@@ -28,12 +28,14 @@
 - 変更したら、リポジトリの CLAUDE.md にある確認のコマンドを通してから報告する。
 - 確かめていないことは「未検証」と書く。推測を断定で書かない。
 
-## コミットと PR
+## ブランチ・コミット・PR
 
-コミットの 1 行目と PR のタイトルは、全リポジトリで同じ形にする。
+ブランチ名、コミットの 1 行目、PR のタイトルは、全リポジトリで同じ形にする。
 
-- 英語で `<type>: <summary>` と書く（例：`docs: drop the centered README header`）。
-- summary は小文字で始まる命令形にし、末尾にピリオドを付けない。72 字以内にする。
+- ブランチ名は `<type>/<summary>` にし、summary は英語の kebab-case で書く（例：`docs/readme-layout`）。
+- main には直接 push しない。PR を作り、squash でマージする。
+- コミットの 1 行目と PR のタイトルは、英語で `<type>: <summary>` と書く（例：`docs: drop the centered README header`）。
+- コミットの summary は小文字で始まる命令形にし、末尾にピリオドを付けない。72 字以内にする。
 - コミットの本文と PR の本文は日本語で書く。
 
 `type` は、変えたものの種類で選ぶ。

@@ -8,7 +8,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 | ファイル | 読み込まれる時 | 中身 |
 | --- | --- | --- |
-| [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、報告、コミットと PR |
+| [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、報告、ブランチ・コミット・PR |
 | [rules/docs.md](rules/docs.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
 | [rules/comments.md](rules/comments.md) | Swift・Kotlin・設定・スクリプトを読み書きする時 | コメントを書かない |
 | [hooks/check-docs.py](hooks/check-docs.py) | `.md` を Edit・Write した後 | `rules/docs.md` のうち、文字列で分かる違反を Claude に返す |
