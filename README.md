@@ -2,6 +2,9 @@
 
 Claude Code の、全リポジトリに共通の決まり。`~/.claude` からシンボリックリンクで指して使う。
 
+![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?logo=claude&logoColor=white)
+![Python 3](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)
+
 ## 中身
 
 ファイルごとに、読み込まれる時が違う。
