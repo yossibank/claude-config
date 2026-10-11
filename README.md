@@ -1,10 +1,6 @@
-<div align="center">
-
 # claude-config
 
 Claude Code の、全リポジトリに共通の決まり。`~/.claude` からシンボリックリンクで指して使う。
-
-</div>
 
 ## 中身
 
@@ -12,9 +8,10 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 | ファイル | 読み込まれる時 | 中身 |
 | --- | --- | --- |
-| `CLAUDE.md` | いつも | 言語、提案と追加、報告 |
-| `rules/docs.md` | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
-| `rules/comments.md` | Swift・Kotlin・設定・スクリプトを読み書きする時 | コメントを書かない |
+| [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、報告、ブランチ・コミット・PR |
+| [rules/docs.md](rules/docs.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
+| [rules/comments.md](rules/comments.md) | Swift・Kotlin・設定・スクリプトを読み書きする時 | コメントを書かない |
+| [hooks/check-docs.py](hooks/check-docs.py) | `.md` を Edit・Write した後 | `rules/docs.md` のうち、文字列で分かる違反を Claude に返す |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
@@ -27,5 +24,24 @@ ln -s ~/Applications/AI/claude-config/CLAUDE.md ~/.claude/CLAUDE.md
 ln -s ~/Applications/AI/claude-config/rules ~/.claude/rules
 ```
 
-> [!NOTE]
-> クラウドのセッション（claude.ai/code など）は `~/.claude` を読み込まない。手元の Claude Code だけで効く。
+フックは、`~/.claude/settings.json` の `hooks` に次を足して使う。
+
+```json
+"PostToolUse": [
+  {
+    "matcher": "Edit|Write|MultiEdit",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/check-docs.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+      }
+    ]
+  }
+]
+```
+
+手で確かめるときは、ファイルを引数に渡す。
+
+```sh
+python3 hooks/check-docs.py README.md
+```
