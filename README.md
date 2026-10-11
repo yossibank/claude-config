@@ -1,10 +1,6 @@
-<div align="center">
-
 # claude-config
 
 Claude Code の、全リポジトリに共通の決まり。`~/.claude` からシンボリックリンクで指して使う。
-
-</div>
 
 ## 中身
 
@@ -12,9 +8,9 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 | ファイル | 読み込まれる時 | 中身 |
 | --- | --- | --- |
-| `CLAUDE.md` | いつも | 言語、提案と追加、報告 |
-| `rules/docs.md` | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
-| `rules/comments.md` | Swift・Kotlin・設定・スクリプトを読み書きする時 | コメントを書かない |
+| [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、報告 |
+| [rules/docs.md](rules/docs.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
+| [rules/comments.md](rules/comments.md) | Swift・Kotlin・設定・スクリプトを読み書きする時 | コメントを書かない |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
