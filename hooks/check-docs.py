@@ -2,12 +2,16 @@ import json
 import os
 import re
 import sys
+from itertools import takewhile
 
 JA = r"々぀-ヺー-ヿ一-鿿"
 README_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td"}
 LIMIT = 60
 
-COUNT = re.compile(r"次の\s*[0-9０-９]+\s*(つ|段|個|点|項目)")
+COUNT = re.compile(r"([0-9０-９]+)\s*(つ|段|個|点|項目|種類|件)")
+NEXT = re.compile(r"次の\s*[0-9０-９]+\s*(つ|段|個|点|項目|種類|件)")
+QUOTE = re.compile(r"^\s*(>\s?)*")
+LIST = re.compile(r"^([-*]|\d+\.)\s")
 TAG = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9]*)")
 BOLD = re.compile(r"\*\*[^*\n]+?\*\*")
 ITALIC = re.compile(r"(?<![A-Za-z0-9*])\*(?=\S)[^*\n]+?(?<=\S)\*(?![A-Za-z0-9*])|(?<![A-Za-z0-9_])_(?=\S)[^_\n]+?(?<=\S)_(?![A-Za-z0-9_])")
@@ -23,6 +27,20 @@ def strip(line):
     return re.sub(r"<!--.*?-->", "", line)
 
 
+def kind(text):
+    if not text:
+        return "blank"
+    if text.startswith("#"):
+        return "heading"
+    if text.startswith("|"):
+        return "table"
+    if LIST.match(text):
+        return "list"
+    if text.startswith(">"):
+        return "quote"
+    return "body"
+
+
 def check(path):
     readme = os.path.basename(path).lower() == "readme.md"
     lines = open(path, encoding="utf-8").read().split("\n")
@@ -31,15 +49,37 @@ def check(path):
     if lines and lines[0] == "---":
         end = next((i for i in range(1, len(lines)) if lines[i] == "---"), 0)
         start = end + 1
+    rows = []
     fence = False
     for number, raw in enumerate(lines[start:], start + 1):
-        if raw.lstrip().startswith(("```", "~~~")):
+        if QUOTE.sub("", raw).lstrip().startswith(("```", "~~~")):
             fence = not fence
+            rows.append((number, "", "code"))
             continue
         if fence:
             continue
         text = strip(raw)
-        if COUNT.search(re.sub(r"「[^」]*」", "", text)):
+        rows.append((number, text, kind(text.strip())))
+    heading = None
+    for index, (number, text, what) in enumerate(rows):
+        if what == "heading":
+            level = len(text) - len(text.lstrip("#"))
+            if heading and level > heading[0] and not heading[1]:
+                found.append((number, "見出しとすぐ下の小見出しの間に本文を置く"))
+            heading = [level, False]
+            continue
+        if what == "body" and heading:
+            heading[1] = True
+        if what in ("code", "blank"):
+            continue
+        after = [w for _, _, w in rows[index + 1 :] if w != "blank"]
+        following = after[0] if after else None
+        items = len(list(takewhile(lambda w: w == following, after)))
+        if following == "table":
+            items -= 2
+        plain = re.sub(r"「[^」]*」", "", text)
+        counts = {int(n) for n, _ in COUNT.findall(plain)}
+        if NEXT.search(plain) or (what in ("body", "quote") and following in ("list", "table") and items >= 3 and items in counts):
             found.append((number, "一覧の前置きに項目の数を書かない"))
         for closing, name in TAG.findall(text):
             if not (readme and name.lower() in README_TAGS):
@@ -49,10 +89,9 @@ def check(path):
             found.append((number, "斜体を使わない"))
         if SPACE.search(text):
             found.append((number, "日本語と英数字の間に半角スペースを入れる"))
-        body = text.strip()
-        if body.startswith(("|", "#")) or "。" not in body:
+        if what == "table":
             continue
-        body = re.sub(r"<[^>]*>", "", body)
+        body = re.sub(r"<[^>]*>", "", text.strip())
         body = re.sub(r"^(>\s*)?([-*]|\d+\.)?\s*", "", body).replace("**", "")
         for sentence in body.split("。"):
             if HAS_JA.search(sentence) and len(sentence) + 1 > LIMIT:
