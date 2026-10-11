@@ -22,6 +22,3 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 ln -s ~/Applications/AI/claude-config/CLAUDE.md ~/.claude/CLAUDE.md
 ln -s ~/Applications/AI/claude-config/rules ~/.claude/rules
 ```
-
-> [!NOTE]
-> クラウドのセッション（claude.ai/code など）は `~/.claude` を読み込まない。手元の Claude Code だけで効く。
