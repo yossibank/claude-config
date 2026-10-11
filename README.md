@@ -14,6 +14,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、報告、ブランチ・コミット・PR |
 | [rules/docs.md](rules/docs.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
 | [rules/comments.md](rules/comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
+| [rules/swift.md](rules/swift.md) | Swift を読み書きする時 | 宣言の置き方、改行と空行、テストの書き方 |
 | [hooks/check-docs.py](hooks/check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs.md` のうち、文字列で分かる違反を Claude に返す |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
