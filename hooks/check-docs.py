@@ -17,6 +17,7 @@ BOLD = re.compile(r"\*\*[^*\n]+?\*\*")
 ITALIC = re.compile(r"(?<![A-Za-z0-9*])\*(?=\S)[^*\n]+?(?<=\S)\*(?![A-Za-z0-9*])|(?<![A-Za-z0-9_])_(?=\S)[^_\n]+?(?<=\S)_(?![A-Za-z0-9_])")
 SPACE = re.compile(rf"[{JA}][A-Za-z0-9]|[A-Za-z0-9][{JA}]")
 HAS_JA = re.compile(rf"[{JA}]")
+MEMORY = re.compile(r"/\.claude/projects/[^/]+/memory/")
 
 
 def strip(line):
@@ -107,7 +108,7 @@ def main():
         paths = [data.get("tool_input", {}).get("file_path", "")]
     report = []
     for path in paths:
-        if path.endswith(".md") and os.path.isfile(path):
+        if path.endswith(".md") and os.path.isfile(path) and not MEMORY.search(path):
             report += [f"{path}:{n}: {m}" for n, m in check(path)]
     if report:
         print("文書の決まり（rules/docs.md）に合わない箇所がある。直す。", file=sys.stderr)
