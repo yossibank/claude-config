@@ -1,6 +1,10 @@
+<div align="center">
+
 # claude-config
 
 Claude Code の、全リポジトリに共通の決まり。`~/.claude` からシンボリックリンクで指して使う。
+
+</div>
 
 ## 中身
 
@@ -14,7 +18,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
-## 入れ方
+## 使い方
 
 `~/.claude` に同じ名前のファイルが無い状態で、次を実行する。
 
