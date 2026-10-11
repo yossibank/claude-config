@@ -18,6 +18,17 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
+## スキル
+
+スキルは、`/` で名前を打ったときだけ動く。Claude が自分の判断では呼ばない。
+
+| スキル | すること |
+| --- | --- |
+| [/pr-ship](skills/pr-ship/SKILL.md) | 変更をブランチに切り出し、確認を通して PR を作る |
+| [/pr-land](skills/pr-land/SKILL.md) | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
+
+PR に関わるスキルは、名前を `pr-` で始める。
+
 ## 使い方
 
 `~/.claude` に同じ名前のファイルが無い状態で、次を実行する。
@@ -25,6 +36,12 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 ```sh
 ln -s ~/Applications/AI/claude-config/CLAUDE.md ~/.claude/CLAUDE.md
 ln -s ~/Applications/AI/claude-config/rules ~/.claude/rules
+```
+
+スキルは、1 つずつ `~/.claude/skills/` にリンクする。
+
+```sh
+for s in ~/Applications/AI/claude-config/skills/*/; do ln -s "${s%/}" ~/.claude/skills/; done
 ```
 
 フックは、`~/.claude/settings.json` の `hooks` に次を足して使う。
