@@ -2,12 +2,14 @@ import json
 import os
 import re
 import sys
+from itertools import takewhile
 
 JA = r"々぀-ヺー-ヿ一-鿿"
 README_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td"}
 LIMIT = 60
 
-COUNT = re.compile(r"[0-9０-９]+\s*(つ|段|個|点|項目|種類|件)")
+COUNT = re.compile(r"([0-9０-９]+)\s*(つ|段|個|点|項目|種類|件)")
+NEXT = re.compile(r"次の\s*[0-9０-９]+\s*(つ|段|個|点|項目|種類|件)")
 QUOTE = re.compile(r"^\s*(>\s?)*")
 LIST = re.compile(r"^([-*]|\d+\.)\s")
 TAG = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9]*)")
@@ -70,8 +72,14 @@ def check(path):
             heading[1] = True
         if what in ("code", "blank"):
             continue
-        following = next((w for _, _, w in rows[index + 1 :] if w != "blank"), None)
-        if what in ("body", "quote") and following in ("list", "table") and COUNT.search(re.sub(r"「[^」]*」", "", text)):
+        after = [w for _, _, w in rows[index + 1 :] if w != "blank"]
+        following = after[0] if after else None
+        items = len(list(takewhile(lambda w: w == following, after)))
+        if following == "table":
+            items -= 2
+        plain = re.sub(r"「[^」]*」", "", text)
+        counts = {int(n) for n, _ in COUNT.findall(plain)}
+        if NEXT.search(plain) or (what in ("body", "quote") and following in ("list", "table") and items >= 3 and items in counts):
             found.append((number, "一覧の前置きに項目の数を書かない"))
         for closing, name in TAG.findall(text):
             if not (readme and name.lower() in README_TAGS):
