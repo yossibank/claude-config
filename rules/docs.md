@@ -53,7 +53,7 @@ paths:
 | 絵文字 | 言葉だけでは見分けにくいものに、言葉と並べて 1 つ。状態（✅ 完了、🚧 作業中、⬜ 未着手）、OS や役割の種類（🍎 iOS、🤖 Android、🧩 共通） | 節の見出し、飾り。絵文字だけで意味を伝えること |
 | アラート | `NOTE` 補足、`TIP` こつ、`IMPORTANT` 必須、`WARNING` 危険・未検証、`CAUTION` 壊れる・戻せない操作 | 本文の言い換え。続けて並べること。1 節に 2 つ以上 |
 | 画像 | README の見た目の紹介。40〜150 字の alt を付ける | docs、rules、CLAUDE.md。AI が読めず、差分も見えない |
-| HTML | README の冒頭の中央寄せ（`<div align="center">`）と、その中の `<img>` | それ以外の場所 |
+| HTML | README の冒頭の中央寄せ（`<div align="center">`）と、その中で画像を並べる `<table>`・`<picture>`・`<img>` | それ以外の場所 |
 | バッジ | README の冒頭の、変わりにくい事実（CI、ライセンス、対応 OS、言語の版） | 進み具合など、よく変わるもの |
 
 ## README の形
