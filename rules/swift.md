@@ -35,6 +35,7 @@ Swift を読み書きするときに読み込まれる決まり。宣言の置�
 - 処理を行うクロージャは、中身を改行して書く。値を変えるだけの短いクロージャ（`map` など）は 1 行でよい
 - 整形で式の途中が切れるときは、`let` で名前を付けて分ける。三項演算子はモディファイアの引数に入れない
 - 折り返せない文字列だけは、80 字を超えてよい
+- `if` と `guard` の条件は、下の形で書く。SwiftFormat は `--wrap-conditions preserve` にし、形を変えさせない
 
 処理を行うクロージャと、入れ子の呼び出しは、次の形で書く。
 
@@ -52,6 +53,32 @@ EntrySheet(
         date: home.today
     )
 )
+```
+
+`if` と `guard` の条件は、数で形を変える。条件が 1 つなら 1 行に書く。
+
+```swift
+guard let hoge else {
+    return
+}
+
+if let hoge {
+}
+```
+
+条件が 2 つ以上なら、`guard` は `guard` と `else` をそれぞれ 1 行にし、条件を 1 つずつ並べる。`if` は最初の条件を `if` と同じ行に置き、続きを揃えて並べる。
+
+```swift
+guard
+    let hoge,
+    let foo
+else {
+    return
+}
+
+if let hoge,
+   let foo {
+}
 ```
 
 ## let で名前を付ける値
