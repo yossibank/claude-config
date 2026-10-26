@@ -11,11 +11,11 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 
 ## 置き場所
 
-公開に使うファイルは、アプリのリポジトリの次の場所に置く。無ければ、`templates/` から写して作る。
+公開に使うファイルは、アプリのリポジトリの次の場所に置く。無ければ、表のひな形から写して作る。
 
 | ファイル | ひな形 | 中身 |
 | --- | --- | --- |
-| `ios/<App>/PrivacyInfo.xcprivacy` | `templates/PrivacyInfo.xcprivacy` | 理由の申告が要る API と、集めるデータ |
+| `ios/<App>/PrivacyInfo.xcprivacy` | claude-config の `templates/ios-app/ios/__App__/PrivacyInfo.xcprivacy` | 理由の申告が要る API と、集めるデータ |
 | `store/ja/*.txt` | `templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
 | `store/screenshots/` | | 6.9 インチの PNG |
 
