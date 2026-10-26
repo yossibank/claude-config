@@ -38,6 +38,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [/pr-ship](skills/pr-ship/SKILL.md) | 人が頼んだ時に Claude | 変更をブランチに切り出し、確認を通して PR を作る |
 | [/pr-land](skills/pr-land/SKILL.md) | 人・Claude | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
 | [ui-record](skills/ui-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
+| [ui-snapshot](skills/ui-snapshot/SKILL.md) | Claude | SwiftUI の画面・部品・ウィジェットをテストとして描き、場合ごとの PNG にする。描く場合はアプリの `.claude/snapshots/` に置く |
 
 ## エージェント
 
