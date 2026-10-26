@@ -43,7 +43,7 @@ ${CLAUDE_SKILL_DIR}/scripts/init.sh <名前> <表示名>
 | --- | --- |
 | 直下 | CLAUDE.md、README、Makefile、Brewfile、Mintfile、SwiftFormat と pre-commit の設定 |
 | `scripts/verify.sh` | コマンドの全ログをファイルに書き、成否と失敗の行だけを出す |
-| `ios/` | Xcode プロジェクト、ワークスペース、テストプラン、アプリのターゲット |
+| `ios/` | Xcode プロジェクト、ワークスペース、テストプラン、アプリのターゲット、空のプライバシーの申告 |
 | `ios/Packages/<App>Kit` | Core（`Identifier`）、Store（`AppDatabase` と最初のマイグレーション） |
 | `ios/Packages/<App>App` | AppFeature（`RootView`）、DesignSystem、Features（`HomeView`） |
 
