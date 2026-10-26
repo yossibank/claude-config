@@ -65,7 +65,7 @@ def created_pr(payload):
     command = (payload.get("tool_input") or {}).get("command", "")
     response = payload.get("tool_response")
     output = response.get("stdout", "") if isinstance(response, dict) else str(response or "")
-    return "gh pr create" in command and PR_URL.search(output) is not None
+    return "gh pr create" in command and "already exists" not in output and PR_URL.search(output) is not None
 
 
 def main():
