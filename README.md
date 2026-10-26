@@ -11,8 +11,9 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 | ファイル | 読み込まれる時 | 中身 |
 | --- | --- | --- |
-| [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、不具合を直す、使う量を抑える、報告、ブランチ・コミット・PR |
+| [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、不具合を直す、使う量を抑える、進め方の決まり、報告、ブランチ・コミット・PR |
 | [rules/docs-writing.md](rules/docs-writing.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
+| [rules/docs-roles.md](rules/docs-roles.md) | `.md` を読み書きする時 | アプリの文書ごとに書くこと、文書を足す条件 |
 | [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
 | [rules/swift-core.md](rules/swift-core.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、SwiftUI の画面、ファイルとフォルダ、テストの書き方 |
 | [hooks/pre-read-guard.py](hooks/pre-read-guard.py) | Read の前 | 30KB を超えるテキストを範囲なしで読むのを止め、節や範囲を絞って読むよう返す |
