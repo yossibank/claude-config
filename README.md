@@ -15,8 +15,10 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [rules/docs-writing.md](rules/docs-writing.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
 | [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
 | [rules/swift-core.md](rules/swift-core.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、SwiftUI の画面、ファイルとフォルダ、テストの書き方 |
-| [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反を Claude に返す |
-| [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/clear` で区切ることを勧める |
+| [hooks/pre-read-guard.py](hooks/pre-read-guard.py) | Read の前 | 30KB を超えるテキストを範囲なしで読むのを止め、節や範囲を絞って読むよう返す |
+| [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反と、`docs/` の 15KB を超えるファイルを Claude に返す |
+| [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
+| [scripts/docs-section.sh](scripts/docs-section.sh) | 呼んだ時 | Markdown の見出しの一覧か、指定した見出しの節だけを出す |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
@@ -81,6 +83,17 @@ for s in ~/Applications/AI/claude-config/skills/*/; do ln -s "${s%/}" ~/.claude/
 フックは、`~/.claude/settings.json` の `hooks` に次を足して使う。
 
 ```json
+"PreToolUse": [
+  {
+    "matcher": "Read",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-read-guard.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+      }
+    ]
+  }
+],
 "PostToolUse": [
   {
     "matcher": "Edit|Write|MultiEdit",

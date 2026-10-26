@@ -53,10 +53,10 @@ def long_context(payload):
     if level < 1 or level <= notified_level(session):
         return None
     save_level(session, level)
-    return f"会話の文脈が約 {tokens // 10_000} 万トークンになりました。区切りのよいところで /clear すると、使う量を抑えられます。"
+    return f"会話の文脈が約 {tokens // 10_000} 万トークンになりました。区切りのよいところで /ctx-handoff で引き継ぎメモを書き、/clear すると、使う量を抑えられます。"
 
 
-PR_MESSAGE = "PR を作りました。この依頼が済んだら /clear で区切ると、次の作業が軽くなります。"
+PR_MESSAGE = "PR を作りました。この依頼が済んだら、/ctx-handoff で引き継ぎメモを書いてから /clear で区切ると、次の作業が軽くなります。"
 
 
 def main():

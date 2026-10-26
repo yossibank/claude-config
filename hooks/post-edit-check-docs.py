@@ -7,6 +7,7 @@ from itertools import takewhile
 JA = r"々぀-ヺー-ヿ一-鿿"
 README_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td"}
 LIMIT = 60
+SIZE_LIMIT = 15_000
 
 COUNT = re.compile(r"([0-9０-９]+)\s*(つ|段|個|点|項目|種類|件)")
 NEXT = re.compile(r"次の\s*[0-9０-９]+\s*(つ|段|個|点|項目|種類|件)")
@@ -43,9 +44,12 @@ def kind(text):
 
 
 def check(path):
+    found = []
+    size = os.path.getsize(path)
+    if "/docs/" in path and size > SIZE_LIMIT:
+        found.append((1, f"docs の 1 ファイルが 15KB を超えている（{size // 1000}KB）。節ごとに分ける"))
     readme = os.path.basename(path).lower() == "readme.md"
     lines = open(path, encoding="utf-8").read().split("\n")
-    found = []
     start = 0
     if lines and lines[0] == "---":
         end = next((i for i in range(1, len(lines)) if lines[i] == "---"), 0)
