@@ -111,7 +111,7 @@ def main():
         data = json.load(sys.stdin)
         paths = [data.get("tool_input", {}).get("file_path", "")]
     report = []
-    for path in paths:
+    for path in map(os.path.abspath, filter(None, paths)):
         if path.endswith(".md") and os.path.isfile(path) and not MEMORY.search(path):
             report += [f"{path}:{n}: {m}" for n, m in check(path)]
     if report:
