@@ -12,11 +12,11 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | ファイル | 読み込まれる時 | 中身 |
 | --- | --- | --- |
 | [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、不具合を直す、使う量を抑える、報告、ブランチ・コミット・PR |
-| [rules/docs.md](rules/docs.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
-| [rules/comments.md](rules/comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
-| [rules/swift.md](rules/swift.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、SwiftUI の画面、ファイルとフォルダ、テストの書き方 |
-| [hooks/check-docs.py](hooks/check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs.md` のうち、文字列で分かる違反を Claude に返す |
-| [hooks/suggest-clear.py](hooks/suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/clear` で区切ることを勧める |
+| [rules/docs-writing.md](rules/docs-writing.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
+| [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
+| [rules/swift-core.md](rules/swift-core.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、SwiftUI の画面、ファイルとフォルダ、テストの書き方 |
+| [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反を Claude に返す |
+| [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/clear` で区切ることを勧める |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
@@ -28,7 +28,7 @@ PR に関わるスキルは、`/` で名前を打ったときだけ動く。名�
 | --- | --- | --- |
 | [/pr-ship](skills/pr-ship/SKILL.md) | 人 | 変更をブランチに切り出し、確認を通して PR を作る |
 | [/pr-land](skills/pr-land/SKILL.md) | 人 | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
-| [sim-record](skills/sim-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
+| [ui-record](skills/ui-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
 
 ## エージェント
 
@@ -38,6 +38,29 @@ PR に関わるスキルは、`/` で名前を打ったときだけ動く。名�
 | --- | --- | --- |
 | [explorer](agents/explorer.md) | Haiku | 場所と事実を探して短く返す。書き換えない |
 | [implementer](agents/implementer.md) | Sonnet | 方針の決まった実装、削除、名前の変更、文書と fixtures の書き換え |
+
+## 名前の付け方
+
+似たものに同じ接頭語を付け、並び順で分類が分かるようにする。
+
+| 対象 | 形 | 例 |
+| --- | --- | --- |
+| スキル | `<分類>-<動詞>` | `pr-ship`、`ui-record` |
+| フック | `<イベント>-<目的>.py` | `post-edit-check-docs.py` |
+| rules | `<対象>-<範囲>.md` | `swift-core.md` |
+| scripts | `<分類>-<目的>.sh` | `docs-section.sh` |
+| エージェント | 役割の名詞（`-er`） | `explorer` |
+
+スキルの分類は次から選ぶ。新しい分類が要る時は、行を足してから名前を付ける。
+
+| 接頭語 | 分類 |
+| --- | --- |
+| `app-` | 企画・立ち上げ |
+| `config-` | claude-config 自体の手入れ |
+| `ctx-` | 文脈とトークンの管理 |
+| `pr-` | PR |
+| `store-` | App Store への公開と数字 |
+| `ui-` | 見た目と動きの確認 |
 
 ## 使い方
 
@@ -64,7 +87,7 @@ for s in ~/Applications/AI/claude-config/skills/*/; do ln -s "${s%/}" ~/.claude/
     "hooks": [
       {
         "type": "command",
-        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/check-docs.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-docs.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
       }
     ]
   },
@@ -74,7 +97,7 @@ for s in ~/Applications/AI/claude-config/skills/*/; do ln -s "${s%/}" ~/.claude/
       {
         "type": "command",
         "if": "Bash(gh pr create *)",
-        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" pr"
+        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" pr"
       }
     ]
   }
@@ -84,7 +107,7 @@ for s in ~/Applications/AI/claude-config/skills/*/; do ln -s "${s%/}" ~/.claude/
     "hooks": [
       {
         "type": "command",
-        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" 2>/dev/null || true"
+        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" 2>/dev/null || true"
       }
     ]
   }
@@ -94,5 +117,5 @@ for s in ~/Applications/AI/claude-config/skills/*/; do ln -s "${s%/}" ~/.claude/
 手で確かめるときは、ファイルを引数に渡す。
 
 ```sh
-python3 hooks/check-docs.py README.md
+python3 hooks/post-edit-check-docs.py README.md
 ```

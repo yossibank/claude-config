@@ -26,7 +26,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/new-worktree.sh *)
 PR を作る前に、変更したリポジトリで次を通す。
 
 - CLAUDE.md の「作業の進め方」にある確認のコマンド。CLAUDE.md が無ければ README の「動かし方」
-- 変えた `.md` への `~/Applications/AI/claude-config/hooks/check-docs.py`
+- 変えた `.md` への `~/Applications/AI/claude-config/hooks/post-edit-check-docs.py`
 
 確認のログは、毎回 `mktemp` で作った新しいファイルに `>|` で書く。`mktemp` がファイルを先に作るので、`>` では zsh の noclobber で書けない。
 
