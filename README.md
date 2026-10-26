@@ -31,7 +31,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 ## スキル
 
-スキルは、Claude が要る時に自分で呼ぶ。外に出す操作を含む pr-ship だけは、人が言葉で頼んだ時に呼び、push の前に承認を得る。人が `/` で呼んでもよい。
+スキルは、Claude が要る時に自分で呼ぶ。外に出す操作を含む pr-ship と store-release は、人が言葉で頼んだ時に呼ぶ。どちらも、外に出す前に承認を得る。人が `/` で呼んでもよい。
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
@@ -40,6 +40,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [/ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 会話を区切る前に、続きに要ることだけを `.claude/handoff.md` に 20 行以内で書く |
 | [/pr-ship](skills/pr-ship/SKILL.md) | 人が頼んだ時に Claude | 変更をブランチに切り出し、確認を通して PR を作る |
 | [/pr-land](skills/pr-land/SKILL.md) | 人・Claude | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
+| [/store-release](skills/store-release/SKILL.md) | 人が頼んだ時に Claude | プライバシーの申告・掲載情報・スクリーンショットを確かめ、アーカイブを App Store Connect に送る |
 | [ui-record](skills/ui-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
 | [ui-snapshot](skills/ui-snapshot/SKILL.md) | Claude | SwiftUI の画面・部品・ウィジェットをテストとして描き、場合ごとの PNG にする。描く場合はアプリの `.claude/snapshots/` に置く |
 
