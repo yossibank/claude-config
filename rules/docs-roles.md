@@ -20,6 +20,7 @@ paths:
 | decisions | 決定、理由、選ばなかった案 | 形の詳しい説明（architecture へリンク） |
 | data | 表の形と、その決まり | なぜその形か |
 | roadmap | 作る順番、状態、画面 | 設定・環境の状態 |
+| glossary | 画面の言葉・文書の言葉・コードの型・意味の対応 | 決まりの説明 |
 
 ## 足す条件
 
@@ -32,3 +33,4 @@ paths:
 | `docs/data.md` | データベースに表を持った時 |
 | `spec/fixtures/` | 計算の決まりがあり、iOS と Android で同じ結果が要る時 |
 | `spec/export-format.md` | ユーザーのデータを書き出す・読み込む時 |
+| `docs/glossary.md` | 画面の言葉とコードの名前が食い違う語が出た時 |

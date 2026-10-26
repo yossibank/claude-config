@@ -5,7 +5,7 @@ import sys
 from itertools import takewhile
 
 JA = r"々぀-ヺー-ヿ一-鿿"
-README_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td"}
+HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
 LIMIT = 60
 SIZE_LIMIT = 15_000
 
@@ -48,7 +48,7 @@ def check(path):
     size = os.path.getsize(path)
     if "/docs/" in path and size > SIZE_LIMIT:
         found.append((1, f"docs の 1 ファイルが 15KB を超えている（{size // 1000}KB）。節ごとに分ける"))
-    readme = os.path.basename(path).lower() == "readme.md"
+    html = os.path.basename(path).lower() == "readme.md" or "/docs/" in path
     lines = open(path, encoding="utf-8").read().split("\n")
     start = 0
     if lines and lines[0] == "---":
@@ -73,7 +73,7 @@ def check(path):
                 found.append((number, "見出しとすぐ下の小見出しの間に本文を置く"))
             heading = [level, False]
             continue
-        if what == "body" and heading:
+        if what in ("body", "quote") and heading:
             heading[1] = True
         if what in ("code", "blank"):
             continue
@@ -87,7 +87,7 @@ def check(path):
         if NEXT.search(plain) or (what in ("body", "quote") and following in ("list", "table") and items >= 3 and items in counts):
             found.append((number, "一覧の前置きに項目の数を書かない"))
         for closing, name in TAG.findall(text):
-            if not (readme and name.lower() in README_TAGS):
+            if not (html and name.lower() in HTML_TAGS):
                 found.append((number, f"使ってよい HTML ではない（<{closing}{name}>）"))
                 break
         if ITALIC.search(BOLD.sub("", text)):
