@@ -19,6 +19,8 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反と、`docs/` の 15KB を超えるファイルを Claude に返す |
 | [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 呼んだ時 | Markdown の見出しの一覧か、指定した見出しの節だけを出す |
+| [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からのリンクを張り、settings.json の案を作る |
+| [settings/settings.json](settings/settings.json) | 入れる時 | `config-install.sh` が settings.json に入れるフックと許可 |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
@@ -68,66 +70,15 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 ## 使い方
 
-`~/.claude` に同じ名前のファイルが無い状態で、次を実行する。
+claude-config を `~/Applications/AI/claude-config` に置き、次を実行する。`jq` が要る。
 
 ```sh
-ln -s ~/Applications/AI/claude-config/CLAUDE.md ~/.claude/CLAUDE.md
-ln -s ~/Applications/AI/claude-config/rules ~/.claude/rules
-ln -s ~/Applications/AI/claude-config/agents ~/.claude/agents
+~/Applications/AI/claude-config/scripts/config-install.sh
 ```
 
-スキルは、1 つずつ `~/.claude/skills/` にリンクする。
+スクリプトは、CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクし、壊れたスキルのリンクを消す。`~/.claude` に同じ名前の実体があれば、`NG` を出して止まる。
 
-```sh
-for s in ~/Applications/AI/claude-config/skills/*/; do ln -s "${s%/}" ~/.claude/skills/; done
-```
-
-フックは、`~/.claude/settings.json` の `hooks` に次を足して使う。
-
-```json
-"PreToolUse": [
-  {
-    "matcher": "Read",
-    "hooks": [
-      {
-        "type": "command",
-        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-read-guard.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
-      }
-    ]
-  }
-],
-"PostToolUse": [
-  {
-    "matcher": "Edit|Write|MultiEdit",
-    "hooks": [
-      {
-        "type": "command",
-        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-docs.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
-      }
-    ]
-  },
-  {
-    "matcher": "Bash",
-    "hooks": [
-      {
-        "type": "command",
-        "if": "Bash(gh pr create *)",
-        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" pr"
-      }
-    ]
-  }
-],
-"Stop": [
-  {
-    "hooks": [
-      {
-        "type": "command",
-        "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" 2>/dev/null || true"
-      }
-    ]
-  }
-]
-```
+settings.json は直接書き換えない。`settings/settings.json` の許可を足し合わせ、`hooks` を置き換えた `settings.json.new` を作り、差分を出す。claude-config に無いフックが消えていないかを確かめてから、表示された `mv` のコマンドで置き換える。
 
 手で確かめるときは、ファイルを引数に渡す。
 
