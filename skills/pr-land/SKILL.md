@@ -1,7 +1,6 @@
 ---
 name: pr-land
-description: マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける
-disable-model-invocation: true
+description: マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける。PR がマージされたと分かった時や、人が片付けを頼んだ時に使う
 argument-hint: "<リポジトリ> <ブランチ> <PR 番号> [...]"
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/land.sh *)
 ---
@@ -18,7 +17,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/land.sh *)
 ${CLAUDE_SKILL_DIR}/scripts/land.sh <リポジトリ> <ブランチ> <PR 番号>
 ```
 
-今のセッションが入っているワークツリーは、land.sh では消せない。先に `git fetch` してから `git diff --quiet origin/main HEAD` で中身が main と同じことを確かめ、`ExitWorktree` で消す。その後に land.sh を実行する。
+今のセッションが入っているワークツリーは、land.sh では消せない。先に `git fetch` してから、2 つを確かめる。`git diff --quiet origin/main HEAD` で中身が main と同じこと、`git status --porcelain` が空であることである。両方を満たしたら、`ExitWorktree` で消す。その後に land.sh を実行する。
 
 ## land.sh が確かめること
 
