@@ -111,7 +111,7 @@ def main():
         if path.endswith(".md") and os.path.isfile(path) and not MEMORY.search(path):
             report += [f"{path}:{n}: {m}" for n, m in check(path)]
     if report:
-        print("文書の決まり（rules/docs.md）に合わない箇所がある。直す。", file=sys.stderr)
+        print("文書の決まり（rules/docs-writing.md）に合わない箇所がある。直す。", file=sys.stderr)
         print("\n".join(report), file=sys.stderr)
         sys.exit(2)
 
