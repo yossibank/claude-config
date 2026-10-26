@@ -38,6 +38,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [/app-init](skills/app-init/SKILL.md) | 人・Claude | `templates/ios-app/` から、ビルドとテストが通る新しいアプリのリポジトリを作る |
 | [/app-plan](skills/app-plan/SKILL.md) | 人・Claude | 題材から競合のレビューの不満を集め、overview と roadmap の下書きを作る |
 | [/ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 会話を区切る前に、続きに要ることだけを `.claude/handoff.md` に 20 行以内で書く |
+| [/ctx-report](skills/ctx-report/SKILL.md) | 人・Claude | 会話の記録から、月ごとに重い作業の上位を表にする |
 | [/pr-ship](skills/pr-ship/SKILL.md) | 人が頼んだ時に Claude | 変更をブランチに切り出し、確認を通して PR を作る |
 | [/pr-land](skills/pr-land/SKILL.md) | 人・Claude | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
 | [/store-release](skills/store-release/SKILL.md) | 人が頼んだ時に Claude | プライバシーの申告・掲載情報・スクリーンショットを確かめ、アーカイブを App Store Connect に送る |
