@@ -1,5 +1,5 @@
 ---
-name: sim-record
+name: ui-record
 description: iOS シミュレーターの画面を録画し、確かめたい場面のコマだけを切り出して 1 枚に並べる。アニメーションのずれ、ちらつき、切り替えの不具合を再現して確かめるときに使う。
 argument-hint: "<シミュレーターの UDID> <秒数> <出力先のフォルダ>"
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
