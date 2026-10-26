@@ -15,7 +15,9 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [rules/docs-writing.md](rules/docs-writing.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
 | [rules/docs-roles.md](rules/docs-roles.md) | `.md` を読み書きする時 | アプリの文書ごとに書くこと、文書を足す条件 |
 | [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
-| [rules/swift-core.md](rules/swift-core.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、SwiftUI の画面、ファイルとフォルダ、テストの書き方 |
+| [rules/swift-core.md](rules/swift-core.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、ファイルとフォルダ |
+| [rules/swift-ui.md](rules/swift-ui.md) | 画面と部品のフォルダ（`AppFeature`・`AppWidget`・`DesignSystem`・`Features`）の Swift と、`*View.swift` を読み書きする時 | `View` の型の分け方、ビューの並べ方 |
+| [rules/swift-test.md](rules/swift-test.md) | `Tests/`・`<名前>Tests/` の下の Swift を読み書きする時 | テストの空行、テストで使う型の置き方 |
 | [hooks/pre-read-guard.py](hooks/pre-read-guard.py) | Read の前 | 30KB を超えるテキストを範囲なしで読むのを止め、節や範囲を絞って読むよう返す |
 | [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反と、`docs/` の 15KB を超えるファイルを Claude に返す |
 | [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
