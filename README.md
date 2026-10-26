@@ -24,13 +24,13 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 ## スキル
 
-PR に関わるスキルは、`/` で名前を打ったときだけ動く。名前を `pr-` で始める。そのほかのスキルは、Claude が要るときに自分で呼ぶ。人が `/` で呼んでもよい。
+スキルは、Claude が要る時に自分で呼ぶ。外に出す操作を含む pr-ship だけは、人が言葉で頼んだ時に呼び、push の前に承認を得る。人が `/` で呼んでもよい。
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
 | [/ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 会話を区切る前に、続きに要ることだけを `.claude/handoff.md` に 20 行以内で書く |
-| [/pr-ship](skills/pr-ship/SKILL.md) | 人 | 変更をブランチに切り出し、確認を通して PR を作る |
-| [/pr-land](skills/pr-land/SKILL.md) | 人 | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
+| [/pr-ship](skills/pr-ship/SKILL.md) | 人が頼んだ時に Claude | 変更をブランチに切り出し、確認を通して PR を作る |
+| [/pr-land](skills/pr-land/SKILL.md) | 人・Claude | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
 | [ui-record](skills/ui-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
 
 ## エージェント
@@ -41,6 +41,7 @@ PR に関わるスキルは、`/` で名前を打ったときだけ動く。名�
 | --- | --- | --- |
 | [explorer](agents/explorer.md) | Haiku | 場所と事実を探して短く返す。書き換えない |
 | [implementer](agents/implementer.md) | Sonnet | 方針の決まった実装、削除、名前の変更、文書と fixtures の書き換え |
+| [reviewer](agents/reviewer.md) | Opus | 差分を読み、マージすると困る所を 5 件まで返す。書き換えない |
 
 ## 名前の付け方
 
