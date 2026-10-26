@@ -1,0 +1,30 @@
+--swift-version 6.4
+
+--disable wrapMultilineStatementBraces
+--disable wrapMultilineFunctionChains
+--enable blankLinesAfterGuardStatements
+--enable blankLinesBetweenImports
+--enable wrapIfStatementBodies
+--enable wrapGuardStatementBodies
+--enable wrapIfExpressionBodies
+--enable organizeDeclarations
+
+--header strip
+--ifdef no-indent
+--line-between-guards true
+--mark-categories false
+--max-width 100
+--organization-mode type
+--organize-types class,actor,struct,enum,extension
+--ranges no-space
+--redundant-type inferred
+--self init-only
+--strip-unused-args closure-only
+--test-case-name-format preserve
+--trailing-commas never
+--wrap-arguments before-first
+--wrap-collections before-first
+--wrap-conditions preserve
+--wrap-parameters before-first
+--wrap-string-interpolation false
+--wrap-ternary before-operators

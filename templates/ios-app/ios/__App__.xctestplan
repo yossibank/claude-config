@@ -1,0 +1,52 @@
+{
+  "configurations" : [
+    {
+      "id" : "11DB58D4-1667-415B-85C6-3ED08017164D",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/__App__Kit",
+        "identifier" : "CoreTests",
+        "name" : "CoreTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/__App__Kit",
+        "identifier" : "StoreTests",
+        "name" : "StoreTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/__App__App",
+        "identifier" : "AppFeatureTests",
+        "name" : "AppFeatureTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/__App__App",
+        "identifier" : "DesignSystemTests",
+        "name" : "DesignSystemTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/__App__App",
+        "identifier" : "FeaturesTests",
+        "name" : "FeaturesTests"
+      }
+    }
+  ],
+  "version" : 1
+}
