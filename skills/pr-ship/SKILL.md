@@ -28,7 +28,7 @@ PR を作る前に、変更したリポジトリで次を通す。
 - CLAUDE.md の「作業の進め方」にある確認のコマンド。CLAUDE.md が無ければ README の「動かし方」
 - 変えた `.md` への `~/Applications/AI/claude-config/hooks/check-docs.py`
 
-確認のログは、毎回 `mktemp` で作った新しいファイルに書く。既存のファイルに書くと、zsh の noclobber で書けず、前回のログを読み違える。
+確認のログは、毎回 `mktemp` で作った新しいファイルに `>|` で書く。`mktemp` がファイルを先に作るので、`>` では zsh の noclobber で書けない。
 
 ## commit と PR
 
