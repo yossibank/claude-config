@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:__App__.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/__App__App">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/__App__Kit">
+   </FileRef>
+</Workspace>
