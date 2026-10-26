@@ -32,10 +32,23 @@ clean_derived_data() {
     echo "$count"
 }
 
+head=""
 if [[ -n $pr ]]; then
-    state=$(cd "$repo" && gh pr view "$pr" --json state -q .state)
+    read -r state head ref < <(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName \
+        -q '"\(.state) \(.headRefOid) \(.headRefName)"')
     [[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（$state）"
+    [[ $ref == "$branch" ]] || head=""
 fi
+
+merged() {
+    local tip base
+    tip=$(git -C "$repo" rev-parse "refs/heads/$branch")
+    [[ $tip == "$head" ]] && return 0
+    [[ -n $head ]] && git -C "$repo" merge-base --is-ancestor "$tip" "$head" 2>/dev/null && return 0
+    git -C "$repo" diff --quiet "origin/$main" "$branch" && return 0
+    base=$(git -C "$repo" merge-base "origin/$main" "$branch")
+    git -C "$repo" diff "$base" "$branch" | git -C "$repo" apply -R --check 2>/dev/null
+}
 
 main=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)
 main=${main#origin/}
@@ -46,11 +59,7 @@ git -C "$repo" pull -q --ff-only origin "$main" || fail "pull --ff-only が通�
     || fail "手元の $main に、origin に無い commit がある"
 
 if git -C "$repo" rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
-    if ! git -C "$repo" diff --quiet "origin/$main" "$branch"; then
-        base=$(git -C "$repo" merge-base "origin/$main" "$branch")
-        git -C "$repo" diff "$base" "$branch" | git -C "$repo" apply -R --check 2>/dev/null \
-            || fail "$branch の中身が $main に入っていない。ワークツリーとブランチは残した"
-    fi
+    merged || fail "$branch の中身が $main に入っていない。ワークツリーとブランチは残した"
     worktree=$(git -C "$repo" worktree list --porcelain \
         | awk -v want="branch refs/heads/$branch" '/^worktree /{path=substr($0, 10)} $0 == want {print path}')
     [[ -z $worktree ]] || git -C "$repo" worktree remove "$worktree"
