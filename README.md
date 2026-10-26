@@ -24,10 +24,11 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 ## スキル
 
-PR に関わるスキルは、`/` で名前を打ったときだけ動く。名前を `pr-` で始める。そのほかのスキルは、Claude が要るときに自分で呼ぶ。
+PR に関わるスキルは、`/` で名前を打ったときだけ動く。名前を `pr-` で始める。そのほかのスキルは、Claude が要るときに自分で呼ぶ。人が `/` で呼んでもよい。
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
+| [/ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 会話を区切る前に、続きに要ることだけを `.claude/handoff.md` に 20 行以内で書く |
 | [/pr-ship](skills/pr-ship/SKILL.md) | 人 | 変更をブランチに切り出し、確認を通して PR を作る |
 | [/pr-land](skills/pr-land/SKILL.md) | 人 | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
 | [ui-record](skills/ui-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
