@@ -11,6 +11,27 @@ fail() {
     exit 1
 }
 
+clean_derived_data() {
+    local plist path
+    local count=0
+
+    for plist in "$HOME"/Library/Developer/Xcode/DerivedData/*/info.plist; do
+        path=$(plutil -extract WorkspacePath raw "$plist" 2>/dev/null) || continue
+
+        case $path in
+            "$repo"/* | "$HOME/.claude/worktrees/$name"/*) ;;
+            *) continue ;;
+        esac
+
+        if [[ ! -e $path ]]; then
+            rm -rf "$(dirname "$plist")"
+            count=$((count + 1))
+        fi
+    done
+
+    echo "$count"
+}
+
 if [[ -n $pr ]]; then
     state=$(cd "$repo" && gh pr view "$pr" --json state -q .state)
     [[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（$state）"
@@ -39,4 +60,5 @@ fi
 git -C "$repo" fetch -q --prune origin
 remote=$(git -C "$repo" ls-remote --heads origin "$branch" | wc -l | tr -d ' ')
 [[ $remote == 0 ]] && left="なし" || left="残っている"
-echo "OK $name: $(git -C "$repo" rev-parse --short HEAD) | 手元の $main は origin と一致 | GitHub 上のブランチ: $left"
+derived=$(clean_derived_data)
+echo "OK $name: $(git -C "$repo" rev-parse --short HEAD) | 手元の $main は origin と一致 | GitHub 上のブランチ: $left | 消した DerivedData: $derived"
