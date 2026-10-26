@@ -1,0 +1,61 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make verify)",
+      "Bash(make build)",
+      "Bash(make test)",
+      "Bash(make test *)",
+      "Bash(swift test *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr checks *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-read-guard.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-docs.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(gh pr create *)",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" pr"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
