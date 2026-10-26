@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -7,6 +8,7 @@ STEP = 200_000
 TAIL = 4_000_000
 STATE = os.path.join(tempfile.gettempdir(), "claude-suggest-clear")
 KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
+PR_URL = re.compile(r"https://github\.com/[^/\s]+/[^/\s]+/pull/\d+")
 
 
 def context_tokens(path):
@@ -59,10 +61,20 @@ def long_context(payload):
 PR_MESSAGE = "PR を作りました。この依頼が済んだら、/ctx-handoff で引き継ぎメモを書いてから /clear で区切ると、次の作業が軽くなります。"
 
 
+def created_pr(payload):
+    command = (payload.get("tool_input") or {}).get("command", "")
+    response = payload.get("tool_response")
+    output = response.get("stdout", "") if isinstance(response, dict) else str(response or "")
+    return "gh pr create" in command and "already exists" not in output and PR_URL.search(output) is not None
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "context"
     payload = json.load(sys.stdin)
-    message = PR_MESSAGE if mode == "pr" else long_context(payload)
+    if mode == "pr":
+        message = PR_MESSAGE if created_pr(payload) else None
+    else:
+        message = long_context(payload)
     if message:
         print(json.dumps({"systemMessage": message}, ensure_ascii=False))
 
