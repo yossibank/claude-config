@@ -39,5 +39,6 @@ HStack {
 
 - `.lineLimit(1)` を付けた文字には、`.minimumScaleFactor(0.8)` を付ける。次のものは除く
   - `displayFont` で出す金額、アイコンの中の文字、ウィジェットの文字は、枠に収まる値まで下げる。下限は 0.5 にする
+  - 一覧の行・格子の札・同じ行の札に並ぶ、使う人が決める名前は、別々に縮めない。並びで倍率をそろえる DesignSystem の修飾子を名前と並びに付け、並びの中で一番縮んだ大きさにそろえる
 - `ViewThatFits` の候補に、`ForEach` を含むビューを入れない
 - 収まらないときだけスクロールさせるときは、`ViewThatFits` で中身とその `ScrollView` 版を並べない。`ScrollView` 1 つに入れ、`.scrollBounceBehavior(.basedOnSize)` を付ける
