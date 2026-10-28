@@ -2,30 +2,27 @@
 
 <何のアプリかを 1 文で>
 
-## 📚 文書
+![iOS 18+](https://img.shields.io/badge/iOS-18+-000000?logo=apple&logoColor=white)
+![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-0D96F6?logo=swift&logoColor=white)
+![GRDB](https://img.shields.io/badge/GRDB-003B57?logo=sqlite&logoColor=white)
 
-文書は、次のとおりに分かれる。
+<img src="docs/images/<画面>-<状態>.png" width="250" alt="<画面の要点>">
+
+## 📚 文書
 
 | 知りたいこと | 文書 |
 | --- | --- |
 | 何を作るか | [docs/overview.md](docs/overview.md) |
 | 作る順番と画面 | [docs/roadmap.md](docs/roadmap.md) |
+| フォルダと依存の向き | [architecture-ios.md](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md)（claude-config） |
 
 ## 🚀 動かし方
 
-Xcode と Homebrew が要る。最初に 1 回、道具を入れる。
+Xcode と Homebrew が要る。
 
-```sh
-make setup
-```
+1. `make setup` で道具を入れる。最初に 1 回だけ走らせる。
+2. `make open` で Xcode のワークスペースを開く。
+3. 変えたら `make verify` で、Kit のテストと iOS のビルドを通す。
 
-ふだんは、次のコマンドを使う。
-
-| コマンド | すること |
-| --- | --- |
-| `make open` | Xcode でワークスペースを開く |
-| `make verify` | Kit のテストと iOS のビルドを通す |
-| `make test` | テストプランをシミュレーターで走らせる |
-| `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` の画面を PNG に描く |
-| `make format` | SwiftFormat で整える |
-| `make licenses` | 設定アプリに出すライセンスの一覧を作り直す |
+ほかのコマンドは、architecture-ios.md の [make のコマンド](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md#make-のコマンド) にある。
