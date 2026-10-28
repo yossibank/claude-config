@@ -11,11 +11,11 @@
 | `make verify` | 変更したら毎回 | 成否と失敗の箇所。失敗した時は、全ログのパスが最後の行にある |
 | `make test` | PR を作る前に 1 回。文書だけの PR では走らせない | テストの結果。CI では走らせない |
 
-見た目は、claude-config の `ui-snapshot` のスキルで描いて確かめる。描く場合は `.claude/snapshots/<セット>/` に置き、`make snapshot SNAPSHOT=<セット>` で描く。
+見た目は、claude-config の `ui-snapshot` のスキルで確かめる。描く場合のセットはスキルに従って置き、`make snapshot SNAPSHOT=<セット>` で描く。
 
 ## 構成
 
-構成は、claude-config の `docs/architecture-ios.md` の共通の形に従う。外れたら `docs/architecture.md` を足し、外れた点だけを書く。
+構成は、claude-config の `docs/architecture-ios.md` の共通の形に従う。外れた時に足す文書は、claude-config の `rules/docs-app.md` に従う。
 
 ## 文書
 
