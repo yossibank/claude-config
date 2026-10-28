@@ -20,9 +20,12 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [rules/swift-test.md](rules/swift-test.md) | `Tests/`・`<名前>Tests/` の下の Swift を読み書きする時 | テストの空行、テストで使う型の置き方 |
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時に読む。自動では読み込まれない | iOS アプリのフォルダ、パッケージ、依存の向き、画面のモデル、テストの共通の形 |
 | [templates/ios-app/](templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形。`__App__` などを置き換えて写す |
+| [hooks/pre-edit-load-rules.py](hooks/pre-edit-load-rules.py) | Read・Edit・Write の前 | 編集するファイルに当たる rules を、この会話（圧縮の後）でまだ読んでいなければ、1 回止めて読むよう返す。Read した rules と、自動で読み込まれた rules を数える。`CLAUDE_RULES_GUARD=off` で止めない |
 | [hooks/pre-read-guard.py](hooks/pre-read-guard.py) | Read の前 | 30KB を超えるテキストを範囲なしで読むのを止め、節や範囲を絞って読むよう返す |
 | [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反と、`docs/` の 15KB を超えるファイルを Claude に返す。HTML は README と `docs/` の下で、画像と `<details>` のタグだけを通す |
 | [hooks/post-edit-format-swift.py](hooks/post-edit-format-swift.py) | `.swift` を Edit・Write した後 | git のルートに `.swiftformat` と、swiftformat を書いた `Mintfile` がある時に、`mint run swiftformat` でそのファイルを整形する。失敗は stderr に出す |
+| [hooks/post-edit-check-shell.py](hooks/post-edit-check-shell.py) | `.sh` を Edit・Write した後 | `bash -n` と、bash が変数名の一部とみなす「変数の直後の全角」を Claude に返す |
+| [hooks/bash-check-edits.py](hooks/bash-check-edits.py) | Bash の前と後 | Bash で書き換えたファイルを git の差で見つけ、Edit・Write を使うよう返し、当たる rules と、文書と `.sh` の検査の結果を添える。git・make などの道具の変更は数えない |
 | [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 呼んだ時 | Markdown の見出しの一覧か、指定した見出しの節だけを出す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からのリンクを張り、settings.json の案を作る |
@@ -67,7 +70,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | 対象 | 形 | 例 |
 | --- | --- | --- |
 | スキル | `<分類>-<すること>`。することは動詞か、作るものの名詞 | `pr-create`、`ctx-handoff` |
-| フック | `<イベント>-<目的>.py` | `post-edit-check-docs.py` |
+| フック | `<イベント>-<目的>.py`。前と後の両方で使うものは `<ツール>-<目的>.py` | `post-edit-check-docs.py`、`bash-check-edits.py` |
 | rules | `<対象>-<範囲>.md` | `swift-core.md` |
 | scripts | `<分類>-<目的>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
@@ -96,4 +99,4 @@ claude-config を `~/Applications/AI/claude-config` に置き、次を実行す�
 
 settings.json は直接書き換えない。`settings/merge.jq` で `settings.json.new` を作り、差分を出す。許可は今の並びのまま、足りないものだけを後ろに足す。フックは claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す。差分を確かめてから、表示された `mv` のコマンドで置き換える。
 
-claude-config を変えたら、`make verify` を通す。`scripts/config-audit.py` が、全体の食い違いと書き方の違反を `NG` の行で出す。`tests/config-audit.sh` は、わざと壊した写しで config-audit が違反を見逃さないかを確かめる。
+claude-config を変えたら、`make verify` を通す。`scripts/config-audit.py` が、全体の食い違いと書き方の違反を `NG` の行で出す。`tests/config-audit.sh` は、わざと壊した写しで config-audit が違反を見逃さないかを確かめる。`tests/hooks.sh` は、作り物のリポジトリと会話の記録で、フックが止めるべき時に止め、止めなくてよい時に止めないかを確かめる。
