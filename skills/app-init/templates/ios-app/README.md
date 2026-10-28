@@ -9,14 +9,6 @@
 
 <img src="docs/images/<画面>-<状態>.png" width="250" alt="<画面の要点>">
 
-## 📚 文書
-
-| 知りたいこと | 文書 |
-| --- | --- |
-| 何を作るか | [docs/overview.md](docs/overview.md) |
-| 作る順番と画面 | [docs/roadmap.md](docs/roadmap.md) |
-| フォルダと依存の向き | [architecture-ios.md](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md)（claude-config） |
-
 ## 🚀 動かし方
 
 Xcode と Homebrew が要る。
@@ -26,3 +18,11 @@ Xcode と Homebrew が要る。
 3. 変えたら `make verify` で、Kit のテストと iOS のビルドを通す。
 
 ほかのコマンドは、architecture-ios.md の [make のコマンド](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md#make-のコマンド) にある。
+
+## 📚 文書
+
+| 知りたいこと | 文書 |
+| --- | --- |
+| 何を作るか | [docs/overview.md](docs/overview.md) |
+| 作る順番と画面 | [docs/roadmap.md](docs/roadmap.md) |
+| フォルダと依存の向き | [architecture-ios.md](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md)（claude-config） |
