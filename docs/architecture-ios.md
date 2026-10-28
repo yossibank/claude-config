@@ -177,7 +177,7 @@ flowchart TB
 - 作る時に、DB・今日の日付・ほかの画面を開く関数を引数で受け取る
 - ほかの画面を開く関数は、Core の型だけを使う（`open<画面>(<型>.ID)`）
 - DB は `ValueObservation` で見張る。保存すると、見張っている画面が自動で変わる
-- 見張りは `ScreenModel` の `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す
+- 見張りは、画面のモデルが共通で持つ `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す。ひな形には無いので、最初に見張る画面を作る時に kakeibot の `Features/Shared/Model/ScreenModel.swift` を写す
 - 見張りと最初の読み込みは `run()` にまとめる。1 回だけ読む値を先に読み、見張りは並べて動かす
 - 計算は Core に任せる。書き込みは DB に書くだけ
 - 設定の一覧は項目の enum を持ち、移る先は AppFeature が決める
