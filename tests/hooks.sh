@@ -57,9 +57,16 @@ sleep 1
 echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}" >>"$log"
 sleep 1
 run "$guard" 2 "rules: 読んだ後に圧縮があれば、また止まる" "$(edit s1 main "$log" "$swift")"
-echo '{"type":"attachment","attachment":{"type":"instructions","files":[{"path":"/x/.claude/rules/code-comments.md"},{"path":"/x/.claude/rules/swift-core.md"},{"path":"/x/.claude/rules/swift-ui.md"}]}}' >>"$log"
+auto="$HOME/.claude/rules"
+echo "{\"type\":\"attachment\",\"attachment\":{\"type\":\"instructions\",\"files\":[{\"path\":\"$auto/code-comments.md\"},{\"path\":\"$auto/swift-core.md\"},{\"path\":\"$auto/swift-ui.md\"}]}}" >>"$log"
 run "$guard" 0 "rules: 圧縮の後に自動で読み込まれた印があれば通る" "$(edit s1 main "$log" "$swift")"
 run "$guard" 0 "rules: 当たる rules が無いファイルは止めない" "$(edit s1 main "$log" "$app/data.json")"
+echo '# メモ' >"$work/memo.md"
+run "$guard" 0 "rules: git の外のファイル（メモリ・プラン）は止めない" "$(edit s1 main "$log" "$work/memo.md")"
+: >"$work/empty.jsonl"
+for name in code-comments.md swift-core.md swift-ui.md; do read_rule s3 main "$name" & done
+wait
+run "$guard" 0 "rules: 同時に Read しても取りこぼさない" "$(edit s3 main "$work/empty.jsonl" "$swift")"
 fresh="$work/t2.jsonl"
 : >"$fresh"
 for name in docs-writing.md docs-app.md; do read_rule s2 main "$name"; done
@@ -82,5 +89,11 @@ git -C "$app" checkout -q -- docs/overview.md
 run "$bash_edits" 0 "bash: git での変更は知らせない" "$(bash_call t2 'git checkout')" post
 run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t3 'ls')" pre
 run "$bash_edits" 0 "bash: 何も変えなければ知らせない" "$(bash_call t3 'ls')" post
+run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t4 'cd app && git checkout')" pre
+echo 'x' >>"$app/docs/overview.md"
+run "$bash_edits" 0 "bash: cd と git だけのコマンドは知らせない" "$(bash_call t4 'cd app && git checkout')" post
+run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t5 'sed -i x && git add')" pre
+echo 'y' >>"$app/docs/overview.md"
+run "$bash_edits" 2 "bash: git が混ざっても書き換えは知らせる" "$(bash_call t5 'sed -i x && git add')" post
 
 exit "$fails"
