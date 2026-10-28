@@ -16,7 +16,7 @@ count=$(awk -v d="$duration" -v f="$fps" 'BEGIN { n = int(d * f + 0.999); print 
 rows=$(( (count + columns - 1) / columns ))
 filter="fps=$fps"
 
-if [ "$crop" != "full" ]; then
+if [[ $crop != full ]]; then
     filter="$filter,crop=$crop"
 fi
 

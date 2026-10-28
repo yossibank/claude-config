@@ -16,8 +16,14 @@ case "$destination" in
     *) echo "NG EXPORT_DESTINATION は upload か export にする: $destination"; exit 1 ;;
 esac
 
+fail_with_log() {
+    { grep -E "error:" "$log" || true; } | sort -u | head -20
+    echo "NG ${1}（全ログ: ${log}）"
+    exit 1
+}
+
 team=$(xcodebuild -workspace "$workspace" -scheme "$scheme" -showBuildSettings 2>/dev/null | awk '!team && $1 == "DEVELOPMENT_TEAM" { team = $3 } END { print team }')
-[ -n "$team" ] || { echo "NG DEVELOPMENT_TEAM が見つからない"; exit 1; }
+[[ -n $team ]] || { echo "NG DEVELOPMENT_TEAM が見つからない"; exit 1; }
 
 cat >|"$options" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -44,14 +50,14 @@ xcodebuild archive \
     -configuration Release \
     -destination "generic/platform=iOS" \
     -archivePath "$archive" \
-    -allowProvisioningUpdates >|"$log" 2>&1 || { { grep -E "error:" "$log" || true; } | sort -u | head -20; echo "NG アーカイブ（全ログ: ${log}）"; exit 1; }
+    -allowProvisioningUpdates >|"$log" 2>&1 || fail_with_log "アーカイブ"
 echo "OK アーカイブ $archive"
 
-[ "${ARCHIVE_ONLY:-0}" = 1 ] && exit 0
+[[ ${ARCHIVE_ONLY:-0} == 1 ]] && exit 0
 
 xcodebuild -exportArchive \
     -archivePath "$archive" \
     -exportPath "$out/export" \
     -exportOptionsPlist "$options" \
-    -allowProvisioningUpdates >>"$log" 2>&1 || { { grep -E "error:" "$log" || true; } | sort -u | head -20; echo "NG 書き出し・送信（全ログ: ${log}）"; exit 1; }
+    -allowProvisioningUpdates >>"$log" 2>&1 || fail_with_log "書き出し・送信"
 echo "OK ${destination}（全ログ: ${log}）"

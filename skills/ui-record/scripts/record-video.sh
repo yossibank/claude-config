@@ -16,5 +16,5 @@ kill -INT "$pid"
 wait "$pid" || true
 sleep 1
 
-[ -s "$out" ] || { echo "NG 録画できなかった: $out"; exit 1; }
+[[ -s $out ]] || { echo "NG 録画できなかった: $out"; exit 1; }
 echo "OK $out"
