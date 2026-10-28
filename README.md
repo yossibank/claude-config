@@ -21,6 +21,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時に読む。自動では読み込まれない | iOS アプリのフォルダ、パッケージ、依存の向き、画面のモデル、テストの共通の形 |
 | [templates/ios-app/](templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形。`__App__` などを置き換えて写す |
 | [hooks/pre-edit-load-rules.py](hooks/pre-edit-load-rules.py) | Read・Edit・Write の前 | 編集するファイルに当たる rules を、この会話（圧縮の後）でまだ読んでいなければ、1 回止めて読むよう返す。Read した rules と、自動で読み込まれた rules を数える。`CLAUDE_RULES_GUARD=off` で止めない |
+| [hooks/pre-bash-check-pr.py](hooks/pre-bash-check-pr.py) | `git push`・`gh pr create` の前 | pr-create の check.sh の記録が無いか、NG か、確認の後に変更があれば止める。タグの push とブランチの削除は止めない。`CLAUDE_PR_GATE=off` で止めない |
 | [hooks/pre-read-guard.py](hooks/pre-read-guard.py) | Read の前 | 30KB を超えるテキストを範囲なしで読むのを止め、節や範囲を絞って読むよう返す |
 | [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反と、`docs/` の 15KB を超えるファイルを Claude に返す。HTML は README と `docs/` の下で、画像と `<details>` のタグだけを通す |
 | [hooks/post-edit-format-swift.py](hooks/post-edit-format-swift.py) | `.swift` を Edit・Write した後 | git のルートに `.swiftformat` と、swiftformat を書いた `Mintfile` がある時に、`mint run swiftformat` でそのファイルを整形する。失敗は stderr に出す |
