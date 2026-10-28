@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-toplevel)
 branch=${2:?ブランチ名を渡す}
-pr=${3:-}
+pr=${3:?PR 番号を渡す}
 name=$(basename "$repo")
 
 fail() {
@@ -32,18 +32,17 @@ clean_derived_data() {
     echo "$count"
 }
 
-head=""
-if [[ -n $pr ]]; then
-    read -r state head ref < <(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName \
-        -q '"\(.state) \(.headRefOid) \(.headRefName)"')
-    [[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（$state）"
-    [[ $ref == "$branch" ]] || head=""
-fi
+info=$(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName \
+    -q '"\(.state) \(.headRefOid) \(.headRefName)"') || fail "PR #$pr を gh pr view で読めない"
+read -r state head ref <<< "$info"
+[[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（${state}）"
+[[ $ref == "$branch" ]] || head=""
 
 merged() {
     local tip base
     tip=$(git -C "$repo" rev-parse "refs/heads/$branch")
     [[ $tip == "$head" ]] && return 0
+    git -C "$repo" merge-base --is-ancestor "$tip" "origin/$main" && return 0
     [[ -n $head ]] && git -C "$repo" merge-base --is-ancestor "$tip" "$head" 2>/dev/null && return 0
     git -C "$repo" diff --quiet "origin/$main" "$branch" && return 0
     base=$(git -C "$repo" merge-base "origin/$main" "$branch")

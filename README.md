@@ -32,7 +32,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 ## スキル
 
-スキルは、Claude が要る時に自分で呼ぶ。外に出す操作を含む pr-ship と store-release は、人が言葉で頼んだ時に呼ぶ。どちらも、外に出す前に承認を得る。人が `/` で呼んでもよい。
+スキルは、Claude が要る時に自分で呼ぶ。外に出す操作を含む pr-create と store-release は、人が言葉で頼んだ時に呼ぶ。どちらも、外に出す前に承認を得る。人が `/` で呼んでもよい。
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
@@ -41,8 +41,9 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [/config-learn](skills/config-learn/SKILL.md) | 人・Claude | 会話の記録と feedback のメモリから、繰り返した手直しを集め、決まりの改定案を出す |
 | [/ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 会話を区切る前に、続きに要ることだけを `.claude/handoff.md` に 20 行以内で書く |
 | [/ctx-report](skills/ctx-report/SKILL.md) | 人・Claude | 会話の記録から、月ごとに重い作業の上位を表にする |
-| [/pr-ship](skills/pr-ship/SKILL.md) | 人が頼んだ時に Claude | 変更をブランチに切り出し、確認を通して PR を作る |
-| [/pr-land](skills/pr-land/SKILL.md) | 人・Claude | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
+| [/pr-create](skills/pr-create/SKILL.md) | 人が頼んだ時に Claude | 変更をブランチに切り出し、差分の大きさに合わせた確認とレビューを通して PR を作る |
+| [/pr-fix](skills/pr-fix/SKILL.md) | 人・Claude | 落ちた CI と未解決のレビューの指摘を直し、push し直す。確認には pr-create のスクリプトを使う |
+| [/pr-prune](skills/pr-prune/SKILL.md) | 人・Claude | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
 | [/store-release](skills/store-release/SKILL.md) | 人が頼んだ時に Claude | プライバシーの申告・掲載情報・スクリーンショットを確かめ、アーカイブを App Store Connect に送る |
 | [/store-report](skills/store-report/SKILL.md) | 人・Claude | 全アプリの月ごとのダウンロード・収益・評価・レビューを 1 枚の表にする |
 | [ui-record](skills/ui-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
@@ -64,7 +65,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
-| スキル | `<分類>-<動詞>` | `pr-ship`、`ui-record` |
+| スキル | `<分類>-<動詞>` | `pr-create`、`ui-record` |
 | フック | `<イベント>-<目的>.py` | `post-edit-check-docs.py` |
 | rules | `<対象>-<範囲>.md` | `swift-core.md` |
 | scripts | `<分類>-<目的>.sh` | `docs-section.sh` |
