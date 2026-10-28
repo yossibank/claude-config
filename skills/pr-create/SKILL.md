@@ -40,8 +40,8 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 
 | 重さ | 条件 | 確認 | レビュー |
 | --- | --- | --- | --- |
-| `docs` | `.md` と `docs/` の下だけ | `make verify-docs`。無ければ、変えた `.md` への `docs-check.py` | 自分で差分を読む |
-| `small` | 200 行まで | `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` に `model: sonnet` を付けて頼む |
+| `docs` | `.md` と `docs/` の下だけ | Makefile に `verify-docs` があれば `make verify-docs`。無ければ、変えた `.md` への `docs-check.py` | 自分で差分を読む |
+| `small` | 200 行まで | Makefile に `verify` があれば `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` に `model: sonnet` を付けて頼む |
 | `large` | 200 行を超える。または移行・スキーマ・fixtures・プロジェクトの設定・フック・settings に触れる | `small` と同じ | `reviewer`（opus）に頼む |
 
 reviewer には、作業場所のパスと base のブランチ名だけを渡す。

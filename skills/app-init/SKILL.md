@@ -7,7 +7,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/create-app.sh *)
 
 # アプリを立ち上げる
 
-`templates/ios-app/` を写して、ビルドとテストが通る新しいアプリのリポジトリを作る手順。構成は `docs/architecture-ios.md` の共通の形に従う。
+ビルドとテストが通る新しいアプリのリポジトリを、ひな形から作る手順。ひな形は `${CLAUDE_SKILL_DIR}/templates/ios-app/` にある。構成は `docs/architecture-ios.md` の共通の形に従う。
 
 ## 入力
 
