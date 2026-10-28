@@ -66,38 +66,6 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 > - 許可：足りないものだけを後ろに足す。
 > - フック：claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す。
 
-## 🧪 確かめ方
-
-claude-config を変えたら、`make verify` を通す。`make audit` と `make test` を順に走らせる。
-
-```mermaid
-flowchart LR
-    verify["make verify"] --> audit["make audit<br/>config-audit.py"]
-    audit --> test["make test<br/>tests/*.sh"]
-```
-
-| コマンド | 確かめること |
-| --- | --- |
-| [scripts/config-audit.py](scripts/config-audit.py) | 全体の食い違いと、書き方の違反 |
-| `tests/config-audit.sh` | わざと壊した写しで、config-audit が違反を見逃さないか |
-| `tests/hooks.sh` | 作り物のリポジトリで、フックが止めるべき時に止めるか |
-| `tests/config-learn.sh` | フックが止めた回数を、config-learn が数えられるか |
-| `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
-| `tests/pr-create.sh` | 作業場所・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
-| `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
-| `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |
-| `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか |
-| `tests/app-init.sh` | ひな形の印を置き換えられるか |
-| `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか |
-| `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
-
-テストが共通で使う処理は、`tests/lib/` に置く。
-
-| ファイル | 中身 |
-| --- | --- |
-| [tests/lib/assert.sh](tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、結果の数え方 |
-| [tests/lib/fixtures.sh](tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh |
-
 ## 📚 文書
 
 アプリを作る時に読む文書と、写して使うひな形である。
@@ -295,3 +263,35 @@ flowchart LR
 | 知らせ | 失敗ではない知らせは stderr に出す |
 | フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
 | 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` で読む |
+
+## 🧪 確かめ方
+
+claude-config を変えたら、`make verify` を通す。`make audit` と `make test` を順に走らせる。
+
+```mermaid
+flowchart LR
+    verify["make verify"] --> audit["make audit<br/>config-audit.py"]
+    audit --> test["make test<br/>tests/*.sh"]
+```
+
+| コマンド | 確かめること |
+| --- | --- |
+| [scripts/config-audit.py](scripts/config-audit.py) | 全体の食い違いと、書き方の違反 |
+| `tests/config-audit.sh` | わざと壊した写しで、config-audit が違反を見逃さないか |
+| `tests/hooks.sh` | 作り物のリポジトリで、フックが止めるべき時に止めるか |
+| `tests/config-learn.sh` | フックが止めた回数を、config-learn が数えられるか |
+| `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
+| `tests/pr-create.sh` | 作業場所・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
+| `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
+| `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |
+| `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか |
+| `tests/app-init.sh` | ひな形の印を置き換えられるか |
+| `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか |
+| `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
+
+テストが共通で使う処理は、`tests/lib/` に置く。
+
+| ファイル | 中身 |
+| --- | --- |
+| [tests/lib/assert.sh](tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、結果の数え方 |
+| [tests/lib/fixtures.sh](tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh |

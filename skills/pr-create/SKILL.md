@@ -29,20 +29,30 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
    | 場面 | 作業場所の作り方 |
    | --- | --- |
    | 今のセッションのリポジトリ | `EnterWorktree` の後に、`git branch -m <type>/<summary>` で名前を変える |
-   | ほかのリポジトリ | `<S>/create-worktree.sh <リポジトリ> <type>/<summary>` を使い、出たパスで作業する |
+   | ほかのリポジトリ | `create-worktree.sh` を使い、出たパスで作業する |
 
 2. 変更を commit する。
-3. `<S>/classify-diff.sh <作業場所> origin/<base>` で、差分の重さと、通す確認とレビューを決める。
-4. 確認を `<S>/run-check.sh <作業場所> <名前> <コマンド…>` で通す。NG なら直して通し直す。
+3. `classify-diff.sh` で、差分の重さと、通す確認とレビューを決める。
+4. 確認を `run-check.sh` で通す。NG なら直して通し直す。
 5. レビューを、3 の結果に合わせて行う。指摘は直すか、直さない理由を本文に書く。直したら 4 を通し直す。
-6. `<S>/write-body.sh <作業場所> origin/<base> [未検証…]` で本文の枠を作る。出たファイルの要約と、変更の各行の説明を書き足す。
+6. `write-body.sh` で本文の枠を作る。出たファイルの要約と、変更の各行の説明を書き足す。
 7. 人の承認を得る。人が「確認なしで出して」と頼んだ時は省く。示すものは次のとおりである。
    - ブランチ名
    - commit の 1 行目
    - 本文
    - 確認の結果
-8. `git push -u origin <ブランチ>` の後に、`<S>/route-pr.sh <作業場所> <base> <タイトル> <本文のファイル>` で出し方を決める。
+8. `git push -u origin <ブランチ>` の後に、`route-pr.sh` で出し方を決める。
 9. CI があれば、`gh pr checks <番号> --watch` をバックグラウンドで走らせて待つ。落ちたら `pr-fix` で直す。
+
+スクリプトは、次の形で呼ぶ。
+
+```sh
+<S>/create-worktree.sh <リポジトリ> <type>/<summary>
+<S>/classify-diff.sh <作業場所> origin/<base>
+<S>/run-check.sh <作業場所> <名前> <コマンド…>
+<S>/write-body.sh <作業場所> origin/<base> [未検証…]
+<S>/route-pr.sh <作業場所> <base> <タイトル> <本文のファイル>
+```
 
 ## classify-diff.sh がすること
 
@@ -74,8 +84,12 @@ reviewer には、作業場所のパスと base のブランチ名だけを渡�
 
 | 出力 | すること |
 | --- | --- |
-| `gh` | `gh pr create --base <base> --title <タイトル> --body-file <本文のファイル>` |
+| `gh` | 下のコマンドで PR を作る |
 | `compare <URL>` | push の権限が無い。URL には題と本文が入っているので、人に渡して、ブラウザで PR を作ってもらう |
+
+```sh
+gh pr create --base <base> --title <タイトル> --body-file <本文のファイル>
+```
 
 ## 報告
 

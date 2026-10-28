@@ -24,12 +24,18 @@ CI が落ちた時と、人が PR の指摘への対応を頼んだ時に使う�
 
 PR のブランチのワークツリーで、次の順に進める。
 
-1. `${CLAUDE_SKILL_DIR}/scripts/list-threads.sh <リポジトリ> <PR 番号>` で、直すものを集める。
+1. `list-threads.sh` で、直すものを集める。
 2. 行ごとに、直すか直さないかを決める。直さないものは理由を 1 行で書く。
 3. 直して commit する。CI の失敗は、`gh run view <番号> --log-failed` で落ちた所だけを読む。
 4. `pr-create` の手順の 3〜5 で、確認とレビューを通し直す。
 5. `git push` する。承認は得ない。
 6. 指摘への返信を書く。`ACCESS write` なら、下の「返信と解決」のコマンドで返信を投稿し、スレッドを解決する。`ACCESS read` なら、返信の案をスレッドごとに人に渡す。
+
+`list-threads.sh` は、次の形で呼ぶ。
+
+```sh
+${CLAUDE_SKILL_DIR}/scripts/list-threads.sh <リポジトリ> <PR 番号>
+```
 
 ## list-threads.sh の出力
 

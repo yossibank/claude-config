@@ -92,10 +92,16 @@ run ctx-suggest-clear 0 "ctx: 壊れた入力でも落ちない" "not json" pr
 run swift-format 0 "swift: .swiftformat が無ければ何もしない" "{\"tool_input\":{\"file_path\":\"$swift\"}}"
 
 doc_case() {
-    local expect=$1 label=$2 name=$3 text=$4
+    local expect=$1 label=$2 name=$3 text=$4 want=${5:-} out status
     mkdir -p "$work/docs-case/$(dirname "$name")"
     printf '%s\n' "$text" >"$work/docs-case/$name"
-    run docs-check "$expect" "docs: $label" "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}"
+    out=$(echo "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}" | bash "$hooks" docs-check 2>&1)
+    status=$?
+    if [[ $status == "$expect" && $out == *"$want"* ]]; then
+        ok "docs: $label"
+    else
+        ng "docs: ${label}（終了コード ${status}、期待は ${expect} と「${want}」）" "$out"
+    fi
 }
 doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
 doc_case 2 "コードも一文の字数に数える" README.md $'# t\n\n`/very/long/path/that/goes/on/and/on/and/on/and/on/x.sh` を走らせて結果を確かめる。'
@@ -106,6 +112,35 @@ doc_case 0 "人が読む文書は表の絵文字を使える" README.md $'# t\n\
 doc_case 2 "人が読む文書でも表に無い絵文字は使わない" README.md $'# t\n\n🎉 済んだ。'
 doc_case 2 "README の ## には絵文字を付ける" README.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 doc_case 2 "## の見出しの絵文字をそろえる" docs/x.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
+
+note=$'# t\n\n> [!NOTE]\n> 分かる。\n'
+state_badge='![CI](https://img.shields.io/github/actions/workflow/status/o/r/verify.yml?label=Verify&logo=github)'
+tech_badge='![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)'
+doc_case 0 "README の節は全体像・動かし方・文書の順" README.md $'# t\n\nあ。\n\n## 🗺️ 全体像\n\nい。\n\n## 🚀 入れ方\n\nう。\n\n## 📚 文書\n\nえ。'
+doc_case 2 "README の文書の節を動かし方より前に置かない" README.md $'# t\n\nあ。\n\n## 📚 文書\n\nい。\n\n## 🚀 入れ方\n\nう。' "README の ## は"
+doc_case 0 "docs の冒頭に [!NOTE] を置けば通る" docs/x.md "$note"
+doc_case 2 "docs の冒頭に [!NOTE] が無い" docs/x.md $'# t\n\n本文である。' "タイトルの直後に [!NOTE]"
+doc_case 0 "親が違えば同じ名前の見出しを使える" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\nい。\n\n### 手順\n\nう。\n\n## 🧪 確かめ方\n\nえ。\n\n### 手順\n\nお。'
+doc_case 2 "同じ親の下に同じ名前の見出しを置かない" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\nい。\n\n### 手順\n\nう。\n\n### 手順\n\nえ。' "同じ名前の見出し"
+doc_case 0 "見出しの絵文字が表にあれば通る" docs/x.md "$note"$'\n## 🪟 ウィジェット\n\nあ。'
+doc_case 2 "見出しの絵文字が表に無い" docs/x.md "$note"$'\n## 🎉 祝い\n\nあ。' "表から選ぶ"
+doc_case 0 "太字は 1 節に 1 か所" docs/x.md "$note"$'\n## 🚀 入れ方\n\n**一つ**だけ。\n\n## 🧪 確かめ方\n\n**一つ**だけ。'
+doc_case 2 "太字を 1 節に 2 か所使わない" docs/x.md "$note"$'\n## 🚀 入れ方\n\n**一つ**と**二つ**。' "太字は 1 節に 1 か所"
+doc_case 0 "冒頭の [!NOTE] とほかのアラート 1 つは通る" docs/x.md "$note"$'\n> [!WARNING]\n> 危ない。'
+doc_case 2 "アラートを 1 節に 2 つ使わない" docs/x.md "$note"$'\n## 🚀 入れ方\n\n> [!TIP]\n> こつ。\n\n> [!WARNING]\n> 危ない。' "1 節に 1 つまで"
+doc_case 0 "GitHub のアラートは通る" docs/x.md "$note"$'\n## 🚀 入れ方\n\n> [!CAUTION]\n> 戻せない。'
+doc_case 2 "GitHub に無いアラートを使わない" docs/x.md "$note"$'\n## 🚀 入れ方\n\n> [!DANGER]\n> 危ない。' "だけを使う（DANGER）"
+doc_case 0 "言語の付いたコードブロックは通る" README.md $'# t\n\nあ。\n\n```sh\nls\n```'
+doc_case 2 "コードブロックに言語を付ける" README.md $'# t\n\nあ。\n\n```\nls\n```' "言語を付ける"
+doc_case 0 "名前だけのフォルダの木は通る" README.md $'# t\n\nあ。\n\n```text\na/\n├── b/\n└── c.md\n```'
+doc_case 2 "フォルダの木に説明を書かない" README.md $'# t\n\nあ。\n\n```text\na/\n├── b/  # 部品\n└── c.md\n```' "名前だけを書く"
+doc_case 0 "本文の中のページ内リンクは目次にしない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)'
+doc_case 2 "手で目次を書かない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)\n- [決まり](#決まり)' "目次は GitHub が作る"
+doc_case 0 "バッジは状態の段の後に技術の段" README.md $'# t\n\nあ。\n\n'"$state_badge"$'\n\n'"$tech_badge"
+doc_case 2 "技術のバッジを状態のバッジより前に置かない" README.md $'# t\n\nあ。\n\n'"$tech_badge"$'\n\n'"$state_badge" "状態の段を技術の段より先"
+doc_case 0 "Claude が読む文書の短いコードは通る" rules/x.md $'# t\n\nあ。\n\n- `git log` で見る。'
+doc_case 2 "Claude が読む文書の文の中に長いコマンドを書かない" rules/x.md $'# t\n\nあ。\n\n- `git log --oneline --graph a..b -- x y z w` を走らせる。' "長いコマンドを書かない"
+doc_case 2 "Claude が読む文書のタイトルの直後に 1 文を書く" rules/x.md $'# t\n\n- 項目である。' "タイトルの直後に、何があるかを 1 文"
 
 run rules-detect-bash-edits 0 "bash: 書き換える前の状態を残す" "$(bash_call t1 'sed -i')" pre
 sed -i '' 's/概要/概要です/' "$app/docs/overview.md"
