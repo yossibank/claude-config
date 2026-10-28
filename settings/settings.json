@@ -24,6 +24,24 @@
             "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-read-guard.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
           }
         ]
+      },
+      {
+        "matcher": "Read|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-edit-load-rules.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/bash-check-edits.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" pre"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -37,6 +55,10 @@
           {
             "type": "command",
             "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-format-swift.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+          },
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-shell.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
           }
         ]
       },
@@ -47,6 +69,10 @@
             "type": "command",
             "if": "Bash(gh pr create *)",
             "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" pr"
+          },
+          {
+            "type": "command",
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/bash-check-edits.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" post"
           }
         ]
       }
