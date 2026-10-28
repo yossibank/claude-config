@@ -133,4 +133,60 @@ d=$(copy prefix-place)
 mv "$d/scripts/docs-section.sh" "$d/scripts/pr-section.sh"
 expect_audit "$d" "接頭語 pr- は scripts に使わない" "使う所の違う接頭語"
 
+d=$(copy verb-ok)
+replace "$d/README.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
+mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/glue-frames.sh"
+replace "$d/skills/ui-record/SKILL.md" 'tile-frames.sh' 'glue-frames.sh'
+expect_audit "$d" OK "README の動詞の表にある動詞で始まるスクリプト"
+
+d=$(copy verb-ng)
+mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/frames-tile.sh"
+expect_audit "$d" "頭の動詞が README の表に無い: frames" "動詞で始まらないスクリプト"
+
+d=$(copy path-ok)
+printf '\n`hooks/<名前>.py` と `scripts/verify.sh` を読む。\n' >>"$d/docs/architecture-ios.md"
+expect_audit "$d" OK "印の入ったパスと、アプリのひな形にあるパス"
+
+d=$(copy path-ng)
+printf '\n`hooks/nothing.py` を読む。\n' >>"$d/docs/architecture-ios.md"
+expect_audit "$d" "参照先が無い: hooks/nothing.py" "無いファイルへのパス"
+
+d=$(copy skill-dir-ok)
+printf '\n`${CLAUDE_SKILL_DIR}/templates/<セット>/` を写す。\n' >>"$d/skills/ui-snapshot/SKILL.md"
+expect_audit "$d" OK "印の入った CLAUDE_SKILL_DIR の参照"
+
+d=$(copy skill-dir-ng)
+printf '\n`${CLAUDE_SKILL_DIR}/templates/nothing/` を写す。\n' >>"$d/skills/ui-snapshot/SKILL.md"
+expect_audit "$d" "参照先が無い: templates/nothing" "無いひな形への CLAUDE_SKILL_DIR の参照"
+
+d=$(copy agent-tools-ok)
+replace "$d/agents/implementer.md" 'model: sonnet
+' 'model: sonnet
+tools: Read, Edit
+'
+expect_audit "$d" OK "書き換えるエージェントは Edit を持てる"
+
+d=$(copy agent-tools-ng)
+replace "$d/agents/explorer.md" 'tools: Read, Grep, Glob, Bash
+' ''
+expect_audit "$d" "書き換えないエージェントの tools に Edit・Write を入れない" "書き換えないエージェントが全部の道具を持つ"
+
+d=$(copy claude-template-ok)
+replace "$d/skills/app-init/templates/ios-app/CLAUDE.md" '## 構成
+' '## コードの書き方
+'
+expect_audit "$d" OK "ひな形の CLAUDE.md の節が決まった順"
+
+d=$(copy claude-template-ng)
+replace "$d/skills/app-init/templates/ios-app/CLAUDE.md" '## 作業の進め方' '## 進め方'
+expect_audit "$d" "CLAUDE.md の ## は" "ひな形の CLAUDE.md の節の順が違う"
+
+d=$(copy template-link-ok)
+printf '\n[r](docs/roadmap.md)\n' >>"$d/skills/app-init/templates/ios-app/README.md"
+expect_audit "$d" OK "ひな形の中で、写した後に辿れるリンク"
+
+d=$(copy template-link-ng)
+printf '\n[x](docs/nothing.md)\n' >>"$d/skills/app-init/templates/ios-app/README.md"
+expect_audit "$d" "リンク先が無い: docs/nothing.md" "ひな形の中の壊れたリンク"
+
 finish

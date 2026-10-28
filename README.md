@@ -214,6 +214,16 @@ flowchart LR
 | `swift-` | Swift | rules、hooks |
 | `ui-` | 見た目と動きの確認 | skills |
 
+スキルのスクリプトの頭の動詞は、次の表から選ぶ。表に無い動詞は config-audit が `NG` にするので、行を足してから名前を付ける。
+
+| 動詞 | すること |
+| --- | --- |
+| `add`・`create` | 足す、作る |
+| `collect`・`fetch`・`list`・`search` | 集める、取ってくる、並べる、探す |
+| `check`・`classify`・`count`・`hash` | 確かめる、分ける、数える、指紋を取る |
+| `record`・`render`・`take`・`tile`・`write` | 録る、描く、撮る、並べる、書く |
+| `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
+
 ## 🔧 環境変数
 
 フックとスクリプトの動きは、次の環境変数で変えられる。
@@ -276,7 +286,7 @@ flowchart LR
 
 | コマンド | 確かめること |
 | --- | --- |
-| [scripts/config-audit.py](scripts/config-audit.py) | 全体の食い違いと、書き方の違反 |
+| [scripts/config-audit.py](scripts/config-audit.py) | README の表・参照先・名前と中身の食い違いと、文書とスクリプトの書き方の違反 |
 | `tests/config-audit.sh` | わざと壊した写しで、config-audit が違反を見逃さないか |
 | `tests/hooks.sh` | 作り物のリポジトリで、フックが止めるべき時に止めるか |
 | `tests/config-learn.sh` | フックが止めた回数を、config-learn が数えられるか |
