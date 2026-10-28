@@ -9,7 +9,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 公開している全アプリの数字を、月ごとの表にまとめる手順。月の初めに、前の月の分を作る。
 
-## 使い方
+## 手順
 
 表は、次のコマンドで作る。
 
@@ -17,7 +17,12 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/monthly.py <YYYY-MM>
 ```
 
-`monthly.py` は、`~/Applications/AppStore/*/store/app-id.txt` を持つアプリを集め、表を `~/Applications/AppStore/reports/<YYYY-MM>.md` に書く。置き場所は `APPS_DIR` で変えられる。`app-id.txt` には、App Store の ID（数字）だけを書く。
+`monthly.py` は、アプリを集めて表を書く。置き場所は `APPS_DIR` で変えられる。
+
+| 読むもの・書くもの | 場所 |
+| --- | --- |
+| 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
+| 表 | `~/Applications/AppStore/reports/<YYYY-MM>.md` |
 
 ## 表の中身
 
@@ -45,9 +50,11 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/monthly.py <YYYY-MM>
 
 キーは、App Store Connect の「ユーザとアクセス」で、「財務」以上の役割で作る。
 
-## 読み方
+## 報告
 
-人には、表と、前の月から大きく変わった所だけを返す。星 2 以下のレビューが増えたアプリは、`reviews.py`（`app-plan` のスキル）で中身を読み、不満を 3 つまでにまとめる。
+人には、表と、前の月から大きく変わった所だけを返す。
+
+星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには、`app-plan` のスキルの `reviews.py` を使う。
 
 > [!WARNING]
 > 売上のレポートの取得は、キーが無いので確かめていない。署名は、テスト用の鍵で `openssl` の検証に通ることだけを確かめた。

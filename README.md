@@ -4,83 +4,135 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?logo=claude&logoColor=white)
 ![Python 3](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)
+![Bash](https://img.shields.io/badge/Bash-4EAA25?logo=gnubash&logoColor=white)
 
-## 中身
+## 🗺️ 全体像
 
-ファイルごとに、読み込まれる時が違う。
+フォルダは、Claude が読むものと、仕組みと、ひな形に分かれる。
 
-| ファイル | 読み込まれる時 | 中身 |
+```text
+claude-config/
+├── CLAUDE.md
+├── agents/
+├── docs/
+├── hooks/
+│   └── lib/
+├── rules/
+├── scripts/
+│   └── lib/
+├── settings/
+├── skills/
+├── templates/
+└── tests/
+```
+
+| フォルダ | 役割 | 読み手 |
 | --- | --- | --- |
-| [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、不具合を直す、使う量を抑える、進め方の決まり、報告、ブランチ・コミット・PR |
-| [rules/docs-writing.md](rules/docs-writing.md) | `.md` を読み書きする時 | 文書の書き方、README と CLAUDE.md の形 |
-| [rules/docs-app.md](rules/docs-app.md) | `docs/`・`spec/` の下と、README・CLAUDE.md を読み書きする時 | アプリの文書ごとに書くこと、文書を足す条件、decisions と画面の仕様の形 |
-| [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
-| [rules/swift-core.md](rules/swift-core.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、ファイルとフォルダ |
-| [rules/swift-ui.md](rules/swift-ui.md) | 画面と部品のフォルダ（`AppFeature`・`AppWidget`・`DesignSystem`・`Features`）の Swift と、`*View.swift` を読み書きする時 | `View` の型の分け方、ビューの並べ方 |
-| [rules/swift-test.md](rules/swift-test.md) | `Tests/`・`<名前>Tests/` の下の Swift を読み書きする時 | テストの空行、テストで使う型の置き方 |
-| [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時に読む。自動では読み込まれない | iOS アプリのフォルダ、パッケージ、依存の向き、画面のモデル、テストの共通の形 |
-| [templates/ios-app/](templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形。`__App__` などを置き換えて写す |
-| [hooks/pre-edit-load-rules.py](hooks/pre-edit-load-rules.py) | Read・Edit・Write の前 | 編集するファイルに当たる rules を、この会話（圧縮の後）でまだ読んでいなければ、1 回止めて読むよう返す。Read した rules と、自動で読み込まれた rules を数える。`CLAUDE_RULES_GUARD=off` で止めない |
-| [hooks/pre-bash-check-pr.py](hooks/pre-bash-check-pr.py) | `git push`・`gh pr create` の前 | pr-create の check.sh の記録が無いか、NG か、確認の後に変更があれば止める。タグの push とブランチの削除は止めない。`CLAUDE_PR_GATE=off` で止めない |
-| [hooks/pre-read-guard.py](hooks/pre-read-guard.py) | Read の前 | 30KB を超えるテキストを範囲なしで読むのを止め、節や範囲を絞って読むよう返す |
-| [hooks/post-edit-check-docs.py](hooks/post-edit-check-docs.py) | `.md` を Edit・Write した後。メモリのファイルは除く | `rules/docs-writing.md` のうち、文字列で分かる違反と、`docs/` の 15KB を超えるファイルを Claude に返す。HTML は README と `docs/` の下で、画像と `<details>` のタグだけを通す |
-| [hooks/post-edit-format-swift.py](hooks/post-edit-format-swift.py) | `.swift` を Edit・Write した後 | git のルートに `.swiftformat` と、swiftformat を書いた `Mintfile` がある時に、`mint run swiftformat` でそのファイルを整形する。失敗は stderr に出す |
-| [hooks/post-edit-check-shell.py](hooks/post-edit-check-shell.py) | `.sh` を Edit・Write した後 | `bash -n` と、bash が変数名の一部とみなす「変数の直後の全角」を Claude に返す |
-| [hooks/bash-check-edits.py](hooks/bash-check-edits.py) | Bash の前と後 | Bash で書き換えたファイルを git の差で見つけ、Edit・Write を使うよう返し、当たる rules と、文書と `.sh` の検査の結果を添える。git・make などの道具の変更は数えない |
-| [hooks/ctx-suggest-clear.py](hooks/ctx-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
-| [hooks/run.sh](hooks/run.sh) | フックを呼ぶ時 | settings.json から名前で呼ばれ、`hooks/<名前>.py` を `python3 -I` で走らせる。ファイルが無ければ `NG` を出す |
-| [hooks/lib/hook_io.py](hooks/lib/hook_io.py) | フックが読み込む時 | 入力の JSON、git の呼び出しとタイムアウト、状態ファイルの掃除をまとめる |
-| [scripts/lib/transcripts.py](scripts/lib/transcripts.py) | collect.py・tokens.py が読み込む時 | 会話の記録の読み方、日本時間、月の形をまとめる |
-| [scripts/docs-section.sh](scripts/docs-section.sh) | 呼んだ時 | Markdown の見出しの一覧か、指定した見出しの節だけを出す |
-| [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からのリンクを張り、settings.json の案を作る |
-| [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | スキル・エージェント・rules・README・settings・スクリプト・文書の食い違いと書き方の違反を探す |
-| [settings/settings.json](settings/settings.json) | 入れる時 | `config-install.sh` が settings.json に入れるフックと許可 |
+| `CLAUDE.md`・`rules/` | いつも、または当たるファイルを触る時に読み込まれる決まり | Claude |
+| `agents/`・`skills/` | 任せる相手と、手順 | Claude |
+| `hooks/`・`settings/` | 決まりを守らせるフックと、その登録 | 仕組み |
+| `scripts/`・`tests/` | 入れる、検査する、確かめるスクリプト | 人・仕組み |
+| `docs/`・`templates/` | アプリの共通の構成と、ひな形 | 人・Claude |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
-## スキル
+## 📏 決まり
 
-スキルは、Claude が要る時に自分で呼ぶ。外に出す操作を含む pr-create と store-release は、人が言葉で頼んだ時に呼ぶ。どちらも、外に出す前に承認を得る。人が `/` で呼んでもよい。
+CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを読み書きする時だけ読み込まれる。
+
+| ファイル | 読み込まれる時 | 決めること |
+| --- | --- | --- |
+| [CLAUDE.md](CLAUDE.md) | いつも | 言語、進め方、使う量、報告、ブランチ・コミット・PR |
+| [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェル | コメントを書かない |
+| [rules/docs-app.md](rules/docs-app.md) | `docs/`・`spec/`・README・CLAUDE.md | アプリの文書ごとの役割と、足す条件 |
+| [rules/docs-writing.md](rules/docs-writing.md) | `.md` | 文、表現、読み手ごとの形 |
+| [rules/swift-core.md](rules/swift-core.md) | Swift | 宣言の置き方、改行、空行、ファイル |
+| [rules/swift-test.md](rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | テストの空行と型の置き方 |
+| [rules/swift-ui.md](rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | `View` の分け方、ビューの並べ方 |
+| [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時に読む | iOS アプリのフォルダ、依存の向き |
+| [templates/ios-app/](templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形 |
+
+## 🪝 フック
+
+フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。どれも `hooks/run.sh` から呼ばれる。
+
+```mermaid
+flowchart LR
+    Read["Read の前"] --> guard["pre-read-guard<br/>大きいファイル"]
+    Read --> load["pre-edit-load-rules<br/>rules の既読"]
+    Edit["Edit の前と後"] --> load
+    Edit --> docs["post-edit-check-docs<br/>文書"]
+    Edit --> swift["post-edit-format-swift<br/>整形"]
+    Edit --> shell["post-edit-check-shell<br/>シェル"]
+    Bash["Bash の前と後"] --> edits["bash-check-edits<br/>Bash での書き換え"]
+    Bash --> pr["pre-bash-check-pr<br/>push・PR の前の確認"]
+    Stop["応答の終わり"] --> clear["ctx-suggest-clear<br/>区切りの勧め"]
+```
+
+| フック | 止める・返す時 | 止めない方法 |
+| --- | --- | --- |
+| [pre-read-guard](hooks/pre-read-guard.py) | 30KB を超えるテキストを、範囲なしで読む時 | `limit` を付けて読む |
+| [pre-edit-load-rules](hooks/pre-edit-load-rules.py) | 当たる rules を、この会話でまだ読まずに編集する時 | `CLAUDE_RULES_GUARD=off` |
+| [post-edit-check-docs](hooks/post-edit-check-docs.py) | `.md` が `rules/docs-writing.md` に合わない時 | メモリのファイルは見ない |
+| [post-edit-format-swift](hooks/post-edit-format-swift.py) | `.swift` を、Mintfile の swiftformat で整える | `.swiftformat` が無ければ動かない |
+| [post-edit-check-shell](hooks/post-edit-check-shell.py) | `.sh` の `bash -n` と、変数の直後の全角 | |
+| [bash-check-edits](hooks/bash-check-edits.py) | Bash でファイルを書き換えた時。git・make などは数えない | |
+| [pre-bash-check-pr](hooks/pre-bash-check-pr.py) | `check.sh` の確認の前に、push や `gh pr create` をする時 | `CLAUDE_PR_GATE=off` |
+| [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 文脈が 20 万トークンを超える時と、PR を作った時 | |
+
+フックが共通で使う処理は、次のファイルにまとめてある。
+
+| ファイル | 中身 |
+| --- | --- |
+| [hooks/run.sh](hooks/run.sh) | 名前で呼ばれ、`hooks/<名前>.py` を `python3 -I` で走らせる。無ければ `NG` を出す |
+| [hooks/lib/hook_io.py](hooks/lib/hook_io.py) | 入力の JSON、タイムアウト付きの git、状態ファイルの掃除 |
+
+## 🧰 スキル
+
+スキルは、Claude が要る時に自分で呼ぶ。人が `/` で呼んでもよい。
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
-| [/app-init](skills/app-init/SKILL.md) | 人・Claude | `templates/ios-app/` から、ビルドとテストが通る新しいアプリのリポジトリを作る |
-| [/app-plan](skills/app-plan/SKILL.md) | 人・Claude | 題材から競合のレビューの不満を集め、overview と roadmap の下書きを作る |
-| [/config-learn](skills/config-learn/SKILL.md) | 人・Claude | 会話の記録と feedback のメモリから、繰り返した手直しを集め、決まりの改定案を出す |
-| [/ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 会話を区切る前に、続きに要ることだけを `.claude/handoff.md` に 20 行以内で書く |
-| [/ctx-report](skills/ctx-report/SKILL.md) | 人・Claude | 会話の記録から、月ごとに重い作業の上位を表にする |
-| [/pr-create](skills/pr-create/SKILL.md) | 人が頼んだ時に Claude | 変更をブランチに切り出し、差分の大きさに合わせた確認とレビューを通して PR を作る |
-| [/pr-fix](skills/pr-fix/SKILL.md) | 人・Claude | 落ちた CI と未解決のレビューの指摘を直し、push し直す。確認には pr-create のスクリプトを使う |
-| [/pr-prune](skills/pr-prune/SKILL.md) | 人・Claude | マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける |
-| [/store-release](skills/store-release/SKILL.md) | 人が頼んだ時に Claude | プライバシーの申告・掲載情報・スクリーンショットを確かめ、アーカイブを App Store Connect に送る |
-| [/store-report](skills/store-report/SKILL.md) | 人・Claude | 全アプリの月ごとのダウンロード・収益・評価・レビューを 1 枚の表にする |
-| [ui-record](skills/ui-record/SKILL.md) | Claude | iOS シミュレーターを録画し、確かめたい場面のコマだけを切り出して並べる |
-| [ui-snapshot](skills/ui-snapshot/SKILL.md) | Claude | SwiftUI の画面・部品・ウィジェットをテストとして描き、場合ごとの PNG にする。描く場合はアプリの `.claude/snapshots/` に置く |
+| [/app-init](skills/app-init/SKILL.md) | 人・Claude | ひな形から、ビルドとテストが通るアプリのリポジトリを作る |
+| [/app-plan](skills/app-plan/SKILL.md) | 人・Claude | 競合のレビューの不満を集め、overview と roadmap の下書きを作る |
+| [/config-learn](skills/config-learn/SKILL.md) | 人・Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
+| [/ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
+| [/ctx-report](skills/ctx-report/SKILL.md) | 人・Claude | 月ごとに、トークンを多く使った作業を表にする |
+| [/pr-create](skills/pr-create/SKILL.md) | 人が頼んだ時に Claude | 差分の大きさに合わせた確認とレビューを通して PR を作る |
+| [/pr-fix](skills/pr-fix/SKILL.md) | 人・Claude | 落ちた CI と未解決の指摘を直し、push し直す |
+| [/pr-prune](skills/pr-prune/SKILL.md) | 人・Claude | マージされた PR を main に反映し、ワークツリーを片付ける |
+| [/store-release](skills/store-release/SKILL.md) | 人が頼んだ時に Claude | 申告・掲載情報・スクリーンショットを確かめ、アーカイブを送る |
+| [/store-report](skills/store-report/SKILL.md) | 人・Claude | 全アプリの月ごとのダウンロード・収益・評価を表にする |
+| [ui-record](skills/ui-record/SKILL.md) | Claude | シミュレーターを録画し、確かめたい場面のコマを並べる |
+| [ui-snapshot](skills/ui-snapshot/SKILL.md) | Claude | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
 
-## エージェント
+> [!IMPORTANT]
+> pr-create と store-release は外に出す操作を含む。人が言葉で頼んだ時だけ呼び、外に出す前に承認を得る。
+
+## 👷 エージェント
 
 エージェントは、仕事の重さに合わせてモデルを分ける。
 
 | エージェント | モデル | 任せること |
 | --- | --- | --- |
 | [explorer](agents/explorer.md) | Haiku | 場所と事実を探して短く返す。書き換えない |
-| [implementer](agents/implementer.md) | Sonnet | 方針の決まった実装、削除、名前の変更、文書と fixtures の書き換え |
-| [reviewer](agents/reviewer.md) | Opus | 差分を読み、マージすると困る所を 5 件まで返す。書き換えない |
+| [implementer](agents/implementer.md) | Sonnet | 方針の決まった実装、削除、名前の変更、文書の書き換え |
+| [reviewer](agents/reviewer.md) | Opus | 差分を読み、マージすると困る所を 5 件まで返す |
 
-## 名前の付け方
+## 🏷️ 名前の付け方
 
 似たものに同じ接頭語を付け、並び順で分類が分かるようにする。
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
-| スキル | `<分類>-<すること>`。することは動詞か、作るものの名詞 | `pr-create`、`ctx-handoff` |
-| フック | `<イベント>-<目的>.py`。2 つ以上のイベントで使うものは `<対象>-<目的>.py` | `post-edit-check-docs.py`、`bash-check-edits.py`、`ctx-suggest-clear.py` |
+| スキル | `<分類>-<すること>` | `pr-create`、`ctx-handoff` |
+| フック | `<イベント>-<目的>.py`。2 つ以上のイベントなら `<対象>-<目的>.py` | `post-edit-check-docs.py` |
 | rules | `<対象>-<範囲>.md` | `swift-core.md` |
 | scripts | `<分類>-<目的>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
-| ひな形の印 | スクリプトが置き換える所は `__<名前>__`、人が書き入れる所は `<中身>` | `__App__`、`<名前>` |
+| ひな形の印 | スクリプトが置き換える所は `__<名前>__`、人が書く所は `<中身>` | `__App__`、`<名前>` |
 
-スキルの分類は次から選ぶ。新しい分類が要る時は、行を足してから名前を付ける。
+スキルの分類は、次から選ぶ。新しい分類が要る時は、行を足してから名前を付ける。
 
 | 接頭語 | 分類 |
 | --- | --- |
@@ -91,26 +143,68 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | `store-` | App Store への公開と数字 |
 | `ui-` | 見た目と動きの確認 |
 
-## スクリプトの書き方
+## 🔧 環境変数
 
-スクリプトは、読み込まれた時に何も実行せず、結果を同じ形で返す。
+フックとスクリプトの動きは、次の環境変数で変えられる。
+
+| 変数 | 使う所 | 中身 |
+| --- | --- | --- |
+| `CLAUDE_RULES_GUARD=off` | pre-edit-load-rules | rules を読まずに編集しても止めない |
+| `CLAUDE_PR_GATE=off` | pre-bash-check-pr | 確認の前の push と PR を止めない |
+| `CLAUDE_PROJECTS` | config-learn、ctx-report | 会話の記録の置き場所 |
+| `APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
+| `DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
+| `ARCHIVE_ONLY=1` | store-release | アーカイブだけを作り、送らない |
+| `EXPORT_DESTINATION=export` | store-release | 送らずに IPA を書き出す |
+| `ASC_ISSUER_ID` ほか `ASC_*` | store-report | App Store Connect API のキー |
+
+## 📜 スクリプト
+
+スクリプトは、読み込まれた時に何も実行せず、結果を同じ形で返す。`make verify` の config-audit が、外れた書き方を `NG` にする。
 
 | 対象 | 決まり |
 | --- | --- |
 | Python | 処理は `main()` に入れ、末尾を `if __name__ == "__main__":` にする |
-| 結果の出し方 | 結果は stdout に `OK`・`NG` で始まる行で出し、失敗したら終了コード 1 で終える。失敗ではない知らせは stderr に出す。`make verify` の config-audit が、この形から外れたスクリプトを NG にする |
-| フック | 終了コード 2 で Claude に返す文は stderr に出す。JSON（`systemMessage` など）で返すものは stdout に出す |
+| 結果 | stdout に `OK`・`NG` で始まる行で出す。失敗したら終了コード 1 で終える |
+| 引数 | 足りない時は `[[ $# -ge N ]]` で確かめ、`NG` を出す。`${N:?}` は使わない |
+| 知らせ | 失敗ではない知らせは stderr に出す |
+| フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
+| 共通の処理 | フックは `hooks/lib/`、スクリプトは `scripts/lib/` に置き、`sys.path.insert` で読む |
 
-## 使い方
+| スクリプト | 呼ぶ時 | すること |
+| --- | --- | --- |
+| [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | 食い違いと書き方の違反を探す |
+| [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
+| [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
+| [scripts/lib/transcripts.py](scripts/lib/transcripts.py) | collect.py・tokens.py から | 会話の記録の読み方、日本時間、月の形 |
+| [settings/settings.json](settings/settings.json) | 入れる時 | settings.json に入れるフックと許可 |
 
-claude-config を `~/Applications/AI/claude-config` に置き、次を実行する。`jq` が要る。フックはこの場所のファイルを読むので、ほかの場所から実行すると `NG` を出して止まる。フックのファイルが無い時は、フックが `NG` を出す。
+## 🚀 入れ方
+
+claude-config を `~/Applications/AI/claude-config` に置き、次を実行する。`jq` が要る。
 
 ```sh
 ~/Applications/AI/claude-config/scripts/config-install.sh
 ```
 
-スクリプトは、CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクし、壊れたスキルのリンクを消す。`~/.claude` に同じ名前の実体があれば、`NG` を出して止まる。
+スクリプトは、次のことをする。
 
-settings.json は直接書き換えない。`settings/merge.jq` で `settings.json.new` を作り、差分を出す。許可は今の並びのまま、足りないものだけを後ろに足す。フックは claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す。差分を確かめてから、表示された `mv` のコマンドで置き換える。
+1. CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクする。
+2. 壊れたスキルのリンクを消す。同じ名前の実体があれば `NG` を出して止まる。
+3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。
+4. 表示された `mv` のコマンドで、差分を確かめてから置き換える。
 
-claude-config を変えたら、`make verify` を通す。`scripts/config-audit.py` が、全体の食い違いと書き方の違反を `NG` の行で出す。`tests/config-audit.sh` は、わざと壊した写しで config-audit が違反を見逃さないかを確かめる。`tests/hooks.sh` は、作り物のリポジトリと会話の記録で、フックが止めるべき時に止め、止めなくてよい時に止めないかを確かめる。
+settings.json の許可は、足りないものだけを後ろに足す。フックは claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す。
+
+> [!WARNING]
+> フックはこの場所のファイルを読む。ほかの場所から実行すると `NG` を出して止まる。
+
+## 🧪 確かめ方
+
+claude-config を変えたら、`make verify` を通す。
+
+| コマンド | 確かめること |
+| --- | --- |
+| `scripts/config-audit.py` | 全体の食い違いと、書き方の違反 |
+| `tests/config-audit.sh` | わざと壊した写しで、config-audit が違反を見逃さないか |
+| `tests/hooks.sh` | 作り物のリポジトリで、フックが止めるべき時に止めるか |

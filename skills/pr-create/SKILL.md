@@ -7,7 +7,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 
 # PR を作る
 
-変更をブランチに切り出し、確認とレビューを通して PR を作る手順。ブランチ名・commit・PR の本文の形は、`~/.claude/CLAUDE.md` の「ブランチ・コミット・PR」に従う。
+変更をブランチに切り出し、確認とレビューを通して PR を作る手順。ブランチ名・commit・本文の形は、共通の CLAUDE.md に従う。
 
 ## 起動条件
 
@@ -48,18 +48,26 @@ reviewer には、作業場所のパスと base のブランチ名だけを渡�
 
 ### 確認の記録
 
-`check.sh` は、結果を作業場所の git のフォルダにある `pr-checks` に、その時のファイルの中身の指紋と一緒に残す。`body.sh` は、通った確認だけに `[x]` を付け、引数で渡した未検証の項目に `[ ]` を付ける。NG の確認が残る時と、確認の後にファイルを変えた時は、本文を作らずに止まる。名前を変えた確認など、要らなくなった記録は `<S>/check.sh <作業場所> --drop <名前>` で外す。`git push` と `gh pr create` の前には、`hooks/pre-bash-check-pr.py` が同じ記録を見て、満たさなければ止める。
+`check.sh` は、確認の結果を記録に残し、push と PR の作成はその記録で止める。
+
+| 場面 | すること |
+| --- | --- |
+| 確認を通す | 結果を、git のフォルダの `pr-checks` に、ファイルの中身の指紋と一緒に残す |
+| 記録を見る | `check.sh <作業場所> --status` が、NG の確認と、確認の後の変更を `NG` の行で出す |
+| 本文を作る | `body.sh` が `--status` で確かめ、通った確認に `[x]`、未検証に `[ ]` を付ける |
+| 記録を外す | 要らなくなった確認は、`check.sh <作業場所> --drop <名前>` で外す |
+| push と PR | `hooks/pre-bash-check-pr.py` が `--status` を見て、満たさなければ止める |
 
 ### 出し方
 
-`route.sh` は、gh でログインしている人の、そのリポジトリへの権限で出し方を決める。push は gh の権限ではなく、リポジトリの git の設定（deploy key の `core.sshCommand` など）で通す。
+`route.sh` は、gh でログインしている人の、そのリポジトリへの権限で出し方を決める。push は gh の権限ではなく、リポジトリの git の設定で通す。deploy key の `core.sshCommand` などである。
 
 | 出力 | すること |
 | --- | --- |
 | `gh` | `gh pr create --base <base> --title <タイトル> --body-file <本文のファイル>` |
 | `compare <URL>` | push の権限が無い。URL には題と本文が入っているので、人に渡して、ブラウザで PR を作ってもらう |
 
-## 出力
+## 報告
 
 PR の URL か、`compare` の URL を返す。あわせて、通した確認と、未検証の項目を書く。マージはしない。
 
