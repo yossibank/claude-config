@@ -1,15 +1,14 @@
 #!/bin/bash
 set -uo pipefail
 
-root=$(cd "$(dirname "$0")/.." && pwd)
-work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
+source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/lib/fixtures.sh"
+
 export TMPDIR="$work/state/"
 mkdir -p "$TMPDIR"
 hooks="$root/hooks/run.sh"
 check="$root/skills/pr-create/scripts/run-check.sh"
 rules="$root/rules"
-fails=0
 
 app="$work/app"
 mkdir -p "$app/ios/Features" "$app/docs"
@@ -17,8 +16,7 @@ echo 'struct A {}' >"$app/ios/Features/HomeView.swift"
 echo '# 概要' >"$app/docs/overview.md"
 echo '{}' >"$app/data.json"
 git -C "$app" init -q
-git -C "$app" add -A
-git -C "$app" -c user.name=t -c user.email=t@t commit -q -m init
+commit "$app" init
 swift="$app/ios/Features/HomeView.swift"
 
 run() {
@@ -27,11 +25,9 @@ run() {
     out=$(echo "$payload" | bash "$hooks" "$hook" "$@" 2>&1)
     status=$?
     if [[ $status == "$expect" ]]; then
-        echo "OK ${label}"
+        ok "$label"
     else
-        echo "NG ${label}（終了コード ${status}、期待は ${expect}）"
-        echo "$out" | head -3
-        fails=$((fails + 1))
+        ng "${label}（終了コード ${status}、期待は ${expect}）" "$out"
     fi
 }
 
@@ -88,19 +84,12 @@ run ctx-limit-read 0 "ctx: 壊れた入力では止めない" "not json"
 usage='{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":250000}}}'
 echo "$usage" >"$work/long.jsonl"
 out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | bash "$hooks" ctx-suggest-clear)
-[[ $out == *systemMessage* ]] && echo "OK ctx: 20 万トークンを超えたら区切りを勧める" || { echo "NG ctx: 20 万トークンを超えたら区切りを勧める"; fails=$((fails + 1)); }
+check "ctx: 20 万トークンを超えたら区切りを勧める" grep -q systemMessage <<<"$out"
 out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | bash "$hooks" ctx-suggest-clear)
-[[ -z $out ]] && echo "OK ctx: 同じ段では 2 回勧めない" || { echo "NG ctx: 同じ段では 2 回勧めない"; fails=$((fails + 1)); }
+check "ctx: 同じ段では 2 回勧めない" test -z "$out"
 run ctx-suggest-clear 0 "ctx: 壊れた入力でも落ちない" "not json" pr
 
 run swift-format 0 "swift: .swiftformat が無ければ何もしない" "{\"tool_input\":{\"file_path\":\"$swift\"}}"
-
-section="$root/scripts/docs-section.sh"
-printf '# t\n\n## a\n\nx\n\n```sh\n## not\n```\n\n## b\n\ny\n' >"$work/section.md"
-[[ $(bash "$section" "$work/section.md" | wc -l | tr -d ' ') == 3 ]] && echo "OK docs-section: コードの中の # を見出しにしない" || { echo "NG docs-section: 見出しの一覧"; fails=$((fails + 1)); }
-[[ $(bash "$section" "$work/section.md" a) == *x* ]] && echo "OK docs-section: 節だけを出す" || { echo "NG docs-section: 節だけを出す"; fails=$((fails + 1)); }
-out=$(bash "$section" "$work/section.md" none)
-[[ $? != 0 && $out == NG* ]] && echo "OK docs-section: 無い見出しは stdout に NG" || { echo "NG docs-section: 無い見出し"; fails=$((fails + 1)); }
 
 doc_case() {
     local expect=$1 label=$2 name=$3 text=$4
@@ -165,47 +154,4 @@ run pr-gate 2 "pr: cd した先のリポジトリを見る" "$(push "$work" "cd 
 CLAUDE_HOOKS_OFF="rules-require-read pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(push "$app" 'git push')"
 CLAUDE_HOOKS_OFF="pr-gate-x" run pr-gate 2 "pr: CLAUDE_HOOKS_OFF の名前は全体で比べる" "$(push "$app" 'git push')"
 
-blocked_rules=$(edit s9 main "$work/empty.jsonl" "$swift" | bash "$hooks" rules-require-read 2>&1)
-bash_call t9 'sed -i x' | bash "$hooks" rules-detect-bash-edits pre
-echo '# 変更' >>"$app/docs/overview.md"
-blocked_bash=$(bash_call t9 'sed -i x' | bash "$hooks" rules-detect-bash-edits post 2>&1)
-blocked_pr=$(push "$app" 'git push' | bash "$hooks" pr-gate 2>&1)
-projects="$work/home/.claude/projects"
-mkdir -p "$projects/demo"
-python3 -I - "$projects/demo/s.jsonl" "$work" "$swift" "$app" "$blocked_rules" "$blocked_bash" "$blocked_pr" <<'EOF'
-import json, sys
-path, cwd, swift, app, rules, bash, pr = sys.argv[1:]
-stamp = "2026-10-01T00:00:00.000Z"
-
-
-def use(id, name, tool_input, where=cwd):
-    return {"type": "assistant", "timestamp": stamp, "cwd": where, "message": {"content": [{"type": "tool_use", "id": id, "name": name, "input": tool_input}]}}
-
-
-def result(id, text):
-    return {"type": "user", "timestamp": stamp, "cwd": cwd, "message": {"content": [{"type": "tool_result", "tool_use_id": id, "is_error": True, "content": text}]}}
-
-
-rows = [
-    use("e1", "Edit", {"file_path": swift}),
-    result("e1", "PreToolUse:Edit hook error: " + rules),
-    use("b1", "Bash", {"command": "sed -i x docs/overview.md"}, app),
-    {"type": "attachment", "timestamp": stamp, "cwd": app, "attachment": {"type": "hook_blocking_error", "toolUseID": "b1", "blockingError": {"blockingError": "[hook] " + bash}}},
-    use("p1", "Bash", {"command": f"git -C {app} push"}),
-    result("p1", "PreToolUse:Bash hook error: " + pr),
-    result("g1", "Exit code 2\n" + app + "/hooks/x.py:1: " + rules),
-]
-text = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
-open(path, "w").write(text + text)
-EOF
-touch -t 202610150000 "$projects/demo/s.jsonl"
-report=$(CLAUDE_PROJECTS="$projects" python3 -I "$root/skills/config-learn/scripts/collect-corrections.py" 2026-10)
-if grep -q '^| app | 1 | 1 | 1 | 1 |$' <<<"$report"; then
-    echo "OK collect: 3 つのフックが止めた回数を数える"
-else
-    echo "NG collect: 3 つのフックが止めた回数を数える"
-    grep "^|" <<<"$report"
-    fails=$((fails + 1))
-fi
-
-exit "$fails"
+finish

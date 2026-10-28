@@ -1,28 +1,15 @@
 #!/bin/bash
 set -uo pipefail
 
-root=$(cd "$(dirname "$0")/.." && pwd)
-work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
+source "$(dirname "$0")/lib/assert.sh"
+
 export HOME="$work/home"
 config="$HOME/Applications/AI/claude-config"
 claude="$HOME/.claude"
 settings="$claude/settings.json"
-fails=0
 
 mkdir -p "$config" "$claude/skills"
 (cd "$root" && git ls-files -z | rsync -a --from0 --files-from=- ./ "$config/")
-
-check() {
-    local label=$1
-    shift
-    if "$@" >/dev/null; then
-        echo "OK ${label}"
-    else
-        echo "NG ${label}"
-        fails=$((fails + 1))
-    fi
-}
 
 cat >"$settings" <<'JSON'
 {
@@ -59,4 +46,4 @@ status=$?
 check "install: 同じ名前の実体があれば止まる" test "$status" -ne 0
 check "install: 実体を残す" grep -q '# mine' "$claude/CLAUDE.md"
 
-exit "$fails"
+finish
