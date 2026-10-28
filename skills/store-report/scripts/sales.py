@@ -14,16 +14,10 @@ import urllib.request
 DOWNLOADS = {"1", "1F", "1T", "F1"}
 KEYS = ["ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_KEY_PATH", "ASC_VENDOR_NUMBER"]
 
-if len(sys.argv) < 2:
-    sys.exit("使い方: sales.py <YYYY-MM>")
 
-missing = [key for key in KEYS if not os.environ.get(key)]
-if missing:
-    sys.exit(f"NG 環境変数が無い: {', '.join(missing)}")
-
-month = sys.argv[1]
-if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
-    sys.exit(f"NG 月は YYYY-MM で書く: {month}")
+def fail(message):
+    print(f"NG {message}")
+    sys.exit(1)
 
 
 def b64(data):
@@ -57,7 +51,7 @@ def token():
     return (signing + b"." + b64(raw_signature(der))).decode()
 
 
-def report(version):
+def report(month, version):
     query = urllib.parse.urlencode({
         "filter[frequency]": "MONTHLY",
         "filter[reportType]": "SALES",
@@ -74,36 +68,52 @@ def report(version):
         return gzip.decompress(response.read()).decode("utf-8")
 
 
-try:
+def main():
+    if len(sys.argv) < 2:
+        fail("使い方: sales.py <YYYY-MM>")
+
+    missing = [key for key in KEYS if not os.environ.get(key)]
+    if missing:
+        fail(f"環境変数が無い: {', '.join(missing)}")
+
+    month = sys.argv[1]
+    if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
+        fail(f"月は YYYY-MM で書く: {month}")
+
     try:
-        text = report("1_1")
+        try:
+            text = report(month, "1_1")
+        except urllib.error.HTTPError as error:
+            if error.code != 400:
+                raise
+            text = report(month, "1_0")
     except urllib.error.HTTPError as error:
-        if error.code != 400:
-            raise
-        text = report("1_0")
-except urllib.error.HTTPError as error:
-    if error.code == 404:
-        sys.exit(f"NG {month} のレポートがまだ無い")
-    sys.exit(f"NG レポートを読めなかった: {error.code}")
-except (urllib.error.URLError, OSError, subprocess.CalledProcessError) as error:
-    sys.exit(f"NG レポートを読めなかった: {type(error).__name__}")
+        if error.code == 404:
+            fail(f"{month} のレポートがまだ無い")
+        fail(f"レポートを読めなかった: {error.code}")
+    except (urllib.error.URLError, OSError, subprocess.CalledProcessError) as error:
+        fail(f"レポートを読めなかった: {type(error).__name__}")
 
-rows = list(csv.DictReader(io.StringIO(text), delimiter="\t"))
-apps_by_sku = {row["SKU"]: row["Apple Identifier"] for row in rows if not row.get("Parent Identifier", "").strip()}
+    rows = list(csv.DictReader(io.StringIO(text), delimiter="\t"))
+    apps_by_sku = {row["SKU"]: row["Apple Identifier"] for row in rows if not row.get("Parent Identifier", "").strip()}
 
-totals = {}
-for row in rows:
-    parent = row.get("Parent Identifier", "").strip()
-    app = apps_by_sku.get(parent, parent) if parent else row["Apple Identifier"]
-    units = int(float(row["Units"] or 0))
-    proceeds = float(row["Developer Proceeds"] or 0) * units
-    total = totals.setdefault(app, {"downloads": 0, "proceeds": {}})
-    if row["Product Type Identifier"] in DOWNLOADS:
-        total["downloads"] += units
-    if proceeds:
-        currency = row["Currency of Proceeds"]
-        total["proceeds"][currency] = total["proceeds"].get(currency, 0) + proceeds
+    totals = {}
+    for row in rows:
+        parent = row.get("Parent Identifier", "").strip()
+        app = apps_by_sku.get(parent, parent) if parent else row["Apple Identifier"]
+        units = int(float(row["Units"] or 0))
+        proceeds = float(row["Developer Proceeds"] or 0) * units
+        total = totals.setdefault(app, {"downloads": 0, "proceeds": {}})
+        if row["Product Type Identifier"] in DOWNLOADS:
+            total["downloads"] += units
+        if proceeds:
+            currency = row["Currency of Proceeds"]
+            total["proceeds"][currency] = total["proceeds"].get(currency, 0) + proceeds
 
-for app, total in sorted(totals.items()):
-    proceeds = " ".join(f"{value:.2f} {currency}" for currency, value in sorted(total["proceeds"].items())) or "0"
-    print(f"{app}\t{total['downloads']}\t{proceeds}")
+    for app, total in sorted(totals.items()):
+        proceeds = " ".join(f"{value:.2f} {currency}" for currency, value in sorted(total["proceeds"].items())) or "0"
+        print(f"{app}\t{total['downloads']}\t{proceeds}")
+
+
+if __name__ == "__main__":
+    main()
