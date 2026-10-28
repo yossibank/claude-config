@@ -2,7 +2,13 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
+expected="$HOME/Applications/AI/claude-config"
 claude="$HOME/.claude"
+
+if [[ $root != "$expected" ]]; then
+    echo "NG claude-config が $root にある。フックは $expected を読むので、そこに置いてから実行する" >&2
+    exit 1
+fi
 settings="$claude/settings.json"
 trap 'rm -f "$settings.tmp"' EXIT
 
@@ -43,13 +49,7 @@ if [[ ! -f $settings ]]; then
     echo '{}' >|"$settings"
 fi
 
-jq -s '
-    .[0] as $current
-    | .[1] as $config
-    | $current
-    | .permissions.allow = (($current.permissions.allow // []) + $config.permissions.allow | unique)
-    | .hooks = $config.hooks
-' "$settings" "$root/settings/settings.json" >|"$settings.tmp"
+jq -s -f "$root/settings/merge.jq" "$settings" "$root/settings/settings.json" >|"$settings.tmp"
 mv -f "$settings.tmp" "$settings.new"
 
 if diff -u "$settings" "$settings.new"; then
