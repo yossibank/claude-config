@@ -1,5 +1,6 @@
 import ast
 import fnmatch
+import functools
 import json
 import os
 import re
@@ -38,6 +39,7 @@ def tracked(*patterns):
     return [os.path.join(ROOT, path) for path in out.splitlines()]
 
 
+@functools.cache
 def read(path):
     return open(path, encoding="utf-8").read()
 

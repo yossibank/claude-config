@@ -12,6 +12,7 @@ JA = r"々぀-ヺー-ヿ一-鿿"
 HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
 LIMIT = 60
 SENTENCES = 3
+CELL_SENTENCES = 2
 SIZE_LIMIT = 15_000
 BODY_EMOJI = {"✅", "🚧", "⬜", "🍎", "🤖", "🧩", "🔴", "🟠", "🟡", "⚪"}
 
@@ -76,7 +77,7 @@ def sentences_of(text):
 def check_size(path):
     size = os.path.getsize(path)
     if "/docs/" in path and size > SIZE_LIMIT:
-        return [(1, f"docs の 1 ファイルが 15KB を超えている（{size // 1000}KB）。節ごとに分ける")]
+        return [(1, f"docs の 1 ファイルが {SIZE_LIMIT // 1000}KB を超えている（{size // 1000}KB）。節ごとに分ける")]
     return []
 
 
@@ -153,7 +154,7 @@ def check_length(number, spoken, what):
         for sentence in parts:
             if len(sentence.strip()) + 1 > LIMIT:
                 found.append((number, f"一文が {LIMIT} 字を超えている（{len(sentence.strip()) + 1} 字）。句点で区切る"))
-        limit = 2 if what == "table" else SENTENCES
+        limit = CELL_SENTENCES if what == "table" else SENTENCES
         if len(parts) > limit:
             where = "表のセル" if what == "table" else "1 つの段落や項目"
             found.append((number, f"{where}は {limit} 文までにする。分けるか、箇条書きか表にする"))
