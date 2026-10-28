@@ -1,6 +1,6 @@
 ---
 name: pr-prune
-description: マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける。PR がマージされたと分かった時や、人が片付けを頼んだ時に使う
+description: マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける。PR がマージされたと分かった時や、人が片付けを頼んだ時に使う。
 argument-hint: "<リポジトリ> <ブランチ> <PR 番号> [...]"
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune.sh *)
 ---
