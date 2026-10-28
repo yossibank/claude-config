@@ -5,11 +5,13 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 HOOKS = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
-TOOLS = re.compile(r"^\s*(git|make|mint|swiftformat|pre-commit|gh|brew|xcodebuild|swift)\b")
+TOOLS = re.compile(r"^\s*(git|make|mint|swiftformat|pre-commit|gh|brew|xcodebuild|swift|cd)\b")
+STALE = 24 * 60 * 60
 
 
 def changed_files(cwd):
@@ -41,13 +43,26 @@ def load_hook(name):
     return module
 
 
+def only_tools(command):
+    parts = [part for part in re.split(r"&&|\|\||;|\|", command) if part.strip()]
+    return bool(parts) and all(TOOLS.match(part) for part in parts)
+
+
+def remove_stale():
+    for name in os.listdir(STATE):
+        path = os.path.join(STATE, name)
+        if time.time() - os.path.getmtime(path) > STALE:
+            os.remove(path)
+
+
 def before(data):
     root, files = changed_files(data.get("cwd") or os.getcwd())
     if root is None:
         return
     os.makedirs(STATE, exist_ok=True)
+    remove_stale()
     with open(state_file(data), "w") as file:
-        json.dump(files, file)
+        json.dump({"root": root, "files": files}, file)
 
 
 def after(data):
@@ -58,13 +73,13 @@ def after(data):
     except (OSError, ValueError):
         return
     command = (data.get("tool_input") or {}).get("command", "")
-    if TOOLS.match(command):
+    if only_tools(command) or not isinstance(earlier, dict) or "root" not in earlier:
         return
-    _, files = changed_files(data.get("cwd") or os.getcwd())
+    _, files = changed_files(earlier["root"])
     edited = sorted(
         path
         for path, mtime in files.items()
-        if path.endswith(CHECKED) and earlier.get(path) != mtime and "/.git/" not in path
+        if path.endswith(CHECKED) and earlier["files"].get(path) != mtime and "/.git/" not in path
     )
     if not edited:
         return

@@ -53,28 +53,51 @@ def relative(path):
         text=True,
     )
     root = result.stdout.strip()
-    return os.path.relpath(path, root) if root else path.lstrip("/")
+    return os.path.relpath(path, root) if root else None
 
 
 def matching_rules(path):
     target = relative(path)
     found = []
+    if target is None:
+        return found
     for name in sorted(os.listdir(RULES)):
         if name.endswith(".md") and any(p.match(target) for p in rule_paths(os.path.join(RULES, name))):
             found.append(name)
     return found
 
 
-def state_file(data):
+def state_dir(data):
     key = f"{data.get('session_id', '')}-{data.get('agent_id', 'main')}"
     return os.path.join(STATE, re.sub(r"[^A-Za-z0-9_-]", "_", key))
 
 
-def read_state(data):
+def read_time(data, name):
     try:
-        return json.load(open(state_file(data)))
-    except (OSError, ValueError):
-        return {}
+        return os.path.getmtime(os.path.join(state_dir(data), name))
+    except OSError:
+        return 0.0
+
+
+def is_rule(path):
+    real = os.path.realpath(path)
+    return os.path.dirname(real) == os.path.realpath(RULES) or path.startswith(os.path.expanduser("~/.claude/rules/"))
+
+
+def tail_after_compaction(transcript, chunk=4_000_000):
+    with open(transcript, "rb") as file:
+        file.seek(0, os.SEEK_END)
+        position = file.tell()
+        data = b""
+        while position > 0:
+            step = min(chunk, position)
+            position -= step
+            file.seek(position)
+            data = file.read(step) + data
+            index = data.rfind(b'"compact_boundary"')
+            if index >= 0:
+                return data[data.rfind(b"\n", 0, index) + 1 :].decode("utf-8", "ignore").splitlines()
+    return data.decode("utf-8", "ignore").splitlines()
 
 
 def scan(transcript):
@@ -82,31 +105,30 @@ def scan(transcript):
     loaded = set()
     if not transcript or not os.path.isfile(transcript):
         return compacted, loaded
-    for line in open(transcript, encoding="utf-8", errors="ignore"):
+    for line in tail_after_compaction(transcript):
         if '"compact_boundary"' in line:
             try:
                 stamp = json.loads(line).get("timestamp", "")
                 compacted = max(compacted, calendar.timegm(time.strptime(stamp[:19], "%Y-%m-%dT%H:%M:%S")))
             except (ValueError, TypeError):
-                continue
+                pass
             loaded = set()
         elif '"instructions"' in line and "/rules/" in line:
             try:
                 files = json.loads(line).get("attachment", {}).get("files") or []
             except ValueError:
                 continue
-            loaded |= {os.path.basename(str(item.get("path", ""))) for item in files if "/rules/" in str(item.get("path", ""))}
+            loaded |= {os.path.basename(str(item.get("path", ""))) for item in files if is_rule(str(item.get("path", "")))}
     return compacted, loaded
 
 
 def record_read(data, path):
-    if os.path.dirname(os.path.realpath(path)) != os.path.realpath(RULES):
+    if not is_rule(path):
         return
-    state = read_state(data)
-    state[os.path.basename(path)] = time.time()
-    os.makedirs(STATE, exist_ok=True)
-    with open(state_file(data), "w") as file:
-        json.dump(state, file)
+    os.makedirs(state_dir(data), exist_ok=True)
+    marker = os.path.join(state_dir(data), os.path.basename(path))
+    with open(marker, "a"):
+        os.utime(marker)
 
 
 def check_edit(data, path):
@@ -114,9 +136,8 @@ def check_edit(data, path):
     if not rules:
         return
     transcript = data.get("transcript_path", "")
-    state = read_state(data)
     compacted, loaded = scan(transcript)
-    missing = [name for name in rules if state.get(name, 0) <= compacted and name not in loaded]
+    missing = [name for name in rules if read_time(data, name) <= compacted and name not in loaded]
     if missing:
         print(
             "この編集に当たる決まりを、この会話でまだ読んでいない。"
