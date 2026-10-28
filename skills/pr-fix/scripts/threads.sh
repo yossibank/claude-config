@@ -1,12 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$(dirname "$0")/../../../lib/git.sh"
+
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <PR 番号>"; exit 1; }
 
-repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+repo=$(resolve_repo "$1") || { echo "$repo"; exit 1; }
 pr=$2
 
-info=$("$(dirname "$0")/../../pr-create/scripts/repo-access.sh" "$repo") || { echo "$info"; exit 1; }
+info=$(repo_access "$repo") || { echo "$info"; exit 1; }
 read -r owner name access <<< "$info"
 
 case $access in

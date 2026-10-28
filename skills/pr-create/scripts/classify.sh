@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$(dirname "$0")/../../../lib/git.sh"
+
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <base のブランチ>"; exit 1; }
 
-repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+repo=$(resolve_repo "$1") || { echo "$repo"; exit 1; }
 base=$(git -C "$repo" merge-base "$2" HEAD)
 limit=200
 risky='(^|/)(Migration|migrations?/)|[Ss]chema|\.sql$|fixtures/|\.pbxproj$|Package\.(swift|resolved)$|(^|/)hooks/|settings[^/]*\.json$'

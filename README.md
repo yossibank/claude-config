@@ -87,6 +87,7 @@ flowchart LR
 | [hooks/run.sh](hooks/run.sh) | 名前で呼ばれ、`hooks/<名前>.py` を `python3 -I` で走らせる。無ければ `NG` を出す |
 | [lib/hook_io.py](lib/hook_io.py) | 入力の JSON、タイムアウト付きの git、状態ファイルの掃除 |
 | [lib/hook_stops.py](lib/hook_stops.py) | フックが止める時の文の書き出し。config-learn も数えるのに使う |
+| [lib/git.sh](lib/git.sh) | スキルの sh が読む。リポジトリの根、既定のブランチ、GitHub での書き込みの権限 |
 
 ## 🧰 スキル
 

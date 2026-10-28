@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$(dirname "$0")/../../../lib/git.sh"
+
 [[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <ブランチ名> <PR 番号>"; exit 1; }
 
-repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+repo=$(resolve_repo "$1") || { echo "$repo"; exit 1; }
 branch=$2
 pr=$3
 name=$(basename "$repo")
@@ -54,7 +56,7 @@ merged() {
     git -C "$repo" diff "$base" "$branch" | git -C "$repo" apply -R --check 2>/dev/null
 }
 
-main=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)
+main=$(default_branch "$repo")
 main=${main#origin/}
 [[ $(git -C "$repo" branch --show-current) == "$main" ]] || fail "手元が $main ではない"
 [[ -z $(git -C "$repo" status --porcelain) ]] || fail "手元に未 commit の変更がある"

@@ -1,15 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$(dirname "$0")/../../../lib/git.sh"
+
 [[ $# -ge 4 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <base のブランチ> <PR のタイトル> <本文のファイル>"; exit 1; }
 
-repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+repo=$(resolve_repo "$1") || { echo "$repo"; exit 1; }
 base=$2
 title=$3
 body=$4
 branch=$(git -C "$repo" branch --show-current)
 
-info=$("$(dirname "$0")/repo-access.sh" "$repo") || { echo "$info"; exit 1; }
+info=$(repo_access "$repo") || { echo "$info"; exit 1; }
 read -r owner name access <<< "$info"
 slug="$owner/$name"
 

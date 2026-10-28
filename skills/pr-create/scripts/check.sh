@@ -1,9 +1,11 @@
 #!/bin/bash
 set -uo pipefail
 
+source "$(dirname "$0")/../../../lib/git.sh"
+
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <確認の名前 | --drop <名前> | --status> [コマンド…]"; exit 1; }
 
-repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+repo=$(resolve_repo "$1") || { echo "$repo"; exit 1; }
 label=$2
 shift 2
 record=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks)
