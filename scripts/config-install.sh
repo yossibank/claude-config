@@ -6,7 +6,7 @@ expected="$HOME/Applications/AI/claude-config"
 claude="$HOME/.claude"
 
 if [[ $root != "$expected" ]]; then
-    echo "NG claude-config が $root にある。フックは $expected を読むので、そこに置いてから実行する" >&2
+    echo "NG claude-config が $root にある。フックは $expected を読むので、そこに置いてから実行する"
     exit 1
 fi
 settings="$claude/settings.json"
@@ -19,7 +19,7 @@ link() {
     if [[ -L $dest ]]; then
         ln -sfn "$source" "$dest"
     elif [[ -e $dest ]]; then
-        echo "NG $dest が実体としてある。退避してから実行し直す" >&2
+        echo "NG $dest が実体としてある。退避してから実行し直す"
         exit 1
     else
         ln -s "$source" "$dest"

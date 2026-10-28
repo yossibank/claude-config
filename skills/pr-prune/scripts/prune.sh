@@ -7,7 +7,7 @@ pr=${3:?PR 番号を渡す}
 name=$(basename "$repo")
 
 fail() {
-    echo "NG $name: $1" >&2
+    echo "NG $name: $1"
     exit 1
 }
 

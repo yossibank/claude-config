@@ -12,6 +12,9 @@ SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 VAR_BEFORE_WIDE = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]")
+NG_TO_STDERR = re.compile(r"""(echo|printf)\s+["']?NG\b.*>&2""")
+EXIT_FAIL = re.compile(r"\s*exit [1-9]")
+RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
 HOOK_FILE = re.compile(r"claude-config/(hooks/[A-Za-z0-9_.-]+\.py)")
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
 ASK_EVERY_TIME = {"store-release/scripts/archive.sh"}
@@ -167,14 +170,62 @@ def check_scripts():
         result = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
         if result.returncode:
             ng(path, 1, f"bash -n が通らない: {result.stderr.strip().splitlines()[-1]}")
-        for number, line in enumerate(read(path).split("\n"), 1):
+        lines = read(path).split("\n")
+        for number, line in enumerate(lines, 1):
             if VAR_BEFORE_WIDE.search(line):
                 ng(path, number, "変数の直後に全角の文字がある。${名前} で囲む")
+            failing = number < len(lines) and EXIT_FAIL.match(lines[number])
+            if NG_TO_STDERR.search(line) or (">&2" in line and failing):
+                ng(path, number, "失敗を stderr に出している。stdout に NG で始めて出す")
     for path in tracked("*.py"):
         try:
-            ast.parse(read(path))
+            tree = ast.parse(read(path))
         except SyntaxError as error:
             ng(path, error.lineno or 1, f"Python の構文が通らない: {error.msg}")
+            continue
+        check_python(path, tree)
+
+
+def is_main_guard(node):
+    return isinstance(node, ast.If) and "__name__" in ast.unparse(node.test)
+
+
+def is_exit_code(node):
+    if isinstance(node, ast.IfExp):
+        return is_exit_code(node.body) and is_exit_code(node.orelse)
+    return isinstance(node, ast.Constant) and isinstance(node.value, int)
+
+
+def is_exit_with_text(node):
+    return (
+        isinstance(node, ast.Call)
+        and ast.unparse(node.func) in ("sys.exit", "exit", "SystemExit")
+        and bool(node.args)
+        and not is_exit_code(node.args[0])
+    )
+
+
+def runs_on_import(node):
+    if isinstance(node, (ast.Import, ast.ImportFrom, ast.FunctionDef, ast.ClassDef)) or is_main_guard(node):
+        return False
+    if isinstance(node, ast.Expr):
+        return not isinstance(node.value, ast.Constant)
+    if isinstance(node, (ast.Assign, ast.AnnAssign)):
+        return bool(RUNTIME_INPUT.search(ast.unparse(node)))
+    return True
+
+
+def check_python(path, tree):
+    if not any(is_main_guard(node) for node in tree.body):
+        ng(path, 1, 'if __name__ == "__main__": が無い')
+    for node in tree.body:
+        if runs_on_import(node):
+            ng(path, node.lineno, "読み込んだだけで処理が走る。main() に入れる")
+    if os.path.relpath(path, ROOT).startswith("hooks/"):
+        return
+    for node in ast.walk(tree):
+        if is_exit_with_text(node):
+            ng(path, node.lineno, "sys.exit に文を渡すと stderr に出る。stdout に NG を出して sys.exit(1) にする")
 
 
 def check_docs():

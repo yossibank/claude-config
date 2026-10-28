@@ -84,4 +84,38 @@ d=$(copy unused-self)
 printf '#!/bin/bash\necho "usage: orphan.sh"\n' >"$d/skills/ui-record/scripts/orphan.sh"
 expect "$d" "orphan.sh:1 どこからも使われていない" "自分の中の名前で使われている扱いにしない"
 
+d=$(copy no-guard)
+replace "$d/skills/config-learn/scripts/collect.py" 'if __name__ == "__main__":
+    main()' 'main()'
+expect "$d" "collect.py:1 if __name__" "main の呼び出しを守っていない .py"
+
+d=$(copy top-level)
+printf '\nfor x in []:\n    pass\n' >>"$d/hooks/pre-read-guard.py"
+expect "$d" "読み込んだだけで処理が走る" "トップレベルで処理が走る .py"
+
+d=$(copy exit-text)
+replace "$d/skills/app-plan/scripts/search.py" 'def main():' 'def main():
+    sys.exit("使い方")'
+expect "$d" "sys.exit に文を渡すと" "sys.exit に文を渡す .py"
+
+d=$(copy top-level-argv)
+replace "$d/skills/app-plan/scripts/search.py" 'def main():' 'month = sys.argv[1]
+
+
+def main():'
+expect "$d" "search.py:.* 読み込んだだけで処理が走る" "トップレベルで引数を読む .py"
+
+d=$(copy exit-variable)
+replace "$d/skills/app-plan/scripts/search.py" 'def main():' 'def main():
+    raise SystemExit(clean("x"))'
+expect "$d" "sys.exit に文を渡すと" "SystemExit に式を渡す .py"
+
+d=$(copy ng-stderr)
+printf 'printf "%s %%s\\n" x >&2\n' NG >>"$d/skills/ui-record/scripts/record.sh"
+expect "$d" "失敗を stderr に出している" "printf で NG を stderr に出す .sh"
+
+d=$(copy fail-stderr)
+printf 'echo "だめ" >&2\nexit 1\n' >>"$d/skills/ui-record/scripts/record.sh"
+expect "$d" "失敗を stderr に出している" "NG を付けずに stderr に出して止まる .sh"
+
 exit "$fails"

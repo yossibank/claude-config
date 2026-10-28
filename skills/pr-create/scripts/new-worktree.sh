@@ -5,7 +5,7 @@ repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-topl
 branch=${2:?ブランチ名を渡す}
 
 if ! [[ $branch =~ ^(feat|fix|docs|refactor|test|build|ci|chore)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-    echo "ブランチ名が <type>/<summary> の形ではない: $branch" >&2
+    echo "NG ブランチ名が <type>/<summary> の形ではない: $branch"
     exit 1
 fi
 

@@ -16,29 +16,11 @@ C_CALLS = {
 }
 SKIP = {".build", ".swiftpm", "DerivedData", ".git", "Tests"}
 
-if len(sys.argv) < 2:
-    sys.exit("使い方: privacy-check.py <アプリのリポジトリ>")
 
-root = sys.argv[1]
-used = {}
-manifests = []
+def fail(message):
+    print(f"NG {message}")
+    sys.exit(1)
 
-for directory, folders, files in os.walk(root):
-    folders[:] = [f for f in folders if f not in SKIP and not f.endswith("Tests")]
-    for file in files:
-        path = os.path.join(directory, file)
-        if file == "PrivacyInfo.xcprivacy":
-            manifests.append(path)
-        if not file.endswith(".swift"):
-            continue
-        text = open(path, encoding="utf-8", errors="ignore").read()
-        for category, pattern in REASONS.items():
-            calls = [
-                name for name in C_CALLS.get(category, [])
-                if re.search(rf"\b{name}\s*\(", text) and not re.search(rf"\bfunc\s+{name}\b", text)
-            ]
-            if re.search(pattern, text) or calls:
-                used.setdefault(category, []).append(os.path.relpath(path, root))
 
 def declared_in(manifest):
     with open(manifest, "rb") as file:
@@ -50,7 +32,7 @@ def declared_in(manifest):
     }
 
 
-def manifest_for(path):
+def manifest_for(path, root, manifests):
     directory = os.path.dirname(os.path.join(root, path))
     nearest = [m for m in manifests if directory.startswith(os.path.dirname(m) + os.sep) or directory == os.path.dirname(m)]
     if nearest:
@@ -58,19 +40,48 @@ def manifest_for(path):
     return [m for m in manifests if f"{os.sep}Packages{os.sep}" not in m]
 
 
-ok = True
-if not manifests:
-    print("NG PrivacyInfo.xcprivacy が無い")
-    ok = False
-declared = set()
-for category, paths in sorted(used.items()):
-    missing = [p for p in paths if not any(category in declared_in(m) for m in manifest_for(p))]
-    for m in {m for p in paths for m in manifest_for(p)}:
-        declared |= declared_in(m)
-    mark = "NG" if missing else "OK"
-    ok = ok and not missing
-    print(f"{mark} {category}（{len(paths)} ファイル。例: {(missing or paths)[0]}）")
-for category in sorted({c for m in manifests for c in declared_in(m)} - used.keys()):
-    print(f"-- {category} は申告しているが、コードに見つからない")
+def main():
+    if len(sys.argv) < 2:
+        fail("使い方: privacy-check.py <アプリのリポジトリ>")
 
-sys.exit(0 if ok else 1)
+    root = sys.argv[1]
+    used = {}
+    manifests = []
+
+    for directory, folders, files in os.walk(root):
+        folders[:] = [f for f in folders if f not in SKIP and not f.endswith("Tests")]
+        for file in files:
+            path = os.path.join(directory, file)
+            if file == "PrivacyInfo.xcprivacy":
+                manifests.append(path)
+            if not file.endswith(".swift"):
+                continue
+            text = open(path, encoding="utf-8", errors="ignore").read()
+            for category, pattern in REASONS.items():
+                calls = [
+                    name for name in C_CALLS.get(category, [])
+                    if re.search(rf"\b{name}\s*\(", text) and not re.search(rf"\bfunc\s+{name}\b", text)
+                ]
+                if re.search(pattern, text) or calls:
+                    used.setdefault(category, []).append(os.path.relpath(path, root))
+
+    ok = True
+    if not manifests:
+        print("NG PrivacyInfo.xcprivacy が無い")
+        ok = False
+    declared = set()
+    for category, paths in sorted(used.items()):
+        missing = [p for p in paths if not any(category in declared_in(m) for m in manifest_for(p, root, manifests))]
+        for m in {m for p in paths for m in manifest_for(p, root, manifests)}:
+            declared |= declared_in(m)
+        mark = "NG" if missing else "OK"
+        ok = ok and not missing
+        print(f"{mark} {category}（{len(paths)} ファイル。例: {(missing or paths)[0]}）")
+    for category in sorted({c for m in manifests for c in declared_in(m)} - used.keys()):
+        print(f"-- {category} は申告しているが、コードに見つからない")
+
+    sys.exit(0 if ok else 1)
+
+
+if __name__ == "__main__":
+    main()

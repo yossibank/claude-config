@@ -27,7 +27,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [hooks/post-edit-format-swift.py](hooks/post-edit-format-swift.py) | `.swift` を Edit・Write した後 | git のルートに `.swiftformat` と、swiftformat を書いた `Mintfile` がある時に、`mint run swiftformat` でそのファイルを整形する。失敗は stderr に出す |
 | [hooks/post-edit-check-shell.py](hooks/post-edit-check-shell.py) | `.sh` を Edit・Write した後 | `bash -n` と、bash が変数名の一部とみなす「変数の直後の全角」を Claude に返す |
 | [hooks/bash-check-edits.py](hooks/bash-check-edits.py) | Bash の前と後 | Bash で書き換えたファイルを git の差で見つけ、Edit・Write を使うよう返し、当たる rules と、文書と `.sh` の検査の結果を添える。git・make などの道具の変更は数えない |
-| [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
+| [hooks/ctx-suggest-clear.py](hooks/ctx-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 呼んだ時 | Markdown の見出しの一覧か、指定した見出しの節だけを出す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からのリンクを張り、settings.json の案を作る |
 | [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | スキル・エージェント・rules・README・settings・スクリプト・文書の食い違いと書き方の違反を探す |
@@ -71,7 +71,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | 対象 | 形 | 例 |
 | --- | --- | --- |
 | スキル | `<分類>-<すること>`。することは動詞か、作るものの名詞 | `pr-create`、`ctx-handoff` |
-| フック | `<イベント>-<目的>.py`。前と後の両方で使うものは `<ツール>-<目的>.py` | `post-edit-check-docs.py`、`bash-check-edits.py` |
+| フック | `<イベント>-<目的>.py`。2 つ以上のイベントで使うものは `<対象>-<目的>.py` | `post-edit-check-docs.py`、`bash-check-edits.py`、`ctx-suggest-clear.py` |
 | rules | `<対象>-<範囲>.md` | `swift-core.md` |
 | scripts | `<分類>-<目的>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
@@ -87,6 +87,16 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | `pr-` | PR |
 | `store-` | App Store への公開と数字 |
 | `ui-` | 見た目と動きの確認 |
+
+## スクリプトの書き方
+
+スクリプトは、読み込まれた時に何も実行せず、結果を同じ形で返す。
+
+| 対象 | 決まり |
+| --- | --- |
+| Python | 処理は `main()` に入れ、末尾を `if __name__ == "__main__":` にする |
+| 結果の出し方 | 結果は stdout に `OK`・`NG` で始まる行で出し、失敗したら終了コード 1 で終える。失敗ではない知らせは stderr に出す。`make verify` の config-audit が、この形から外れたスクリプトを NG にする |
+| フック | 終了コード 2 で Claude に返す文は stderr に出す。JSON（`systemMessage` など）で返すものは stdout に出す |
 
 ## 使い方
 

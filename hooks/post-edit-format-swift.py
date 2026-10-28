@@ -47,4 +47,5 @@ def main():
         print(f"swiftformat が失敗した：{result.stderr.strip()[-500:]}", file=sys.stderr)
 
 
-main()
+if __name__ == "__main__":
+    main()
