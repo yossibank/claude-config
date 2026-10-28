@@ -9,6 +9,7 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import git_root, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
+from hook_stops import RULES_UNREAD  # noqa: E402
 
 RULES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
 STATE = os.path.join(tempfile.gettempdir(), "claude-rules-read")
@@ -140,7 +141,7 @@ def check_edit(data, path):
     missing = [name for name in rules if read_time(data, name) <= compacted and name not in loaded]
     if missing:
         print(
-            "この編集に当たる決まりを、この会話でまだ読んでいない。"
+            f"{RULES_UNREAD}。"
             "次を Read で読んでから、同じ編集をやり直す: " + "、".join(os.path.join(RULES, name) for name in missing),
             file=sys.stderr,
         )

@@ -8,6 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
+from hook_stops import BASH_EDITED, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
 from transcripts import MONTH, entries, month_start, projects_dir, to_jst, touched_since  # noqa: E402
 
 CUE = re.compile(
@@ -18,12 +19,7 @@ WIDTH = 120
 APPS = os.path.expanduser("~/Applications")
 WORKTREES = os.path.expanduser("~/.claude/worktrees/")
 PREFIX = APPS.replace("/", "-") + "-"
-# hooks/ の各フックが止める時の文の書き出しと同じにする
-GUARDS = {
-    "rules": "この編集に当たる決まりを、この会話でまだ読んでいない",
-    "bash": "Bash でファイルを書き換えた",
-    "pr": "push と PR の作成の前に",
-}
+GUARDS = {"rules": RULES_UNREAD, "bash": BASH_EDITED, "pr": PR_UNCHECKED}
 EDITS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 HOOK_ERROR = re.compile(r"PreToolUse:\w+ hook error: ")
 GIT_C = re.compile(r"\bgit\s+-C\s+(\S+)")

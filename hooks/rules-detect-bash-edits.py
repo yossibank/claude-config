@@ -8,6 +8,7 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import git, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
+from hook_stops import BASH_EDITED  # noqa: E402
 
 HOOKS = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
@@ -78,7 +79,7 @@ def after(data):
     if not edited:
         return
     lines = [
-        "Bash でファイルを書き換えた。ファイルの変更は Edit・Write で行う。書き換えたファイルに、Edit の後と同じ検査をかけた。",
+        f"{BASH_EDITED}。ファイルの変更は Edit・Write で行う。書き換えたファイルに、Edit の後と同じ検査をかけた。",
         *edited,
     ]
     guard = load_hook("rules-require-read")
