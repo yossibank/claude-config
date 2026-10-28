@@ -7,6 +7,7 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import read_payload, safe_name, tool_input  # noqa: E402
+from transcripts import parse_entry, tail_lines  # noqa: E402
 
 STEP = 200_000
 TAIL = 4_000_000
@@ -16,16 +17,11 @@ PR_URL = re.compile(r"https://github\.com/[^/\s]+/[^/\s]+/pull/\d+")
 
 
 def context_tokens(path):
-    size = os.path.getsize(path)
-    with open(path, "rb") as file:
-        file.seek(max(size - TAIL, 0))
-        lines = file.read().decode("utf-8", "ignore").splitlines()
-    for line in reversed(lines):
+    for line in reversed(tail_lines(path, TAIL)):
         if '"usage"' not in line:
             continue
-        try:
-            entry = json.loads(line)
-        except ValueError:
+        entry = parse_entry(line)
+        if entry is None:
             continue
         message = entry.get("message")
         if entry.get("isSidechain") or not isinstance(message, dict):

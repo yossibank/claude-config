@@ -84,7 +84,8 @@ flowchart LR
 | ファイル | 中身 |
 | --- | --- |
 | [hooks/run.sh](hooks/run.sh) | 名前で呼ばれ、`hooks/<名前>.py` を `python3 -I` で走らせる。無ければ `NG` を出す |
-| [lib/hook_io.py](lib/hook_io.py) | 入力の JSON、タイムアウト付きの git、状態ファイルの掃除 |
+| [lib/hook_io.py](lib/hook_io.py) | 入力の JSON、コマンドの区切り、タイムアウト付きの git、状態ファイルの掃除 |
+| [lib/md_blocks.py](lib/md_blocks.py) | Markdown の frontmatter とコードの囲みの見分け方 |
 | [lib/hook_stops.py](lib/hook_stops.py) | フックが止める時の文の書き出し。config-learn も数えるのに使う |
 | [lib/git.sh](lib/git.sh) | スキルの sh が読む。リポジトリの根、既定のブランチ、GitHub での書き込みの権限 |
 
@@ -182,7 +183,7 @@ flowchart LR
 | [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | 食い違いと書き方の違反を探す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
-| [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py・count-tokens.py から | 会話の記録の読み方 |
+| [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py・count-tokens.py とフックから | 会話の記録の読み方 |
 | [lib/months.py](lib/months.py) | 月を扱うスクリプトから | 日本時間、月の形 |
 | [lib/script_io.py](lib/script_io.py) | スキルの .py から | `NG` を出して止める `fail` |
 | [lib/app_store.py](lib/app_store.py) | fetch-reviews.py・search-apps.py・fetch-ratings.py から | App Store の検索とレビューの読み方 |

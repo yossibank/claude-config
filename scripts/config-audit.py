@@ -1,6 +1,5 @@
 import ast
 import fnmatch
-import importlib.util
 import json
 import os
 import re
@@ -8,6 +7,11 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "lib"))
+
+from md_blocks import front_matter_end, is_fence  # noqa: E402
+from modules import load_hook  # noqa: E402
+
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
@@ -40,9 +44,7 @@ def read(path):
 
 def front_matter(path):
     lines = read(path).split("\n")
-    if not lines or lines[0] != "---":
-        return None
-    end = next((i for i in range(1, len(lines)) if lines[i] == "---"), None)
+    end = front_matter_end(lines)
     if end is None:
         return None
     fields = {}
@@ -61,7 +63,7 @@ def headings(path):
     found = []
     fence = False
     for number, line in enumerate(read(path).split("\n"), 1):
-        if line.lstrip().startswith(("```", "~~~")):
+        if is_fence(line):
             fence = not fence
         elif not fence and line.startswith("## "):
             found.append((number, line[3:].strip()))
@@ -231,13 +233,6 @@ def check_settings():
                 for name in names:
                     if not os.path.isfile(os.path.join(ROOT, "hooks", f"{name}.py")):
                         ng(path, 1, f"フックのファイルが無い: hooks/{name}.py")
-
-
-def load_hook(name):
-    spec = importlib.util.spec_from_file_location(name.replace("-", "_"), os.path.join(ROOT, "hooks", f"{name}.py"))
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def check_scripts():

@@ -1,21 +1,19 @@
 import os
-import re
 import shlex
 import subprocess
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import git_root, read_payload, tool_input  # noqa: E402
+from hook_io import git_root, read_payload, split_commands, tool_input  # noqa: E402
 from hook_stops import PR_UNCHECKED  # noqa: E402
 
 CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "run-check.sh")
-SEGMENT = re.compile(r"&&|\|\||;|\|")
 PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 
 
 def gated_repo(command, cwd):
-    for part in SEGMENT.split(command):
+    for part in split_commands(command):
         try:
             words = shlex.split(part, posix=True)
         except ValueError:

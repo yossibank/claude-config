@@ -5,6 +5,8 @@ import subprocess
 import sys
 import time
 
+SEGMENT = re.compile(r"&&|\|\||;|\|")
+
 
 def read_payload():
     try:
@@ -17,6 +19,10 @@ def read_payload():
 def tool_input(payload):
     value = payload.get("tool_input")
     return value if isinstance(value, dict) else {}
+
+
+def split_commands(command):
+    return SEGMENT.split(command)
 
 
 def git(cwd, *args, timeout=10):

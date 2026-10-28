@@ -6,6 +6,7 @@ from itertools import takewhile
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import read_payload, tool_input  # noqa: E402
+from md_blocks import front_matter_end, is_fence  # noqa: E402
 
 JA = r"々぀-ヺー-ヿ一-鿿"
 HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
@@ -16,7 +17,6 @@ BODY_EMOJI = {"✅", "🚧", "⬜", "🍎", "🤖", "🧩", "🔴", "🟠", "�
 
 COUNT = re.compile(r"([0-9０-９]+)\s*(つ|段|個|点|項目|種類|件)")
 NEXT = re.compile(r"次の\s*[0-9０-９]+\s*(つ|段|個|点|項目|種類|件)")
-QUOTE = re.compile(r"^\s*(>\s?)*")
 LIST = re.compile(r"^([-*]|\d+\.)\s")
 TAG = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9]*)")
 BOLD = re.compile(r"\*\*[^*\n]+?\*\*")
@@ -51,13 +51,12 @@ def kind(text):
 
 
 def rows_of(lines):
-    start = 0
-    if lines and lines[0] == "---":
-        start = next((i for i in range(1, len(lines)) if lines[i] == "---"), 0) + 1
+    end = front_matter_end(lines)
+    start = 0 if end is None else end + 1
     rows = []
     fence = False
     for number, raw in enumerate(lines[start:], start + 1):
-        if QUOTE.sub("", raw).lstrip().startswith(("```", "~~~")):
+        if is_fence(raw):
             fence = not fence
             rows.append((number, "", "", "code"))
             continue
