@@ -1,20 +1,52 @@
-import datetime
-import json
-import re
+import os
 import sys
-import urllib.request
 
-JST = datetime.timezone(datetime.timedelta(hours=9))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
+from app_store import ReviewPageError, clean, fetch_json, review_pages  # noqa: E402
+from months import MONTH, to_jst  # noqa: E402
+from script_io import Failure, fail  # noqa: E402
 
 
-def fetch(url):
-    with urllib.request.urlopen(url, timeout=10) as response:
-        return json.load(response)
+def ratings(app, month):
+    try:
+        results = fetch_json(f"https://itunes.apple.com/lookup?id={app}&country=jp")["results"]
+    except Exception as error:
+        raise Failure(f"評価を読めなかった: {type(error).__name__}") from error
+    if not results:
+        raise Failure(f"アプリが見つからない: {app}")
+
+    info = results[0]
+    reviews = 0
+    low = 0
+    notice = ""
+
+    try:
+        for entries in review_pages(app):
+            older = False
+            for entry in entries:
+                updated = to_jst(entry["updated"]["label"]).strftime("%Y-%m")
+                if updated < month:
+                    older = True
+                    continue
+                if updated == month:
+                    reviews += 1
+                    low += int(entry["im:rating"]["label"]) <= 2
+            if older:
+                break
+    except ReviewPageError as error:
+        if error.page == 1:
+            raise Failure(f"レビューを読めなかった: {type(error.cause).__name__}") from error
+        notice = f"{error.page} ページ目から先のレビューを読めなかった"
+
+    fields = [
+        clean(info["trackName"]),
+        f"{info.get('averageUserRating', 0):.1f}",
+        str(info.get("userRatingCount", 0)),
+        str(reviews),
+        str(low),
+    ]
+    return fields, notice
 
 
 def main():
@@ -22,49 +54,16 @@ def main():
         fail("使い方: fetch-ratings.py <アプリの ID> <YYYY-MM>")
 
     app, month = sys.argv[1], sys.argv[2]
-    if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
+    if not MONTH.fullmatch(month):
         fail(f"月は YYYY-MM で書く: {month}")
 
     try:
-        results = fetch(f"https://itunes.apple.com/lookup?id={app}&country=jp")["results"]
-    except Exception as error:
-        fail(f"評価を読めなかった: {type(error).__name__}")
-    if not results:
-        fail(f"アプリが見つからない: {app}")
-
-    info = results[0]
-    reviews = 0
-    low = 0
-
-    for page in range(1, 11):
-        url = f"https://itunes.apple.com/jp/rss/customerreviews/page={page}/id={app}/sortby=mostrecent/json"
-        try:
-            entries = fetch(url)["feed"].get("entry", [])
-        except Exception as error:
-            if page == 1:
-                fail(f"レビューを読めなかった: {type(error).__name__}")
-            print(f"{page} ページ目から先のレビューを読めなかった", file=sys.stderr)
-            break
-        if isinstance(entries, dict):
-            entries = [entries]
-        if not entries:
-            break
-        older = False
-        for entry in entries:
-            if "im:rating" not in entry:
-                continue
-            updated = datetime.datetime.fromisoformat(entry["updated"]["label"]).astimezone(JST).strftime("%Y-%m")
-            if updated < month:
-                older = True
-                continue
-            if updated == month:
-                reviews += 1
-                low += int(entry["im:rating"]["label"]) <= 2
-        if older:
-            break
-
-    name = " ".join(info["trackName"].split())
-    print(f"{name}\t{info.get('averageUserRating', 0):.1f}\t{info.get('userRatingCount', 0)}\t{reviews}\t{low}")
+        fields, notice = ratings(app, month)
+    except Failure as error:
+        fail(str(error))
+    if notice:
+        print(notice, file=sys.stderr)
+    print("\t".join(fields))
 
 
 if __name__ == "__main__":

@@ -1,24 +1,17 @@
 import glob
 import os
-import re
-import subprocess
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "lib"))
+
+from modules import load_module  # noqa: E402
+from months import MONTH  # noqa: E402
+from script_io import Failure, fail  # noqa: E402
 
 
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
-
-
-def run(script, *args):
-    result = subprocess.run([sys.executable, "-I", os.path.join(HERE, script), *args], capture_output=True, text=True)
-    out_lines = result.stdout.strip().splitlines()
-    err_lines = result.stderr.strip().splitlines()
-    failure = (out_lines or err_lines or [""])[-1] if result.returncode != 0 else ""
-    notice = err_lines[-1] if err_lines else ""
-    return result.returncode, result.stdout.strip(), failure, notice
+def failure_of(error):
+    return f"NG {error}" if isinstance(error, Failure) else f"{type(error).__name__}: {error}"
 
 
 def main():
@@ -26,7 +19,7 @@ def main():
         fail("使い方: write-report.py <YYYY-MM>")
 
     month = sys.argv[1]
-    if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
+    if not MONTH.fullmatch(month):
         fail(f"月は YYYY-MM で書く: {month}")
     apps_dir = os.environ.get("APPS_DIR", os.path.expanduser("~/Applications/AppStore"))
     out_dir = os.path.join(apps_dir, "reports")
@@ -39,25 +32,26 @@ def main():
     if not apps:
         fail(f"store/app-id.txt を持つアプリが無い: {apps_dir}")
 
-    code, out, failure, _ = run("fetch-sales.py", month)
+    fetch_sales = load_module(os.path.join(HERE, "fetch-sales.py"))
+    fetch_ratings = load_module(os.path.join(HERE, "fetch-ratings.py"))
     sales = {}
     notes = []
-    sales_ok = code == 0
-    if sales_ok:
-        for line in out.splitlines():
-            app_id, downloads, proceeds = line.split("\t")
-            sales[app_id] = (downloads, proceeds)
-    else:
-        notes.append(f"売上とダウンロードは取れなかった（{failure}）")
+    sales_ok = True
+    try:
+        sales = fetch_sales.sales_by_app(month)
+    except Exception as error:
+        sales_ok = False
+        notes.append(f"売上とダウンロードは取れなかった（{failure_of(error)}）")
 
     rows = []
     for repo, app_id in apps:
-        code, out, failure, notice = run("fetch-ratings.py", app_id, month)
-        if code != 0:
-            notes.append(f"{repo} の評価は取れなかった（{failure}）")
+        try:
+            fields, notice = fetch_ratings.ratings(app_id, month)
+        except Exception as error:
+            notes.append(f"{repo} の評価は取れなかった（{failure_of(error)}）")
             rating = ["—"] * 4
         else:
-            rating = out.split("\t")[1:]
+            rating = fields[1:]
             if notice:
                 notes.append(f"{repo} のレビューは途中までしか数えていない（{notice}）")
         downloads, proceeds = sales.get(app_id, ("0", "0") if sales_ok else ("—", "—"))

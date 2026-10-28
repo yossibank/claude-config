@@ -9,7 +9,9 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from hook_stops import BASH_EDITED, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
-from transcripts import MONTH, entries, month_start, projects_dir, to_jst, touched_since  # noqa: E402
+from months import MONTH, month_start, to_jst  # noqa: E402
+from script_io import fail  # noqa: E402
+from transcripts import entries, projects_dir, touched_since  # noqa: E402
 
 CUE = re.compile(
     r"ではなく|じゃなく|違う|ちがう|やめ|しないで|外して|戻して|消して|不要|いらない|要らない|"
@@ -23,11 +25,6 @@ GUARDS = {"rules": RULES_UNREAD, "bash": BASH_EDITED, "pr": PR_UNCHECKED}
 EDITS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 HOOK_ERROR = re.compile(r"PreToolUse:\w+ hook error: ")
 GIT_C = re.compile(r"\bgit\s+-C\s+(\S+)")
-
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
 
 
 def text_of(content):

@@ -5,14 +5,11 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from transcripts import MONTH, entries, month_start, projects_dir, to_jst, touched_since  # noqa: E402
+from months import MONTH, month_start, to_jst  # noqa: E402
+from script_io import fail  # noqa: E402
+from transcripts import entries, projects_dir, touched_since  # noqa: E402
 
 WEIGHTS = {"input": 1, "write_5m": 1.25, "write_1h": 2, "read": 0.1, "output": 5}
-
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
 
 
 def usage_of(path, seen, month=None):

@@ -3,6 +3,10 @@ import plistlib
 import re
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
+
+from script_io import fail  # noqa: E402
+
 REASONS = {
     "NSPrivacyAccessedAPICategoryUserDefaults": r"\bUserDefaults\b|@AppStorage\b",
     "NSPrivacyAccessedAPICategoryFileTimestamp": r"\.(creationDate|modificationDate|fileModificationDate)\b|\b(contentModificationDateKey|creationDateKey|attributesOfItem)\b",
@@ -15,11 +19,6 @@ C_CALLS = {
     "NSPrivacyAccessedAPICategoryDiskSpace": ["statfs", "fstatfs", "statvfs", "fstatvfs"],
 }
 SKIP = {".build", ".swiftpm", "DerivedData", ".git", "Tests"}
-
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
 
 
 def declared_in(manifest):

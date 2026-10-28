@@ -1,16 +1,11 @@
-import json
+import os
 import sys
 import urllib.parse
-import urllib.request
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
-
-
-def clean(text):
-    return " ".join(str(text).split())
+from app_store import clean, fetch_json  # noqa: E402
+from script_io import fail  # noqa: E402
 
 
 def main():
@@ -22,8 +17,7 @@ def main():
     query = urllib.parse.urlencode({"term": term, "country": "jp", "entity": "software", "limit": limit})
 
     try:
-        with urllib.request.urlopen(f"https://itunes.apple.com/search?{query}", timeout=10) as response:
-            results = json.load(response)["results"]
+        results = fetch_json(f"https://itunes.apple.com/search?{query}")["results"]
     except Exception as error:
         fail(f"検索できなかった: {error}")
 

@@ -4,7 +4,6 @@ import gzip
 import io
 import json
 import os
-import re
 import subprocess
 import sys
 import time
@@ -12,13 +11,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
+
+from months import MONTH  # noqa: E402
+from script_io import Failure, fail  # noqa: E402
+
 DOWNLOADS = {"1", "1F", "1T", "F1"}
 KEYS = ["ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_KEY_PATH", "ASC_VENDOR_NUMBER"]
-
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
 
 
 def b64(data):
@@ -69,18 +68,14 @@ def report(month, version):
         return gzip.decompress(response.read()).decode("utf-8")
 
 
-def main():
-    if len(sys.argv) < 2:
-        fail("使い方: fetch-sales.py <YYYY-MM>")
-
+def check_keys():
     missing = [key for key in KEYS if not os.environ.get(key)]
     if missing:
-        fail(f"環境変数が無い: {', '.join(missing)}")
+        raise Failure(f"環境変数が無い: {', '.join(missing)}")
 
-    month = sys.argv[1]
-    if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
-        fail(f"月は YYYY-MM で書く: {month}")
 
+def sales_by_app(month):
+    check_keys()
     try:
         try:
             text = report(month, "1_1")
@@ -90,10 +85,10 @@ def main():
             text = report(month, "1_0")
     except urllib.error.HTTPError as error:
         if error.code == 404:
-            fail(f"{month} のレポートがまだ無い")
-        fail(f"レポートを読めなかった: {error.code}")
+            raise Failure(f"{month} のレポートがまだ無い") from error
+        raise Failure(f"レポートを読めなかった: {error.code}") from error
     except (urllib.error.URLError, OSError, subprocess.CalledProcessError) as error:
-        fail(f"レポートを読めなかった: {type(error).__name__}")
+        raise Failure(f"レポートを読めなかった: {type(error).__name__}") from error
 
     rows = list(csv.DictReader(io.StringIO(text), delimiter="\t"))
     apps_by_sku = {row["SKU"]: row["Apple Identifier"] for row in rows if not row.get("Parent Identifier", "").strip()}
@@ -111,9 +106,28 @@ def main():
             currency = row["Currency of Proceeds"]
             total["proceeds"][currency] = total["proceeds"].get(currency, 0) + proceeds
 
+    sales = {}
     for app, total in sorted(totals.items()):
         proceeds = " ".join(f"{value:.2f} {currency}" for currency, value in sorted(total["proceeds"].items())) or "0"
-        print(f"{app}\t{total['downloads']}\t{proceeds}")
+        sales[app] = (str(total["downloads"]), proceeds)
+    return sales
+
+
+def main():
+    if len(sys.argv) < 2:
+        fail("使い方: fetch-sales.py <YYYY-MM>")
+
+    month = sys.argv[1]
+    try:
+        check_keys()
+        if not MONTH.fullmatch(month):
+            raise Failure(f"月は YYYY-MM で書く: {month}")
+        sales = sales_by_app(month)
+    except Failure as error:
+        fail(str(error))
+
+    for app, (downloads, proceeds) in sales.items():
+        print(f"{app}\t{downloads}\t{proceeds}")
 
 
 if __name__ == "__main__":

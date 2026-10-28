@@ -16,13 +16,11 @@ claude-config/
 ├── agents/
 ├── docs/
 ├── hooks/
-│   └── lib/
+├── lib/
 ├── rules/
 ├── scripts/
-│   └── lib/
 ├── settings/
 ├── skills/
-├── templates/
 └── tests/
 ```
 
@@ -32,7 +30,8 @@ claude-config/
 | `agents/`・`skills/` | 任せる相手と、手順 | Claude |
 | `hooks/`・`settings/` | 決まりを守らせるフックと、その登録 | 仕組み |
 | `scripts/`・`tests/` | 入れる、検査する、確かめるスクリプト | 人・仕組み |
-| `docs/`・`templates/` | アプリの共通の構成と、ひな形 | 人・Claude |
+| `lib/` | フックとスクリプトが共通で使う処理 | 仕組み |
+| `docs/` | アプリの共通の構成 | 人・Claude |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
 
@@ -183,7 +182,11 @@ flowchart LR
 | [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | 食い違いと書き方の違反を探す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
-| [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py・count-tokens.py から | 会話の記録の読み方、日本時間、月の形 |
+| [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py・count-tokens.py から | 会話の記録の読み方 |
+| [lib/months.py](lib/months.py) | 月を扱うスクリプトから | 日本時間、月の形 |
+| [lib/script_io.py](lib/script_io.py) | スキルの .py から | `NG` を出して止める `fail` |
+| [lib/app_store.py](lib/app_store.py) | fetch-reviews.py・search-apps.py・fetch-ratings.py から | App Store の検索とレビューの読み方 |
+| [lib/modules.py](lib/modules.py) | config-audit.py・write-report.py ほか | ファイルの場所から .py を読み込む |
 | [settings/settings.json](settings/settings.json) | 入れる時 | settings.json に入れるフックと許可 |
 
 ## 🚀 入れ方

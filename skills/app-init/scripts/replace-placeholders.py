@@ -1,10 +1,9 @@
 import os
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
+from script_io import fail  # noqa: E402
 
 
 def replace(text, tokens):
