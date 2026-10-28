@@ -7,6 +7,7 @@ duration="${3:?長さの秒}"
 fps="${4:?1 秒あたりのコマ数}"
 crop="${5:?crop か full}"
 columns="${6:?列数}"
+[[ $columns =~ ^[1-9][0-9]*$ ]] || { echo "NG 列数は 1 以上の整数にする: $columns"; exit 1; }
 out="${7:?出力する png}"
 
 count=$(awk -v d="$duration" -v f="$fps" 'BEGIN { n = int(d * f + 0.999); print (n < 1 ? 1 : n) }')

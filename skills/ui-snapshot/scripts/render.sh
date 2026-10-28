@@ -9,9 +9,18 @@ tests="$package/Tests/UISnapshotTests"
 
 [ -f "$set_dir/SnapshotTests.swift" ] || { echo "NG セットに SnapshotTests.swift が無い: $set_dir"; exit 1; }
 [ -f "$set_dir/targets.txt" ] || { echo "NG セットに targets.txt が無い: $set_dir"; exit 1; }
-[ -e "$tests" ] && { echo "NG 前の回の後片付けが済んでいない: $tests。退避のフォルダから戻すか、git で戻してから走らせる"; exit 1; }
+case "$out/" in
+    "$package"/*) echo "NG 出力先がパッケージの中にある: ${out}。戻す時に消えるので、パッケージの外を渡す"; exit 1 ;;
+esac
+marker="$out/.ui-snapshot"
+if [ ! -f "$marker" ] && [ -n "$(ls -A "$out")" ]; then
+    echo "NG 出力先が空でなく、ui-snapshot の出力先でもない: ${out}。空のフォルダを渡す"
+    exit 1
+fi
+[ -e "$tests" ] && { echo "NG 前の回の後片付けが済んでいない: ${tests}。退避のフォルダから戻すか、git で戻してから走らせる"; exit 1; }
 
-device="${DEVICE:-$(xcrun simctl list devices available iPhone | awk -F '[()]' '/iPhone/ { print $2; exit }')}"
+device="${DEVICE:-$(xcrun simctl list devices available -j | python3 -I -c 'import json, sys; ids = [d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")]; print(ids[0] if ids else "")')}"
+[ -n "$device" ] || { echo "NG iPhone のシミュレーターが無い。DEVICE に UDID を渡す"; exit 1; }
 scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | python3 -I -c '
 import json, sys
 schemes = json.load(sys.stdin)["workspace"]["schemes"]
@@ -26,7 +35,7 @@ rsync -a --exclude .build --exclude .swiftpm "$package/" "$backup/"
 
 restore() {
     rm -rf "$tests"
-    rsync -a --exclude .build --exclude .swiftpm "$backup/" "$package/" && rm -rf "$backup"
+    rsync -a --delete --exclude .build --exclude .swiftpm "$backup/" "$package/" && rm -rf "$backup"
 }
 
 trap restore EXIT
@@ -37,6 +46,7 @@ mkdir -p "$tests"
 python3 -I -c 'import sys; open(sys.argv[3], "w", encoding="utf-8").write(open(sys.argv[1], encoding="utf-8").read().replace("__OUT__", sys.argv[2]))' \
     "$set_dir/SnapshotTests.swift" "$out" "$tests/SnapshotTests.swift"
 rm -f "$out"/*.png
+touch "$marker"
 
 cd "$package"
 

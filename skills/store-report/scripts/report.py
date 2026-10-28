@@ -8,7 +8,7 @@ if len(sys.argv) < 2:
     sys.exit("使い方: report.py <YYYY-MM>")
 
 month = sys.argv[1]
-if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month):
+if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
     sys.exit(f"NG 月は YYYY-MM で書く: {month}")
 here = os.path.dirname(os.path.abspath(__file__))
 apps_dir = os.environ.get("APPS_DIR", os.path.expanduser("~/Applications/AppStore"))
