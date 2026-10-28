@@ -26,6 +26,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [hooks/stop-suggest-clear.py](hooks/stop-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 呼んだ時 | Markdown の見出しの一覧か、指定した見出しの節だけを出す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からのリンクを張り、settings.json の案を作る |
+| [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | スキル・エージェント・rules・README・settings・スクリプト・文書の食い違いと書き方の違反を探す |
 | [settings/settings.json](settings/settings.json) | 入れる時 | `config-install.sh` が settings.json に入れるフックと許可 |
 
 リポジトリだけの事実は、各リポジトリの CLAUDE.md と `.claude/rules/` に書く。
@@ -65,11 +66,12 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
-| スキル | `<分類>-<動詞>` | `pr-create`、`ui-record` |
+| スキル | `<分類>-<すること>`。することは動詞か、作るものの名詞 | `pr-create`、`ctx-handoff` |
 | フック | `<イベント>-<目的>.py` | `post-edit-check-docs.py` |
 | rules | `<対象>-<範囲>.md` | `swift-core.md` |
-| scripts | `<分類>-<目的>.sh` | `docs-section.sh` |
+| scripts | `<分類>-<目的>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
+| ひな形の印 | スクリプトが置き換える所は `__<名前>__`、人が書き入れる所は `<中身>` | `__App__`、`<名前>` |
 
 スキルの分類は次から選ぶ。新しい分類が要る時は、行を足してから名前を付ける。
 
@@ -94,8 +96,4 @@ claude-config を `~/Applications/AI/claude-config` に置き、次を実行す�
 
 settings.json は直接書き換えない。`settings/merge.jq` で `settings.json.new` を作り、差分を出す。許可は今の並びのまま、足りないものだけを後ろに足す。フックは claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す。差分を確かめてから、表示された `mv` のコマンドで置き換える。
 
-手で確かめるときは、ファイルを引数に渡す。
-
-```sh
-python3 hooks/post-edit-check-docs.py README.md
-```
+claude-config を変えたら、`make verify` を通す。`scripts/config-audit.py` が、全体の食い違いと書き方の違反を `NG` の行で出す。`tests/config-audit.sh` は、わざと壊した写しで config-audit が違反を見逃さないかを確かめる。
