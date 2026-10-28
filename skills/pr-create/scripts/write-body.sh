@@ -12,7 +12,7 @@ shift 2
 record=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks)
 body=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-body.txt)
 
-status=$("$(dirname "$0")/check.sh" "$repo" --status) || { grep '^NG' <<< "$status"; exit 1; }
+status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$status"; exit 1; }
 
 {
     echo "<何がなぜ変わるかを 1〜2 文で>"

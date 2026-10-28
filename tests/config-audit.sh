@@ -43,7 +43,7 @@ printf 'if then\n' >"$d/skills/ui-record/scripts/broken.sh"
 expect "$d" "bash -n が通らない" "構文の壊れた .sh"
 
 d=$(copy wide)
-printf 'echo "x $name%s"\n' '。' >>"$d/skills/ui-record/scripts/record.sh"
+printf 'echo "x $name%s"\n' '。' >>"$d/skills/ui-record/scripts/record-video.sh"
 expect "$d" "変数の直後に全角" "変数の直後の全角"
 
 d=$(copy missing)
@@ -51,8 +51,8 @@ printf '\n`${CLAUDE_SKILL_DIR}/scripts/nothing.sh`\n' >>"$d/skills/ui-record/SKI
 expect "$d" "参照先が無い: scripts/nothing.sh" "無いスクリプトへの参照"
 
 d=$(copy alias)
-rm -f "$d/skills/pr-create/scripts/route.sh"
-expect "$d" "参照先が無い: scripts/route.sh" "別名（<S>）で書いた参照の先が無い"
+rm -f "$d/skills/pr-create/scripts/route-pr.sh"
+expect "$d" "参照先が無い: scripts/route-pr.sh" "別名（<S>）で書いた参照の先が無い"
 
 d=$(copy link)
 printf '\n[x](nowhere.md)\n' >>"$d/skills/ui-record/SKILL.md"
@@ -63,59 +63,59 @@ echo 'print(1)' >"$d/hooks/post-tool-extra.py"
 expect "$d" "README の表に載っていない: hooks/post-tool-extra.py" "README に無いフック"
 
 d=$(copy allowed)
-replace "$d/skills/pr-prune/SKILL.md" 'allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune.sh *)' 'allowed-tools: Bash(git status *)'
-expect "$d" "allowed-tools で許可していない: scripts/prune.sh" "許可していないスクリプト"
+replace "$d/skills/pr-prune/SKILL.md" 'allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh *)' 'allowed-tools: Bash(git status *)'
+expect "$d" "allowed-tools で許可していない: scripts/prune-merged.sh" "許可していないスクリプト"
 
 d=$(copy bash-prefix)
 replace "$d/skills/pr-prune/SKILL.md" '
-${CLAUDE_SKILL_DIR}/scripts/prune.sh <' '
-bash ${CLAUDE_SKILL_DIR}/scripts/prune.sh <'
-expect "$d" "allowed-tools で許可していない: bash scripts/prune.sh" "bash を付けた呼び方が許可と合わない"
+${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh <' '
+bash ${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh <'
+expect "$d" "allowed-tools で許可していない: bash scripts/prune-merged.sh" "bash を付けた呼び方が許可と合わない"
 
 d=$(copy ask)
-replace "$d/skills/store-release/SKILL.md" 'Bash(${CLAUDE_SKILL_DIR}/scripts/screenshot.sh *)' 'Bash(${CLAUDE_SKILL_DIR}/scripts/*)'
+replace "$d/skills/store-release/SKILL.md" 'Bash(${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh *)' 'Bash(${CLAUDE_SKILL_DIR}/scripts/*)'
 expect "$d" "外に出す操作が allowed-tools で自動で許可されている" "外に出す操作の自動の許可"
 
 d=$(copy unused-same-name)
-cp "$d/skills/pr-create/scripts/state.sh" "$d/skills/pr-fix/scripts/state.sh"
-expect "$d" "skills/pr-fix/scripts/state.sh:1 どこからも使われていない" "ほかのスキルの同じ名前で使われている扱いにしない"
+cp "$d/skills/pr-create/scripts/hash-state.sh" "$d/skills/pr-fix/scripts/hash-state.sh"
+expect "$d" "skills/pr-fix/scripts/hash-state.sh:1 どこからも使われていない" "ほかのスキルの同じ名前で使われている扱いにしない"
 
 d=$(copy unused-self)
 printf '#!/bin/bash\necho "usage: orphan.sh"\n' >"$d/skills/ui-record/scripts/orphan.sh"
 expect "$d" "orphan.sh:1 どこからも使われていない" "自分の中の名前で使われている扱いにしない"
 
 d=$(copy no-guard)
-replace "$d/skills/config-learn/scripts/collect.py" 'if __name__ == "__main__":
+replace "$d/skills/config-learn/scripts/collect-corrections.py" 'if __name__ == "__main__":
     main()' 'main()'
-expect "$d" "collect.py:1 if __name__" "main の呼び出しを守っていない .py"
+expect "$d" "collect-corrections.py:1 if __name__" "main の呼び出しを守っていない .py"
 
 d=$(copy top-level)
 printf '\nfor x in []:\n    pass\n' >>"$d/hooks/ctx-limit-read.py"
 expect "$d" "読み込んだだけで処理が走る" "トップレベルで処理が走る .py"
 
 d=$(copy exit-text)
-replace "$d/skills/app-plan/scripts/search.py" 'def main():' 'def main():
+replace "$d/skills/app-plan/scripts/search-apps.py" 'def main():' 'def main():
     sys.exit("使い方")'
 expect "$d" "sys.exit に文を渡すと" "sys.exit に文を渡す .py"
 
 d=$(copy top-level-argv)
-replace "$d/skills/app-plan/scripts/search.py" 'def main():' 'month = sys.argv[1]
+replace "$d/skills/app-plan/scripts/search-apps.py" 'def main():' 'month = sys.argv[1]
 
 
 def main():'
-expect "$d" "search.py:.* 読み込んだだけで処理が走る" "トップレベルで引数を読む .py"
+expect "$d" "search-apps.py:.* 読み込んだだけで処理が走る" "トップレベルで引数を読む .py"
 
 d=$(copy exit-variable)
-replace "$d/skills/app-plan/scripts/search.py" 'def main():' 'def main():
+replace "$d/skills/app-plan/scripts/search-apps.py" 'def main():' 'def main():
     raise SystemExit(clean("x"))'
 expect "$d" "sys.exit に文を渡すと" "SystemExit に式を渡す .py"
 
 d=$(copy ng-stderr)
-printf 'printf "%s %%s\\n" x >&2\n' NG >>"$d/skills/ui-record/scripts/record.sh"
+printf 'printf "%s %%s\\n" x >&2\n' NG >>"$d/skills/ui-record/scripts/record-video.sh"
 expect "$d" "失敗を stderr に出している" "printf で NG を stderr に出す .sh"
 
 d=$(copy fail-stderr)
-printf 'echo "だめ" >&2\nexit 1\n' >>"$d/skills/ui-record/scripts/record.sh"
+printf 'echo "だめ" >&2\nexit 1\n' >>"$d/skills/ui-record/scripts/record-video.sh"
 expect "$d" "失敗を stderr に出している" "NG を付けずに stderr に出して止まる .sh"
 
 d=$(copy skill-sections)

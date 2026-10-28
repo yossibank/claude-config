@@ -7,7 +7,7 @@ trap 'rm -rf "$work"' EXIT
 export HOME="$work/home"
 mkdir -p "$HOME" "$work/bin"
 scripts="$root/skills/pr-create/scripts"
-prune="$root/skills/pr-prune/scripts/prune.sh"
+prune="$root/skills/pr-prune/scripts/prune-merged.sh"
 fails=0
 
 cat >"$work/bin/gh" <<'GH'
@@ -44,23 +44,23 @@ commit "$repo" init
 git -C "$repo" push -q origin main
 git -C "$repo" remote set-head origin main
 
-expect "NG 使い方" "classify: 引数が足りなければ NG" bash "$scripts/classify.sh" "$repo"
-expect "差分が無い" "classify: 差分が無ければ NG" bash "$scripts/classify.sh" "$repo" origin/main
+expect "NG 使い方" "classify: 引数が足りなければ NG" bash "$scripts/classify-diff.sh" "$repo"
+expect "差分が無い" "classify: 差分が無ければ NG" bash "$scripts/classify-diff.sh" "$repo" origin/main
 echo b >"$repo/日本語.md"
-out=$(bash "$scripts/classify.sh" "$repo" origin/main)
+out=$(bash "$scripts/classify-diff.sh" "$repo" origin/main)
 if [[ $out == "docs | 1 行"* ]]; then echo "OK classify: 日本語の名前の文書だけなら docs"; else echo "NG classify: 日本語の名前の文書だけなら docs: $out"; fails=$((fails + 1)); fi
 echo 'x' >"$repo/hooks.py"
-out=$(bash "$scripts/classify.sh" "$repo" origin/main)
+out=$(bash "$scripts/classify-diff.sh" "$repo" origin/main)
 if [[ $out == small* ]]; then echo "OK classify: コードが混ざれば small"; else echo "NG classify: コードが混ざれば small: $out"; fails=$((fails + 1)); fi
 rm -f "$repo/hooks.py" "$repo/日本語.md"
 
-expect "確認が無い" "body: 確認が無ければ本文を作らない" bash "$scripts/body.sh" "$repo" origin/main
-bash "$scripts/check.sh" "$repo" true true >/dev/null
-expect OK "body: 確認が通れば本文を作る" bash "$scripts/body.sh" "$repo" origin/main "画面"
+expect "確認が無い" "body: 確認が無ければ本文を作らない" bash "$scripts/write-body.sh" "$repo" origin/main
+bash "$scripts/run-check.sh" "$repo" true true >/dev/null
+expect OK "body: 確認が通れば本文を作る" bash "$scripts/write-body.sh" "$repo" origin/main "画面"
 grep -q -- '- \[ \] 画面（未検証）' "$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-body.txt)" \
     && echo "OK body: 未検証の項目を付ける" || { echo "NG body: 未検証の項目を付ける"; fails=$((fails + 1)); }
 echo c >>"$repo/a.md"
-expect "確認の後に変更がある" "body: 確認の後に変えたら止まる" bash "$scripts/body.sh" "$repo" origin/main
+expect "確認の後に変更がある" "body: 確認の後に変えたら止まる" bash "$scripts/write-body.sh" "$repo" origin/main
 git -C "$repo" checkout -q -- a.md
 
 git -C "$repo" checkout -q -b feat/done

@@ -71,7 +71,7 @@ def report(month, version):
 
 def main():
     if len(sys.argv) < 2:
-        fail("使い方: sales.py <YYYY-MM>")
+        fail("使い方: fetch-sales.py <YYYY-MM>")
 
     missing = [key for key in KEYS if not os.environ.get(key)]
     if missing:

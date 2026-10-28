@@ -15,7 +15,7 @@ def clean(text):
 
 def main():
     if len(sys.argv) < 2 or (len(sys.argv) > 2 and not sys.argv[2].isdigit()):
-        fail("使い方: search.py <語> [件数]")
+        fail("使い方: search-apps.py <語> [件数]")
 
     term = sys.argv[1]
     limit = sys.argv[2] if len(sys.argv) > 2 else "10"

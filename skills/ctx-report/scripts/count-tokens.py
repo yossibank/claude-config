@@ -71,7 +71,7 @@ def man(value):
 
 def main():
     if len(sys.argv) < 2 or not MONTH.fullmatch(sys.argv[1]):
-        fail("使い方: tokens.py <YYYY-MM> [件数]")
+        fail("使い方: count-tokens.py <YYYY-MM> [件数]")
     if len(sys.argv) > 2 and not sys.argv[2].isdigit():
         fail("件数は数字で書く")
 

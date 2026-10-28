@@ -7,7 +7,7 @@ trap 'rm -rf "$work"' EXIT
 export TMPDIR="$work/state/"
 mkdir -p "$TMPDIR"
 hooks="$root/hooks/run.sh"
-check="$root/skills/pr-create/scripts/check.sh"
+check="$root/skills/pr-create/scripts/run-check.sh"
 rules="$root/rules"
 fails=0
 
@@ -199,7 +199,7 @@ text = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
 open(path, "w").write(text + text)
 EOF
 touch -t 202610150000 "$projects/demo/s.jsonl"
-report=$(CLAUDE_PROJECTS="$projects" python3 -I "$root/skills/config-learn/scripts/collect.py" 2026-10)
+report=$(CLAUDE_PROJECTS="$projects" python3 -I "$root/skills/config-learn/scripts/collect-corrections.py" 2026-10)
 if grep -q '^| app | 1 | 1 | 1 | 1 |$' <<<"$report"; then
     echo "OK collect: 3 つのフックが止めた回数を数える"
 else

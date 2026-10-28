@@ -15,7 +15,7 @@ def replace(text, tokens):
 
 def main():
     if len(sys.argv) < 5:
-        fail("使い方: rename.py <ルート> <パスカル> <小文字> <表示名>")
+        fail("使い方: replace-placeholders.py <ルート> <パスカル> <小文字> <表示名>")
     root, pascal, lower, display = sys.argv[1:5]
     tokens = [("__DisplayName__", display), ("__App__", pascal), ("__app__", lower)]
 

@@ -74,7 +74,7 @@ flowchart LR
 | [ctx-limit-read](hooks/ctx-limit-read.py) | Read の前 | 30KB を超えるテキストを、範囲なしで読む時 | `limit` を付けて読む |
 | [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 応答の終わり、PR の作成の後 | 文脈が 20 万トークンを超える時と、PR を作った時 | |
 | [docs-check](hooks/docs-check.py) | Edit の後 | `.md` が `rules/docs-writing.md` に合わない時 | メモリのファイルは見ない |
-| [pr-gate](hooks/pr-gate.py) | Bash の前 | `check.sh` の確認の前に、push や `gh pr create` をする時 | `CLAUDE_HOOKS_OFF=pr-gate` |
+| [pr-gate](hooks/pr-gate.py) | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時 | `CLAUDE_HOOKS_OFF=pr-gate` |
 | [rules-detect-bash-edits](hooks/rules-detect-bash-edits.py) | Bash の前と後 | Bash でファイルを書き換えた時。git・make などは数えない | |
 | [rules-require-read](hooks/rules-require-read.py) | Read・Edit の前 | 当たる rules を、この会話でまだ読まずに編集する時 | `CLAUDE_HOOKS_OFF=rules-require-read` |
 | [shell-check](hooks/shell-check.py) | Edit の後 | `.sh` の `bash -n` と、変数の直後の全角 | |
@@ -183,7 +183,7 @@ flowchart LR
 | [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | 食い違いと書き方の違反を探す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
-| [lib/transcripts.py](lib/transcripts.py) | collect.py・tokens.py から | 会話の記録の読み方、日本時間、月の形 |
+| [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py・count-tokens.py から | 会話の記録の読み方、日本時間、月の形 |
 | [settings/settings.json](settings/settings.json) | 入れる時 | settings.json に入れるフックと許可 |
 
 ## 🚀 入れ方

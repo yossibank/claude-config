@@ -14,10 +14,10 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 材料は、次のコマンドで集める。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/collect.py <YYYY-MM>
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/collect-corrections.py <YYYY-MM>
 ```
 
-`collect.py` は、次の材料を出す。
+`collect-corrections.py` は、次の材料を出す。
 
 - `~/.claude/projects/*/memory/` の、種類が `feedback` のメモリ
 - その月の会話で人が送った、400 字以下の文。手直しの言葉（「ではなく」「外して」「戻して」「毎回」など）を含むものだけを出す。1 件は、その言葉の前後 120 字に切る

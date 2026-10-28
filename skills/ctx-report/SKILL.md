@@ -14,7 +14,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 表は、次のコマンドで出す。件数を省くと 10 件である。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/tokens.py <YYYY-MM> [件数]
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/count-tokens.py <YYYY-MM> [件数]
 ```
 
 会話は、始まった日（日本時間）の月に数える。記録の置き場所は `CLAUDE_PROJECTS` で変えられる。

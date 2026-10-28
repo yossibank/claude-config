@@ -2,7 +2,7 @@
 name: store-release
 description: App Store に出す前の申告・掲載情報・スクリーンショット・版を確かめ、アーカイブを TestFlight に送る。人がストアへの公開や配布を頼んだ時に使う。
 argument-hint: "[<アプリのリポジトリ>]"
-allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/screenshot.sh *)
+allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh *)
 ---
 
 # ストアに出す
@@ -58,10 +58,10 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-listing.py <アプリのリポジ�
 
 ### 3. スクリーンショット
 
-6.9 インチのシミュレーター（iPhone 18 Pro Max など）でアプリを開き、見せたい画面ごとに撮る。`screenshot.sh` は、状態バーを 9:41・電池 100% に固定して撮り、大きさを確かめる。
+6.9 インチのシミュレーター（iPhone 18 Pro Max など）でアプリを開き、見せたい画面ごとに撮る。`take-screenshot.sh` は、状態バーを 9:41・電池 100% に固定して撮り、大きさを確かめる。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/screenshot.sh <UDID> <アプリのリポジトリ>/store/screenshots/<番号>-<画面>.png
+${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh <UDID> <アプリのリポジトリ>/store/screenshots/<番号>-<画面>.png
 ```
 
 撮る画面は 3〜5 枚にし、overview の「解決したい不満」の上位に応える画面から並べる。見せたい状態のデータは、テストデータを入れて作る。
@@ -72,10 +72,10 @@ ${CLAUDE_SKILL_DIR}/scripts/screenshot.sh <UDID> <アプリのリポジトリ>/s
 
 ### 5. アーカイブと送信
 
-`archive.sh` は、Release でアーカイブを作り、App Store Connect に送る。外に出す操作なので、走らせる前に人の承認を得る。
+`archive-app.sh` は、Release でアーカイブを作り、App Store Connect に送る。外に出す操作なので、走らせる前に人の承認を得る。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/archive.sh <ワークスペース> <スキーム> <出力先のフォルダ>
+${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム> <出力先のフォルダ>
 ```
 
 | 変数 | すること |

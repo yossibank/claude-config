@@ -17,19 +17,19 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
    - アプリの名前（英小文字。リポジトリの名前になる）
    - 自分でも使うか
    - 守ること（データを送らない先など）
-2. 競合を探す。`search.py` で題材の語を 2〜3 通り検索し、評価の数の多い順に 3〜5 本を選ぶ。
-3. 不満を集める。選んだ競合ごとに `reviews.py` で星 2 以下のレビューを出し、同じ不満をまとめて数える。
+2. 競合を探す。`search-apps.py` で題材の語を 2〜3 通り検索し、評価の数の多い順に 3〜5 本を選ぶ。
+3. 不満を集める。選んだ競合ごとに `fetch-reviews.py` で星 2 以下のレビューを出し、同じ不満をまとめて数える。
 4. 不満の表を作る。多い順に並べ、作る人 1 人で応えられるものに、対応する機能を付ける。
 5. 最初のリリースの機能を決める。不満の上位に応える機能だけにし、ほかは「この先の段階」に回す。
 6. `${CLAUDE_SKILL_DIR}/templates/` の 2 つを写して埋め、下書きを書く。
 7. 下書きと、人が決めることを人に見せる。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/search.py <語> [件数]
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/reviews.py <アプリの ID> [星の上限]
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/search-apps.py <語> [件数]
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-reviews.py <アプリの ID> [星の上限]
 ```
 
-`search.py` は、ID・評価・評価の数・値段・名前をタブ区切りで出す。`reviews.py` は、新しい順に最大 500 件から、星の上限以下のものを 1 行 200 字で出す。どちらも日本の App Store を見る。
+`search-apps.py` は、ID・評価・評価の数・値段・名前をタブ区切りで出す。`fetch-reviews.py` は、新しい順に最大 500 件から、星の上限以下のものを 1 行 200 字で出す。どちらも日本の App Store を見る。
 
 ## 書き出す先
 

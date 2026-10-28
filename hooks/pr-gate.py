@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from hook_io import git_root, read_payload, tool_input  # noqa: E402
 from hook_stops import PR_UNCHECKED  # noqa: E402
 
-CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "check.sh")
+CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "run-check.sh")
 SEGMENT = re.compile(r"&&|\|\||;|\|")
 PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 
@@ -60,7 +60,7 @@ def main():
     found = problems(repo)
     if found:
         print(
-            f"{PR_UNCHECKED}、pr-create の手順の確認を通す（check.sh で通し直すか、要らない記録は check.sh <作業場所> --drop <名前> で外す）。\n"
+            f"{PR_UNCHECKED}、pr-create の手順の確認を通す（run-check.sh で通し直すか、要らない記録は run-check.sh <作業場所> --drop <名前> で外す）。\n"
             + "\n".join(found),
             file=sys.stderr,
         )

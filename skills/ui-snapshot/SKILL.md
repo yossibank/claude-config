@@ -2,7 +2,7 @@
 name: ui-snapshot
 description: SwiftUI の画面・部品・ウィジェットを、シミュレーターでテストとして描いて PNG にする。見た目・余白・色・字体を変えた時や、場合ごとの見た目を比べたい時に使う。動きの確認は ui-record を使う。
 argument-hint: "<パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>"
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/render.sh *)
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh *)
 ---
 
 # 見た目を描いて確かめる
@@ -14,12 +14,12 @@ SwiftUI のビューを `ImageRenderer` で PNG に描き、見た目を確か�
 描く時は、次を実行する。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/render.sh <パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>
+${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>
 ```
 
 シミュレーターは、`DEVICE` に UDID を渡して選べる。渡さない時は、使える iPhone の最初の 1 台を使う。
 
-`render.sh` は、次を行い、終わると必ずパッケージを元に戻す。
+`render-snapshots.sh` は、次を行い、終わると必ずパッケージを元に戻す。
 
 1. パッケージを一時のフォルダに退避し、そのパスを `退避:` の行に出す。
 2. その場の Package.swift に、一時のテストのターゲット `UISnapshotTests` を足す。
@@ -28,7 +28,7 @@ ${CLAUDE_SKILL_DIR}/scripts/render.sh <パッケージのフォルダ> <セッ�
 5. シミュレーターで、そのテストだけを動かす。
 6. テストが通れば、描いた PNG の一覧を出す。通らなければ `NG` の行を出して止まる。
 
-出力先には、空のフォルダか、前に `render.sh` が書いたフォルダ（`.ui-snapshot` がある）を渡す。ほかのフォルダは、中の PNG を消さないように `NG` で止まる。終わると、テストやパッチが足したファイルも消して、退避の状態に戻す。
+出力先には、空のフォルダか、前に書いたフォルダ（`.ui-snapshot` がある）を渡す。ほかのフォルダは、中の PNG を消さないように `NG` で止まる。終わると、テストやパッチが足したファイルも消して、退避の状態に戻す。
 
 走っている間は、パッケージのファイルを変えない。終わると退避から書き戻すので、その間の変更は上書きされる。強制終了などで戻らなかった時は、`退避:` のフォルダから戻すか、git で戻す。
 
@@ -38,7 +38,7 @@ ${CLAUDE_SKILL_DIR}/scripts/render.sh <パッケージのフォルダ> <セッ�
 
 | ファイル | 要る時 | 中身 |
 | --- | --- | --- |
-| `SnapshotTests.swift` | いつも | 描く場合と大きさ。出力先は `__OUT__` と書き、`render.sh` が置き換える |
+| `SnapshotTests.swift` | いつも | 描く場合と大きさ。出力先は `__OUT__` と書き、`render-snapshots.sh` が置き換える |
 | `targets.txt` | いつも | テストが依存するターゲットを、1 行に 1 つ書く。ほかのパッケージの製品は `<製品>:<パッケージ>` |
 | `patch.py` | 外から渡せない値を差し替える時 | 引数のパッケージのフォルダの中を書き換える。`@Environment(\.widgetFamily)` を引数に変えるなど |
 

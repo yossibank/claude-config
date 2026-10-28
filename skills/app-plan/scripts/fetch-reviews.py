@@ -16,7 +16,7 @@ def clean(text):
 
 def main():
     if len(sys.argv) < 2 or not sys.argv[1].isdigit() or (len(sys.argv) > 2 and not sys.argv[2].isdigit()):
-        fail("使い方: reviews.py <アプリの ID> [星の上限]")
+        fail("使い方: fetch-reviews.py <アプリの ID> [星の上限]")
 
     app = sys.argv[1]
     stars = int(sys.argv[2]) if len(sys.argv) > 2 else 2

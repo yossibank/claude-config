@@ -23,7 +23,7 @@ def run(script, *args):
 
 def main():
     if len(sys.argv) < 2:
-        fail("使い方: monthly.py <YYYY-MM>")
+        fail("使い方: write-report.py <YYYY-MM>")
 
     month = sys.argv[1]
     if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
@@ -39,7 +39,7 @@ def main():
     if not apps:
         fail(f"store/app-id.txt を持つアプリが無い: {apps_dir}")
 
-    code, out, failure, _ = run("sales.py", month)
+    code, out, failure, _ = run("fetch-sales.py", month)
     sales = {}
     notes = []
     sales_ok = code == 0
@@ -52,7 +52,7 @@ def main():
 
     rows = []
     for repo, app_id in apps:
-        code, out, failure, notice = run("ratings.py", app_id, month)
+        code, out, failure, notice = run("fetch-ratings.py", app_id, month)
         if code != 0:
             notes.append(f"{repo} の評価は取れなかった（{failure}）")
             rating = ["—"] * 4

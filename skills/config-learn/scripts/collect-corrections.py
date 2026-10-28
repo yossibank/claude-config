@@ -194,7 +194,7 @@ def print_guards(stats, broken):
 
 def main():
     if len(sys.argv) < 2 or not MONTH.fullmatch(sys.argv[1]):
-        fail("使い方: collect.py <YYYY-MM>")
+        fail("使い方: collect-corrections.py <YYYY-MM>")
 
     month = sys.argv[1]
     projects = projects_dir()

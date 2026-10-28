@@ -49,7 +49,7 @@ for doc in overview roadmap; do
     fi
 done
 
-python3 -I "$skill/scripts/rename.py" "$root" "$pascal" "$name" "$display"
+python3 -I "$skill/scripts/replace-placeholders.py" "$root" "$pascal" "$name" "$display"
 
 git -C "$root" init -q -b main
 git -C "$root" add -A

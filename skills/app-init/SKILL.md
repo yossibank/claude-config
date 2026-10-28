@@ -2,7 +2,7 @@
 name: app-init
 description: 新しい iOS アプリのリポジトリを、kakeibot の形のひな形から作る。app-plan で企画を書いた後や、人が新しいアプリを始める時に使う。
 argument-hint: "<アプリの名前（英小文字）> <ストアの表示名>"
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/init.sh *)
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/create-app.sh *)
 ---
 
 # アプリを立ち上げる
@@ -21,17 +21,17 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/init.sh *)
 立ち上げは、次の順に進める。
 
 1. 名前と表示名を人に確かめる。`app-plan` の下書きがあれば、その名前を使う。
-2. `init.sh` を走らせる。
+2. `create-app.sh` を走らせる。
 3. 作ったリポジトリで `make setup` と `make verify` を通す。
 4. GitHub にリポジトリを作るかを人に聞く。作る時は、人の承認を得てから `gh repo create` する。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/init.sh <名前> <表示名>
+${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 ```
 
-## init.sh がすること
+## create-app.sh がすること
 
-`init.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `APPS_DIR` で変えられる。
+`create-app.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `APPS_DIR` で変えられる。
 
 - フォルダに `docs/` のほかの中身があれば、`NG` を出して止まる
 - 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる

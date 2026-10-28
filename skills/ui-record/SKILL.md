@@ -15,14 +15,14 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 
 1. 動きを自動で起こす一時の仕掛けを入れる。下の「一時の仕掛け」に従う。
 2. アプリをビルドしてシミュレーターに入れ、起動する。
-3. `record.sh` で録画する。
-4. `frames.sh` で、はじめは低いコマ数で全体を並べ、動きの起きる時刻を見つける。
+3. `record-video.sh` で録画する。
+4. `tile-frames.sh` で、はじめは低いコマ数で全体を並べ、動きの起きる時刻を見つける。
 5. その時刻の前後だけを、高いコマ数で切り出して並べ直す。
 6. 一時の仕掛けを戻す。`git diff` に残っていないことを確かめる。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/record.sh <UDID> <秒数> <出力先>/before.mp4
-${CLAUDE_SKILL_DIR}/scripts/frames.sh <出力先>/before.mp4 <開始秒> <長さ秒> <コマ数/秒> <crop> <列数> <出力先>/sheet.png
+${CLAUDE_SKILL_DIR}/scripts/record-video.sh <UDID> <秒数> <出力先>/before.mp4
+${CLAUDE_SKILL_DIR}/scripts/tile-frames.sh <出力先>/before.mp4 <開始秒> <長さ秒> <コマ数/秒> <crop> <列数> <出力先>/sheet.png
 ```
 
 `crop` は ffmpeg の `幅:高さ:x:y` を元の解像度で書く。画面全体なら `full` を渡す。
