@@ -96,4 +96,4 @@ claude-config を `~/Applications/AI/claude-config` に置き、次を実行す�
 
 settings.json は直接書き換えない。`settings/merge.jq` で `settings.json.new` を作り、差分を出す。許可は今の並びのまま、足りないものだけを後ろに足す。フックは claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す。差分を確かめてから、表示された `mv` のコマンドで置き換える。
 
-claude-config を変えたら、`make verify` を通す。`scripts/config-audit.py` が、全体の食い違いと書き方の違反を `NG` の行で出す。
+claude-config を変えたら、`make verify` を通す。`scripts/config-audit.py` が、全体の食い違いと書き方の違反を `NG` の行で出す。`tests/config-audit.sh` は、わざと壊した写しで config-audit が違反を見逃さないかを確かめる。

@@ -7,7 +7,9 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKILL_PATH = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
+SKILL_DIR = "${CLAUDE_SKILL_DIR}"
+SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
+ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 VAR_BEFORE_WIDE = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]")
 HOOK_FILE = re.compile(r"claude-config/(hooks/[A-Za-z0-9_.-]+\.py)")
@@ -50,51 +52,66 @@ def front_matter(path):
 
 
 def allowed_patterns(fields):
-    tools = fields.get("allowed-tools", "")
-    return [match.group(1) for match in re.finditer(r"Bash\(([^)]*)\)", tools)]
+    return re.findall(r"Bash\(([^)]*)\)", fields.get("allowed-tools", ""))
+
+
+def expand_aliases(text):
+    for alias, target in ALIAS.findall(text):
+        text = text.replace(f"{alias}/", f"{SKILL_DIR}/{target}/")
+    return text
+
+
+def covered(prefix, reference, patterns):
+    command = f"{prefix}{SKILL_DIR}/{reference} x"
+    return any(fnmatch.fnmatchcase(command, pattern) for pattern in patterns)
+
+
+def skill_names():
+    return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("skills/*/SKILL.md"))
 
 
 def check_skills():
-    for skill_dir in sorted(os.listdir(os.path.join(ROOT, "skills"))):
+    for skill_dir in skill_names():
         base = os.path.join(ROOT, "skills", skill_dir)
         skill = os.path.join(base, "SKILL.md")
-        if not os.path.isfile(skill):
-            ng(base, 1, "SKILL.md が無い")
-            continue
         fields = front_matter(skill) or {}
         if fields.get("name") != skill_dir:
             ng(skill, 2, f"name がフォルダ名 {skill_dir} と違う: {fields.get('name')}")
         if not fields.get("description", "").endswith("。"):
             ng(skill, 3, "description を「。」で終える")
-        text = read(skill)
         patterns = allowed_patterns(fields)
-        for number, line in enumerate(text.split("\n"), 1):
-            for reference in SKILL_PATH.findall(line):
+        for number, line in enumerate(expand_aliases(read(skill)).split("\n"), 1):
+            if line.startswith("allowed-tools:"):
+                continue
+            for prefix, reference in SKILL_PATH.findall(line):
                 target = os.path.normpath(os.path.join(base, reference))
                 if not os.path.exists(target):
                     ng(skill, number, f"参照先が無い: {reference}")
-                elif (
-                    "scripts/" in reference
-                    and f"{skill_dir}/{reference}" not in ASK_EVERY_TIME
-                    and not covered(reference, patterns)
-                ):
-                    ng(skill, number, f"allowed-tools で許可していない: {reference}")
-        scripts = os.path.join(base, "scripts")
-        if os.path.isdir(scripts):
-            check_unused(skill_dir, scripts)
+                    continue
+                if "scripts/" not in reference:
+                    continue
+                allowed = covered(prefix, reference, patterns)
+                if f"{skill_dir}/{reference}" in ASK_EVERY_TIME:
+                    if allowed:
+                        ng(skill, number, f"外に出す操作が allowed-tools で自動で許可されている: {reference}")
+                elif not allowed:
+                    ng(skill, number, f"allowed-tools で許可していない: {prefix}{reference}")
+        check_unused(skill_dir)
 
 
-def covered(reference, patterns):
-    command = f"${{CLAUDE_SKILL_DIR}}/{reference}"
-    candidates = [f"python3 -I {command} x"] if reference.endswith(".py") else [f"{command} x", f"bash {command} x"]
-    return any(fnmatch.fnmatchcase(candidate, pattern) for pattern in patterns for candidate in candidates)
-
-
-def check_unused(skill_dir, scripts):
-    texts = "\n".join(read(path) for path in tracked("skills") if path.endswith((".md", ".sh", ".py")))
-    for name in sorted(os.listdir(scripts)):
-        if name not in texts.replace(f"skills/{skill_dir}/scripts/{name}", ""):
-            ng(os.path.join(scripts, name), 1, "どこからも使われていない")
+def check_unused(skill_dir):
+    scripts = tracked(f"skills/{skill_dir}/scripts/*")
+    own_skill = expand_aliases(read(os.path.join(ROOT, "skills", skill_dir, "SKILL.md")))
+    other_skills = [expand_aliases(read(path)) for path in tracked("skills/*/SKILL.md")]
+    for path in scripts:
+        name = os.path.basename(path)
+        in_own_skill = f"{SKILL_DIR}/scripts/{name}" in own_skill
+        in_other_skill = any(f"{SKILL_DIR}/../{skill_dir}/scripts/{name}" in text for text in other_skills)
+        in_sibling = any(
+            re.search(rf"[/\"'\s]{re.escape(name)}\b", read(sibling)) for sibling in scripts if sibling != path
+        )
+        if not (in_own_skill or in_other_skill or in_sibling):
+            ng(path, 1, "どこからも使われていない")
 
 
 def check_agents():
@@ -115,12 +132,12 @@ def check_rules():
 
 def check_readme():
     readme = os.path.join(ROOT, "README.md")
-    text = read(readme)
-    entries = [os.path.join("skills", name) for name in os.listdir(os.path.join(ROOT, "skills"))]
+    links = {target.rstrip("/") for target in LINK.findall(read(readme))}
+    entries = [f"skills/{name}/SKILL.md" for name in skill_names()]
     entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "rules/*.md", "hooks/*.py", "scripts/*")]
-    for entry in sorted(entries):
-        if entry not in text:
-            ng(readme, 1, f"README に載っていない: {entry}")
+    for entry in entries:
+        if entry not in links:
+            ng(readme, 1, f"README の表に載っていない: {entry}")
 
 
 def check_links():
@@ -161,16 +178,14 @@ def check_scripts():
 
 
 def check_docs():
-    paths = [path for path in tracked("*.md") if "/templates/" not in path]
-    result = subprocess.run(
-        [sys.executable, "-I", os.path.join(ROOT, "hooks", "post-edit-check-docs.py"), *paths],
-        capture_output=True,
-        text=True,
-    )
-    for line in result.stderr.splitlines():
-        if line.startswith("/"):
-            path, number, message = line.split(":", 2)
-            ng(path, number, message.strip())
+    hook = os.path.join(ROOT, "hooks", "post-edit-check-docs.py")
+    result = subprocess.run([sys.executable, "-I", hook, *tracked("*.md")], capture_output=True, text=True)
+    lines = [line for line in result.stderr.splitlines() if line.startswith("/")]
+    for line in lines:
+        path, number, message = line.split(":", 2)
+        ng(path, number, message.strip())
+    if result.returncode not in (0, 2) or (result.returncode == 2 and not lines):
+        ng(hook, 1, f"文書の検査が落ちた: {result.stderr.strip()[-200:]}")
 
 
 def main():
