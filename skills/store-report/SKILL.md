@@ -24,9 +24,9 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 | 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
 | 表 | `~/Applications/AppStore/reports/<YYYY-MM>.md` |
 
-## 表の中身
+## write-report.py の出力
 
-表の列は、次のとおりである。
+`write-report.py` が書く表の列は、次のとおりである。
 
 | 列 | 出どころ | 要るもの |
 | --- | --- | --- |
