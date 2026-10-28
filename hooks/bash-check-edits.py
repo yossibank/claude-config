@@ -16,7 +16,7 @@ STALE = 24 * 60 * 60
 
 def changed_files(cwd):
     result = subprocess.run(
-        ["git", "-C", cwd, "status", "--porcelain", "--untracked-files=all"],
+        ["git", "-C", cwd, "status", "--porcelain", "-z", "--untracked-files=all"],
         capture_output=True,
         text=True,
     )
@@ -24,9 +24,12 @@ def changed_files(cwd):
         return None, {}
     root = subprocess.run(["git", "-C", cwd, "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
     files = {}
-    for line in result.stdout.splitlines():
-        path = os.path.join(root, line[3:].split(" -> ")[-1].strip('"'))
-        if os.path.isfile(path):
+    entries = iter(result.stdout.split("\0"))
+    for entry in entries:
+        if entry[:1] in ("R", "C"):
+            next(entries, None)
+        path = os.path.join(root, entry[3:])
+        if entry and os.path.isfile(path):
             files[path] = os.path.getmtime(path)
     return root, files
 

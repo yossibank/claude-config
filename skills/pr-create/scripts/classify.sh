@@ -7,8 +7,8 @@ limit=200
 risky='(^|/)(Migration|migrations?/)|[Ss]chema|\.sql$|fixtures/|\.pbxproj$|Package\.(swift|resolved)$|(^|/)hooks/|settings[^/]*\.json$'
 
 changes() {
-    git -C "$repo" diff --numstat --no-renames "$base"
-    git -C "$repo" ls-files --others --exclude-standard | while read -r path; do
+    git -C "$repo" diff --numstat -z --no-renames "$base" | tr '\0' '\n'
+    git -C "$repo" ls-files -z --others --exclude-standard | while IFS= read -r -d '' path; do
         printf '%s\t0\t%s\n' "$(wc -l < "$repo/$path" | tr -d ' ')" "$path"
     done
 }
