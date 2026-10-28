@@ -12,8 +12,8 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | ファイル | 読み込まれる時 | 中身 |
 | --- | --- | --- |
 | [CLAUDE.md](CLAUDE.md) | いつも | 言語、提案と追加、不具合を直す、使う量を抑える、進め方の決まり、報告、ブランチ・コミット・PR |
-| [rules/docs-writing.md](rules/docs-writing.md) | `.md` を読み書きする時 | 文書の書き方、CLAUDE.md の形 |
-| [rules/docs-roles.md](rules/docs-roles.md) | `.md` を読み書きする時 | アプリの文書ごとに書くこと、文書を足す条件 |
+| [rules/docs-writing.md](rules/docs-writing.md) | `.md` を読み書きする時 | 文書の書き方、README と CLAUDE.md の形 |
+| [rules/docs-app.md](rules/docs-app.md) | `docs/`・`spec/` の下と、README・CLAUDE.md を読み書きする時 | アプリの文書ごとに書くこと、文書を足す条件、decisions と画面の仕様の形 |
 | [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェルスクリプトを読み書きする時 | コメントを書かない |
 | [rules/swift-core.md](rules/swift-core.md) | Swift を読み書きする時 | 宣言の置き方、名前を付ける値、改行と空行、ファイルとフォルダ |
 | [rules/swift-ui.md](rules/swift-ui.md) | 画面と部品のフォルダ（`AppFeature`・`AppWidget`・`DesignSystem`・`Features`）の Swift と、`*View.swift` を読み書きする時 | `View` の型の分け方、ビューの並べ方 |
