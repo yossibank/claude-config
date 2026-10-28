@@ -214,3 +214,5 @@ claude-config を変えたら、`make verify` を通す。
 | `scripts/config-audit.py` | 全体の食い違いと、書き方の違反 |
 | `tests/config-audit.sh` | わざと壊した写しで、config-audit が違反を見逃さないか |
 | `tests/hooks.sh` | 作り物のリポジトリで、フックが止めるべき時に止めるか |
+| `tests/pr-scripts.sh` | 偽の gh と作り物のリポジトリで、PR のスクリプトが消してよいものだけを消すか |
+| `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか |

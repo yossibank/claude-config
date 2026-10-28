@@ -83,6 +83,31 @@ printf '#!/bin/bash\necho "x ${name}。"\n' >"$work/ok.sh"
 run "$shell" 2 "shell: 変数の直後の全角で止まる" "{\"tool_input\":{\"file_path\":\"$work/wide.sh\"}}"
 run "$shell" 0 "shell: \${名前} で囲めば通る" "{\"tool_input\":{\"file_path\":\"$work/ok.sh\"}}"
 
+limit="$root/hooks/ctx-limit-read.py"
+python3 -I -c 'print("a" * 40000)' >"$work/big.md"
+run "$limit" 2 "ctx: 大きいファイルを範囲なしで読むと止める" "{\"tool_input\":{\"file_path\":\"$work/big.md\"}}"
+run "$limit" 0 "ctx: limit を付ければ通す" "{\"tool_input\":{\"file_path\":\"$work/big.md\",\"limit\":10}}"
+run "$limit" 0 "ctx: 壊れた入力では止めない" "not json"
+
+clear="$root/hooks/ctx-suggest-clear.py"
+usage='{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":250000}}}'
+echo "$usage" >"$work/long.jsonl"
+out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | python3 -I "$clear")
+[[ $out == *systemMessage* ]] && echo "OK ctx: 20 万トークンを超えたら区切りを勧める" || { echo "NG ctx: 20 万トークンを超えたら区切りを勧める"; fails=$((fails + 1)); }
+out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | python3 -I "$clear")
+[[ -z $out ]] && echo "OK ctx: 同じ段では 2 回勧めない" || { echo "NG ctx: 同じ段では 2 回勧めない"; fails=$((fails + 1)); }
+run "$clear" 0 "ctx: 壊れた入力でも落ちない" "not json" pr
+
+format="$root/hooks/swift-format.py"
+run "$format" 0 "swift: .swiftformat が無ければ何もしない" "{\"tool_input\":{\"file_path\":\"$swift\"}}"
+
+section="$root/scripts/docs-section.sh"
+printf '# t\n\n## a\n\nx\n\n```sh\n## not\n```\n\n## b\n\ny\n' >"$work/section.md"
+[[ $(bash "$section" "$work/section.md" | wc -l | tr -d ' ') == 3 ]] && echo "OK docs-section: コードの中の # を見出しにしない" || { echo "NG docs-section: 見出しの一覧"; fails=$((fails + 1)); }
+[[ $(bash "$section" "$work/section.md" a) == *x* ]] && echo "OK docs-section: 節だけを出す" || { echo "NG docs-section: 節だけを出す"; fails=$((fails + 1)); }
+out=$(bash "$section" "$work/section.md" none)
+[[ $? != 0 && $out == NG* ]] && echo "OK docs-section: 無い見出しは stdout に NG" || { echo "NG docs-section: 無い見出し"; fails=$((fails + 1)); }
+
 docs="$root/hooks/docs-check.py"
 doc_case() {
     local expect=$1 label=$2 name=$3 text=$4
