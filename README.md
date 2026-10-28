@@ -221,6 +221,10 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/hooks.sh` | 作り物のリポジトリで、フックが止めるべき時に止めるか |
 | `tests/config-learn.sh` | フックが止めた回数を、config-learn が数えられるか |
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
-| `tests/pr-create.sh` | 作り物のリポジトリで、PR の重さと本文を決められるか |
+| `tests/pr-create.sh` | 偽の gh と作り物のリポジトリで、作業場所・PR の重さ・本文・出し方を決められるか |
+| `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |
 | `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか |
+| `tests/app-init.sh` | ひな形の印を置き換えられるか |
+| `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか |
+| `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |

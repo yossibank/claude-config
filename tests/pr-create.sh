@@ -36,4 +36,20 @@ echo c >>"$repo/a.md"
 expect "確認の後に変更がある" "body: 確認の後に変えたら止まる" bash "$scripts/write-body.sh" "$repo" origin/main
 git -C "$repo" checkout -q -- a.md
 
+route="$scripts/route-pr.sh"
+echo body >"$work/body.txt"
+fake_gh 'echo "o n ${GH_PERMISSION:-WRITE}"'
+expect "NG 使い方" "route: 引数が足りなければ NG" bash "$route" "$repo" main title
+out=$(bash "$route" "$repo" main title "$work/body.txt")
+check "route: 書き込める時は gh で作る" test "$out" == gh
+out=$(GH_PERMISSION=READ bash "$route" "$repo" main title "$work/body.txt")
+check "route: 読むだけの時は compare の URL を出す" test "$out" == "compare https://github.com/o/n/compare/main...main?expand=1&title=title&body=body%0A"
+
+create="$scripts/create-worktree.sh"
+expect "NG 使い方" "create-worktree: 引数が足りなければ NG" bash "$create" "$repo"
+expect "形ではない" "create-worktree: 形の違うブランチ名は NG" bash "$create" "$repo" Feature/X
+expect OK "create-worktree: ワークツリーを作る" bash "$create" "$repo" feat/new-thing
+check "create-worktree: ~/.claude/worktrees の下に置く" test -d "$HOME/.claude/worktrees/repo/feat-new-thing"
+check "create-worktree: origin の既定のブランチから切る" test "$(git -C "$HOME/.claude/worktrees/repo/feat-new-thing" rev-parse HEAD)" == "$(git -C "$repo" rev-parse origin/main)"
+
 finish
