@@ -12,6 +12,16 @@ def replace(text, tokens):
     return text
 
 
+def summary_of(overview):
+    lines = open(overview, encoding="utf-8").read().split("\n")
+    body = (line.strip() for line in lines[1:])
+    first = next((line for line in body if line and not line.startswith(">")), "")
+    if first.startswith(("<", "#", "|", "-")):
+        return ""
+    sentence, mark, _ = first.partition("。")
+    return sentence + mark
+
+
 def main():
     if len(sys.argv) < 5:
         fail("使い方: replace-placeholders.py <ルート> <パスカル> <小文字> <表示名>")
@@ -33,11 +43,9 @@ def main():
             if renamed != item:
                 os.rename(os.path.join(directory, item), os.path.join(directory, renamed))
 
-    overview = os.path.join(root, "docs", "overview.md")
     readme = os.path.join(root, "README.md")
-    lines = open(overview, encoding="utf-8").read().split("\n")
-    summary = lines[2] if len(lines) > 2 else ""
-    if summary and not summary.startswith("<"):
+    summary = summary_of(os.path.join(root, "docs", "overview.md"))
+    if summary:
         text = open(readme, encoding="utf-8").read()
         open(readme, "w", encoding="utf-8").write(text.replace("<何のアプリかを 1 文で>", summary))
 
