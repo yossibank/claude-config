@@ -32,14 +32,14 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 
 ### 1. プライバシーの申告
 
-`privacy-check.py` は、Swift のコードから理由の申告が要る API を探し、申告と突き合わせる。
+`check-privacy.py` は、Swift のコードから理由の申告が要る API を探し、申告と突き合わせる。
 
 - 突き合わせる先は、そのファイルに一番近い上の階層の `PrivacyInfo.xcprivacy` である
 - 近くに無ければ、アプリの申告と突き合わせる
 - テストのコードは見ない
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/privacy-check.py <アプリのリポジトリ>
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-privacy.py <アプリのリポジトリ>
 ```
 
 `NG` の API は、理由のコードを選んで申告する。コードは、Apple の「Describing use of required reason API」にある。
@@ -48,10 +48,10 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/privacy-check.py <アプリのリポジ�
 
 ### 2. 掲載情報
 
-`store/ja/` の文を書き、`listing-check.py` で字数と抜けを確かめる。上限は、名前とサブタイトルが 30 字、キーワードが 100 字、宣伝文が 170 字、説明が 4000 字である。
+`store/ja/` の文を書き、`check-listing.py` で字数と抜けを確かめる。上限は、名前とサブタイトルが 30 字、キーワードが 100 字、宣伝文が 170 字、説明が 4000 字である。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/listing-check.py <アプリのリポジトリ>/store/ja
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-listing.py <アプリのリポジトリ>/store/ja
 ```
 
 説明の文は、overview の「解決したい不満」と「最初のリリースの機能」から書く。キーワードはカンマで区切り、名前とサブタイトルにある語は入れない。

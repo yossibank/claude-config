@@ -6,12 +6,11 @@ set -euo pipefail
 repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
 pr=$2
 
-info=$(cd "$repo" && gh repo view --json owner,name,viewerPermission \
-    -q '"\(.owner.login) \(.name) \(.viewerPermission)"') || { echo "NG gh repo view が通らない"; exit 1; }
-read -r owner name permission <<< "$info"
+info=$("$(dirname "$0")/../../pr-create/scripts/repo-access.sh" "$repo") || { echo "$info"; exit 1; }
+read -r owner name access <<< "$info"
 
-case $permission in
-    ADMIN | MAINTAIN | WRITE) echo "ACCESS write" ;;
+case $access in
+    write) echo "ACCESS write" ;;
     *) echo "ACCESS read（返信と解決は人がする）" ;;
 esac
 

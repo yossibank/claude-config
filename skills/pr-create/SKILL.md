@@ -24,7 +24,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 
 以下の `<S>` は `${CLAUDE_SKILL_DIR}/scripts` を指す。
 
-1. 作業場所を作る。今のセッションのリポジトリなら、`EnterWorktree` の後に `git branch -m <type>/<summary>` で名前を変える。ほかのリポジトリなら `<S>/new-worktree.sh <リポジトリ> <type>/<summary>` を使い、出たパスで作業する
+1. 作業場所を作る。今のセッションのリポジトリなら、`EnterWorktree` の後に `git branch -m <type>/<summary>` で名前を変える。ほかのリポジトリなら `<S>/create-worktree.sh <リポジトリ> <type>/<summary>` を使い、出たパスで作業する
 2. 変更を commit する
 3. `<S>/classify.sh <作業場所> origin/<base>` で、差分の重さと、通す確認とレビューを決める
 4. 確認を `<S>/check.sh <作業場所> <名前> <コマンド…>` で通す。NG なら直して通し直す
@@ -40,7 +40,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 
 | 重さ | 条件 | 確認 | レビュー |
 | --- | --- | --- | --- |
-| `docs` | `.md` と `docs/` の下だけ | `make verify-docs`。無ければ、変えた `.md` への `post-edit-check-docs.py` | 自分で差分を読む |
+| `docs` | `.md` と `docs/` の下だけ | `make verify-docs`。無ければ、変えた `.md` への `docs-check.py` | 自分で差分を読む |
 | `small` | 200 行まで | `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` に `model: sonnet` を付けて頼む |
 | `large` | 200 行を超える。または移行・スキーマ・fixtures・プロジェクトの設定・フック・settings に触れる | `small` と同じ | `reviewer`（opus）に頼む |
 
@@ -56,7 +56,7 @@ reviewer には、作業場所のパスと base のブランチ名だけを渡�
 | 記録を見る | `check.sh <作業場所> --status` が、NG の確認と、確認の後の変更を `NG` の行で出す |
 | 本文を作る | `body.sh` が `--status` で確かめ、通った確認に `[x]`、未検証に `[ ]` を付ける |
 | 記録を外す | 要らなくなった確認は、`check.sh <作業場所> --drop <名前>` で外す |
-| push と PR | `hooks/pre-bash-check-pr.py` が `--status` を見て、満たさなければ止める |
+| push と PR | `hooks/pr-gate.py` が `--status` を見て、満たさなければ止める |
 
 ### 出し方
 
