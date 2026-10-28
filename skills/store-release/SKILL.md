@@ -1,6 +1,6 @@
 ---
 name: store-release
-description: iOS アプリを App Store に出す前の準備を確かめ、アーカイブを TestFlight に送る。プライバシーの申告、掲載情報、スクリーンショット、版の番号、アーカイブと送信を扱う。人がストアへの公開や TestFlight への配布を頼んだ時に使う。
+description: App Store に出す前の申告・掲載情報・スクリーンショット・版を確かめ、アーカイブを TestFlight に送る。人がストアへの公開や配布を頼んだ時に使う。
 argument-hint: "[<アプリのリポジトリ>]"
 allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/screenshot.sh *)
 ---
@@ -9,13 +9,13 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKI
 
 App Store に出す前に要るものをそろえて確かめ、アーカイブを App Store Connect に送る手順。審査への提出は、人が App Store Connect で行う。
 
-## 置き場所
+## 入力
 
 公開に使うファイルは、アプリのリポジトリの次の場所に置く。無ければ、表のひな形から写して作る。
 
 | ファイル | ひな形 | 中身 |
 | --- | --- | --- |
-| `ios/<App>/PrivacyInfo.xcprivacy` | claude-config の `templates/ios-app/ios/__App__/PrivacyInfo.xcprivacy` | 理由の申告が要る API と、集めるデータ |
+| `ios/<App>/PrivacyInfo.xcprivacy` | claude-config の `templates/ios-app/` にある同じ名前のファイル | 理由の申告が要る API と、集めるデータ |
 | `store/ja/*.txt` | `templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
 | `store/screenshots/` | | 6.9 インチの PNG |
 
@@ -32,13 +32,19 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 
 ### 1. プライバシーの申告
 
-`privacy-check.py` は、Swift のコードから理由の申告が要る API を探し、`PrivacyInfo.xcprivacy` の申告と突き合わせる。突き合わせる先は、そのファイルに一番近い上の階層の申告で、無ければアプリの申告である。テストのコードは見ない。
+`privacy-check.py` は、Swift のコードから理由の申告が要る API を探し、申告と突き合わせる。
+
+- 突き合わせる先は、そのファイルに一番近い上の階層の `PrivacyInfo.xcprivacy` である
+- 近くに無ければ、アプリの申告と突き合わせる
+- テストのコードは見ない
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/privacy-check.py <アプリのリポジトリ>
 ```
 
-`NG` の API は、理由のコードを選んで申告する。コードは、Apple の「Describing use of required reason API」にある。理由が選べない時は、人に聞く。ライブラリは、それぞれが持つ申告を使う。
+`NG` の API は、理由のコードを選んで申告する。コードは、Apple の「Describing use of required reason API」にある。
+
+理由が選べない時は、人に聞く。ライブラリは、それぞれが持つ申告を使う。
 
 ### 2. 掲載情報
 
@@ -79,9 +85,9 @@ ${CLAUDE_SKILL_DIR}/scripts/archive.sh <ワークスペース> <スキーム> <�
 
 全ログは、出力先の `archive.log` にある。失敗した時は、`error:` の行だけを出す。
 
-## 人がすること
+## 報告
 
-次は、App Store Connect で人が行う。終えたら、人に結果を聞く。
+人には、通した確認の結果と、App Store Connect で人がすることを返す。終えたら、人に結果を聞く。
 
 - App のプライバシー（集めるデータの申告）に答える
 - 年齢の区分、価格、配信する国を決める
@@ -90,4 +96,4 @@ ${CLAUDE_SKILL_DIR}/scripts/archive.sh <ワークスペース> <スキーム> <�
 - 審査に出す
 
 > [!WARNING]
-> `EXPORT_DESTINATION=export` と送信（既定）は、配布用の署名と App Store Connect のアカウントが要る。手元では確かめていない。
+> 書き出しと送信には、配布用の署名と App Store Connect のアカウントが要る。手元では確かめていない。

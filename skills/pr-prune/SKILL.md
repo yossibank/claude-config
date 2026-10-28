@@ -9,7 +9,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune.sh *)
 
 マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける手順。マージそのものは、この skill ではしない。
 
-## 使い方
+## 手順
 
 `$ARGUMENTS` には、PR ごとに「リポジトリ・ブランチ・PR 番号」の組を渡す。組ごとに、次を実行する。
 
@@ -17,7 +17,12 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune.sh *)
 ${CLAUDE_SKILL_DIR}/scripts/prune.sh <リポジトリ> <ブランチ> <PR 番号>
 ```
 
-今のセッションが入っているワークツリーは、prune.sh では消せない。先に `git fetch` してから、2 つを確かめる。`git diff --quiet origin/<既定のブランチ> HEAD` で中身が既定のブランチと同じこと、`git status --porcelain` が空であることである。両方を満たしたら、`ExitWorktree` で消す。その後に prune.sh を実行する。
+今のセッションが入っているワークツリーは、prune.sh では消せない。次の順に消してから、prune.sh を実行する。
+
+1. `git fetch` する。
+2. 中身が既定のブランチと同じかを、`git diff --quiet origin/<既定のブランチ> HEAD` で確かめる。
+3. `git status --porcelain` が空かを確かめる。
+4. 両方を満たしたら、`ExitWorktree` で消す。
 
 ## prune.sh が確かめること
 
@@ -28,8 +33,14 @@ prune.sh は、上から順に確かめる。満たさないものがあれば�
 | `gh pr view` で PR を読めて、`MERGED` か | 止まる |
 | 手元が既定のブランチで、未 commit の変更が無いか | 止まる |
 | `pull --ff-only` の後、手元が `origin` と同じか | 止まる |
-| ブランチの中身が既定のブランチに入っているか。PR の head と同じかその祖先か、`origin` の祖先か、差分が入っているかで見る。PR の head が手元に無ければ `pull/<番号>/head` から取ってくる | 止まり、ワークツリーとブランチを残す |
+| ブランチの中身が既定のブランチに入っているか。見方は下の箇条書き | 止まり、ワークツリーとブランチを残す |
 | GitHub 上にブランチが残っているか | 消さずに、`ls-remote` の結果を出す |
+
+ブランチの中身が入っているかは、次のどれかで見る。PR の head が手元に無ければ、`pull/<番号>/head` から取ってくる。
+
+- PR の head と同じか、その祖先である
+- `origin` の既定のブランチの祖先である
+- 差分が、既定のブランチに入っている
 
 最後に、ワークスペースがもう無い DerivedData を消す。対象は、リポジトリとそのワークツリーの下にあったワークスペースである。消した数は `OK` の行に出す。
 

@@ -118,4 +118,16 @@ d=$(copy fail-stderr)
 printf 'echo "だめ" >&2\nexit 1\n' >>"$d/skills/ui-record/scripts/record.sh"
 expect "$d" "失敗を stderr に出している" "NG を付けずに stderr に出して止まる .sh"
 
+d=$(copy skill-sections)
+replace "$d/skills/pr-prune/SKILL.md" '## 報告' '## 結果'
+expect "$d" "## 報告 が無い" "SKILL.md に報告の節が無い"
+
+d=$(copy skill-order)
+printf '\n## 入力\n\nx\n' >>"$d/skills/ctx-handoff/SKILL.md"
+expect "$d" "## 入力 は" "SKILL.md の節の順が違う"
+
+d=$(copy agent-last)
+printf '\n## 補足\n\nx\n' >>"$d/agents/explorer.md"
+expect "$d" "最後の ## は「返す形」" "agents の最後の節が返す形ではない"
+
 exit "$fails"

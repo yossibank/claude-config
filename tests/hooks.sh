@@ -83,6 +83,23 @@ printf '#!/bin/bash\necho "x ${name}。"\n' >"$work/ok.sh"
 run "$shell" 2 "shell: 変数の直後の全角で止まる" "{\"tool_input\":{\"file_path\":\"$work/wide.sh\"}}"
 run "$shell" 0 "shell: \${名前} で囲めば通る" "{\"tool_input\":{\"file_path\":\"$work/ok.sh\"}}"
 
+docs="$root/hooks/post-edit-check-docs.py"
+doc_case() {
+    local expect=$1 label=$2 name=$3 text=$4
+    mkdir -p "$work/docs-case/$(dirname "$name")"
+    printf '%s\n' "$text" >"$work/docs-case/$name"
+    run "$docs" "$expect" "docs: $label" "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}"
+}
+doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
+doc_case 2 "コードも一文の字数に数える" README.md $'# t\n\n`/very/long/path/that/goes/on/and/on/and/on/and/on/x.sh` を走らせて結果を確かめる。'
+doc_case 2 "段落は 3 文まで" README.md $'# t\n\n一つ目。二つ目。三つ目。四つ目。'
+doc_case 2 "表のセルは 2 文まで" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | 一つ。二つ。三つ。 |'
+doc_case 2 "Claude が読む文書に絵文字を使わない" rules/x.md $'# t\n\n✅ 済んだ。'
+doc_case 0 "人が読む文書は表の絵文字を使える" README.md $'# t\n\n✅ 済んだ。'
+doc_case 2 "人が読む文書でも表に無い絵文字は使わない" README.md $'# t\n\n🎉 済んだ。'
+doc_case 2 "README の ## には絵文字を付ける" README.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
+doc_case 2 "## の見出しの絵文字をそろえる" docs/x.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
+
 run "$bash_edits" 0 "bash: 書き換える前の状態を残す" "$(bash_call t1 'sed -i')" pre
 sed -i '' 's/概要/概要です/' "$app/docs/overview.md"
 run "$bash_edits" 2 "bash: Bash で .md を書き換えると知らせて検査する" "$(bash_call t1 'sed -i')" post

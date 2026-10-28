@@ -32,7 +32,7 @@ paths:
 | 文書 | 足す条件 |
 | --- | --- |
 | `docs/decisions/<領域>.md` | 迷った案があり、理由を残さないと同じ議論になる決定が出た時 |
-| `docs/architecture.md` | 構成が共通の形（`~/Applications/AI/claude-config/docs/architecture-ios.md`）から外れた時。外れた点と、アプリだけの事実（ID、署名の状態など）を書く |
+| `docs/architecture.md` | 構成が共通の形（claude-config の `docs/architecture-ios.md`）から外れた時。外れた点と、ID などアプリだけの事実を書く |
 | `docs/data.md` | データベースに表を持った時 |
 | `spec/fixtures/` | 計算の決まりがあり、iOS と Android で同じ結果が要る時 |
 | `spec/export-format.md` | ユーザーのデータを書き出す・読み込む時 |

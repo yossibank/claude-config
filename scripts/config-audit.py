@@ -17,6 +17,8 @@ EXIT_FAIL = re.compile(r"\s*exit [1-9]")
 RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
 HOOK_NAME = re.compile(r"claude-config/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
+SKILL_SECTIONS = ["起動条件", "入力", "手順", "報告", "制約"]
+DESCRIPTION_LIMIT = 120
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
 ASK_EVERY_TIME = {"store-release/scripts/archive.sh"}
 
@@ -55,6 +57,34 @@ def front_matter(path):
     return fields
 
 
+def headings(path):
+    found = []
+    fence = False
+    for number, line in enumerate(read(path).split("\n"), 1):
+        if line.lstrip().startswith(("```", "~~~")):
+            fence = not fence
+        elif not fence and line.startswith("## "):
+            found.append((number, line[3:].strip()))
+    return found
+
+
+def check_skill_sections(skill):
+    found = headings(skill)
+    names = [name for _, name in found]
+    for need in ("手順", "報告"):
+        if need not in names:
+            ng(skill, 1, f"## {need} が無い")
+    fixed = [(number, name) for number, name in found if name in SKILL_SECTIONS]
+    for (_, before), (number, after) in zip(fixed, fixed[1:]):
+        if SKILL_SECTIONS.index(before) >= SKILL_SECTIONS.index(after):
+            ng(skill, number, f"## {after} は {'・'.join(SKILL_SECTIONS)} の順に置く")
+    if "手順" in names and "報告" in names:
+        start, end = names.index("手順"), names.index("報告")
+        for index, (number, name) in enumerate(found):
+            if name not in SKILL_SECTIONS and not start < index < end:
+                ng(skill, number, f"## {name} は、## 手順 と ## 報告 の間に置く")
+
+
 def allowed_patterns(fields):
     return re.findall(r"Bash\(([^)]*)\)", fields.get("allowed-tools", ""))
 
@@ -83,6 +113,9 @@ def check_skills():
             ng(skill, 2, f"name がフォルダ名 {skill_dir} と違う: {fields.get('name')}")
         if not fields.get("description", "").endswith("。"):
             ng(skill, 3, "description を「。」で終える")
+        if len(fields.get("description", "")) > DESCRIPTION_LIMIT:
+            ng(skill, 3, f"description が {DESCRIPTION_LIMIT} 字を超えている。毎回読み込まれるので短くする")
+        check_skill_sections(skill)
         patterns = allowed_patterns(fields)
         for number, line in enumerate(expand_aliases(read(skill)).split("\n"), 1):
             if line.startswith("allowed-tools:"):
@@ -126,6 +159,9 @@ def check_agents():
             ng(path, 2, f"name がファイル名 {name} と違う: {fields.get('name')}")
         if not fields.get("model"):
             ng(path, 1, "model が無い")
+        found = headings(path)
+        if not found or found[-1][1] != "返す形":
+            ng(path, found[-1][0] if found else 1, "agents の最後の ## は「返す形」にする")
 
 
 def check_rules():
