@@ -85,7 +85,7 @@ flowchart LR
 | ファイル | 中身 |
 | --- | --- |
 | [hooks/run.sh](hooks/run.sh) | 名前で呼ばれ、`hooks/<名前>.py` を `python3 -I` で走らせる。無ければ `NG` を出す |
-| [hooks/lib/hook_io.py](hooks/lib/hook_io.py) | 入力の JSON、タイムアウト付きの git、状態ファイルの掃除 |
+| [lib/hook_io.py](lib/hook_io.py) | 入力の JSON、タイムアウト付きの git、状態ファイルの掃除 |
 
 ## 🧰 スキル
 
@@ -175,14 +175,14 @@ flowchart LR
 | 引数 | 足りない時は `[[ $# -ge N ]]` で確かめ、`NG` を出す。`${N:?}` は使わない |
 | 知らせ | 失敗ではない知らせは stderr に出す |
 | フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
-| 共通の処理 | フックは `hooks/lib/`、スクリプトは `scripts/lib/` に置き、`sys.path.insert` で読む |
+| 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` で読む |
 
 | スクリプト | 呼ぶ時 | すること |
 | --- | --- | --- |
 | [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | 食い違いと書き方の違反を探す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
-| [scripts/lib/transcripts.py](scripts/lib/transcripts.py) | collect.py・tokens.py から | 会話の記録の読み方、日本時間、月の形 |
+| [lib/transcripts.py](lib/transcripts.py) | collect.py・tokens.py から | 会話の記録の読み方、日本時間、月の形 |
 | [settings/settings.json](settings/settings.json) | 入れる時 | settings.json に入れるフックと許可 |
 
 ## 🚀 入れ方
