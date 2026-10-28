@@ -9,6 +9,13 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/init.sh *)
 
 `templates/ios-app/` を写して、ビルドとテストが通る新しいアプリのリポジトリを作る手順。構成は `docs/architecture-ios.md` の共通の形に従う。
 
+## 入力
+
+| 入力 | 中身 |
+| --- | --- |
+| 名前 | 英小文字。リポジトリとパッケージの名前になる |
+| 表示名 | ストアに出す名前 |
+
 ## 手順
 
 立ち上げは、次の順に進める。
@@ -24,16 +31,23 @@ ${CLAUDE_SKILL_DIR}/scripts/init.sh <名前> <表示名>
 
 ## init.sh がすること
 
-`init.sh` は、`~/Applications/AppStore/<名前>/` に、次のことをする。置き場所は `APPS_DIR` で変えられる。
+`init.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `APPS_DIR` で変えられる。
 
 - フォルダに `docs/` のほかの中身があれば、`NG` を出して止まる
-- 名前がパッケージのモジュール（`core`・`store` など）と同じ時と、表示名に `"`・`\`・改行がある時は、`NG` を出して止まる
+- 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる
+- 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる
 - ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える
 - `docs/overview.md`・`docs/roadmap.md` が無ければ、`app-plan` のひな形を置く
 - overview の最初の 1 文を、README の説明の文に写す
 - `git init` し、最初の commit を作る
 
-`<App>` は名前の頭を大文字にしたもの（`kakeibot` なら `Kakeibot`）になる。Bundle ID は `com.yossibank.<名前>`、App Group は `group.com.yossibank.<名前>` である。
+置き換えた後の名前は、次の形になる。
+
+| 印 | 値 | `kakeibot` の例 |
+| --- | --- | --- |
+| `<App>` | 名前の頭を大文字にしたもの | `Kakeibot` |
+| Bundle ID | `com.yossibank.<名前>` | `com.yossibank.kakeibot` |
+| App Group | `group.com.yossibank.<名前>` | `group.com.yossibank.kakeibot` |
 
 ## ひな形の中身
 
@@ -41,11 +55,19 @@ ${CLAUDE_SKILL_DIR}/scripts/init.sh <名前> <表示名>
 
 | 置き場所 | 中身 |
 | --- | --- |
-| 直下 | CLAUDE.md、README、Makefile、Brewfile、Mintfile、SwiftFormat と pre-commit の設定 |
-| `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す。全ログは `.build/verify/<名前>.log` に書き、通ったら消す |
-| `scripts/simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す。Makefile の `SIMULATOR` の既定値 |
+| 直下 | CLAUDE.md、README、Makefile、Brewfile、Mintfile |
+| 直下の設定 | `.swiftformat`、`.pre-commit-config.yaml` |
+| `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す。全ログは `.build/verify/` に書く |
+| `scripts/simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す |
 | `ios/` | Xcode プロジェクト、ワークスペース、テストプラン、アプリのターゲット、空のプライバシーの申告 |
 | `ios/Packages/<App>Kit` | Core（`Identifier`）、Store（`AppDatabase` と最初のマイグレーション） |
 | `ios/Packages/<App>App` | AppFeature（`RootView`）、DesignSystem、Features（`HomeView`） |
 
-アプリアイコンは空である。公開の前に `AppIcon` を入れる。
+## 報告
+
+人には、次のものを返す。
+
+- 作ったリポジトリのパス
+- `make verify` の結果
+- GitHub に作ったか。作った時は URL
+- 公開の前に要ること。アプリアイコンは空なので、`AppIcon` を入れる

@@ -178,7 +178,8 @@ flowchart TB
 - 作る時に、DB・今日の日付・ほかの画面を開く関数を引数で受け取る
 - ほかの画面を開く関数は、Core の型だけを使う（`open<画面>(<型>.ID)`）
 - DB は `ValueObservation` で見張る。保存すると、見張っている画面が自動で変わる
-- 見張りは、画面のモデルが共通で持つ `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す。ひな形には無いので、最初に見張る画面を作る時に kakeibot の `Features/Shared/Model/ScreenModel.swift` を写す
+- 見張りは、画面のモデルが共通で持つ `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す
+- `observe` はひな形に無い。最初に見張る画面を作る時に、kakeibot から写す。元は `Features/Shared/Model/ScreenModel.swift` である
 - 見張りと最初の読み込みは `run()` にまとめる。1 回だけ読む値を先に読み、見張りは並べて動かす
 - 計算は Core に任せる。書き込みは DB に書くだけ
 - 設定の一覧は項目の enum を持ち、移る先は AppFeature が決める
@@ -201,7 +202,10 @@ flowchart TB
 | ほかのプロセス（ウィジェット）の書き込みを、見張りに知らせて読み直させる | | する | する |
 | 通知を予約し直す（通知を持つ時） | する | する | する |
 
-裏に回ると `AppDatabase.suspend()` で DB を止め、戻ると `AppDatabase.resume()` で再開する。書き込みの最中に裏に回っても `0xdead10cc` で終了させないためである。
+裏に回ると `AppDatabase.suspend()` で DB を止める。戻ると `AppDatabase.resume()` で再開する。
+
+> [!IMPORTANT]
+> 書き込みの最中に裏に回っても、`0xdead10cc` で終了させないための仕組みである。
 
 ### 外からの入口
 
@@ -209,7 +213,14 @@ flowchart TB
 
 ## ウィジェット
 
-ウィジェットは、AppWidget が App Group の DB を読むだけで開く。計算は、アプリの画面と同じ Core のものを使う。表の形が最新でなければ読まない。更新は AppModel が見張りで起こし、日付が変わる時はタイムラインで切り替える。ウィジェットから書く機能を持つ時は、その時だけ AppIntent が書き込み用に開く。
+ウィジェットは、AppWidget が App Group の DB を読むだけで開く。
+
+| 場面 | 動き |
+| --- | --- |
+| 計算 | アプリの画面と同じ Core のものを使う |
+| 表の形が古い | 読まない |
+| 更新 | AppModel が見張りで起こす。日付が変わる時はタイムラインで切り替える |
+| ウィジェットから書く | その機能を持つ時だけ、AppIntent が書き込み用に開く |
 
 ## テスト
 
@@ -220,7 +231,7 @@ flowchart TB
 | `make verify` | Kit の `swift test` と iOS のビルドを `scripts/verify.sh` を通して走らせる |
 | `make test` | テストプランを iOS シミュレーターで走らせる |
 | `make test-build` | 走らせずにコンパイルだけする |
-| `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` の画面を claude-config の ui-snapshot で描き、`.build/snapshots/` に出す |
+| `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` を ui-snapshot で描く。出力は `.build/snapshots/` |
 
 CI は置かず、PR ごとに手元で回す。`make` のビルドとテストは、xcbeautify があれば出力を通して整える。テストの対象と方法は、次のとおりである。
 

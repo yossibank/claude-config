@@ -4,13 +4,18 @@
 
 ## 作業の進め方
 
-変更したら `make verify` を通す。出力は成否と失敗の箇所だけで、失敗した時は全ログのパスが最後の行にある。テストは CI で走らせず、PR を作る前に手元で `make test` を 1 回通す。文書だけの PR では走らせない。
+作業の確認は、次のコマンドで行う。
+
+| コマンド | 走らせる時 | 出力 |
+| --- | --- | --- |
+| `make verify` | 変更したら毎回 | 成否と失敗の箇所。失敗した時は、全ログのパスが最後の行にある |
+| `make test` | PR を作る前に 1 回。文書だけの PR では走らせない | テストの結果。CI では走らせない |
 
 見た目は、claude-config の `ui-snapshot` のスキルで描いて確かめる。描く場合は `.claude/snapshots/<セット>/` に置き、`make snapshot SNAPSHOT=<セット>` で描く。
 
 ## 構成
 
-構成は、共通の形（`~/Applications/AI/claude-config/docs/architecture-ios.md`）に従う。外れたら `docs/architecture.md` を足し、外れた点だけを書く。
+構成は、claude-config の `docs/architecture-ios.md` の共通の形に従う。外れたら `docs/architecture.md` を足し、外れた点だけを書く。
 
 ## 文書
 
