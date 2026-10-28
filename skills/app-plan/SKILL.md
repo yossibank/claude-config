@@ -21,7 +21,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 3. 不満を集める。選んだ競合ごとに `reviews.py` で星 2 以下のレビューを出し、同じ不満をまとめて数える。
 4. 不満の表を作る。多い順に並べ、作る人 1 人で応えられるものに、対応する機能を付ける。
 5. 最初のリリースの機能を決める。不満の上位に応える機能だけにし、ほかは「この先の段階」に回す。
-6. `templates/` の 2 つを写して埋め、下書きを書く。
+6. `${CLAUDE_SKILL_DIR}/templates/` の 2 つを写して埋め、下書きを書く。
 7. 下書きと、人が決めることを人に見せる。
 
 ```sh
@@ -37,8 +37,8 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/reviews.py <アプリの ID> [星の上�
 
 | ファイル | ひな形 | 大きさ |
 | --- | --- | --- |
-| `docs/overview.md` | `templates/overview.md` | 5KB まで |
-| `docs/roadmap.md` | `templates/roadmap.md` | 3KB まで |
+| `docs/overview.md` | `${CLAUDE_SKILL_DIR}/templates/overview.md` | 5KB まで |
+| `docs/roadmap.md` | `${CLAUDE_SKILL_DIR}/templates/roadmap.md` | 3KB まで |
 
 ## 最初のリリースの決め方
 
