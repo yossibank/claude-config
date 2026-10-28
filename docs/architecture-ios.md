@@ -23,7 +23,8 @@
 ├── docs/
 ├── ios/
 ├── scripts/
-│   └── verify.sh            コマンドの全ログをファイルに書き、成否と失敗の行だけを出す
+│   ├── simulator.sh         使える先頭の iPhone のシミュレーターの UDID を出す
+│   └── verify.sh            確認の名前とコマンドを受け、成否と失敗の行だけを出す
 ├── spec/                    両 OS で同じ結果が要る計算の fixtures と、書き出しの形
 ├── .claude/
 │   ├── rules/               このアプリだけの決まり
@@ -219,6 +220,7 @@ flowchart TB
 | `make verify` | Kit の `swift test` と iOS のビルドを `scripts/verify.sh` を通して走らせる |
 | `make test` | テストプランを iOS シミュレーターで走らせる |
 | `make test-build` | 走らせずにコンパイルだけする |
+| `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` の画面を claude-config の ui-snapshot で描き、`.build/snapshots/` に出す |
 
 CI は置かず、PR ごとに手元で回す。`make` のビルドとテストは、xcbeautify があれば出力を通して整える。テストの対象と方法は、次のとおりである。
 

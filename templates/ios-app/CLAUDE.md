@@ -4,9 +4,9 @@
 
 ## 作業の進め方
 
-変更したら `make verify` を通す。出力は成否と失敗の箇所だけで、全ログのパスは最後の行にある。テストは CI で走らせず、PR を作る前に手元で `make test` を 1 回通す。文書だけの PR では走らせない。
+変更したら `make verify` を通す。出力は成否と失敗の箇所だけで、失敗した時は全ログのパスが最後の行にある。テストは CI で走らせず、PR を作る前に手元で `make test` を 1 回通す。文書だけの PR では走らせない。
 
-見た目は、claude-config の `ui-snapshot` のスキルで描いて確かめる。描く場合は `.claude/snapshots/` に置く。
+見た目は、claude-config の `ui-snapshot` のスキルで描いて確かめる。描く場合は `.claude/snapshots/<セット>/` に置き、`make snapshot SNAPSHOT=<セット>` で描く。
 
 ## 構成
 

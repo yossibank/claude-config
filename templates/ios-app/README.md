@@ -26,5 +26,6 @@ make setup
 | `make open` | Xcode でワークスペースを開く |
 | `make verify` | Kit のテストと iOS のビルドを通す |
 | `make test` | テストプランをシミュレーターで走らせる |
+| `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` の画面を PNG に描く |
 | `make format` | SwiftFormat で整える |
 | `make licenses` | 設定アプリに出すライセンスの一覧を作り直す |

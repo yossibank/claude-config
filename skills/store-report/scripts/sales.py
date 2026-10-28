@@ -4,6 +4,7 @@ import gzip
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -21,6 +22,8 @@ if missing:
     sys.exit(f"NG 環境変数が無い: {', '.join(missing)}")
 
 month = sys.argv[1]
+if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
+    sys.exit(f"NG 月は YYYY-MM で書く: {month}")
 
 
 def b64(data):

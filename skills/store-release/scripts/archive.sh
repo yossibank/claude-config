@@ -42,7 +42,7 @@ xcodebuild archive \
     -configuration Release \
     -destination "generic/platform=iOS" \
     -archivePath "$archive" \
-    -allowProvisioningUpdates >|"$log" 2>&1 || { { grep -E "error:" "$log" || true; } | sort -u | head -20; echo "NG アーカイブ（全ログ: $log）"; exit 1; }
+    -allowProvisioningUpdates >|"$log" 2>&1 || { { grep -E "error:" "$log" || true; } | sort -u | head -20; echo "NG アーカイブ（全ログ: ${log}）"; exit 1; }
 echo "OK アーカイブ $archive"
 
 [ "${ARCHIVE_ONLY:-0}" = 1 ] && exit 0
@@ -51,5 +51,5 @@ xcodebuild -exportArchive \
     -archivePath "$archive" \
     -exportPath "$out/export" \
     -exportOptionsPlist "$options" \
-    -allowProvisioningUpdates >>"$log" 2>&1 || { { grep -E "error:" "$log" || true; } | sort -u | head -20; echo "NG 書き出し・送信（全ログ: $log）"; exit 1; }
-echo "OK $destination（全ログ: $log）"
+    -allowProvisioningUpdates >>"$log" 2>&1 || { { grep -E "error:" "$log" || true; } | sort -u | head -20; echo "NG 書き出し・送信（全ログ: ${log}）"; exit 1; }
+echo "OK ${destination}（全ログ: ${log}）"

@@ -42,7 +42,8 @@ ${CLAUDE_SKILL_DIR}/scripts/init.sh <名前> <表示名>
 | 置き場所 | 中身 |
 | --- | --- |
 | 直下 | CLAUDE.md、README、Makefile、Brewfile、Mintfile、SwiftFormat と pre-commit の設定 |
-| `scripts/verify.sh` | コマンドの全ログをファイルに書き、成否と失敗の行だけを出す |
+| `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す。全ログは `.build/verify/<名前>.log` に書き、通ったら消す |
+| `scripts/simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す。Makefile の `SIMULATOR` の既定値 |
 | `ios/` | Xcode プロジェクト、ワークスペース、テストプラン、アプリのターゲット、空のプライバシーの申告 |
 | `ios/Packages/<App>Kit` | Core（`Identifier`）、Store（`AppDatabase` と最初のマイグレーション） |
 | `ios/Packages/<App>App` | AppFeature（`RootView`）、DesignSystem、Features（`HomeView`） |

@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 import sys
 import urllib.request
 
@@ -7,9 +8,7 @@ if len(sys.argv) < 3 or not sys.argv[1].isdigit():
     sys.exit("使い方: ratings.py <アプリの ID> <YYYY-MM>")
 
 app, month = sys.argv[1], sys.argv[2]
-try:
-    datetime.datetime.strptime(month, "%Y-%m")
-except ValueError:
+if not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
     sys.exit(f"NG 月は YYYY-MM で書く: {month}")
 
 

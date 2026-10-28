@@ -20,11 +20,31 @@ if [ -d "$root" ]; then
     [ -z "$others" ] || { echo "NG docs/ のほかに中身がある: $root"; exit 1; }
 fi
 
+[ -d "$root" ] && fresh="" || fresh=1
+copied=()
+
+cleanup() {
+    if [ -n "$fresh" ]; then
+        rm -rf "$root"
+    else
+        find "$root" -mindepth 1 -maxdepth 1 ! -name docs -exec rm -rf {} +
+        for doc in "${copied[@]+"${copied[@]}"}"; do
+            rm -f "$doc"
+        done
+    fi
+    echo "NG 途中で止まったので、作りかけを消した: $root"
+}
+
+trap cleanup ERR
+
 mkdir -p "$root/docs"
 rsync -a --exclude .DS_Store "$config/templates/ios-app/" "$root/"
 
 for doc in overview roadmap; do
-    [ -f "$root/docs/$doc.md" ] || cp "$config/skills/app-plan/templates/$doc.md" "$root/docs/$doc.md"
+    if [ ! -f "$root/docs/$doc.md" ]; then
+        cp "$config/skills/app-plan/templates/$doc.md" "$root/docs/$doc.md"
+        copied+=("$root/docs/$doc.md")
+    fi
 done
 
 python3 -I "$skill/scripts/rename.py" "$root" "$pascal" "$name" "$display"
@@ -33,4 +53,5 @@ git -C "$root" init -q -b main
 git -C "$root" add -A
 git -C "$root" commit -q -m "chore: start $name from the ios-app template"
 
+trap - ERR
 echo "OK $root"
