@@ -74,9 +74,9 @@ flowchart LR
 | [ctx-limit-read](hooks/ctx-limit-read.py) | Read の前 | 30KB を超えるテキストを、範囲なしで読む時 | `limit` を付けて読む |
 | [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 応答の終わり、PR の作成の後 | 文脈が 20 万トークンを超える時と、PR を作った時 | |
 | [docs-check](hooks/docs-check.py) | Edit の後 | `.md` が `rules/docs-writing.md` に合わない時 | メモリのファイルは見ない |
-| [pr-gate](hooks/pr-gate.py) | Bash の前 | `check.sh` の確認の前に、push や `gh pr create` をする時 | `CLAUDE_PR_GATE=off` |
+| [pr-gate](hooks/pr-gate.py) | Bash の前 | `check.sh` の確認の前に、push や `gh pr create` をする時 | `CLAUDE_HOOKS_OFF=pr-gate` |
 | [rules-detect-bash-edits](hooks/rules-detect-bash-edits.py) | Bash の前と後 | Bash でファイルを書き換えた時。git・make などは数えない | |
-| [rules-require-read](hooks/rules-require-read.py) | Read・Edit の前 | 当たる rules を、この会話でまだ読まずに編集する時 | `CLAUDE_RULES_GUARD=off` |
+| [rules-require-read](hooks/rules-require-read.py) | Read・Edit の前 | 当たる rules を、この会話でまだ読まずに編集する時 | `CLAUDE_HOOKS_OFF=rules-require-read` |
 | [shell-check](hooks/shell-check.py) | Edit の後 | `.sh` の `bash -n` と、変数の直後の全角 | |
 | [swift-format](hooks/swift-format.py) | Edit の後 | `.swift` を、Mintfile の swiftformat で整える | `.swiftformat` が無ければ動かない |
 
@@ -156,8 +156,7 @@ flowchart LR
 
 | 変数 | 使う所 | 中身 |
 | --- | --- | --- |
-| `CLAUDE_RULES_GUARD=off` | rules-require-read | rules を読まずに編集しても止めない |
-| `CLAUDE_PR_GATE=off` | pr-gate | 確認の前の push と PR を止めない |
+| `CLAUDE_HOOKS_OFF` | hooks/run.sh | 空白で区切って並べた名前のフックを動かさない。例は `CLAUDE_HOOKS_OFF="pr-gate rules-require-read"` |
 | `CLAUDE_PROJECTS` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
 | `DEVICE` | ui-snapshot | 描くシミュレーターの UDID |

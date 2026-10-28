@@ -51,8 +51,6 @@ def problems(repo):
 
 
 def main():
-    if os.environ.get("CLAUDE_PR_GATE") == "off":
-        return
     data = read_payload()
     if data is None:
         return

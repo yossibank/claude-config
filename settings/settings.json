@@ -86,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-suggest-clear 2>/dev/null || true"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-suggest-clear"
           }
         ]
       }

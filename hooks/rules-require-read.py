@@ -149,8 +149,6 @@ def check_edit(data, path):
 
 
 def main():
-    if os.environ.get("CLAUDE_RULES_GUARD") == "off":
-        return
     data = read_payload()
     if data is None:
         return

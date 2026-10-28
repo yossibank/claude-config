@@ -6,10 +6,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 export TMPDIR="$work/state/"
 mkdir -p "$TMPDIR"
-guard="$root/hooks/rules-require-read.py"
-bash_edits="$root/hooks/rules-detect-bash-edits.py"
-shell="$root/hooks/shell-check.py"
-gate="$root/hooks/pr-gate.py"
+hooks="$root/hooks/run.sh"
 check="$root/skills/pr-create/scripts/check.sh"
 rules="$root/rules"
 fails=0
@@ -27,7 +24,7 @@ swift="$app/ios/Features/HomeView.swift"
 run() {
     local hook=$1 expect=$2 label=$3 payload=$4 out status
     shift 4
-    out=$(echo "$payload" | python3 -I "$hook" "$@" 2>&1)
+    out=$(echo "$payload" | bash "$hooks" "$hook" "$@" 2>&1)
     status=$?
     if [[ $status == "$expect" ]]; then
         echo "OK ${label}"
@@ -43,7 +40,7 @@ edit() {
 }
 
 read_rule() {
-    echo "{\"session_id\":\"$1\",\"agent_id\":\"$2\",\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"$rules/$3\"}}" | python3 -I "$guard"
+    echo "{\"session_id\":\"$1\",\"agent_id\":\"$2\",\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"$rules/$3\"}}" | bash "$hooks" rules-require-read
 }
 
 bash_call() {
@@ -52,54 +49,51 @@ bash_call() {
 
 log="$work/t.jsonl"
 : >"$log"
-run "$guard" 2 "rules: 読まずに Swift を編集すると止まる" "$(edit s1 main "$log" "$swift")"
+run rules-require-read 2 "rules: 読まずに Swift を編集すると止まる" "$(edit s1 main "$log" "$swift")"
 for name in code-comments.md swift-core.md swift-ui.md; do read_rule s1 main "$name"; done
-run "$guard" 0 "rules: Read した後は通る" "$(edit s1 main "$log" "$swift")"
+run rules-require-read 0 "rules: Read した後は通る" "$(edit s1 main "$log" "$swift")"
 sleep 1
 echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}" >>"$log"
 sleep 1
-run "$guard" 2 "rules: 読んだ後に圧縮があれば、また止まる" "$(edit s1 main "$log" "$swift")"
+run rules-require-read 2 "rules: 読んだ後に圧縮があれば、また止まる" "$(edit s1 main "$log" "$swift")"
 auto="$HOME/.claude/rules"
 echo "{\"type\":\"attachment\",\"attachment\":{\"type\":\"instructions\",\"files\":[{\"path\":\"$auto/code-comments.md\"},{\"path\":\"$auto/swift-core.md\"},{\"path\":\"$auto/swift-ui.md\"}]}}" >>"$log"
-run "$guard" 0 "rules: 圧縮の後に自動で読み込まれた印があれば通る" "$(edit s1 main "$log" "$swift")"
-run "$guard" 0 "rules: 当たる rules が無いファイルは止めない" "$(edit s1 main "$log" "$app/data.json")"
+run rules-require-read 0 "rules: 圧縮の後に自動で読み込まれた印があれば通る" "$(edit s1 main "$log" "$swift")"
+run rules-require-read 0 "rules: 当たる rules が無いファイルは止めない" "$(edit s1 main "$log" "$app/data.json")"
 echo '# メモ' >"$work/memo.md"
-run "$guard" 0 "rules: git の外のファイル（メモリ・プラン）は止めない" "$(edit s1 main "$log" "$work/memo.md")"
+run rules-require-read 0 "rules: git の外のファイル（メモリ・プラン）は止めない" "$(edit s1 main "$log" "$work/memo.md")"
 : >"$work/empty.jsonl"
 for name in code-comments.md swift-core.md swift-ui.md; do read_rule s3 main "$name" & done
 wait
-run "$guard" 0 "rules: 同時に Read しても取りこぼさない" "$(edit s3 main "$work/empty.jsonl" "$swift")"
+run rules-require-read 0 "rules: 同時に Read しても取りこぼさない" "$(edit s3 main "$work/empty.jsonl" "$swift")"
 fresh="$work/t2.jsonl"
 : >"$fresh"
 for name in docs-writing.md docs-app.md; do read_rule s2 main "$name"; done
-run "$guard" 2 "rules: サブエージェントは親の記録を使わない" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
+run rules-require-read 2 "rules: サブエージェントは親の記録を使わない" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
 for name in docs-writing.md docs-app.md; do read_rule s2 a1 "$name"; done
-run "$guard" 0 "rules: サブエージェントが自分で読めば通る" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
-CLAUDE_RULES_GUARD=off run "$guard" 0 "rules: CLAUDE_RULES_GUARD=off で止めない" "$(edit s9 main "$fresh" "$swift")"
-run "$guard" 0 "rules: 壊れた入力では止めない" "not json"
+run rules-require-read 0 "rules: サブエージェントが自分で読めば通る" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
+CLAUDE_HOOKS_OFF="pr-gate rules-require-read" run rules-require-read 0 "rules: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(edit s9 main "$fresh" "$swift")"
+run rules-require-read 0 "rules: 壊れた入力では止めない" "not json"
 
 printf '#!/bin/bash\necho "x $name%s"\n' '。' >"$work/wide.sh"
 printf '#!/bin/bash\necho "x ${name}。"\n' >"$work/ok.sh"
-run "$shell" 2 "shell: 変数の直後の全角で止まる" "{\"tool_input\":{\"file_path\":\"$work/wide.sh\"}}"
-run "$shell" 0 "shell: \${名前} で囲めば通る" "{\"tool_input\":{\"file_path\":\"$work/ok.sh\"}}"
+run shell-check 2 "shell: 変数の直後の全角で止まる" "{\"tool_input\":{\"file_path\":\"$work/wide.sh\"}}"
+run shell-check 0 "shell: \${名前} で囲めば通る" "{\"tool_input\":{\"file_path\":\"$work/ok.sh\"}}"
 
-limit="$root/hooks/ctx-limit-read.py"
 python3 -I -c 'print("a" * 40000)' >"$work/big.md"
-run "$limit" 2 "ctx: 大きいファイルを範囲なしで読むと止める" "{\"tool_input\":{\"file_path\":\"$work/big.md\"}}"
-run "$limit" 0 "ctx: limit を付ければ通す" "{\"tool_input\":{\"file_path\":\"$work/big.md\",\"limit\":10}}"
-run "$limit" 0 "ctx: 壊れた入力では止めない" "not json"
+run ctx-limit-read 2 "ctx: 大きいファイルを範囲なしで読むと止める" "{\"tool_input\":{\"file_path\":\"$work/big.md\"}}"
+run ctx-limit-read 0 "ctx: limit を付ければ通す" "{\"tool_input\":{\"file_path\":\"$work/big.md\",\"limit\":10}}"
+run ctx-limit-read 0 "ctx: 壊れた入力では止めない" "not json"
 
-clear="$root/hooks/ctx-suggest-clear.py"
 usage='{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":250000}}}'
 echo "$usage" >"$work/long.jsonl"
-out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | python3 -I "$clear")
+out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | bash "$hooks" ctx-suggest-clear)
 [[ $out == *systemMessage* ]] && echo "OK ctx: 20 万トークンを超えたら区切りを勧める" || { echo "NG ctx: 20 万トークンを超えたら区切りを勧める"; fails=$((fails + 1)); }
-out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | python3 -I "$clear")
+out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | bash "$hooks" ctx-suggest-clear)
 [[ -z $out ]] && echo "OK ctx: 同じ段では 2 回勧めない" || { echo "NG ctx: 同じ段では 2 回勧めない"; fails=$((fails + 1)); }
-run "$clear" 0 "ctx: 壊れた入力でも落ちない" "not json" pr
+run ctx-suggest-clear 0 "ctx: 壊れた入力でも落ちない" "not json" pr
 
-format="$root/hooks/swift-format.py"
-run "$format" 0 "swift: .swiftformat が無ければ何もしない" "{\"tool_input\":{\"file_path\":\"$swift\"}}"
+run swift-format 0 "swift: .swiftformat が無ければ何もしない" "{\"tool_input\":{\"file_path\":\"$swift\"}}"
 
 section="$root/scripts/docs-section.sh"
 printf '# t\n\n## a\n\nx\n\n```sh\n## not\n```\n\n## b\n\ny\n' >"$work/section.md"
@@ -108,12 +102,11 @@ printf '# t\n\n## a\n\nx\n\n```sh\n## not\n```\n\n## b\n\ny\n' >"$work/section.m
 out=$(bash "$section" "$work/section.md" none)
 [[ $? != 0 && $out == NG* ]] && echo "OK docs-section: 無い見出しは stdout に NG" || { echo "NG docs-section: 無い見出し"; fails=$((fails + 1)); }
 
-docs="$root/hooks/docs-check.py"
 doc_case() {
     local expect=$1 label=$2 name=$3 text=$4
     mkdir -p "$work/docs-case/$(dirname "$name")"
     printf '%s\n' "$text" >"$work/docs-case/$name"
-    run "$docs" "$expect" "docs: $label" "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}"
+    run docs-check "$expect" "docs: $label" "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}"
 }
 doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
 doc_case 2 "コードも一文の字数に数える" README.md $'# t\n\n`/very/long/path/that/goes/on/and/on/and/on/and/on/x.sh` を走らせて結果を確かめる。'
@@ -125,57 +118,58 @@ doc_case 2 "人が読む文書でも表に無い絵文字は使わない" README
 doc_case 2 "README の ## には絵文字を付ける" README.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 doc_case 2 "## の見出しの絵文字をそろえる" docs/x.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 
-run "$bash_edits" 0 "bash: 書き換える前の状態を残す" "$(bash_call t1 'sed -i')" pre
+run rules-detect-bash-edits 0 "bash: 書き換える前の状態を残す" "$(bash_call t1 'sed -i')" pre
 sed -i '' 's/概要/概要です/' "$app/docs/overview.md"
-run "$bash_edits" 2 "bash: Bash で .md を書き換えると知らせて検査する" "$(bash_call t1 'sed -i')" post
-run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t2 'git checkout')" pre
+run rules-detect-bash-edits 2 "bash: Bash で .md を書き換えると知らせて検査する" "$(bash_call t1 'sed -i')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t2 'git checkout')" pre
 git -C "$app" checkout -q -- docs/overview.md
-run "$bash_edits" 0 "bash: git での変更は知らせない" "$(bash_call t2 'git checkout')" post
-run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t3 'ls')" pre
-run "$bash_edits" 0 "bash: 何も変えなければ知らせない" "$(bash_call t3 'ls')" post
-run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t4 'cd app && git checkout')" pre
+run rules-detect-bash-edits 0 "bash: git での変更は知らせない" "$(bash_call t2 'git checkout')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t3 'ls')" pre
+run rules-detect-bash-edits 0 "bash: 何も変えなければ知らせない" "$(bash_call t3 'ls')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t4 'cd app && git checkout')" pre
 echo 'x' >>"$app/docs/overview.md"
-run "$bash_edits" 0 "bash: cd と git だけのコマンドは知らせない" "$(bash_call t4 'cd app && git checkout')" post
-run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t5 'sed -i x && git add')" pre
+run rules-detect-bash-edits 0 "bash: cd と git だけのコマンドは知らせない" "$(bash_call t4 'cd app && git checkout')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t5 'sed -i x && git add')" pre
 echo 'y' >>"$app/docs/overview.md"
-run "$bash_edits" 2 "bash: git が混ざっても書き換えは知らせる" "$(bash_call t5 'sed -i x && git add')" post
+run rules-detect-bash-edits 2 "bash: git が混ざっても書き換えは知らせる" "$(bash_call t5 'sed -i x && git add')" post
 echo '# 日本語' >"$app/docs/日本語.md"
-run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t6 'sed -i')" pre
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t6 'sed -i')" pre
 echo 'z' >>"$app/docs/日本語.md"
-run "$bash_edits" 2 "bash: 日本語の名前のファイルの書き換えも知らせる" "$(bash_call t6 'sed -i')" post
+run rules-detect-bash-edits 2 "bash: 日本語の名前のファイルの書き換えも知らせる" "$(bash_call t6 'sed -i')" post
 rm -f "$app/docs/日本語.md"
 
 push() {
     echo "{\"cwd\":\"$1\",\"tool_input\":{\"command\":\"$2\"}}"
 }
 
-run "$gate" 2 "pr: 確認の記録が無いと push を止める" "$(push "$app" 'git push -u origin feat/x')"
+run pr-gate 2 "pr: 確認の記録が無いと push を止める" "$(push "$app" 'git push -u origin feat/x')"
 "$check" "$app" "true" true >/dev/null
-run "$gate" 0 "pr: 確認を通せば push を通す" "$(push "$app" 'git push -u origin feat/x')"
-run "$gate" 0 "pr: 確認を通せば gh pr create を通す" "$(push "$app" 'gh pr create --title x')"
+run pr-gate 0 "pr: 確認を通せば push を通す" "$(push "$app" 'git push -u origin feat/x')"
+run pr-gate 0 "pr: 確認を通せば gh pr create を通す" "$(push "$app" 'gh pr create --title x')"
 echo 'struct B {}' >>"$swift"
-run "$gate" 2 "pr: 確認の後に変えると止める" "$(push "$app" 'git push')"
+run pr-gate 2 "pr: 確認の後に変えると止める" "$(push "$app" 'git push')"
 "$check" "$app" "true" true >/dev/null
 "$check" "$app" "false" false >/dev/null
-run "$gate" 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')"
+run pr-gate 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')"
 "$check" "$app" --drop "false" >/dev/null
-run "$gate" 0 "pr: --drop で外せば通す" "$(push "$app" 'git push')"
+run pr-gate 0 "pr: --drop で外せば通す" "$(push "$app" 'git push')"
 echo 'struct C {}' >>"$swift"
-run "$gate" 0 "pr: タグの push は止めない" "$(push "$app" 'git push --tags')"
-run "$gate" 0 "pr: ブランチの削除は止めない" "$(push "$app" 'git push origin --delete feat/x')"
-run "$gate" 0 "pr: : で始まる refspec の削除は止めない" "$(push "$app" 'git push origin :feat/x')"
-run "$gate" 2 "pr: draft の PR（gh pr create -d）も止める" "$(push "$app" 'gh pr create -d --title x')"
-run "$gate" 2 "pr: 別のコマンドの -d に引きずられない" "$(push "$app" 'git branch -d old && git push')"
-run "$gate" 2 "pr: git -C で別のリポジトリを指しても、そのリポジトリを見る" "$(push "$work" "git -C $app push")"
-run "$gate" 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git status')"
-run "$gate" 2 "pr: cd した先のリポジトリを見る" "$(push "$work" "cd $app && git push")"
-CLAUDE_PR_GATE=off run "$gate" 0 "pr: CLAUDE_PR_GATE=off で止めない" "$(push "$app" 'git push')"
+run pr-gate 0 "pr: タグの push は止めない" "$(push "$app" 'git push --tags')"
+run pr-gate 0 "pr: ブランチの削除は止めない" "$(push "$app" 'git push origin --delete feat/x')"
+run pr-gate 0 "pr: : で始まる refspec の削除は止めない" "$(push "$app" 'git push origin :feat/x')"
+run pr-gate 2 "pr: draft の PR（gh pr create -d）も止める" "$(push "$app" 'gh pr create -d --title x')"
+run pr-gate 2 "pr: 別のコマンドの -d に引きずられない" "$(push "$app" 'git branch -d old && git push')"
+run pr-gate 2 "pr: git -C で別のリポジトリを指しても、そのリポジトリを見る" "$(push "$work" "git -C $app push")"
+run pr-gate 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git status')"
+run pr-gate 2 "pr: cd した先のリポジトリを見る" "$(push "$work" "cd $app && git push")"
+CLAUDE_HOOKS_OFF="rules-require-read pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(push "$app" 'git push')"
+CLAUDE_HOOKS_OFF="pr-gate-x" run pr-gate 2 "pr: CLAUDE_HOOKS_OFF の名前は全体で比べる" "$(push "$app" 'git push')"
 
-blocked_rules=$(edit s9 main "$work/empty.jsonl" "$swift" | python3 -I "$guard" 2>&1)
-bash_call t9 'sed -i x' | python3 -I "$bash_edits" pre
+blocked_rules=$(edit s9 main "$work/empty.jsonl" "$swift" | bash "$hooks" rules-require-read 2>&1)
+bash_call t9 'sed -i x' | bash "$hooks" rules-detect-bash-edits pre
 echo '# 変更' >>"$app/docs/overview.md"
-blocked_bash=$(bash_call t9 'sed -i x' | python3 -I "$bash_edits" post 2>&1)
-blocked_pr=$(push "$app" 'git push' | python3 -I "$gate" 2>&1)
+blocked_bash=$(bash_call t9 'sed -i x' | bash "$hooks" rules-detect-bash-edits post 2>&1)
+blocked_pr=$(push "$app" 'git push' | bash "$hooks" pr-gate 2>&1)
 projects="$work/home/.claude/projects"
 mkdir -p "$projects/demo"
 python3 -I - "$projects/demo/s.jsonl" "$work" "$swift" "$app" "$blocked_rules" "$blocked_bash" "$blocked_pr" <<'EOF'
