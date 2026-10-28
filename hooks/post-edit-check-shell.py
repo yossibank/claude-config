@@ -1,17 +1,20 @@
-import json
 import os
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+from hook_io import read_payload, tool_input  # noqa: E402
 
 VAR_BEFORE_WIDE = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]")
 
 
 def check(path):
     found = []
-    result = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+    result = subprocess.run(["bash", "-n", path], capture_output=True, text=True, timeout=10)
     if result.returncode:
-        found.append((1, result.stderr.strip().splitlines()[-1]))
+        found.append((1, "bash -n が通らない: " + result.stderr.strip().splitlines()[-1]))
     for number, line in enumerate(open(path, encoding="utf-8", errors="ignore").read().split("\n"), 1):
         if VAR_BEFORE_WIDE.search(line):
             found.append((number, "変数の直後に全角の文字がある。bash は変数名の一部とみなすので ${名前} で囲む"))
@@ -22,11 +25,10 @@ def main():
     if len(sys.argv) > 1:
         paths = sys.argv[1:]
     else:
-        try:
-            data = json.load(sys.stdin)
-        except ValueError:
+        data = read_payload()
+        if data is None:
             return
-        paths = [(data.get("tool_input") or {}).get("file_path", "")]
+        paths = [tool_input(data).get("file_path", "")]
     report = []
     for path in map(os.path.abspath, filter(None, paths)):
         if path.endswith(".sh") and os.path.isfile(path):

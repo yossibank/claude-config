@@ -1,12 +1,12 @@
 import collections
-import datetime
 import glob
-import json
 import os
-import re
 import sys
 
-JST = datetime.timezone(datetime.timedelta(hours=9))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "scripts", "lib"))
+
+from transcripts import MONTH, entries, month_start, projects_dir, to_jst, touched_since  # noqa: E402
+
 WEIGHTS = {"input": 1, "write_5m": 1.25, "write_1h": 2, "read": 0.1, "output": 5}
 
 
@@ -15,28 +15,20 @@ def fail(message):
     sys.exit(1)
 
 
-def jst(stamp):
-    return datetime.datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(JST)
-
-
 def usage_of(path, seen, month=None):
     requests = {}
     custom = ai = ""
     place = ""
     branches = collections.Counter()
     first = None
-    for line in open(path, encoding="utf-8", errors="ignore"):
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            continue
+    for entry in entries(path):
         kind = entry.get("type")
         if kind == "custom-title":
             custom = entry.get("customTitle") or custom
         if kind == "ai-title":
             ai = entry.get("aiTitle") or ai
         if entry.get("timestamp") and first is None:
-            first = jst(entry["timestamp"])
+            first = to_jst(entry["timestamp"])
             if month and first.strftime("%Y-%m") != month:
                 return None
         if entry.get("cwd") and not place:
@@ -78,21 +70,19 @@ def man(value):
 
 
 def main():
-    if len(sys.argv) < 2 or not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", sys.argv[1]):
+    if len(sys.argv) < 2 or not MONTH.fullmatch(sys.argv[1]):
         fail("使い方: tokens.py <YYYY-MM> [件数]")
     if len(sys.argv) > 2 and not sys.argv[2].isdigit():
         fail("件数は数字で書く")
 
     month = sys.argv[1]
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else 10
-    projects = os.environ.get("CLAUDE_PROJECTS", os.path.expanduser("~/.claude/projects"))
-    start = datetime.datetime.strptime(month, "%Y-%m").replace(tzinfo=JST)
+    projects = projects_dir()
+    start = month_start(month)
     seen = set()
 
     rows = []
-    for path in glob.glob(os.path.join(projects, "*", "*.jsonl")):
-        if datetime.datetime.fromtimestamp(os.path.getmtime(path), JST) < start:
-            continue
+    for path in touched_since(os.path.join(projects, "*", "*.jsonl"), start):
         session = usage_of(path, seen, month)
         if not session or not session["requests"]:
             continue

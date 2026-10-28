@@ -1,14 +1,19 @@
-import json
 import os
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+from hook_io import read_payload, tool_input  # noqa: E402
 
 LIMIT = 30_000
 TEXT = (".md", ".swift", ".kt", ".json", ".txt", ".log", ".yml", ".yaml", ".csv")
 
 
 def main():
-    data = json.load(sys.stdin)
-    tool = data.get("tool_input", {})
+    data = read_payload()
+    if data is None:
+        return
+    tool = tool_input(data)
     path = tool.get("file_path", "")
     if not path.endswith(TEXT) or not os.path.isfile(path) or tool.get("limit"):
         return

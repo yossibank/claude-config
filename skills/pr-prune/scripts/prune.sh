@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-toplevel)
-branch=${2:?ブランチ名を渡す}
-pr=${3:?PR 番号を渡す}
+[[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <ブランチ名> <PR 番号>"; exit 1; }
+
+repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+branch=$2
+pr=$3
 name=$(basename "$repo")
 
 fail() {
@@ -64,7 +66,8 @@ if git -C "$repo" rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
     merged || fail "$branch の中身が $main に入っていない。ワークツリーとブランチは残した"
     worktree=$(git -C "$repo" worktree list --porcelain \
         | awk -v want="branch refs/heads/$branch" '/^worktree /{path=substr($0, 10)} $0 == want {print path}')
-    [[ -z $worktree ]] || git -C "$repo" worktree remove "$worktree"
+    [[ -z $worktree ]] || git -C "$repo" worktree remove "$worktree" 2>/dev/null \
+        || fail "ワークツリーを消せない。未 commit や未追跡のファイルを確かめる: $worktree"
     git -C "$repo" branch -q -D "$branch"
 fi
 

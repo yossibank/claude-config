@@ -2,10 +2,12 @@ import importlib.util
 import json
 import os
 import re
-import subprocess
 import sys
 import tempfile
-import time
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+from hook_io import git, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
 
 HOOKS = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
@@ -15,14 +17,11 @@ STALE = 24 * 60 * 60
 
 
 def changed_files(cwd):
-    result = subprocess.run(
-        ["git", "-C", cwd, "status", "--porcelain", "-z", "--untracked-files=all"],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode:
+    result = git(cwd, "status", "--porcelain", "-z", "--untracked-files=all")
+    top = git(cwd, "rev-parse", "--show-toplevel", timeout=5)
+    if not result or result.returncode or not top or top.returncode:
         return None, {}
-    root = subprocess.run(["git", "-C", cwd, "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
+    root = top.stdout.strip()
     files = {}
     entries = iter(result.stdout.split("\0"))
     for entry in entries:
@@ -35,8 +34,7 @@ def changed_files(cwd):
 
 
 def state_file(data):
-    key = re.sub(r"[^A-Za-z0-9_-]", "_", f"{data.get('session_id', '')}-{data.get('tool_use_id', '')}")
-    return os.path.join(STATE, key)
+    return os.path.join(STATE, safe_name(f"{data.get('session_id', '')}-{data.get('tool_use_id', '')}"))
 
 
 def load_hook(name):
@@ -51,19 +49,12 @@ def only_tools(command):
     return bool(parts) and all(TOOLS.match(part) for part in parts)
 
 
-def remove_stale():
-    for name in os.listdir(STATE):
-        path = os.path.join(STATE, name)
-        if time.time() - os.path.getmtime(path) > STALE:
-            os.remove(path)
-
-
 def before(data):
     root, files = changed_files(data.get("cwd") or os.getcwd())
     if root is None:
         return
     os.makedirs(STATE, exist_ok=True)
-    remove_stale()
+    remove_stale(STATE, STALE)
     with open(state_file(data), "w") as file:
         json.dump({"root": root, "files": files}, file)
 
@@ -75,7 +66,7 @@ def after(data):
         os.remove(state_file(data))
     except (OSError, ValueError):
         return
-    command = (data.get("tool_input") or {}).get("command", "")
+    command = tool_input(data).get("command", "")
     if only_tools(command) or not isinstance(earlier, dict) or "root" not in earlier:
         return
     _, files = changed_files(earlier["root"])
@@ -104,9 +95,8 @@ def after(data):
 
 
 def main():
-    try:
-        data = json.load(sys.stdin)
-    except ValueError:
+    data = read_payload()
+    if data is None:
         return
     if sys.argv[1:] == ["pre"]:
         before(data)

@@ -69,15 +69,13 @@ def main():
     if not manifests:
         print("NG PrivacyInfo.xcprivacy が無い")
         ok = False
-    declared = set()
+    declared = {m: declared_in(m) for m in manifests}
     for category, paths in sorted(used.items()):
-        missing = [p for p in paths if not any(category in declared_in(m) for m in manifest_for(p, root, manifests))]
-        for m in {m for p in paths for m in manifest_for(p, root, manifests)}:
-            declared |= declared_in(m)
+        missing = [p for p in paths if not any(category in declared[m] for m in manifest_for(p, root, manifests))]
         mark = "NG" if missing else "OK"
         ok = ok and not missing
         print(f"{mark} {category}（{len(paths)} ファイル。例: {(missing or paths)[0]}）")
-    for category in sorted({c for m in manifests for c in declared_in(m)} - used.keys()):
+    for category in sorted(set().union(*declared.values()) - used.keys()):
         print(f"-- {category} は申告しているが、コードに見つからない")
 
     sys.exit(0 if ok else 1)
