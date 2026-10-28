@@ -187,5 +187,5 @@ README は、次の順に書く。無い節は作らない。
 
 | 仕組み | 見ること |
 | --- | --- |
-| `hooks/post-edit-check-docs.py` | 一文と段落の長さ、表のセル、絵文字、見出し、HTML、斜体、英数字の間 |
+| `hooks/docs-check.py` | 一文と段落の長さ、表のセル、絵文字、見出し、HTML、斜体、英数字の間 |
 | `scripts/config-audit.py` | SKILL.md と agents の節の並び、README の表、リンク |

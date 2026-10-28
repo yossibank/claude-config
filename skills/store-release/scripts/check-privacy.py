@@ -42,7 +42,7 @@ def manifest_for(path, root, manifests):
 
 def main():
     if len(sys.argv) < 2:
-        fail("使い方: privacy-check.py <アプリのリポジトリ>")
+        fail("使い方: check-privacy.py <アプリのリポジトリ>")
 
     root = sys.argv[1]
     used = {}

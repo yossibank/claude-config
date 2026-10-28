@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pre-read-guard"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-limit-read"
           }
         ]
       },
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pre-edit-load-rules"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-require-read"
           }
         ]
       },
@@ -39,11 +39,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" bash-check-edits pre"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits pre"
           },
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pre-bash-check-pr"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pr-gate"
           }
         ]
       }
@@ -54,15 +54,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" post-edit-check-docs"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" docs-check"
           },
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" post-edit-format-swift"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-format"
           },
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" post-edit-check-shell"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" shell-check"
           }
         ]
       },
@@ -76,7 +76,7 @@
           },
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" bash-check-edits post"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits post"
           }
         ]
       }

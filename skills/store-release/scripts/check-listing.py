@@ -21,7 +21,7 @@ def fail(message):
 
 def main():
     if len(sys.argv) < 2:
-        fail("使い方: listing-check.py <掲載情報のフォルダ>")
+        fail("使い方: check-listing.py <掲載情報のフォルダ>")
 
     folder = sys.argv[1]
     ok = True

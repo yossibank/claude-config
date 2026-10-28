@@ -38,7 +38,7 @@ fi
 if [[ $size == docs ]] && grep -q '^verify-docs:' "$repo/Makefile" 2>/dev/null; then
     check="make verify-docs"
 elif [[ $size == docs ]]; then
-    check="変えた .md への post-edit-check-docs.py"
+    check="変えた .md への docs-check.py"
 elif grep -q '^verify:' "$repo/Makefile" 2>/dev/null; then
     check="make verify"
 else

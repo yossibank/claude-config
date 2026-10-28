@@ -180,6 +180,33 @@ def check_readme():
             ng(readme, 1, f"README の表に載っていない: {entry}")
 
 
+def prefixes():
+    text = read(os.path.join(ROOT, "README.md"))
+    rows = re.findall(r"^\| `([a-z]+-)` \| [^|]+ \| ([^|]+) \|$", text, re.M)
+    return {prefix: {place.strip() for place in places.split("、")} for prefix, places in rows}
+
+
+def check_prefixes():
+    table = prefixes()
+    readme = os.path.join(ROOT, "README.md")
+    if not table:
+        ng(readme, 1, "名前の付け方の接頭語の表が読めない")
+        return
+    names = {
+        "skills": [(os.path.join(ROOT, "skills", name, "SKILL.md"), name) for name in skill_names()],
+        "hooks": [(path, os.path.basename(path)) for path in tracked("hooks/*.py") if "/lib/" not in path],
+        "rules": [(path, os.path.basename(path)) for path in tracked("rules/*.md")],
+        "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*") if "/lib/" not in path],
+    }
+    for place, items in names.items():
+        for path, name in items:
+            prefix = next((p for p in table if name.startswith(p)), None)
+            if prefix is None:
+                ng(path, 1, f"名前の接頭語が README の表に無い: {name}")
+            elif place not in table[prefix]:
+                ng(path, 1, f"接頭語 {prefix} は {place} に使わない（README の表の使う所）")
+
+
 def check_links():
     for path in tracked("*.md"):
         if "/templates/" in path:
@@ -214,7 +241,7 @@ def load_hook(name):
 
 
 def check_scripts():
-    shell = load_hook("post-edit-check-shell")
+    shell = load_hook("shell-check")
     for path in tracked("*.sh"):
         for number, message in shell.check(path):
             ng(path, number, message)
@@ -285,7 +312,7 @@ def check_python(path, tree):
 
 
 def check_docs():
-    docs = load_hook("post-edit-check-docs")
+    docs = load_hook("docs-check")
     for path in tracked("*.md"):
         for number, message in docs.check(path):
             ng(path, number, message)
@@ -296,6 +323,7 @@ def main():
     check_agents()
     check_rules()
     check_readme()
+    check_prefixes()
     check_links()
     check_settings()
     check_scripts()
