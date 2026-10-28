@@ -1,4 +1,6 @@
+import collections
 import datetime
+import functools
 import glob
 import json
 import os
@@ -12,7 +14,17 @@ CUE = re.compile(
 )
 WIDTH = 120
 APPS = os.path.expanduser("~/Applications")
+WORKTREES = os.path.expanduser("~/.claude/worktrees/")
 PREFIX = APPS.replace("/", "-") + "-"
+# hooks/ の各フックが止める時の文の書き出しと同じにする
+GUARDS = {
+    "rules": "この編集に当たる決まりを、この会話でまだ読んでいない",
+    "bash": "Bash でファイルを書き換えた",
+    "pr": "push と PR の作成の前に",
+}
+EDITS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+HOOK_ERROR = re.compile(r"PreToolUse:\w+ hook error: ")
+GIT_C = re.compile(r"\bgit\s+-C\s+(\S+)")
 
 
 def fail(message):
@@ -26,8 +38,21 @@ def text_of(content):
     return content if isinstance(content, str) else ""
 
 
+@functools.cache
+def repo_root(cwd):
+    path = cwd
+    while path.startswith(APPS + "/"):
+        if os.path.exists(os.path.join(path, ".git")):
+            return path
+        path = os.path.dirname(path)
+    return cwd
+
+
 def place_of(entry):
-    cwd = entry.get("cwd", "").split("/.claude/worktrees/")[0]
+    cwd = entry.get("cwd", "")
+    if cwd.startswith(WORKTREES):
+        return cwd[len(WORKTREES) :].split("/")[0]
+    cwd = repo_root(cwd.split("/.claude/worktrees/")[0])
     return os.path.relpath(cwd, APPS).replace("/", "-") if cwd.startswith(APPS + "/") else ""
 
 
@@ -35,6 +60,127 @@ def clip(text):
     match = CUE.search(text)
     begin = max(0, match.start() - 40) if match else 0
     return ("…" if begin else "") + text[begin : begin + WIDTH]
+
+
+def entries_of(path, month, start):
+    if datetime.datetime.fromtimestamp(os.path.getmtime(path), JST) < start:
+        return
+    for line in open(path, encoding="utf-8", errors="ignore"):
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not entry.get("timestamp"):
+            continue
+        when = datetime.datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00")).astimezone(JST)
+        if when.strftime("%Y-%m") == month:
+            yield entry, when
+
+
+@functools.cache
+def repo_of(path):
+    while path not in ("", "/"):
+        marker = os.path.join(path, ".git")
+        if os.path.isfile(marker):
+            gitdir = open(marker, encoding="utf-8").read().removeprefix("gitdir:").strip()
+            return os.path.basename(gitdir.split("/.git/worktrees/")[0])
+        if os.path.isdir(marker):
+            return os.path.basename(path)
+        if os.path.dirname(path).rstrip("/") + "/" == WORKTREES:
+            return os.path.basename(path)
+        path = os.path.dirname(path)
+    return ""
+
+
+def target_of(part, cwd):
+    tool_input = part.get("input") or {}
+    if part.get("name") in EDITS:
+        return repo_of(os.path.dirname(tool_input.get("file_path") or tool_input.get("notebook_path") or ""))
+    other = GIT_C.search(tool_input.get("command", "")) if part.get("name") == "Bash" else None
+    return repo_of(os.path.expanduser(other.group(1)) if other else cwd)
+
+
+def guard_of(text):
+    return next((name for name, mark in GUARDS.items() if mark in text), "")
+
+
+def count_guards(entry, tally):
+    cwd = entry.get("cwd", "")
+    content = (entry.get("message") or {}).get("content")
+    parts = [part for part in content if isinstance(part, dict)] if isinstance(content, list) else []
+    for part in parts:
+        if entry.get("type") != "assistant" or part.get("type") != "tool_use" or part.get("id") in tally["targets"]:
+            continue
+        place = target_of(part, cwd)
+        tally["targets"][part.get("id")] = place
+        if place and part.get("name") in EDITS:
+            tally["stats"][place]["edits"] += 1
+    blocks = []
+    for part in parts:
+        text = part.get("content") if part.get("type") == "tool_result" and part.get("is_error") else ""
+        if isinstance(text, str) and HOOK_ERROR.match(text):
+            blocks.append((part.get("tool_use_id"), guard_of(text)))
+    attachment = entry.get("attachment") or {}
+    if attachment.get("type") == "hook_blocking_error":
+        blocks.append((attachment.get("toolUseID"), guard_of(json.dumps(attachment.get("blockingError"), ensure_ascii=False))))
+    for tool_use_id, name in blocks:
+        key = (tool_use_id, name)
+        if not name or key in tally["blocked"]:
+            continue
+        tally["blocked"].add(key)
+        place = tally["targets"].get(tool_use_id) or repo_of(cwd)
+        if place:
+            tally["stats"][place][name] += 1
+    if attachment.get("type") == "hook_non_blocking_error" and os.path.isdir(cwd):
+        stderr = attachment.get("stderr", "").replace("Failed with non-blocking status code:", "").strip()
+        first = stderr.splitlines()[0] if stderr else ""
+        tally["broken"][(attachment.get("hookName", ""), first if len(first) <= 100 else "…" + first[-100:])] += 1
+
+
+def print_memories(projects):
+    print("## feedback のメモリ\n")
+    memories = 0
+    for path in sorted(glob.glob(os.path.join(projects, "*", "memory", "*.md"))):
+        text = open(path, encoding="utf-8", errors="ignore").read()
+        if not re.search(r"^\s*type:\s*feedback\s*$", text, re.M):
+            continue
+        description = re.search(r"^description:\s*(.+)$", text, re.M)
+        project = os.path.basename(os.path.dirname(os.path.dirname(path)))
+        if not project.startswith(PREFIX):
+            continue
+        repo = project[len(PREFIX) :].split("--claude-worktrees-")[0]
+        memories += 1
+        print(f"- {repo}／{os.path.basename(path)}：{description.group(1).strip() if description else ''}")
+    if not memories:
+        print("なし")
+
+
+def correction_of(entry):
+    if entry.get("type") != "user" or entry.get("isSidechain"):
+        return ""
+    text = text_of(entry.get("message", {}).get("content"))
+    if not text or text.lstrip().startswith("<") or len(text) > 400 or not CUE.search(text):
+        return ""
+    return " ".join(text.split())
+
+
+def print_guards(stats, broken):
+    print("\n## 決まりの効き目\n")
+    print("フックが止めた回数。決まりがあるのに止まる回数が多いものは、決まりが読まれずに作業が進んでいる。\n")
+    rows = [(place, row) for place, row in sorted(stats.items()) if row["edits"] or any(row[name] for name in GUARDS)]
+    if rows:
+        print("| 場所 | 編集 | 決まりを読まずに編集 | Bash で書き換え | 確認の前の push・PR |")
+        print("| --- | --- | --- | --- | --- |")
+        for place, row in rows:
+            print(f"| {place} | {row['edits']} | {row['rules']} | {row['bash']} | {row['pr']} |")
+    else:
+        print("なし")
+    print("\n### 動かなかったフック\n")
+    if broken:
+        for (hook, stderr), count in broken.most_common(5):
+            print(f"- {hook}（{count} 回）：{stderr}")
+    else:
+        print("なし")
 
 
 def main():
@@ -46,52 +192,33 @@ def main():
     start = datetime.datetime.strptime(month, "%Y-%m").replace(tzinfo=JST)
 
     print(f"# {month} の手直しの材料\n")
-    print("## feedback のメモリ\n")
-    memories = 0
-    for path in sorted(glob.glob(os.path.join(projects, "*", "memory", "*.md"))):
-        text = open(path, encoding="utf-8", errors="ignore").read()
-        if not re.search(r"^\s*type:\s*feedback\s*$", text, re.M):
-            continue
-        description = re.search(r"^description:\s*(.+)$", text, re.M)
-        project = os.path.basename(os.path.dirname(os.path.dirname(path)))
-        if not project.startswith(PREFIX):
-            continue
-        repo = project[len(PREFIX):].split("--claude-worktrees-")[0]
-        memories += 1
-        print(f"- {repo}／{os.path.basename(path)}：{description.group(1).strip() if description else ''}")
-    if not memories:
-        print("なし")
+    print_memories(projects)
 
     print("\n## 手直しの言葉を含む人の文\n")
     seen = set()
     found = 0
-    for path in sorted(glob.glob(os.path.join(projects, "*", "*.jsonl"))):
-        if datetime.datetime.fromtimestamp(os.path.getmtime(path), JST) < start:
-            continue
-        for line in open(path, encoding="utf-8", errors="ignore"):
-            try:
-                entry = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if entry.get("type") != "user" or entry.get("isSidechain") or not entry.get("timestamp"):
-                continue
-            when = datetime.datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00")).astimezone(JST)
-            if when.strftime("%Y-%m") != month:
-                continue
-            text = text_of(entry.get("message", {}).get("content"))
-            if not text or text.lstrip().startswith("<") or len(text) > 400 or not CUE.search(text):
-                continue
+    tally = {
+        "stats": collections.defaultdict(collections.Counter),
+        "broken": collections.Counter(),
+        "targets": {},
+        "blocked": set(),
+    }
+    sessions = sorted(glob.glob(os.path.join(projects, "*", "*.jsonl")))
+    subagents = sorted(glob.glob(os.path.join(projects, "*", "*", "subagents", "*.jsonl")))
+    for path in sessions + subagents:
+        for entry, when in entries_of(path, month, start):
+            count_guards(entry, tally)
             place = place_of(entry)
-            if not place:
-                continue
-            flat = " ".join(text.split())
-            if flat in seen:
+            flat = correction_of(entry) if place and "/subagents/" not in path else ""
+            if not flat or flat in seen:
                 continue
             seen.add(flat)
             found += 1
             print(f"- {when:%m-%d} {place}：{clip(flat)}")
     if not found:
         print("なし")
+
+    print_guards(tally["stats"], tally["broken"])
 
 
 if __name__ == "__main__":

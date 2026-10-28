@@ -119,4 +119,47 @@ run "$gate" 2 "pr: git -C で別のリポジトリを指しても、そのリポ
 run "$gate" 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git status')"
 CLAUDE_PR_GATE=off run "$gate" 0 "pr: CLAUDE_PR_GATE=off で止めない" "$(push "$app" 'git push')"
 
+blocked_rules=$(edit s9 main "$work/empty.jsonl" "$swift" | python3 -I "$guard" 2>&1)
+bash_call t9 'sed -i x' | python3 -I "$bash_edits" pre
+echo '# 変更' >>"$app/docs/overview.md"
+blocked_bash=$(bash_call t9 'sed -i x' | python3 -I "$bash_edits" post 2>&1)
+blocked_pr=$(push "$app" 'git push' | python3 -I "$gate" 2>&1)
+projects="$work/home/.claude/projects"
+mkdir -p "$projects/demo"
+python3 -I - "$projects/demo/s.jsonl" "$work" "$swift" "$app" "$blocked_rules" "$blocked_bash" "$blocked_pr" <<'EOF'
+import json, sys
+path, cwd, swift, app, rules, bash, pr = sys.argv[1:]
+stamp = "2026-10-01T00:00:00.000Z"
+
+
+def use(id, name, tool_input, where=cwd):
+    return {"type": "assistant", "timestamp": stamp, "cwd": where, "message": {"content": [{"type": "tool_use", "id": id, "name": name, "input": tool_input}]}}
+
+
+def result(id, text):
+    return {"type": "user", "timestamp": stamp, "cwd": cwd, "message": {"content": [{"type": "tool_result", "tool_use_id": id, "is_error": True, "content": text}]}}
+
+
+rows = [
+    use("e1", "Edit", {"file_path": swift}),
+    result("e1", "PreToolUse:Edit hook error: " + rules),
+    use("b1", "Bash", {"command": "sed -i x docs/overview.md"}, app),
+    {"type": "attachment", "timestamp": stamp, "cwd": app, "attachment": {"type": "hook_blocking_error", "toolUseID": "b1", "blockingError": {"blockingError": "[hook] " + bash}}},
+    use("p1", "Bash", {"command": f"git -C {app} push"}),
+    result("p1", "PreToolUse:Bash hook error: " + pr),
+    result("g1", "Exit code 2\n" + app + "/hooks/x.py:1: " + rules),
+]
+text = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
+open(path, "w").write(text + text)
+EOF
+touch -t 202610150000 "$projects/demo/s.jsonl"
+report=$(CLAUDE_PROJECTS="$projects" python3 -I "$root/skills/config-learn/scripts/collect.py" 2026-10)
+if grep -q '^| app | 1 | 1 | 1 | 1 |$' <<<"$report"; then
+    echo "OK collect: 3 つのフックが止めた回数を数える"
+else
+    echo "NG collect: 3 つのフックが止めた回数を数える"
+    grep "^|" <<<"$report"
+    fails=$((fails + 1))
+fi
+
 exit "$fails"
