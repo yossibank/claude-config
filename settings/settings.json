@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-read-guard.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-read-guard.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
           }
         ]
       }
@@ -32,11 +32,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-docs.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-docs.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
           },
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-format-swift.py\"; [ ! -f \"$f\" ] || python3 \"$f\""
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-format-swift.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
           }
         ]
       },
@@ -46,7 +46,7 @@
           {
             "type": "command",
             "if": "Bash(gh pr create *)",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" pr"
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" pr"
           }
         ]
       }
@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ ! -f \"$f\" ] || python3 \"$f\" 2>/dev/null || true"
+            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/stop-suggest-clear.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" 2>/dev/null || true"
           }
         ]
       }
