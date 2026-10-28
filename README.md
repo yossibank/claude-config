@@ -83,7 +83,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 
 ## 使い方
 
-claude-config を `~/Applications/AI/claude-config` に置き、次を実行する。`jq` が要る。
+claude-config を `~/Applications/AI/claude-config` に置き、次を実行する。`jq` が要る。フックはこの場所のファイルを読むので、ほかの場所から実行すると `NG` を出して止まる。フックのファイルが無い時は、フックが `NG` を出す。
 
 ```sh
 ~/Applications/AI/claude-config/scripts/config-install.sh
@@ -91,7 +91,7 @@ claude-config を `~/Applications/AI/claude-config` に置き、次を実行す�
 
 スクリプトは、CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクし、壊れたスキルのリンクを消す。`~/.claude` に同じ名前の実体があれば、`NG` を出して止まる。
 
-settings.json は直接書き換えない。`settings/settings.json` の許可を足し合わせ、`hooks` を置き換えた `settings.json.new` を作り、差分を出す。claude-config に無いフックが消えていないかを確かめてから、表示された `mv` のコマンドで置き換える。
+settings.json は直接書き換えない。`settings/merge.jq` で `settings.json.new` を作り、差分を出す。許可は今の並びのまま、足りないものだけを後ろに足す。フックは claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す。差分を確かめてから、表示された `mv` のコマンドで置き換える。
 
 手で確かめるときは、ファイルを引数に渡す。
 
