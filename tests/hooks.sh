@@ -126,6 +126,7 @@ run "$gate" 2 "pr: draft の PR（gh pr create -d）も止める" "$(push "$app"
 run "$gate" 2 "pr: 別のコマンドの -d に引きずられない" "$(push "$app" 'git branch -d old && git push')"
 run "$gate" 2 "pr: git -C で別のリポジトリを指しても、そのリポジトリを見る" "$(push "$work" "git -C $app push")"
 run "$gate" 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git status')"
+run "$gate" 2 "pr: cd した先のリポジトリを見る" "$(push "$work" "cd $app && git push")"
 CLAUDE_PR_GATE=off run "$gate" 0 "pr: CLAUDE_PR_GATE=off で止めない" "$(push "$app" 'git push')"
 
 blocked_rules=$(edit s9 main "$work/empty.jsonl" "$swift" | python3 -I "$guard" 2>&1)

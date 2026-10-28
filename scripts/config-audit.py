@@ -1,5 +1,6 @@
 import ast
 import fnmatch
+import importlib.util
 import json
 import os
 import re
@@ -11,11 +12,11 @@ SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
-VAR_BEFORE_WIDE = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]")
 NG_TO_STDERR = re.compile(r"""(echo|printf)\s+["']?NG\b.*>&2""")
 EXIT_FAIL = re.compile(r"\s*exit [1-9]")
 RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
-HOOK_FILE = re.compile(r"claude-config/(hooks/[A-Za-z0-9_.-]+\.py)")
+HOOK_NAME = re.compile(r"claude-config/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
+REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
 ASK_EVERY_TIME = {"store-release/scripts/archive.sh"}
 
@@ -137,7 +138,7 @@ def check_readme():
     readme = os.path.join(ROOT, "README.md")
     links = {target.rstrip("/") for target in LINK.findall(read(readme))}
     entries = [f"skills/{name}/SKILL.md" for name in skill_names()]
-    entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "rules/*.md", "hooks/*.py", "scripts/*")]
+    entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "rules/*.md", "hooks/*.py", "hooks/*.sh", "scripts/*")]
     for entry in entries:
         if entry not in links:
             ng(readme, 1, f"README の表に載っていない: {entry}")
@@ -160,23 +161,36 @@ def check_settings():
     for group in json.load(open(path, encoding="utf-8")).get("hooks", {}).values():
         for entry in group:
             for hook in entry.get("hooks", []):
-                for target in HOOK_FILE.findall(hook.get("command", "")):
-                    if not os.path.isfile(os.path.join(ROOT, target)):
-                        ng(path, 1, f"フックのファイルが無い: {target}")
+                command = hook.get("command", "")
+                names = HOOK_NAME.findall(command)
+                if not names:
+                    ng(path, 1, f"フックを hooks/run.sh で呼んでいない: {command[:60]}")
+                for name in names:
+                    if not os.path.isfile(os.path.join(ROOT, "hooks", f"{name}.py")):
+                        ng(path, 1, f"フックのファイルが無い: hooks/{name}.py")
+
+
+def load_hook(name):
+    spec = importlib.util.spec_from_file_location(name.replace("-", "_"), os.path.join(ROOT, "hooks", f"{name}.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def check_scripts():
+    shell = load_hook("post-edit-check-shell")
     for path in tracked("*.sh"):
-        result = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
-        if result.returncode:
-            ng(path, 1, f"bash -n が通らない: {result.stderr.strip().splitlines()[-1]}")
+        for number, message in shell.check(path):
+            ng(path, number, message)
+        if os.path.relpath(path, ROOT).startswith("hooks/"):
+            continue
         lines = read(path).split("\n")
         for number, line in enumerate(lines, 1):
-            if VAR_BEFORE_WIDE.search(line):
-                ng(path, number, "変数の直後に全角の文字がある。${名前} で囲む")
             failing = number < len(lines) and EXIT_FAIL.match(lines[number])
-            if NG_TO_STDERR.search(line) or (">&2" in line and failing):
+            if NG_TO_STDERR.search(line) or (">&2" in line and failing) or ("NG" in line and "/dev/stderr" in line):
                 ng(path, number, "失敗を stderr に出している。stdout に NG で始めて出す")
+            if REQUIRED_ARG.search(line):
+                ng(path, number, "${N:?} は stderr に出て止まる。[[ $# -ge N ]] で確かめ、stdout に NG を出す")
     for path in tracked("*.py"):
         try:
             tree = ast.parse(read(path))
@@ -205,8 +219,14 @@ def is_exit_with_text(node):
     )
 
 
+def is_path_insert(node):
+    return isinstance(node, ast.Expr) and ast.unparse(node.value).startswith("sys.path.insert(")
+
+
 def runs_on_import(node):
     if isinstance(node, (ast.Import, ast.ImportFrom, ast.FunctionDef, ast.ClassDef)) or is_main_guard(node):
+        return False
+    if is_path_insert(node):
         return False
     if isinstance(node, ast.Expr):
         return not isinstance(node.value, ast.Constant)
@@ -216,7 +236,7 @@ def runs_on_import(node):
 
 
 def check_python(path, tree):
-    if not any(is_main_guard(node) for node in tree.body):
+    if "/lib/" not in path and not any(is_main_guard(node) for node in tree.body):
         ng(path, 1, 'if __name__ == "__main__": が無い')
     for node in tree.body:
         if runs_on_import(node):
@@ -229,14 +249,10 @@ def check_python(path, tree):
 
 
 def check_docs():
-    hook = os.path.join(ROOT, "hooks", "post-edit-check-docs.py")
-    result = subprocess.run([sys.executable, "-I", hook, *tracked("*.md")], capture_output=True, text=True)
-    lines = [line for line in result.stderr.splitlines() if line.startswith("/")]
-    for line in lines:
-        path, number, message = line.split(":", 2)
-        ng(path, number, message.strip())
-    if result.returncode not in (0, 2) or (result.returncode == 2 and not lines):
-        ng(hook, 1, f"文書の検査が落ちた: {result.stderr.strip()[-200:]}")
+    docs = load_hook("post-edit-check-docs")
+    for path in tracked("*.md"):
+        for number, message in docs.check(path):
+            ng(path, number, message)
 
 
 def main():

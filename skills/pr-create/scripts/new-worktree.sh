@@ -1,8 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-toplevel)
-branch=${2:?ブランチ名を渡す}
+[[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <ブランチ名>"; exit 1; }
+
+repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+branch=$2
 
 if ! [[ $branch =~ ^(feat|fix|docs|refactor|test|build|ci|chore)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
     echo "NG ブランチ名が <type>/<summary> の形ではない: $branch"

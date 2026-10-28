@@ -28,6 +28,9 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | [hooks/post-edit-check-shell.py](hooks/post-edit-check-shell.py) | `.sh` を Edit・Write した後 | `bash -n` と、bash が変数名の一部とみなす「変数の直後の全角」を Claude に返す |
 | [hooks/bash-check-edits.py](hooks/bash-check-edits.py) | Bash の前と後 | Bash で書き換えたファイルを git の差で見つけ、Edit・Write を使うよう返し、当たる rules と、文書と `.sh` の検査の結果を添える。git・make などの道具の変更は数えない |
 | [hooks/ctx-suggest-clear.py](hooks/ctx-suggest-clear.py) | 応答が終わった時と、`gh pr create` の後 | 文脈が 20 万トークンを超えるごとに 1 回と、PR を作った時に、`/ctx-handoff` で引き継ぎメモを書いて `/clear` で区切ることを勧める |
+| [hooks/run.sh](hooks/run.sh) | フックを呼ぶ時 | settings.json から名前で呼ばれ、`hooks/<名前>.py` を `python3 -I` で走らせる。ファイルが無ければ `NG` を出す |
+| [hooks/lib/hook_io.py](hooks/lib/hook_io.py) | フックが読み込む時 | 入力の JSON、git の呼び出しとタイムアウト、状態ファイルの掃除をまとめる |
+| [scripts/lib/transcripts.py](scripts/lib/transcripts.py) | collect.py・tokens.py が読み込む時 | 会話の記録の読み方、日本時間、月の形をまとめる |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 呼んだ時 | Markdown の見出しの一覧か、指定した見出しの節だけを出す |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からのリンクを張り、settings.json の案を作る |
 | [scripts/config-audit.py](scripts/config-audit.py) | `make verify` の時 | スキル・エージェント・rules・README・settings・スクリプト・文書の食い違いと書き方の違反を探す |
