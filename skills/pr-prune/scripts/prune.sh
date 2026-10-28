@@ -37,6 +37,9 @@ info=$(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName \
 read -r state head ref <<< "$info"
 [[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（${state}）"
 [[ $ref == "$branch" ]] || head=""
+if [[ -n $head ]] && ! git -C "$repo" cat-file -e "$head^{commit}" 2>/dev/null; then
+    git -C "$repo" fetch -q origin "pull/$pr/head" 2>/dev/null || true
+fi
 
 merged() {
     local tip base
