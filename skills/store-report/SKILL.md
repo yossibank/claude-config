@@ -14,10 +14,10 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 表は、次のコマンドで作る。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/report.py <YYYY-MM>
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/monthly.py <YYYY-MM>
 ```
 
-`report.py` は、`~/Applications/AppStore/*/store/app-id.txt` を持つアプリを集め、表を `~/Applications/AppStore/reports/<YYYY-MM>.md` に書く。置き場所は `APPS_DIR` で変えられる。`app-id.txt` には、App Store の ID（数字）だけを書く。
+`monthly.py` は、`~/Applications/AppStore/*/store/app-id.txt` を持つアプリを集め、表を `~/Applications/AppStore/reports/<YYYY-MM>.md` に書く。置き場所は `APPS_DIR` で変えられる。`app-id.txt` には、App Store の ID（数字）だけを書く。
 
 ## 表の中身
 
