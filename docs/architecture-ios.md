@@ -53,7 +53,7 @@ flowchart TB
     Store --> GRDB
 ```
 
-## 🔧 使う技術
+## 🛠️ 使う技術
 
 既定の技術は、次のとおりである。変えたら、アプリの `docs/decisions/` に理由を書く。
 
@@ -299,7 +299,7 @@ sequenceDiagram
     M->>M: 行き先の画面を開く
 ```
 
-## 🧩 ウィジェット
+## 🪟 ウィジェット
 
 ウィジェットは、AppWidget が App Group の DB を読むだけで開く。
 

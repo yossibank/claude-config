@@ -283,8 +283,7 @@ flowchart LR
 | [lib/app_store.py](lib/app_store.py) | fetch-reviews.py、search-apps.py、fetch-ratings.py | App Store の検索とレビューの読み方 |
 | [lib/git.sh](lib/git.sh) | スキルの .sh | リポジトリの根、既定のブランチ、GitHub での書き込みの権限 |
 
-<details>
-<summary>スクリプトの書き方</summary>
+### スクリプトの書き方
 
 スクリプトは、読み込まれた時に何も実行せず、結果を同じ形で返す。`make verify` の config-audit が、外れた書き方を `NG` にする。
 
@@ -296,5 +295,3 @@ flowchart LR
 | 知らせ | 失敗ではない知らせは stderr に出す |
 | フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
 | 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` で読む |
-
-</details>
