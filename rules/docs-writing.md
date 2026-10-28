@@ -263,7 +263,7 @@ README は、次の順に書く。無い節は作らない。
 | `hooks/docs-check.py` | 一文の長さ、段落・項目・表のセルの文の数、一覧の前置きの項目の数 |
 | `hooks/docs-check.py` | 見出しの絵文字の数と位置、`##` の絵文字のそろえ方（README は付ける） |
 | `hooks/docs-check.py` | 見出しと小見出しの間の本文 |
-| `hooks/docs-check.py` | Claude が読む文書の絵文字、本文の絵文字の表、斜体、日本語と英数字の間 |
+| `hooks/docs-check.py` | Claude が読む文書の絵文字・本文の絵文字の表・斜体・日本語と英数字の間 |
 | `hooks/docs-check.py` | README と `docs/` の外の HTML、使ってよいタグ、`docs/` の 1 ファイルの大きさ |
 | `scripts/config-audit.py` | SKILL.md の「手順」と「報告」の有無、固定の節の順、ほかの節の置き場所 |
 | `scripts/config-audit.py` | SKILL.md の description の文末と字数 |
