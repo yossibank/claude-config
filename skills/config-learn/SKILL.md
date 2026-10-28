@@ -24,9 +24,9 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/collect.py <YYYY-MM>
 - 決まりの効き目。その月の会話とサブエージェントの会話から、リポジトリごとに次の回数を数える
   - リポジトリは、Edit・Write したファイルと、Bash の `git -C` の先で決める。無ければ会話の場所にする
   - Edit・Write の回数
-  - `hooks/pre-edit-load-rules.py` が、当たる rules を読まずに編集しようとして止めた回数
-  - `hooks/bash-check-edits.py` が、Bash でファイルを書き換えたと返した回数
-  - `hooks/pre-bash-check-pr.py` が、確認を通す前の push と PR の作成を止めた回数
+  - `hooks/rules-require-read.py` が、当たる rules を読まずに編集しようとして止めた回数
+  - `hooks/rules-detect-bash-edits.py` が、Bash でファイルを書き換えたと返した回数
+  - `hooks/pr-gate.py` が、確認を通す前の push と PR の作成を止めた回数
   - 失敗して動かなかったフックの、多いもの 5 件。消えた作業場所で失敗したものは、フックのせいではないので数えない
 
 ## 手順

@@ -9,12 +9,12 @@ title=$3
 body=$4
 branch=$(git -C "$repo" branch --show-current)
 
-info=$(cd "$repo" && gh repo view --json nameWithOwner,viewerPermission \
-    -q '"\(.nameWithOwner) \(.viewerPermission)"') || { echo "NG gh repo view が通らない"; exit 1; }
-read -r slug permission <<< "$info"
+info=$("$(dirname "$0")/repo-access.sh" "$repo") || { echo "$info"; exit 1; }
+read -r owner name access <<< "$info"
+slug="$owner/$name"
 
-case $permission in
-    ADMIN | MAINTAIN | WRITE)
+case $access in
+    write)
         echo "gh"
         ;;
     *)

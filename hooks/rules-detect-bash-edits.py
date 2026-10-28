@@ -81,12 +81,12 @@ def after(data):
         "Bash でファイルを書き換えた。ファイルの変更は Edit・Write で行う。書き換えたファイルに、Edit の後と同じ検査をかけた。",
         *edited,
     ]
-    guard = load_hook("pre-edit-load-rules")
+    guard = load_hook("rules-require-read")
     rules = sorted({name for path in edited for name in guard.matching_rules(path)})
     if rules:
         lines.append("当たる決まり（まだ読んでいなければ Read で読む）: " + "、".join(rules))
-    docs = load_hook("post-edit-check-docs")
-    shell = load_hook("post-edit-check-shell")
+    docs = load_hook("docs-check")
+    shell = load_hook("shell-check")
     for path in edited:
         found = docs.check(path) if path.endswith(".md") else shell.check(path) if path.endswith(".sh") else []
         lines += [f"{path}:{n}: {m}" for n, m in found]

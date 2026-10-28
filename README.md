@@ -58,27 +58,27 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 
 ```mermaid
 flowchart LR
-    Read["Read の前"] --> guard["pre-read-guard<br/>大きいファイル"]
-    Read --> load["pre-edit-load-rules<br/>rules の既読"]
+    Read["Read の前"] --> guard["ctx-limit-read<br/>大きいファイル"]
+    Read --> load["rules-require-read<br/>rules の既読"]
     Edit["Edit の前と後"] --> load
-    Edit --> docs["post-edit-check-docs<br/>文書"]
-    Edit --> swift["post-edit-format-swift<br/>整形"]
-    Edit --> shell["post-edit-check-shell<br/>シェル"]
-    Bash["Bash の前と後"] --> edits["bash-check-edits<br/>Bash での書き換え"]
-    Bash --> pr["pre-bash-check-pr<br/>push・PR の前の確認"]
+    Edit --> docs["docs-check<br/>文書"]
+    Edit --> swift["swift-format<br/>整形"]
+    Edit --> shell["shell-check<br/>シェル"]
+    Bash["Bash の前と後"] --> edits["rules-detect-bash-edits<br/>Bash での書き換え"]
+    Bash --> pr["pr-gate<br/>push・PR の前の確認"]
     Stop["応答の終わり"] --> clear["ctx-suggest-clear<br/>区切りの勧め"]
 ```
 
-| フック | 止める・返す時 | 止めない方法 |
-| --- | --- | --- |
-| [pre-read-guard](hooks/pre-read-guard.py) | 30KB を超えるテキストを、範囲なしで読む時 | `limit` を付けて読む |
-| [pre-edit-load-rules](hooks/pre-edit-load-rules.py) | 当たる rules を、この会話でまだ読まずに編集する時 | `CLAUDE_RULES_GUARD=off` |
-| [post-edit-check-docs](hooks/post-edit-check-docs.py) | `.md` が `rules/docs-writing.md` に合わない時 | メモリのファイルは見ない |
-| [post-edit-format-swift](hooks/post-edit-format-swift.py) | `.swift` を、Mintfile の swiftformat で整える | `.swiftformat` が無ければ動かない |
-| [post-edit-check-shell](hooks/post-edit-check-shell.py) | `.sh` の `bash -n` と、変数の直後の全角 | |
-| [bash-check-edits](hooks/bash-check-edits.py) | Bash でファイルを書き換えた時。git・make などは数えない | |
-| [pre-bash-check-pr](hooks/pre-bash-check-pr.py) | `check.sh` の確認の前に、push や `gh pr create` をする時 | `CLAUDE_PR_GATE=off` |
-| [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 文脈が 20 万トークンを超える時と、PR を作った時 | |
+| フック | 動く時 | 止める・返す時 | 止めない方法 |
+| --- | --- | --- | --- |
+| [ctx-limit-read](hooks/ctx-limit-read.py) | Read の前 | 30KB を超えるテキストを、範囲なしで読む時 | `limit` を付けて読む |
+| [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 応答の終わり、PR の作成の後 | 文脈が 20 万トークンを超える時と、PR を作った時 | |
+| [docs-check](hooks/docs-check.py) | Edit の後 | `.md` が `rules/docs-writing.md` に合わない時 | メモリのファイルは見ない |
+| [pr-gate](hooks/pr-gate.py) | Bash の前 | `check.sh` の確認の前に、push や `gh pr create` をする時 | `CLAUDE_PR_GATE=off` |
+| [rules-detect-bash-edits](hooks/rules-detect-bash-edits.py) | Bash の前と後 | Bash でファイルを書き換えた時。git・make などは数えない | |
+| [rules-require-read](hooks/rules-require-read.py) | Read・Edit の前 | 当たる rules を、この会話でまだ読まずに編集する時 | `CLAUDE_RULES_GUARD=off` |
+| [shell-check](hooks/shell-check.py) | Edit の後 | `.sh` の `bash -n` と、変数の直後の全角 | |
+| [swift-format](hooks/swift-format.py) | Edit の後 | `.swift` を、Mintfile の swiftformat で整える | `.swiftformat` が無ければ動かない |
 
 フックが共通で使う処理は、次のファイルにまとめてある。
 
@@ -121,27 +121,33 @@ flowchart LR
 
 ## 🏷️ 名前の付け方
 
-似たものに同じ接頭語を付け、並び順で分類が分かるようにする。
+名前は `<分類>-<すること>` にそろえ、フォルダの中を名前の順に並べると分類ごとにまとまるようにする。分類は、フォルダをまたいで同じ接頭語を使う。
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
 | スキル | `<分類>-<すること>` | `pr-create`、`ctx-handoff` |
-| フック | `<イベント>-<目的>.py`。2 つ以上のイベントなら `<対象>-<目的>.py` | `post-edit-check-docs.py` |
-| rules | `<対象>-<範囲>.md` | `swift-core.md` |
-| scripts | `<分類>-<目的>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
+| フック | `<分類>-<すること>.py`。イベントは settings.json に書く | `docs-check.py`、`pr-gate.py` |
+| rules | `<分類>-<範囲>.md` | `swift-core.md` |
+| scripts | `<分類>-<すること>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
+| スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | ひな形の印 | スクリプトが置き換える所は `__<名前>__`、人が書く所は `<中身>` | `__App__`、`<名前>` |
 
-スキルの分類は、次から選ぶ。新しい分類が要る時は、行を足してから名前を付ける。
+分類は、次から選ぶ。新しい分類が要る時は、行を足してから名前を付ける。config-audit が、この表に無い接頭語と、使う所の違う接頭語を `NG` にする。
 
-| 接頭語 | 分類 |
-| --- | --- |
-| `app-` | 企画・立ち上げ |
-| `config-` | claude-config 自体の手入れ |
-| `ctx-` | 文脈とトークンの管理 |
-| `pr-` | PR |
-| `store-` | App Store への公開と数字 |
-| `ui-` | 見た目と動きの確認 |
+| 接頭語 | 分類 | 使う所 |
+| --- | --- | --- |
+| `app-` | 企画・立ち上げ | skills |
+| `code-` | コード全般 | rules |
+| `config-` | claude-config 自体の手入れ | skills、scripts |
+| `ctx-` | 文脈とトークンの管理 | skills、hooks |
+| `docs-` | 文書 | rules、hooks、scripts |
+| `pr-` | PR | skills、hooks |
+| `rules-` | rules を読ませる | hooks |
+| `shell-` | シェルスクリプト | hooks |
+| `store-` | App Store への公開と数字 | skills |
+| `swift-` | Swift | rules、hooks |
+| `ui-` | 見た目と動きの確認 | skills |
 
 ## 🔧 環境変数
 
@@ -149,8 +155,8 @@ flowchart LR
 
 | 変数 | 使う所 | 中身 |
 | --- | --- | --- |
-| `CLAUDE_RULES_GUARD=off` | pre-edit-load-rules | rules を読まずに編集しても止めない |
-| `CLAUDE_PR_GATE=off` | pre-bash-check-pr | 確認の前の push と PR を止めない |
+| `CLAUDE_RULES_GUARD=off` | rules-require-read | rules を読まずに編集しても止めない |
+| `CLAUDE_PR_GATE=off` | pr-gate | 確認の前の push と PR を止めない |
 | `CLAUDE_PROJECTS` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
 | `DEVICE` | ui-snapshot | 描くシミュレーターの UDID |

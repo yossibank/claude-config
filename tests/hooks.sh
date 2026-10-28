@@ -6,10 +6,10 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 export TMPDIR="$work/state/"
 mkdir -p "$TMPDIR"
-guard="$root/hooks/pre-edit-load-rules.py"
-bash_edits="$root/hooks/bash-check-edits.py"
-shell="$root/hooks/post-edit-check-shell.py"
-gate="$root/hooks/pre-bash-check-pr.py"
+guard="$root/hooks/rules-require-read.py"
+bash_edits="$root/hooks/rules-detect-bash-edits.py"
+shell="$root/hooks/shell-check.py"
+gate="$root/hooks/pr-gate.py"
 check="$root/skills/pr-create/scripts/check.sh"
 rules="$root/rules"
 fails=0
@@ -83,7 +83,7 @@ printf '#!/bin/bash\necho "x ${name}。"\n' >"$work/ok.sh"
 run "$shell" 2 "shell: 変数の直後の全角で止まる" "{\"tool_input\":{\"file_path\":\"$work/wide.sh\"}}"
 run "$shell" 0 "shell: \${名前} で囲めば通る" "{\"tool_input\":{\"file_path\":\"$work/ok.sh\"}}"
 
-docs="$root/hooks/post-edit-check-docs.py"
+docs="$root/hooks/docs-check.py"
 doc_case() {
     local expect=$1 label=$2 name=$3 text=$4
     mkdir -p "$work/docs-case/$(dirname "$name")"

@@ -90,7 +90,7 @@ replace "$d/skills/config-learn/scripts/collect.py" 'if __name__ == "__main__":
 expect "$d" "collect.py:1 if __name__" "main の呼び出しを守っていない .py"
 
 d=$(copy top-level)
-printf '\nfor x in []:\n    pass\n' >>"$d/hooks/pre-read-guard.py"
+printf '\nfor x in []:\n    pass\n' >>"$d/hooks/ctx-limit-read.py"
 expect "$d" "読み込んだだけで処理が走る" "トップレベルで処理が走る .py"
 
 d=$(copy exit-text)
@@ -129,5 +129,13 @@ expect "$d" "## 入力 は" "SKILL.md の節の順が違う"
 d=$(copy agent-last)
 printf '\n## 補足\n\nx\n' >>"$d/agents/explorer.md"
 expect "$d" "最後の ## は「返す形」" "agents の最後の節が返す形ではない"
+
+d=$(copy prefix-unknown)
+git -C "$d" mv -q hooks/swift-format.py hooks/format-swift.py 2>/dev/null || mv "$d/hooks/swift-format.py" "$d/hooks/format-swift.py"
+expect "$d" "名前の接頭語が README の表に無い: format-swift.py" "表に無い接頭語のフック"
+
+d=$(copy prefix-place)
+mv "$d/scripts/docs-section.sh" "$d/scripts/pr-section.sh"
+expect "$d" "接頭語 pr- は scripts に使わない" "使う所の違う接頭語"
 
 exit "$fails"
