@@ -1,10 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-toplevel)
-base=${2:?base のブランチを渡す}
-title=${3:?PR のタイトルを渡す}
-body=${4:?本文のファイルを渡す}
+[[ $# -ge 4 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <base のブランチ> <PR のタイトル> <本文のファイル>"; exit 1; }
+
+repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+base=$2
+title=$3
+body=$4
 branch=$(git -C "$repo" branch --show-current)
 
 info=$(cd "$repo" && gh repo view --json nameWithOwner,viewerPermission \

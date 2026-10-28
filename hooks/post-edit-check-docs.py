@@ -1,8 +1,11 @@
-import json
 import os
 import re
 import sys
 from itertools import takewhile
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+from hook_io import read_payload, tool_input  # noqa: E402
 
 JA = r"々぀-ヺー-ヿ一-鿿"
 HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
@@ -49,7 +52,7 @@ def check(path):
     if "/docs/" in path and size > SIZE_LIMIT:
         found.append((1, f"docs の 1 ファイルが 15KB を超えている（{size // 1000}KB）。節ごとに分ける"))
     html = os.path.basename(path).lower() == "readme.md" or "/docs/" in path
-    lines = open(path, encoding="utf-8").read().split("\n")
+    lines = open(path, encoding="utf-8", errors="replace").read().split("\n")
     start = 0
     if lines and lines[0] == "---":
         end = next((i for i in range(1, len(lines)) if lines[i] == "---"), 0)
@@ -108,8 +111,10 @@ def main():
     if len(sys.argv) > 1:
         paths = sys.argv[1:]
     else:
-        data = json.load(sys.stdin)
-        paths = [data.get("tool_input", {}).get("file_path", "")]
+        data = read_payload()
+        if data is None:
+            return
+        paths = [tool_input(data).get("file_path", "")]
     report = []
     for path in map(os.path.abspath, filter(None, paths)):
         if path.endswith(".md") and os.path.isfile(path) and not MEMORY.search(path):

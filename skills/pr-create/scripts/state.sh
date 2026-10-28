@@ -1,7 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-toplevel)
+[[ $# -ge 1 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス>"; exit 1; }
+
+repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
 index=$(mktemp)
 trap 'rm -f "$index"' EXIT
 

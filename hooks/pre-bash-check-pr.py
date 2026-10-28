@@ -1,73 +1,62 @@
-import json
 import os
 import re
 import shlex
 import subprocess
 import sys
 
-STATE_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "state.sh")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+from hook_io import git_root, read_payload, tool_input  # noqa: E402
+
+CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "check.sh")
 SEGMENT = re.compile(r"&&|\|\||;|\|")
 PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 
 
-def gated(command):
+def gated_repo(command, cwd):
     for part in SEGMENT.split(command):
         try:
             words = shlex.split(part, posix=True)
         except ValueError:
             continue
+        if words[:1] == ["cd"] and len(words) > 1:
+            cwd = os.path.join(cwd, os.path.expanduser(words[1]))
+            continue
         if words[:3] == ["gh", "pr", "create"]:
-            return True
+            return cwd
         if words[:1] != ["git"]:
             continue
-        rest = words[3:] if words[1:2] == ["-C"] else words[1:]
+        repo = cwd
+        rest = words[1:]
+        if rest[:1] == ["-C"] and len(rest) > 1:
+            repo = os.path.join(cwd, os.path.expanduser(rest[1]))
+            rest = rest[2:]
         if rest[:1] == ["push"] and not any(word in PUSH_SKIPPED or word.startswith(":") for word in rest[1:]):
-            return True
-    return False
-
-
-def target_repo(command, cwd):
-    words = shlex.split(command, posix=True) if command else []
-    for i, word in enumerate(words[:-1]):
-        if word == "-C" and words[i - 1:i] == ["git"]:
-            return os.path.join(cwd, os.path.expanduser(words[i + 1]))
-    return cwd
-
-
-def git(repo, *args):
-    return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True)
+            return repo
+    return None
 
 
 def problems(repo):
-    top = git(repo, "rev-parse", "--show-toplevel").stdout.strip()
+    top = git_root(repo)
     if not top:
         return []
-    record = git(top, "rev-parse", "--path-format=absolute", "--git-path", "pr-checks").stdout.strip()
     try:
-        rows = [line.split("\t") for line in open(record, encoding="utf-8").read().splitlines() if line]
-    except OSError:
-        rows = []
-    if not rows:
-        return ["pr-create の check.sh で通した確認が無い"]
-    state = subprocess.run(["bash", STATE_SH, top], capture_output=True, text=True).stdout.strip()
-    found = [f"通っていない確認: {row[1]}" for row in rows if row[0] != "OK"]
-    found += [f"確認の後に変更がある: {row[1]}" for row in rows if len(row) > 2 and row[2] != state]
-    return found
+        result = subprocess.run(["bash", CHECK_SH, top, "--status"], capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        return []
+    if result.returncode == 0:
+        return []
+    return [line[3:] for line in result.stdout.splitlines() if line.startswith("NG ")] or [result.stdout.strip()]
 
 
 def main():
     if os.environ.get("CLAUDE_PR_GATE") == "off":
         return
-    try:
-        data = json.load(sys.stdin)
-    except ValueError:
+    data = read_payload()
+    if data is None:
         return
-    command = (data.get("tool_input") or {}).get("command", "")
-    if not gated(command):
-        return
-    try:
-        repo = target_repo(command, data.get("cwd") or os.getcwd())
-    except ValueError:
+    repo = gated_repo(tool_input(data).get("command", ""), data.get("cwd") or os.getcwd())
+    if repo is None:
         return
     found = problems(repo)
     if found:

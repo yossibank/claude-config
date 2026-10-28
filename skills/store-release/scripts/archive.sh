@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-workspace="${1:?ワークスペース}"
-scheme="${2:?スキーム}"
-out=$(mkdir -p "${3:?出力先のフォルダ}" && cd "$3" && pwd)
+[[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <ワークスペース> <スキーム> <出力先のフォルダ>"; exit 1; }
+
+workspace="$1"
+scheme="$2"
+out=$(mkdir -p "$3" && cd "$3" && pwd)
 archive="$out/$scheme.xcarchive"
 log="$out/archive.log"
 options="$out/ExportOptions.plist"

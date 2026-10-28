@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-read-guard.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pre-read-guard"
           }
         ]
       },
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-edit-load-rules.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pre-edit-load-rules"
           }
         ]
       },
@@ -39,11 +39,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/bash-check-edits.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" pre"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" bash-check-edits pre"
           },
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/pre-bash-check-pr.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pre-bash-check-pr"
           }
         ]
       }
@@ -54,15 +54,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-docs.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" post-edit-check-docs"
           },
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-format-swift.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" post-edit-format-swift"
           },
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/post-edit-check-shell.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\""
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" post-edit-check-shell"
           }
         ]
       },
@@ -72,11 +72,11 @@
           {
             "type": "command",
             "if": "Bash(gh pr create *)",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/ctx-suggest-clear.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" pr"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-suggest-clear pr"
           },
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/bash-check-edits.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" post"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" bash-check-edits post"
           }
         ]
       }
@@ -86,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/Applications/AI/claude-config/hooks/ctx-suggest-clear.py\"; [ -f \"$f\" ] || { echo \"NG $f が無い。claude-config を ~/Applications/AI/claude-config に置く\" >&2; exit 1; }; python3 \"$f\" 2>/dev/null || true"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-suggest-clear 2>/dev/null || true"
           }
         ]
       }

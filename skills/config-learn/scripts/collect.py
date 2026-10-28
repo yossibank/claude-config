@@ -1,5 +1,4 @@
 import collections
-import datetime
 import functools
 import glob
 import json
@@ -7,7 +6,10 @@ import os
 import re
 import sys
 
-JST = datetime.timezone(datetime.timedelta(hours=9))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "scripts", "lib"))
+
+from transcripts import MONTH, entries, month_start, projects_dir, to_jst, touched_since  # noqa: E402
+
 CUE = re.compile(
     r"ではなく|じゃなく|違う|ちがう|やめ|しないで|外して|戻して|消して|不要|いらない|要らない|"
     r"おかしい|揃えて|そろえて|統一|勝手に|聞いて|前も|毎回|何度も"
@@ -62,17 +64,11 @@ def clip(text):
     return ("…" if begin else "") + text[begin : begin + WIDTH]
 
 
-def entries_of(path, month, start):
-    if datetime.datetime.fromtimestamp(os.path.getmtime(path), JST) < start:
-        return
-    for line in open(path, encoding="utf-8", errors="ignore"):
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            continue
+def entries_of(path, month):
+    for entry in entries(path):
         if not entry.get("timestamp"):
             continue
-        when = datetime.datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00")).astimezone(JST)
+        when = to_jst(entry["timestamp"])
         if when.strftime("%Y-%m") == month:
             yield entry, when
 
@@ -104,17 +100,24 @@ def guard_of(text):
     return next((name for name, mark in GUARDS.items() if mark in text), "")
 
 
-def count_guards(entry, tally):
-    cwd = entry.get("cwd", "")
+def parts_of(entry):
     content = (entry.get("message") or {}).get("content")
-    parts = [part for part in content if isinstance(part, dict)] if isinstance(content, list) else []
+    return [part for part in content if isinstance(part, dict)] if isinstance(content, list) else []
+
+
+def record_targets(entry, parts, tally):
+    if entry.get("type") != "assistant":
+        return
     for part in parts:
-        if entry.get("type") != "assistant" or part.get("type") != "tool_use" or part.get("id") in tally["targets"]:
+        if part.get("type") != "tool_use" or part.get("id") in tally["targets"]:
             continue
-        place = target_of(part, cwd)
+        place = target_of(part, entry.get("cwd", ""))
         tally["targets"][part.get("id")] = place
         if place and part.get("name") in EDITS:
             tally["stats"][place]["edits"] += 1
+
+
+def blocks_of(entry, parts):
     blocks = []
     for part in parts:
         text = part.get("content") if part.get("type") == "tool_result" and part.get("is_error") else ""
@@ -123,6 +126,11 @@ def count_guards(entry, tally):
     attachment = entry.get("attachment") or {}
     if attachment.get("type") == "hook_blocking_error":
         blocks.append((attachment.get("toolUseID"), guard_of(json.dumps(attachment.get("blockingError"), ensure_ascii=False))))
+    return blocks
+
+
+def count_blocks(entry, blocks, tally):
+    cwd = entry.get("cwd", "")
     for tool_use_id, name in blocks:
         key = (tool_use_id, name)
         if not name or key in tally["blocked"]:
@@ -131,6 +139,11 @@ def count_guards(entry, tally):
         place = tally["targets"].get(tool_use_id) or repo_of(cwd)
         if place:
             tally["stats"][place][name] += 1
+
+
+def count_broken(entry, tally):
+    cwd = entry.get("cwd", "")
+    attachment = entry.get("attachment") or {}
     if attachment.get("type") == "hook_non_blocking_error" and os.path.isdir(cwd):
         stderr = attachment.get("stderr", "").replace("Failed with non-blocking status code:", "").strip()
         first = stderr.splitlines()[0] if stderr else ""
@@ -184,12 +197,12 @@ def print_guards(stats, broken):
 
 
 def main():
-    if len(sys.argv) < 2 or not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", sys.argv[1]):
+    if len(sys.argv) < 2 or not MONTH.fullmatch(sys.argv[1]):
         fail("使い方: collect.py <YYYY-MM>")
 
     month = sys.argv[1]
-    projects = os.environ.get("CLAUDE_PROJECTS", os.path.expanduser("~/.claude/projects"))
-    start = datetime.datetime.strptime(month, "%Y-%m").replace(tzinfo=JST)
+    projects = projects_dir()
+    start = month_start(month)
 
     print(f"# {month} の手直しの材料\n")
     print_memories(projects)
@@ -203,11 +216,14 @@ def main():
         "targets": {},
         "blocked": set(),
     }
-    sessions = sorted(glob.glob(os.path.join(projects, "*", "*.jsonl")))
-    subagents = sorted(glob.glob(os.path.join(projects, "*", "*", "subagents", "*.jsonl")))
+    sessions = touched_since(os.path.join(projects, "*", "*.jsonl"), start)
+    subagents = touched_since(os.path.join(projects, "*", "*", "subagents", "*.jsonl"), start)
     for path in sessions + subagents:
-        for entry, when in entries_of(path, month, start):
-            count_guards(entry, tally)
+        for entry, when in entries_of(path, month):
+            parts = parts_of(entry)
+            record_targets(entry, parts, tally)
+            count_blocks(entry, blocks_of(entry, parts), tally)
+            count_broken(entry, tally)
             place = place_of(entry)
             flat = correction_of(entry) if place and "/subagents/" not in path else ""
             if not flat or flat in seen:

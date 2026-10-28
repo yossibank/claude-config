@@ -1,10 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+[[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <アプリの名前（英小文字）> <ストアの表示名>"; exit 1; }
+
 skill=$(cd "$(dirname "$0")/.." && pwd -P)
 config=$(cd "$skill/../.." && pwd)
-name="${1:?アプリの名前（英小文字）}"
-display="${2:?ストアの表示名}"
+name="$1"
+display="$2"
 root="${APPS_DIR:-$HOME/Applications/AppStore}/$name"
 
 [[ "$name" =~ ^[a-z][a-z0-9]*$ ]] || { echo "NG 名前は英小文字と数字だけにする: $name"; exit 1; }

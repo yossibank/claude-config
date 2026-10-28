@@ -1,10 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+[[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>"; exit 1; }
+
 skill=$(cd "$(dirname "$0")/.." && pwd)
-package=$(cd "${1:?パッケージのフォルダ}" && pwd)
-set_dir=$(cd "${2:?セットのフォルダ}" && pwd)
-out=$(mkdir -p "${3:?出力先のフォルダ}" && cd "$3" && pwd)
+package=$(cd "$1" && pwd)
+set_dir=$(cd "$2" && pwd)
+out=$(mkdir -p "$3" && cd "$3" && pwd)
 tests="$package/Tests/UISnapshotTests"
 
 [ -f "$set_dir/SnapshotTests.swift" ] || { echo "NG セットに SnapshotTests.swift が無い: $set_dir"; exit 1; }
@@ -59,4 +61,5 @@ status=${PIPESTATUS[0]}
 set -e
 
 [ "$status" -eq 0 ] || { echo "NG テストが通らなかった（xcodebuild: ${status}）"; exit "${status}"; }
+compgen -G "$out/*.png" >/dev/null || { echo "NG PNG が描かれなかった: $out"; exit 1; }
 ls "$out"/*.png

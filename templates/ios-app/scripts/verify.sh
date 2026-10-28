@@ -1,7 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-label=${1:?確認の名前を渡す}
+[[ $# -ge 1 ]] || { echo "NG 使い方: $(basename "$0") <確認の名前>"; exit 1; }
+
+label=$1
 shift
 [[ $# -gt 0 ]] || { echo "NG $label: コマンドを渡す"; exit 1; }
 

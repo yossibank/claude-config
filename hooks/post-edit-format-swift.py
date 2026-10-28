@@ -1,17 +1,11 @@
-import json
 import os
 import shutil
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
 
-def repository_root(path):
-    result = subprocess.run(
-        ["git", "-C", os.path.dirname(path), "rev-parse", "--show-toplevel"],
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout.strip()
+from hook_io import git_root, read_payload, tool_input  # noqa: E402
 
 
 def pinned(root):
@@ -23,11 +17,13 @@ def pinned(root):
 
 
 def main():
-    data = json.load(sys.stdin)
-    path = data.get("tool_input", {}).get("file_path", "")
+    data = read_payload()
+    if data is None:
+        return
+    path = tool_input(data).get("file_path", "")
     if not path.endswith(".swift") or not os.path.isfile(path):
         return
-    root = repository_root(path)
+    root = git_root(path)
     if not root or not os.path.isfile(os.path.join(root, ".swiftformat")):
         return
     if shutil.which("mint") is None or not pinned(root):

@@ -2,14 +2,19 @@ import calendar
 import json
 import os
 import re
-import subprocess
 import sys
 import tempfile
 import time
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+from hook_io import git_root, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
+
 RULES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
 STATE = os.path.join(tempfile.gettempdir(), "claude-rules-read")
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit")
+STALE = 7 * 24 * 60 * 60
+TAIL_LIMIT = 32_000_000
 
 
 def to_regex(pattern):
@@ -22,7 +27,7 @@ def to_regex(pattern):
         elif pattern[i] == "*":
             out += "[^/]*"
             i += 1
-        elif pattern[i] == "{":
+        elif pattern[i] == "{" and "}" in pattern[i:]:
             end = pattern.index("}", i)
             out += "(?:" + "|".join(map(re.escape, pattern[i + 1 : end].split(","))) + ")"
             i = end + 1
@@ -47,12 +52,7 @@ def rule_paths(path):
 
 
 def relative(path):
-    result = subprocess.run(
-        ["git", "-C", os.path.dirname(path) or ".", "rev-parse", "--show-toplevel"],
-        capture_output=True,
-        text=True,
-    )
-    root = result.stdout.strip()
+    root = git_root(path)
     return os.path.relpath(path, root) if root else None
 
 
@@ -68,8 +68,7 @@ def matching_rules(path):
 
 
 def state_dir(data):
-    key = f"{data.get('session_id', '')}-{data.get('agent_id', 'main')}"
-    return os.path.join(STATE, re.sub(r"[^A-Za-z0-9_-]", "_", key))
+    return os.path.join(STATE, safe_name(f"{data.get('session_id', '')}-{data.get('agent_id', 'main')}"))
 
 
 def read_time(data, name):
@@ -89,7 +88,7 @@ def tail_after_compaction(transcript, chunk=4_000_000):
         file.seek(0, os.SEEK_END)
         position = file.tell()
         data = b""
-        while position > 0:
+        while position > 0 and len(data) < TAIL_LIMIT:
             step = min(chunk, position)
             position -= step
             file.seek(position)
@@ -125,6 +124,7 @@ def scan(transcript):
 def record_read(data, path):
     if not is_rule(path):
         return
+    remove_stale(STATE, STALE)
     os.makedirs(state_dir(data), exist_ok=True)
     marker = os.path.join(state_dir(data), os.path.basename(path))
     with open(marker, "a"):
@@ -150,11 +150,10 @@ def check_edit(data, path):
 def main():
     if os.environ.get("CLAUDE_RULES_GUARD") == "off":
         return
-    try:
-        data = json.load(sys.stdin)
-    except ValueError:
+    data = read_payload()
+    if data is None:
         return
-    path = (data.get("tool_input") or {}).get("file_path", "")
+    path = tool_input(data).get("file_path", "")
     if not path:
         return
     if data.get("tool_name") == "Read":

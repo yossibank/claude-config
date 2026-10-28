@@ -1,8 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-toplevel)
-pr=${2:?PR 番号を渡す}
+[[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <PR 番号>"; exit 1; }
+
+repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+pr=$2
 
 info=$(cd "$repo" && gh repo view --json owner,name,viewerPermission \
     -q '"\(.owner.login) \(.name) \(.viewerPermission)"') || { echo "NG gh repo view が通らない"; exit 1; }

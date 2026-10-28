@@ -1,8 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-device="${1:?シミュレーターの UDID}"
-out="${2:?出力する PNG}"
+[[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <シミュレーターの UDID> <出力する PNG>"; exit 1; }
+
+device="$1"
+out="$2"
 
 xcrun simctl bootstatus "$device" -b >/dev/null
 xcrun simctl status_bar "$device" override \

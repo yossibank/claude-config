@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-device="${1:?シミュレーターの UDID}"
-seconds="${2:?録画する秒数}"
-out="${3:?出力する mp4}"
+[[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <シミュレーターの UDID> <録画する秒数> <出力する mp4>"; exit 1; }
+
+device="$1"
+seconds="$2"
+out="$3"
 
 mkdir -p "$(dirname "$out")"
 xcrun simctl io "$device" recordVideo --codec h264 --force "$out" >/dev/null 2>&1 &

@@ -1,7 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-file=${1:?Markdown のパスを渡す}
+[[ $# -ge 1 ]] || { echo "NG 使い方: $(basename "$0") <Markdown のパス>"; exit 1; }
+
+file=$1
 heading=${2:-}
 
 awk -v want="$heading" '
@@ -36,5 +38,5 @@ function fence_length(line, mark,    rest) {
     if (substr($0, level + 2) == want) { found = 1; depth = level }
 }
 found
-END { if (want != "" && !found) { print "NG 見出しが無い: " want > "/dev/stderr"; exit 1 } }
+END { if (want != "" && !found) { print "NG 見出しが無い: " want; exit 1 } }
 ' "$file"

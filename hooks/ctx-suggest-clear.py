@@ -4,6 +4,10 @@ import re
 import sys
 import tempfile
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+from hook_io import read_payload, safe_name, tool_input  # noqa: E402
+
 STEP = 200_000
 TAIL = 4_000_000
 STATE = os.path.join(tempfile.gettempdir(), "claude-suggest-clear")
@@ -34,14 +38,14 @@ def context_tokens(path):
 
 def notified_level(session):
     try:
-        return int(open(os.path.join(STATE, session)).read())
+        return int(open(os.path.join(STATE, safe_name(session))).read())
     except (OSError, ValueError):
         return 0
 
 
 def save_level(session, level):
     os.makedirs(STATE, exist_ok=True)
-    with open(os.path.join(STATE, session), "w") as file:
+    with open(os.path.join(STATE, safe_name(session)), "w") as file:
         file.write(str(level))
 
 
@@ -62,7 +66,7 @@ PR_MESSAGE = "PR を作りました。この依頼が済んだら、/ctx-handoff
 
 
 def created_pr(payload):
-    command = (payload.get("tool_input") or {}).get("command", "")
+    command = tool_input(payload).get("command", "")
     response = payload.get("tool_response")
     output = response.get("stdout", "") if isinstance(response, dict) else str(response or "")
     return "gh pr create" in command and "already exists" not in output and PR_URL.search(output) is not None
@@ -70,7 +74,9 @@ def created_pr(payload):
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "context"
-    payload = json.load(sys.stdin)
+    payload = read_payload()
+    if payload is None:
+        return
     if mode == "pr":
         message = PR_MESSAGE if created_pr(payload) else None
     else:

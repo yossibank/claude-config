@@ -1,17 +1,50 @@
 #!/bin/bash
 set -uo pipefail
 
-repo=$(cd "${1:?リポジトリのパスを渡す}" && git rev-parse --show-toplevel)
-label=${2:?確認の名前を渡す}
+[[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <確認の名前 | --drop <名前> | --status> [コマンド…]"; exit 1; }
+
+repo=$(cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || { echo "NG Git のリポジトリではない: $1"; exit 1; }
+label=$2
 shift 2
 record=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks)
+lock="$record.lock"
+
+update_record() {
+    local drop=$1
+    local line=${2:-}
+    local tmp
+
+    until mkdir "$lock" 2>/dev/null; do
+        sleep 0.1
+    done
+    trap 'rmdir "$lock" 2>/dev/null' EXIT
+
+    touch "$record"
+    tmp=$(mktemp "$record.XXXXXX")
+    awk -F '\t' -v label="$drop" '$2 != label' "$record" >| "$tmp"
+    [[ -z $line ]] || printf '%s\n' "$line" >> "$tmp"
+    mv -f "$tmp" "$record"
+    rmdir "$lock"
+    trap - EXIT
+}
+
+if [[ $label == --status ]]; then
+    [[ -s $record ]] || { echo "NG check.sh で通した確認が無い"; exit 1; }
+    state=$("$(dirname "$0")/state.sh" "$repo") || { echo "NG 作業場所の状態を読めない"; exit 1; }
+    awk -F '\t' -v state="$state" '
+        NF < 3 { next }
+        $1 != "OK" { print "NG 通っていない確認: " $2; bad = 1; next }
+        $3 != state { print "NG 確認の後に変更がある: " $2; bad = 1; next }
+        { print "OK " $2 }
+        END { exit bad }
+    ' "$record"
+    exit
+fi
 
 if [[ $label == --drop ]]; then
-    drop=${1:?外す確認の名前を渡す}
-    touch "$record"
-    awk -F '\t' -v label="$drop" '$2 != label' "$record" >| "$record.new"
-    mv -f "$record.new" "$record"
-    echo "OK 外した: $drop"
+    [[ $# -ge 1 ]] || { echo "NG 外す確認の名前を渡す"; exit 1; }
+    update_record "$1"
+    echo "OK 外した: $1"
     exit 0
 fi
 
@@ -20,16 +53,13 @@ fi
 logs=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-check-logs)
 log="$logs/${label//[^A-Za-z0-9._-]/_}.log"
 mkdir -p "$logs"
-touch "$record"
 
 (cd "$repo" && "$@") >| "$log" 2>&1
 status=$?
 [[ $status == 0 ]] && result=OK || result=NG
 state=$("$(dirname "$0")/state.sh" "$repo")
 
-awk -F '\t' -v label="$label" '$2 != label' "$record" >| "$record.new"
-printf '%s\t%s\t%s\n' "$result" "$label" "$state" >> "$record.new"
-mv -f "$record.new" "$record"
+update_record "$label" "$(printf '%s\t%s\t%s' "$result" "$label" "$state")"
 
 if [[ $result == OK ]]; then
     rm -f "$log"
