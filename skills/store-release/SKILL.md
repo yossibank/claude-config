@@ -15,7 +15,7 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 
 | ファイル | ひな形 | 中身 |
 | --- | --- | --- |
-| `ios/<App>/PrivacyInfo.xcprivacy` | claude-config の `templates/ios-app/` にある同じ名前のファイル | 理由の申告が要る API と、集めるデータ |
+| `ios/<App>/PrivacyInfo.xcprivacy` | app-init の `templates/ios-app/` にある同じ名前のファイル | 理由の申告が要る API と、集めるデータ |
 | `store/ja/*.txt` | `templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
 | `store/screenshots/` | | 6.9 インチの PNG |
 

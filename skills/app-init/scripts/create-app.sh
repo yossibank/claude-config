@@ -40,7 +40,7 @@ cleanup() {
 trap cleanup ERR
 
 mkdir -p "$root/docs"
-rsync -a --exclude .DS_Store "$config/templates/ios-app/" "$root/"
+rsync -a --exclude .DS_Store "$skill/templates/ios-app/" "$root/"
 
 for doc in overview roadmap; do
     if [ ! -f "$root/docs/$doc.md" ]; then

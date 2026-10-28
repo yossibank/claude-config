@@ -38,6 +38,7 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 - 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる
 - ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える
 - `docs/overview.md`・`docs/roadmap.md` が無ければ、`app-plan` のひな形を置く
+- app-plan のひな形は、app-plan の `templates/` から直に写す。app-plan が同じ claude-config に要る
 - overview の最初の 1 文を、README の説明の文に写す
 - `git init` し、最初の commit を作る
 

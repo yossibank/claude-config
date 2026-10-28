@@ -50,7 +50,7 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 | [rules/swift-test.md](rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | テストの空行と型の置き方 |
 | [rules/swift-ui.md](rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | `View` の分け方、ビューの並べ方 |
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時に読む | iOS アプリのフォルダ、依存の向き |
-| [templates/ios-app/](templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形 |
+| [skills/app-init/templates/ios-app/](skills/app-init/templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形 |
 
 ## 🪝 フック
 
