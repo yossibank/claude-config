@@ -97,6 +97,11 @@ run "$bash_edits" 0 "bash: cd と git だけのコマンドは知らせない" "
 run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t5 'sed -i x && git add')" pre
 echo 'y' >>"$app/docs/overview.md"
 run "$bash_edits" 2 "bash: git が混ざっても書き換えは知らせる" "$(bash_call t5 'sed -i x && git add')" post
+echo '# 日本語' >"$app/docs/日本語.md"
+run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t6 'sed -i')" pre
+echo 'z' >>"$app/docs/日本語.md"
+run "$bash_edits" 2 "bash: 日本語の名前のファイルの書き換えも知らせる" "$(bash_call t6 'sed -i')" post
+rm -f "$app/docs/日本語.md"
 
 push() {
     echo "{\"cwd\":\"$1\",\"tool_input\":{\"command\":\"$2\"}}"
@@ -115,6 +120,10 @@ run "$gate" 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')
 run "$gate" 0 "pr: --drop で外せば通す" "$(push "$app" 'git push')"
 echo 'struct C {}' >>"$swift"
 run "$gate" 0 "pr: タグの push は止めない" "$(push "$app" 'git push --tags')"
+run "$gate" 0 "pr: ブランチの削除は止めない" "$(push "$app" 'git push origin --delete feat/x')"
+run "$gate" 0 "pr: : で始まる refspec の削除は止めない" "$(push "$app" 'git push origin :feat/x')"
+run "$gate" 2 "pr: draft の PR（gh pr create -d）も止める" "$(push "$app" 'gh pr create -d --title x')"
+run "$gate" 2 "pr: 別のコマンドの -d に引きずられない" "$(push "$app" 'git branch -d old && git push')"
 run "$gate" 2 "pr: git -C で別のリポジトリを指しても、そのリポジトリを見る" "$(push "$work" "git -C $app push")"
 run "$gate" 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git status')"
 CLAUDE_PR_GATE=off run "$gate" 0 "pr: CLAUDE_PR_GATE=off で止めない" "$(push "$app" 'git push')"

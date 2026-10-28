@@ -6,8 +6,24 @@ import subprocess
 import sys
 
 STATE_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "state.sh")
-GATED = re.compile(r"(^|[;&|]\s*)(git(\s+-C\s+\S+)?\s+push|gh\s+pr\s+create)\b")
-SKIPPED = ("--tags", "--delete", "-d ", ":refs/")
+SEGMENT = re.compile(r"&&|\|\||;|\|")
+PUSH_SKIPPED = {"--tags", "--delete", "-d"}
+
+
+def gated(command):
+    for part in SEGMENT.split(command):
+        try:
+            words = shlex.split(part, posix=True)
+        except ValueError:
+            continue
+        if words[:3] == ["gh", "pr", "create"]:
+            return True
+        if words[:1] != ["git"]:
+            continue
+        rest = words[3:] if words[1:2] == ["-C"] else words[1:]
+        if rest[:1] == ["push"] and not any(word in PUSH_SKIPPED or word.startswith(":") for word in rest[1:]):
+            return True
+    return False
 
 
 def target_repo(command, cwd):
@@ -47,7 +63,7 @@ def main():
     except ValueError:
         return
     command = (data.get("tool_input") or {}).get("command", "")
-    if not GATED.search(command) or any(word in command for word in SKIPPED):
+    if not gated(command):
         return
     try:
         repo = target_repo(command, data.get("cwd") or os.getcwd())
