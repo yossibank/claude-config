@@ -9,6 +9,8 @@ mkdir -p "$TMPDIR"
 guard="$root/hooks/pre-edit-load-rules.py"
 bash_edits="$root/hooks/bash-check-edits.py"
 shell="$root/hooks/post-edit-check-shell.py"
+gate="$root/hooks/pre-bash-check-pr.py"
+check="$root/skills/pr-create/scripts/check.sh"
 rules="$root/rules"
 fails=0
 
@@ -82,5 +84,26 @@ git -C "$app" checkout -q -- docs/overview.md
 run "$bash_edits" 0 "bash: git での変更は知らせない" "$(bash_call t2 'git checkout')" post
 run "$bash_edits" 0 "bash: 前の状態を残す" "$(bash_call t3 'ls')" pre
 run "$bash_edits" 0 "bash: 何も変えなければ知らせない" "$(bash_call t3 'ls')" post
+
+push() {
+    echo "{\"cwd\":\"$1\",\"tool_input\":{\"command\":\"$2\"}}"
+}
+
+run "$gate" 2 "pr: 確認の記録が無いと push を止める" "$(push "$app" 'git push -u origin feat/x')"
+"$check" "$app" "true" true >/dev/null
+run "$gate" 0 "pr: 確認を通せば push を通す" "$(push "$app" 'git push -u origin feat/x')"
+run "$gate" 0 "pr: 確認を通せば gh pr create を通す" "$(push "$app" 'gh pr create --title x')"
+echo 'struct B {}' >>"$swift"
+run "$gate" 2 "pr: 確認の後に変えると止める" "$(push "$app" 'git push')"
+"$check" "$app" "true" true >/dev/null
+"$check" "$app" "false" false >/dev/null
+run "$gate" 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')"
+"$check" "$app" --drop "false" >/dev/null
+run "$gate" 0 "pr: --drop で外せば通す" "$(push "$app" 'git push')"
+echo 'struct C {}' >>"$swift"
+run "$gate" 0 "pr: タグの push は止めない" "$(push "$app" 'git push --tags')"
+run "$gate" 2 "pr: git -C で別のリポジトリを指しても、そのリポジトリを見る" "$(push "$work" "git -C $app push")"
+run "$gate" 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git status')"
+CLAUDE_PR_GATE=off run "$gate" 0 "pr: CLAUDE_PR_GATE=off で止めない" "$(push "$app" 'git push')"
 
 exit "$fails"
