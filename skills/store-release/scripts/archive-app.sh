@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-source "$(dirname "$0")/../../../lib/log.sh"
+source "$(dirname "$0")/../../../lib/build_log.sh"
 
 [[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <ワークスペース> <スキーム> <出力先のフォルダ>"; exit 1; }
 

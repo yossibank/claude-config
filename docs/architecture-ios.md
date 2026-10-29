@@ -97,7 +97,7 @@ flowchart TB
 | `.claude/rules/` | このアプリだけの決まり |
 | `.claude/skills/` | このアプリだけの手順 |
 | `.pre-commit-config.yaml` | commit の前の確認（SwiftFormat） |
-| `Brewfile` | Mint、pre-commit、xcbeautify |
+| `Brewfile` | jq、Mint、pre-commit、xcbeautify |
 | `Makefile` | 下の make のコマンド |
 | `Mintfile` | SwiftFormat と LicensePlist の版 |
 

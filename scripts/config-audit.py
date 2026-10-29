@@ -35,7 +35,6 @@ TEMPLATE_TOKEN = re.compile(r"__[A-Za-z]+__")
 WRITE_TOOLS = re.compile(rf"\b(?:{'|'.join(EDIT_TOOLS)})\b")
 NAMING = os.path.join(ROOT, "docs", "development.md")
 APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
-APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
 REPLACER = os.path.join(ROOT, "skills", "app-init", "scripts", "replace-placeholders.py")
 SKILL_SECTIONS = ["起動条件", "入力", "手順", "報告", "制約"]
 DESCRIPTION_LIMIT = 120
@@ -231,6 +230,25 @@ def check_readme():
             yield readme, 1, f"README の表に載っていない: {entry}"
 
 
+def test_targets():
+    targets = {}
+    for path in tracked("hooks/*.py", "scripts/*"):
+        targets.setdefault(os.path.splitext(os.path.basename(path))[0], path)
+    for path in tracked("skills/*/scripts/*"):
+        skill = os.path.relpath(path, ROOT).split(os.sep)[1]
+        targets.setdefault(skill, os.path.join(ROOT, "skills", skill, "SKILL.md"))
+    return targets
+
+
+def check_test_pairs():
+    targets = test_targets()
+    tests = {os.path.splitext(os.path.basename(path))[0]: path for path in tracked("tests/*.sh")}
+    for name in sorted(targets.keys() - tests.keys()):
+        yield targets[name], 1, f"テストが無い: tests/{name}.sh"
+    for name in sorted(tests.keys() - targets.keys()):
+        yield tests[name], 1, "テストの対象が無い。hooks/<名前>.py・scripts/<名前>・scripts/ を持つスキルの名前にする"
+
+
 def check_readme_flow():
     readme = os.path.join(ROOT, "README.md")
     section = re.search(r"^## 🧰 .*?(?=^## |\Z)", read(readme), re.M | re.S)
@@ -315,31 +333,17 @@ def check_script_verbs():
             yield path, 1, f"スキルのスクリプトの頭の動詞が動詞の表に無い: {verb}"
 
 
-def in_app(path):
-    if path.startswith(APP_DOCS_TEMPLATE + os.sep):
-        return os.path.join(APP_TEMPLATE, "docs", os.path.relpath(path, APP_DOCS_TEMPLATE))
-    return path
-
-
-def exists_in_app(path):
-    docs = os.path.join(APP_TEMPLATE, "docs") + os.sep
-    if path.startswith(docs):
-        return os.path.exists(os.path.join(APP_DOCS_TEMPLATE, path[len(docs) :]))
-    return os.path.exists(path)
-
-
 def check_links():
     for path in tracked("*.md"):
         template = "/templates/" in path
-        place = in_app(path) if template else path
         for number, line in enumerate(read(path).split("\n"), 1):
             for target in LINK.findall(line):
                 if re.match(r"[a-z]+:", target) or target.startswith("<"):
                     continue
                 if template and ("<" in target or "__" in target):
                     continue
-                resolved = os.path.normpath(os.path.join(os.path.dirname(place), target))
-                if not (exists_in_app(resolved) if template else os.path.exists(resolved)):
+                resolved = os.path.normpath(os.path.join(os.path.dirname(path), target))
+                if not os.path.exists(resolved):
                     yield path, number, f"リンク先が無い: {target}"
 
 
@@ -404,7 +408,7 @@ def check_template_tokens():
             yield REPLACER, number, f"tokens に __<名前>__ でない文字列がある: {token}"
     for number, text in literal_replaces(tree):
         yield REPLACER, number, f"tokens を通さずに文字列を置き換えている: {text}"
-    for path in tracked("skills/app-init/templates/**", "skills/app-plan/templates/**"):
+    for path in tracked("skills/app-init/templates/**"):
         for number, line in template_tokens(path):
             for token in sorted(set(TEMPLATE_TOKEN.findall(line)) - tokens):
                 yield path, number, f"replace-placeholders.py の tokens に無い印: {token}"
@@ -538,6 +542,7 @@ CHECKS = [
     check_rules,
     check_readme,
     check_readme_flow,
+    check_test_pairs,
     check_skill_steps,
     check_terms,
     check_prefixes,

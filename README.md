@@ -100,7 +100,7 @@ squash でマージしても、積んだ PR がぶつからないように、使
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
 | [docs/development.md](docs/development.md) | claude-config を直す時 | 名前の付け方、スクリプトの書き方、共通の処理、テスト |
 | [skills/app-init/templates/ios-app/](skills/app-init/templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形 |
-| [skills/app-plan/templates/](skills/app-plan/templates/) | `app-plan` の時 | overview と roadmap のひな形 |
+| [skills/app-init/templates/ios-app/docs/](skills/app-init/templates/ios-app/docs/) | `app-plan` の時 | overview と roadmap のひな形 |
 
 ## 📏 決まり
 

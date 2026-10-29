@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-source "$(dirname "$0")/../../../lib/simulator.sh"
-
 [[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>"; exit 1; }
 
 [[ -d $1 ]] || { echo "NG パッケージのフォルダが無い: $1"; exit 1; }
@@ -26,7 +24,7 @@ if [[ ! -f $marker && -n $(ls -A "$out") ]]; then
 fi
 [[ -e $tests ]] && { echo "NG 前の回の後片付けが済んでいない: ${tests}。退避のフォルダから戻すか、git で戻してから走らせる"; exit 1; }
 
-device=$(pick_iphone)
+device=${CC_UI_DEVICE:-$("$skill/scripts/find-simulator.sh")}
 [[ -n $device ]] || { echo "NG iPhone のシミュレーターが無い。CC_UI_DEVICE に UDID を渡す"; exit 1; }
 scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | jq -r '.workspace.schemes as $all | ([$all[] | select(endswith("-Package"))] + $all)[0] // empty')
 [[ -n $scheme ]] || { echo "NG パッケージのスキームが見つからない: $package"; exit 1; }

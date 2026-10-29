@@ -3,13 +3,13 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
-source "$root/lib/simulator.sh"
 
+find_simulator="$root/skills/ui-snapshot/scripts/find-simulator.sh"
 fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPad Air\",\"udid\":\"PAD\"},{\"name\":\"iPhone 17\",\"udid\":\"PHONE\"}]}}'"
-check "pick_iphone: 先頭の iPhone の UDID を出す" test "$(pick_iphone)" == PHONE
-check "pick_iphone: CC_UI_DEVICE があればそれを出す" test "$(CC_UI_DEVICE=MINE pick_iphone)" == MINE
+check "find-simulator: 先頭の iPhone の UDID を出す" test "$("$find_simulator")" == PHONE
 fake_command xcrun "echo '{\"devices\":{}}'"
-check "pick_iphone: iPhone が無ければ何も出さない" test -z "$(pick_iphone)"
+check "find-simulator: iPhone が無ければ何も出さない" test -z "$("$find_simulator")"
+check "find-simulator: app-init のひな形と中身が同じ" cmp -s "$find_simulator" "$root/skills/app-init/templates/ios-app/scripts/find-simulator.sh"
 
 add_target="$root/skills/ui-snapshot/scripts/add-target.py"
 manifest="$work/Package.swift"
@@ -48,6 +48,9 @@ expect "NG 出力先がパッケージの中にある" "render-snapshots: 出力
 mkdir -p "$work/busy"
 touch "$work/busy/keep.txt"
 expect "NG 出力先が空でなく" "render-snapshots: 出力先に別のファイルがあれば NG" bash "$render" "$package" "$set_dir" "$work/busy"
+expect "NG iPhone のシミュレーターが無い" "render-snapshots: iPhone が無ければ NG" bash "$render" "$package" "$set_dir" "$work/out"
+fake_command xcodebuild "echo '{\"workspace\":{\"schemes\":[]}}'"
+CC_UI_DEVICE=MINE expect "NG パッケージのスキームが見つからない" "render-snapshots: CC_UI_DEVICE があれば iPhone を探さない" bash "$render" "$package" "$set_dir" "$work/out"
 mkdir -p "$package/Tests/UISnapshotTests"
 expect "NG 前の回の後片付けが済んでいない" "render-snapshots: 前の回のテストが残っていれば NG" bash "$render" "$package" "$set_dir" "$work/out"
 

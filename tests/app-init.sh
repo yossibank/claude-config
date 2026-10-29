@@ -4,7 +4,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 
 replace="$root/skills/app-init/scripts/replace-placeholders.py"
-overview="$root/skills/app-plan/templates/overview.md"
+overview="$root/skills/app-init/templates/ios-app/docs/overview.md"
 readme="$root/skills/app-init/templates/ios-app/README.md"
 placeholder='<何のアプリかを 1 文で。誰の、どの不満を解くか>'
 
@@ -43,5 +43,10 @@ check "create-app: overview と roadmap を写す" test -f "$CC_APPS_DIR/demo/do
 check "create-app: 最初のコミットを作る" grep -q "chore: start demo" <<<"$(git -C "$CC_APPS_DIR/demo" log --oneline)"
 check "create-app: 中身に印を残さない" test -z "$(git -C "$CC_APPS_DIR/demo" grep -lE '__[A-Za-z]+__')"
 expect "NG docs/ のほかに中身がある" "create-app: 中身のある場所には作らない" bash "$create" demo "デモ"
+mkdir -p "$CC_APPS_DIR/planned/docs"
+printf '# 下書き\n' >"$CC_APPS_DIR/planned/docs/overview.md"
+expect OK "create-app: app-plan の下書きがある所に作る" bash "$create" planned "下書き"
+check "create-app: app-plan の下書きを上書きしない" grep -qx '# 下書き' "$CC_APPS_DIR/planned/docs/overview.md"
+check "create-app: 無い方のひな形だけを写す" test -f "$CC_APPS_DIR/planned/docs/roadmap.md"
 
 finish
