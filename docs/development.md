@@ -33,7 +33,7 @@
 | `code-` | コード全般 | rules |
 | `config-` | claude-config 自体の手入れ | skills、scripts |
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
-| `docs-` | 文書 | rules、hooks、scripts |
+| `docs-` | 文書 | rules、skills、hooks、scripts |
 | `pr-` | PR | skills、hooks |
 | `rules-` | rules を読ませる | hooks |
 | `shell-` | シェルスクリプト | hooks |
@@ -97,6 +97,7 @@
 | `tests/ctx-report.sh` | 作り物の会話の記録から、月ごとのトークンを数えられるか |
 | `tests/ctx-suggest-clear.sh` | 文脈が大きい時に、同じ段で 1 回だけ区切りを勧めるか |
 | `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
+| `tests/docs-polish.sh` | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
 | `tests/pr-create.sh` | 作業場所・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
