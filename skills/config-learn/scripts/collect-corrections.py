@@ -1,5 +1,4 @@
 import collections
-import functools
 import glob
 import json
 import os
@@ -15,7 +14,7 @@ from hook_io import EDIT_TOOLS  # noqa: E402
 from hook_messages import BASH_EDITED, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
 from script_io import require_month  # noqa: E402
-from transcripts import entries, projects_dir, touched_since  # noqa: E402
+from transcripts import entries, projects_dir, repo_of, touched_since  # noqa: E402
 
 CUE = re.compile(
     r"ではなく|じゃなく|違う|ちがう|やめ|しないで|外して|戻して|消して|不要|いらない|要らない|"
@@ -23,7 +22,6 @@ CUE = re.compile(
 )
 WIDTH = 120
 APPS = os.path.expanduser("~/Applications")
-WORKTREES = os.path.expanduser("~/.claude/worktrees/")
 PREFIX = APPS.replace("/", "-") + "-"
 GUARDS = {"rules": RULES_UNREAD, "bash": BASH_EDITED, "pr": PR_UNCHECKED}
 HOOK_ERROR = re.compile(r"PreToolUse:\w+ hook error: ")
@@ -58,21 +56,6 @@ def entries_of(path, month):
             continue
         if month_of(entry["timestamp"]) == month:
             yield entry, to_jst(entry["timestamp"])
-
-
-@functools.cache
-def repo_of(path):
-    while path not in ("", "/"):
-        marker = os.path.join(path, ".git")
-        if os.path.isfile(marker):
-            gitdir = Path(marker).read_text(encoding="utf-8").removeprefix("gitdir:").strip()
-            return os.path.basename(gitdir.split("/.git/worktrees/")[0])
-        if os.path.isdir(marker):
-            return os.path.basename(path)
-        if os.path.dirname(path).rstrip("/") + "/" == WORKTREES:
-            return os.path.basename(path)
-        path = os.path.dirname(path)
-    return ""
 
 
 def target_of(part, cwd):

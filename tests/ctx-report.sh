@@ -32,4 +32,13 @@ check "count-tokens: その月に始まった会話だけを数える" grep -q '
 check "count-tokens: 同じ要求を 2 回数えず、サブエージェントを足して入力換算で並べる" \
     grep -qxF '| 09-10 | app @feat/a | 作業 A | 1 | 40 | 25% | 110.0 | 2 |' <<<"$out"
 
+other="$work/other/p2/s2.jsonl"
+mkdir -p "$(dirname "$other")"
+{
+    echo "{\"type\":\"user\",\"timestamp\":\"2026-09-11T01:00:00.000Z\",\"cwd\":\"$HOME/.claude/worktrees/tool/feat-b\",\"gitBranch\":\"feat/b\"}"
+    usage r4 '{"input_tokens":100}'
+} >"$other"
+out=$(CC_PROJECTS_DIR="$work/other" python3 -I "$count" 2026-09)
+check "count-tokens: ~/.claude/worktrees の下の作業は、リポジトリの名前を場所にする" grep -qF '| tool @feat/b |' <<<"$out"
+
 finish

@@ -17,6 +17,7 @@ run rules-require-read 2 "rules: 読んだ後に圧縮があれば、また止�
 auto="$HOME/.claude/rules"
 echo "{\"type\":\"attachment\",\"attachment\":{\"type\":\"instructions\",\"files\":[{\"path\":\"$auto/code-comments.md\"},{\"path\":\"$auto/swift-core.md\"},{\"path\":\"$auto/swift-ui.md\"}]}}" >>"$log"
 run rules-require-read 0 "rules: 圧縮の後に自動で読み込まれた印があれば通る" "$(edit s1 main "$log" "$swift")"
+run rules-require-read 2 "rules: まだ無いフォルダへの編集も止める" "$(edit s4 main "$work/none.jsonl" "$app/ios/Features/New/Deep/NewView.swift")"
 run rules-require-read 0 "rules: 当たる rules が無いファイルは止めない" "$(edit s1 main "$log" "$app/data.json")"
 echo '# メモ' >"$work/memo.md"
 run rules-require-read 0 "rules: git の外のファイル（メモリ・プラン）は止めない" "$(edit s1 main "$log" "$work/memo.md")"

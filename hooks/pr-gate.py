@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git_root  # noqa: E402
-from hook_io import read_payload, split_commands, tool_input  # noqa: E402
+from hook_io import command_words, git_subcommand, read_payload, split_commands, tool_input  # noqa: E402
 from hook_messages import PR_UNCHECKED  # noqa: E402
 
 CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "run-check.sh")
@@ -13,7 +13,8 @@ PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 
 
 def gated_repo(command, cwd):
-    for words in split_commands(command):
+    for parts in split_commands(command):
+        words = command_words(parts)
         if words[:1] == ["cd"] and len(words) > 1:
             cwd = os.path.join(cwd, os.path.expanduser(words[1]))
             continue
@@ -21,11 +22,10 @@ def gated_repo(command, cwd):
             return cwd
         if words[:1] != ["git"]:
             continue
+        directories, rest = git_subcommand(words)
         repo = cwd
-        rest = words[1:]
-        if rest[:1] == ["-C"] and len(rest) > 1:
-            repo = os.path.join(cwd, os.path.expanduser(rest[1]))
-            rest = rest[2:]
+        for directory in directories:
+            repo = os.path.join(repo, os.path.expanduser(directory))
         if rest[:1] == ["push"] and not any(word in PUSH_SKIPPED or word.startswith(":") for word in rest[1:]):
             return repo
     return None

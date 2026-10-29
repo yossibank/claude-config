@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 
 from dates import month_of, month_start, to_jst  # noqa: E402
 from script_io import fail, require_month  # noqa: E402
-from transcripts import entries, projects_dir, touched_since  # noqa: E402
+from transcripts import entries, projects_dir, repo_of, touched_since  # noqa: E402
 
 WEIGHTS = {"input": 1, "write_5m": 1.25, "write_1h": 2, "read": 0.1, "output": 5}
 
@@ -29,7 +29,7 @@ def usage_of(path, seen, month=None):
             if month and month_of(entry["timestamp"]) != month:
                 return None
         if entry.get("cwd") and not place:
-            place = os.path.basename(entry["cwd"].split("/.claude/worktrees/")[0])
+            place = repo_of(entry["cwd"]) or os.path.basename(entry["cwd"])
         if entry.get("gitBranch"):
             branches[entry["gitBranch"]] += 1
         if kind == "assistant":
