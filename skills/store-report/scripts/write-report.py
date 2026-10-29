@@ -1,13 +1,13 @@
 import glob
 import os
 import sys
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "lib"))
 
-from modules import load_module  # noqa: E402
-from months import MONTH  # noqa: E402
-from script_io import Failure, fail  # noqa: E402
+from loader import load_module  # noqa: E402
+from script_io import Failure, fail, require_month  # noqa: E402
 
 
 def failure_of(error):
@@ -15,18 +15,13 @@ def failure_of(error):
 
 
 def main():
-    if len(sys.argv) < 2:
-        fail("使い方: write-report.py <YYYY-MM>")
-
-    month = sys.argv[1]
-    if not MONTH.fullmatch(month):
-        fail(f"月は YYYY-MM で書く: {month}")
+    month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: write-report.py <YYYY-MM>")
     apps_dir = os.environ.get("APPS_DIR", os.path.expanduser("~/Applications/AppStore"))
     out_dir = os.path.join(apps_dir, "reports")
 
     apps = []
     for path in sorted(glob.glob(os.path.join(apps_dir, "*", "store", "app-id.txt"))):
-        app_id = open(path, encoding="utf-8").read().strip()
+        app_id = Path(path).read_text(encoding="utf-8").strip()
         apps.append((os.path.basename(os.path.dirname(os.path.dirname(path))), app_id))
 
     if not apps:
@@ -71,7 +66,7 @@ def main():
 
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, f"{month}.md")
-    open(path, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+    Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
     print(f"\nOK {path}")
 

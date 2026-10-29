@@ -91,6 +91,7 @@ check "ctx: 20 万トークンを超えたら区切りを勧める" grep -q syst
 out=$(echo "{\"session_id\":\"c1\",\"transcript_path\":\"$work/long.jsonl\"}" | bash "$hooks" ctx-suggest-clear)
 check "ctx: 同じ段では 2 回勧めない" test -z "$out"
 run ctx-suggest-clear 0 "ctx: 壊れた入力でも落ちない" "not json" pr
+run ctx-suggest-clear 1 "ctx: 知らないモードは止めずに知らせる" "{}" prr
 
 run swift-format 0 "swift: .swiftformat が無ければ何もしない" "{\"tool_input\":{\"file_path\":\"$swift\"}}"
 
@@ -162,6 +163,7 @@ doc_case 2 "状態の段に固定のバッジを置かない" docs/x.md "$note"$
 doc_case 0 "節の中のページ内リンクの一覧は目次にしない" docs/x.md "$note"$'\n## 📚 文書\n\n関係する節を次に置く。\n\n- [入れ方](#入れ方)\n- [使い方](#使い方)'
 doc_case 0 "小文字のアラートも種類を見分ける" docs/x.md $'# t\n\n> [!note]\n> 分かる。'
 
+run rules-detect-bash-edits 1 "bash: 知らないモードは止めずに知らせる" "$(bash_call t0 'ls')" before
 run rules-detect-bash-edits 0 "bash: 書き換える前の状態を残す" "$(bash_call t1 'sed -i')" pre
 sed -i '' 's/概要/概要です/' "$app/docs/overview.md"
 run rules-detect-bash-edits 2 "bash: Bash で .md を書き換えると知らせて検査する" "$(bash_call t1 'sed -i')" post
@@ -221,13 +223,30 @@ printf '#!/bin/bash\necho "壊れた" >&2\nexit 3\n' >"$work/broken-check.sh"
 out=$(python3 -I - "$root" "$work/broken-check.sh" "$app" <<'EOF'
 import sys
 sys.path.insert(0, sys.argv[1] + "/lib")
-from modules import load_hook
+from loader import load_hook
 gate = load_hook("pr-gate")
 gate.CHECK_SH = sys.argv[2]
 print(gate.problems(sys.argv[3]))
 EOF
 )
 check "pr: run-check.sh が何も出さずに落ちたら、理由に stderr の末尾を出す" grep -q "run-check.sh が失敗した（終了コード 3）: 壊れた" <<<"$out"
+out=$(python3 -I - "$root" "$app" 2>&1 <<'EOF'
+import subprocess, sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_hook
+gate = load_hook("pr-gate")
+gate.git_root = lambda repo: repo
+
+
+def slow(*args, **kwargs):
+    raise subprocess.TimeoutExpired(args[0], 30)
+
+
+gate.subprocess.run = slow
+print(gate.problems(sys.argv[2]))
+EOF
+)
+check "pr: run-check.sh が時間切れなら、stderr に知らせて通す" grep -q "確かめずに通す（TimeoutExpired）" <<<"$out"
 CLAUDE_HOOKS_OFF="rules-require-read,pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はカンマで区切ってもよい" "$(push "$app" 'git push')"
 CLAUDE_HOOKS_OFF=$'rules-require-read\tpr-gate' run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はタブで区切ってもよい" "$(push "$app" 'git push')"
 out=$(push "$app" 'git status' | CLAUDE_HOOKS_OFF="pr-gate.py" bash "$hooks" pr-gate 2>&1)

@@ -2,6 +2,7 @@ import os
 import plistlib
 import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
@@ -55,7 +56,7 @@ def main():
                 manifests.append(path)
             if not file.endswith(".swift"):
                 continue
-            text = open(path, encoding="utf-8", errors="ignore").read()
+            text = Path(path).read_text(encoding="utf-8", errors="ignore")
             for category, pattern in REASONS.items():
                 calls = [
                     name for name in C_CALLS.get(category, [])

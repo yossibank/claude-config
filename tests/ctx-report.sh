@@ -23,7 +23,7 @@ echo '{"type":"user","timestamp":"2026-08-31T01:00:00.000Z"}' >"$CLAUDE_PROJECTS
 usage r3 '{"input_tokens":900000}' >>"$CLAUDE_PROJECTS/p1/old.jsonl"
 
 expect "NG 使い方" "count-tokens: 引数が無ければ NG" python3 -I "$count"
-expect "NG 使い方" "count-tokens: 月の形が違えば NG" python3 -I "$count" 2026-13
+expect "NG 月は YYYY-MM で書く" "count-tokens: 月の形が違えば NG" python3 -I "$count" 2026-13
 expect "NG 件数は数字で書く" "count-tokens: 件数が数字でなければ NG" python3 -I "$count" 2026-09 x
 CLAUDE_PROJECTS="$work/none" expect "の会話の記録が無い" "count-tokens: 会話の記録が無ければ NG" python3 -I "$count" 2026-09
 

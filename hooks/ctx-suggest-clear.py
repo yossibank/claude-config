@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import tempfile
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
@@ -36,15 +37,14 @@ def context_tokens(path):
 
 def notified_level(session):
     try:
-        return int(open(os.path.join(STATE, safe_name(session))).read())
+        return int(Path(STATE, safe_name(session)).read_text())
     except (OSError, ValueError):
         return 0
 
 
 def save_level(session, level):
     os.makedirs(STATE, exist_ok=True)
-    with open(os.path.join(STATE, safe_name(session)), "w") as file:
-        file.write(str(level))
+    Path(STATE, safe_name(session)).write_text(str(level))
 
 
 def long_context(payload):
@@ -69,6 +69,9 @@ def created_pr(payload):
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "context"
+    if mode not in ("context", "pr"):
+        print(f"ctx-suggest-clear: 知らないモード「{mode}」。pr を渡すか、何も渡さない", file=sys.stderr)
+        sys.exit(1)
     payload = read_payload()
     if payload is None:
         return

@@ -6,12 +6,14 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "lib"))
 
-from md_blocks import fence_marks, front_matter_end  # noqa: E402
-from modules import load_hook  # noqa: E402
+from hook_io import EDIT_TOOLS  # noqa: E402
+from loader import load_hook  # noqa: E402
+from md_blocks import fence_marks, front_matter, table_under  # noqa: E402
 
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
@@ -25,9 +27,8 @@ REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
 SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
 PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
-WRITE_TOOLS = re.compile(r"\b(Multi|Notebook)?Edit\b|\bWrite\b")
+WRITE_TOOLS = re.compile(rf"\b(?:{'|'.join(EDIT_TOOLS)})\b")
 NAMING = os.path.join(ROOT, "docs", "development.md")
-VERB_ROW = re.compile(r"^\| ((?:`[a-z]+`・?)+) \|", re.M)
 APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
 APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
 SKILL_SECTIONS = ["起動条件", "入力", "手順", "報告", "制約"]
@@ -35,38 +36,20 @@ DESCRIPTION_LIMIT = 120
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
 ASK_EVERY_TIME = {"store-release/scripts/archive-app.sh"}
 
-problems = []
 
-
-def ng(path, line, message):
-    problems.append(f"NG {os.path.relpath(path, ROOT)}:{line} {message}")
-
-
+@functools.cache
 def tracked(*patterns):
     out = subprocess.run(["git", "-C", ROOT, "ls-files", *patterns], capture_output=True, text=True, check=True).stdout
-    return [os.path.join(ROOT, path) for path in out.splitlines()]
+    return tuple(os.path.join(ROOT, path) for path in out.splitlines())
 
 
 @functools.cache
 def read(path):
-    return open(path, encoding="utf-8").read()
+    return Path(path).read_text(encoding="utf-8")
 
 
-def front_matter(path):
-    lines = read(path).split("\n")
-    end = front_matter_end(lines)
-    if end is None:
-        return None
-    fields = {}
-    key = None
-    for line in lines[1:end]:
-        match = re.match(r"^([a-z-]+):\s*(.*)$", line)
-        if match:
-            key = match.group(1)
-            fields[key] = match.group(2).strip().strip('"')
-        elif key and line.strip():
-            fields[key] += "\n" + line.strip()
-    return fields
+def fields_of(path):
+    return front_matter(read(path).split("\n")) or {}
 
 
 def outside_code(path):
@@ -83,16 +66,16 @@ def check_skill_sections(skill):
     names = [name for _, name in found]
     for need in ("手順", "報告"):
         if need not in names:
-            ng(skill, 1, f"## {need} が無い")
+            yield skill, 1, f"## {need} が無い"
     fixed = [(number, name) for number, name in found if name in SKILL_SECTIONS]
     for (_, before), (number, after) in zip(fixed, fixed[1:]):
         if SKILL_SECTIONS.index(before) >= SKILL_SECTIONS.index(after):
-            ng(skill, number, f"## {after} は {'・'.join(SKILL_SECTIONS)} の順に置く")
+            yield skill, number, f"## {after} は {'・'.join(SKILL_SECTIONS)} の順に置く"
     if "手順" in names and "報告" in names:
         start, end = names.index("手順"), names.index("報告")
         for index, (number, name) in enumerate(found):
             if name not in SKILL_SECTIONS and not start < index < end:
-                ng(skill, number, f"## {name} は、## 手順 と ## 報告 の間に置く")
+                yield skill, number, f"## {name} は、## 手順 と ## 報告 の間に置く"
 
 
 def allowed_patterns(fields):
@@ -114,18 +97,23 @@ def skill_names():
     return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("skills/*/SKILL.md"))
 
 
+@functools.cache
+def expanded_skills():
+    return tuple(expand_aliases(read(path)) for path in tracked("skills/*/SKILL.md"))
+
+
 def check_skills():
     for skill_dir in skill_names():
         base = os.path.join(ROOT, "skills", skill_dir)
         skill = os.path.join(base, "SKILL.md")
-        fields = front_matter(skill) or {}
+        fields = fields_of(skill)
         if fields.get("name") != skill_dir:
-            ng(skill, 2, f"name がフォルダ名 {skill_dir} と違う: {fields.get('name')}")
+            yield skill, 2, f"name がフォルダ名 {skill_dir} と違う: {fields.get('name')}"
         if not fields.get("description", "").endswith("。"):
-            ng(skill, 3, "description を「。」で終える")
+            yield skill, 3, "description を「。」で終える"
         if len(fields.get("description", "")) > DESCRIPTION_LIMIT:
-            ng(skill, 3, f"description が {DESCRIPTION_LIMIT} 字を超えている。毎回読み込まれるので短くする")
-        check_skill_sections(skill)
+            yield skill, 3, f"description が {DESCRIPTION_LIMIT} 字を超えている。毎回読み込まれるので短くする"
+        yield from check_skill_sections(skill)
         patterns = allowed_patterns(fields)
         for number, line in enumerate(expand_aliases(read(skill)).split("\n"), 1):
             if line.startswith("allowed-tools:"):
@@ -133,7 +121,7 @@ def check_skills():
             for reference, after in SKILL_REF.findall(line):
                 reference = reference.rstrip("./")
                 if reference and after not in ("<", "*") and not os.path.exists(os.path.join(base, reference)):
-                    ng(skill, number, f"参照先が無い: {reference}")
+                    yield skill, number, f"参照先が無い: {reference}"
             for prefix, reference in SKILL_PATH.findall(line):
                 if not os.path.exists(os.path.normpath(os.path.join(base, reference))):
                     continue
@@ -142,62 +130,61 @@ def check_skills():
                 allowed = covered(prefix, reference, patterns)
                 if f"{skill_dir}/{reference}" in ASK_EVERY_TIME:
                     if allowed:
-                        ng(skill, number, f"外に出す操作が allowed-tools で自動で許可されている: {reference}")
+                        yield skill, number, f"外に出す操作が allowed-tools で自動で許可されている: {reference}"
                 elif not allowed:
-                    ng(skill, number, f"allowed-tools で許可していない: {prefix}{reference}")
-        check_unused(skill_dir)
+                    yield skill, number, f"allowed-tools で許可していない: {prefix}{reference}"
+        yield from check_unused(skill_dir)
 
 
 def check_unused(skill_dir):
     scripts = tracked(f"skills/{skill_dir}/scripts/*")
     own_skill = expand_aliases(read(os.path.join(ROOT, "skills", skill_dir, "SKILL.md")))
-    other_skills = [expand_aliases(read(path)) for path in tracked("skills/*/SKILL.md")]
     for path in scripts:
         name = os.path.basename(path)
         in_own_skill = f"{SKILL_DIR}/scripts/{name}" in own_skill
-        in_other_skill = any(f"{SKILL_DIR}/../{skill_dir}/scripts/{name}" in text for text in other_skills)
+        in_other_skill = any(f"{SKILL_DIR}/../{skill_dir}/scripts/{name}" in text for text in expanded_skills())
         in_sibling = any(
             re.search(rf"[/\"'\s]{re.escape(name)}\b", read(sibling)) for sibling in scripts if sibling != path
         )
         if not (in_own_skill or in_other_skill or in_sibling):
-            ng(path, 1, "どこからも使われていない")
+            yield path, 1, "どこからも使われていない"
 
 
 def check_agents():
     for path in tracked("agents/*.md"):
-        fields = front_matter(path) or {}
+        fields = fields_of(path)
         name = os.path.splitext(os.path.basename(path))[0]
         if fields.get("name") != name:
-            ng(path, 2, f"name がファイル名 {name} と違う: {fields.get('name')}")
+            yield path, 2, f"name がファイル名 {name} と違う: {fields.get('name')}"
         if not fields.get("model"):
-            ng(path, 1, "model が無い")
+            yield path, 1, "model が無い"
         found = headings(path)
         if not found or found[-1][1] != "返す形":
-            ng(path, found[-1][0] if found else 1, "agents の最後の ## は「返す形」にする")
+            yield path, found[-1][0] if found else 1, "agents の最後の ## は「返す形」にする"
         body = read(path).split("\n---\n", 1)[-1]
         tools = fields.get("tools")
         if "書き換えない" in body and (tools is None or WRITE_TOOLS.search(tools)):
-            ng(path, 1, "書き換えないエージェントは tools を書き、Edit・Write・MultiEdit・NotebookEdit を入れない")
+            yield path, 1, f"書き換えないエージェントは tools を書き、{'・'.join(EDIT_TOOLS)} を入れない"
 
 
 def check_claude_templates():
     order = [row[1] for row in load_hook("docs-check").rule_table("## CLAUDE.md の形", "順")][1:-1]
     if not order:
-        ng(os.path.join(ROOT, "rules", "docs-claude.md"), 1, "CLAUDE.md の形の表が読めない")
+        yield os.path.join(ROOT, "rules", "docs-claude.md"), 1, "CLAUDE.md の形の表が読めない"
         return
     for path in tracked("skills/*/templates/*/CLAUDE.md"):
         top = 0
         for number, name in headings(path):
             rank = order.index(name) if name in order else len(order)
             if rank < top:
-                ng(path, number, f"CLAUDE.md の ## は {'・'.join(order)}・ほかの節の順に並べる")
+                yield path, number, f"CLAUDE.md の ## は {'・'.join(order)}・ほかの節の順に並べる"
             top = max(top, rank)
 
 
 def check_rules():
     for path in tracked("rules/*.md"):
-        if "paths" not in (front_matter(path) or {}):
-            ng(path, 1, "frontmatter に paths が無い")
+        if "paths" not in fields_of(path):
+            yield path, 1, "frontmatter に paths が無い"
 
 
 def check_readme():
@@ -207,19 +194,22 @@ def check_readme():
     entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "rules/*.md", "hooks/*.py", "hooks/*.sh", "scripts/*")]
     for entry in entries:
         if entry not in links:
-            ng(readme, 1, f"README の表に載っていない: {entry}")
+            yield readme, 1, f"README の表に載っていない: {entry}"
+
+
+def naming_table(heading, first_column):
+    return table_under(read(NAMING).split("\n"), heading, first_column)
 
 
 def prefixes():
-    text = read(NAMING)
-    rows = re.findall(r"^\| `([a-z]+-)` \| [^|]+ \| ([^|]+) \|$", text, re.M)
-    return {prefix: {place.strip() for place in places.split("、")} for prefix, places in rows}
+    rows = naming_table("### 接頭語の表", "接頭語")
+    return {row[0]: {place.strip() for place in row[-1].split("、")} for row in rows}
 
 
 def check_prefixes():
     table = prefixes()
     if not table:
-        ng(NAMING, 1, "名前の付け方の接頭語の表が読めない")
+        yield NAMING, 1, "名前の付け方の接頭語の表が読めない"
         return
     names = {
         "skills": [(os.path.join(ROOT, "skills", name, "SKILL.md"), name) for name in skill_names()],
@@ -231,27 +221,26 @@ def check_prefixes():
         for path, name in items:
             prefix = next((p for p in table if name.startswith(p)), None)
             if prefix is None:
-                ng(path, 1, f"名前の接頭語が接頭語の表に無い: {name}")
+                yield path, 1, f"名前の接頭語が接頭語の表に無い: {name}"
             elif place not in table[prefix]:
-                ng(path, 1, f"接頭語 {prefix} は {place} に使わない（接頭語の表の使う所）")
+                yield path, 1, f"接頭語 {prefix} は {place} に使わない（接頭語の表の使う所）"
 
 
 def verbs():
-    text = read(NAMING)
-    return {verb for cell in VERB_ROW.findall(text) for verb in re.findall(r"`([a-z]+)`", cell)}
+    return {verb.strip("`") for row in naming_table("### 動詞の表", "動詞") for verb in row[0].split("・")}
 
 
 def check_script_verbs():
     allowed = verbs()
     if not allowed:
-        ng(NAMING, 1, "名前の付け方の動詞の表が読めない")
+        yield NAMING, 1, "名前の付け方の動詞の表が読めない"
         return
     for path in tracked("skills/*/scripts/*"):
         if len(os.path.relpath(path, ROOT).split(os.sep)) != 4:
             continue
         verb = os.path.basename(path).split(".")[0].split("-")[0]
         if verb not in allowed:
-            ng(path, 1, f"スキルのスクリプトの頭の動詞が動詞の表に無い: {verb}")
+            yield path, 1, f"スキルのスクリプトの頭の動詞が動詞の表に無い: {verb}"
 
 
 def in_app(path):
@@ -279,7 +268,7 @@ def check_links():
                     continue
                 resolved = os.path.normpath(os.path.join(os.path.dirname(place), target))
                 if not (exists_in_app(resolved) if template else os.path.exists(resolved)):
-                    ng(path, number, f"リンク先が無い: {target}")
+                    yield path, number, f"リンク先が無い: {target}"
 
 
 def path_bases(path):
@@ -297,7 +286,7 @@ def check_paths():
                 reference = reference.rstrip(".")
                 if after in ("<", "*") or any(os.path.exists(os.path.join(base, reference)) for base in path_bases(path)):
                     continue
-                ng(path, number, f"参照先が無い: {reference}")
+                yield path, number, f"参照先が無い: {reference}"
 
 
 def check_template_scripts():
@@ -306,44 +295,47 @@ def check_template_scripts():
         for number, line in enumerate(read(path).split("\n"), 1):
             for reference in CONFIG_REF.findall(line):
                 if not os.path.exists(os.path.join(ROOT, reference)):
-                    ng(path, number, f"claude-config の参照先が無い: {reference}")
+                    yield path, number, f"claude-config の参照先が無い: {reference}"
 
 
 def check_settings():
     path = os.path.join(ROOT, "settings", "settings.json")
-    for group in json.load(open(path, encoding="utf-8")).get("hooks", {}).values():
+    for group in json.loads(read(path)).get("hooks", {}).values():
         for entry in group:
             for hook in entry.get("hooks", []):
                 command = hook.get("command", "")
                 names = HOOK_NAME.findall(command)
                 if not names:
-                    ng(path, 1, f"フックを hooks/run.sh で呼んでいない: {command[:60]}")
+                    yield path, 1, f"フックを hooks/run.sh で呼んでいない: {command[:60]}"
                 for name in names:
                     if not os.path.isfile(os.path.join(ROOT, "hooks", f"{name}.py")):
-                        ng(path, 1, f"フックのファイルが無い: hooks/{name}.py")
+                        yield path, 1, f"フックのファイルが無い: hooks/{name}.py"
 
 
-def check_scripts():
+def check_shell_scripts():
     shell = load_hook("shell-check")
     for path in tracked("*.sh"):
         for number, message in shell.check(path):
-            ng(path, number, message)
+            yield path, number, message
         if os.path.relpath(path, ROOT).startswith("hooks/"):
             continue
         lines = read(path).split("\n")
         for number, line in enumerate(lines, 1):
             failing = number < len(lines) and EXIT_FAIL.match(lines[number])
             if NG_TO_STDERR.search(line) or (">&2" in line and failing) or ("NG" in line and "/dev/stderr" in line):
-                ng(path, number, "失敗を stderr に出している。stdout に NG で始めて出す")
+                yield path, number, "失敗を stderr に出している。stdout に NG で始めて出す"
             if REQUIRED_ARG.search(line):
-                ng(path, number, "${N:?} は stderr に出て止まる。[[ $# -ge N ]] で確かめ、stdout に NG を出す")
+                yield path, number, "${N:?} は stderr に出て止まる。[[ $# -ge N ]] で確かめ、stdout に NG を出す"
+
+
+def check_python_scripts():
     for path in tracked("*.py"):
         try:
             tree = ast.parse(read(path))
         except SyntaxError as error:
-            ng(path, error.lineno or 1, f"Python の構文が通らない: {error.msg}")
+            yield path, error.lineno or 1, f"Python の構文が通らない: {error.msg}"
             continue
-        check_python(path, tree)
+        yield from check_python(path, tree)
 
 
 def is_main_guard(node):
@@ -383,40 +375,46 @@ def runs_on_import(node):
 
 def check_python(path, tree):
     if "/lib/" not in path and not any(is_main_guard(node) for node in tree.body):
-        ng(path, 1, 'if __name__ == "__main__": が無い')
+        yield path, 1, 'if __name__ == "__main__": が無い'
     for node in tree.body:
         if runs_on_import(node):
-            ng(path, node.lineno, "読み込んだだけで処理が走る。main() に入れる")
+            yield path, node.lineno, "読み込んだだけで処理が走る。main() に入れる"
     if os.path.relpath(path, ROOT).startswith("hooks/"):
         return
     for node in ast.walk(tree):
         if is_exit_with_text(node):
-            ng(path, node.lineno, "sys.exit に文を渡すと stderr に出る。stdout に NG を出して sys.exit(1) にする")
+            yield path, node.lineno, "sys.exit に文を渡すと stderr に出る。stdout に NG を出して sys.exit(1) にする"
 
 
 def check_docs():
     docs = load_hook("docs-check")
     if not docs.heading_emojis() or not docs.readme_order():
-        ng(os.path.join(ROOT, "rules", "docs-human.md"), 1, "見出しの絵文字の表か、README の形の表が読めない")
+        yield os.path.join(ROOT, "rules", "docs-human.md"), 1, "見出しの絵文字の表か、README の形の表が読めない"
     for path in tracked("*.md"):
         for number, message in docs.check(path):
-            ng(path, number, message)
+            yield path, number, message
+
+
+CHECKS = [
+    check_skills,
+    check_agents,
+    check_claude_templates,
+    check_rules,
+    check_readme,
+    check_prefixes,
+    check_script_verbs,
+    check_links,
+    check_paths,
+    check_template_scripts,
+    check_settings,
+    check_shell_scripts,
+    check_python_scripts,
+    check_docs,
+]
 
 
 def main():
-    check_skills()
-    check_agents()
-    check_claude_templates()
-    check_rules()
-    check_readme()
-    check_prefixes()
-    check_script_verbs()
-    check_links()
-    check_paths()
-    check_template_scripts()
-    check_settings()
-    check_scripts()
-    check_docs()
+    problems = [f"NG {os.path.relpath(path, ROOT)}:{line} {message}" for check in CHECKS for path, line, message in check()]
     if problems:
         print("\n".join(problems))
         print(f"NG config-audit: {len(problems)} 件")

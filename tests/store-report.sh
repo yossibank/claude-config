@@ -17,6 +17,26 @@ expect "環境変数が無い" "fetch-sales: キーが無ければ、月の形�
 ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH=z ASC_VENDOR_NUMBER=1 \
     expect "月は YYYY-MM で書く" "fetch-sales: キーがあれば月の形を確かめる" python3 -I "$scripts/fetch-sales.py" 2026-13
 
+{
+    printf 'SKU\tApple Identifier\tParent Identifier\tUnits\tDeveloper Proceeds\tProduct Type Identifier\tCurrency of Proceeds\n'
+    printf 'app1\t111\t\t10\t0\t1F\tJPY\n'
+    printf 'app1\t111\t\t2\t0\t7F\tJPY\n'
+    printf 'coin\t901\tapp1\t3\t100\tIA1\tJPY\n'
+    printf 'coin\t901\tapp1\t1\t1.5\tIA1\tUSD\n'
+    printf 'app2\t222\t\t5\t0\t1\tJPY\n'
+} >"$work/sales.tsv"
+summary=$(python3 -I - "$root" "$scripts/fetch-sales.py" "$work/sales.tsv" <<'EOF'
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+sales = load_module(sys.argv[2]).summarize(Path(sys.argv[3]).read_text())
+print("\n".join("\t".join([app, *values]) for app, values in sales.items()))
+EOF
+)
+check "fetch-sales: 課金をアプリにまとめ、ダウンロードと通貨ごとの収益を数える" \
+    test "$summary" = $'111\t10\t300.00 JPY 1.50 USD\n222\t5\t0'
+
 expect "月は YYYY-MM で書く" "write-report: 月の形が違えば NG" python3 -I "$scripts/write-report.py" 2026-13
 mkdir -p "$work/none"
 APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "write-report: アプリが無ければ NG" python3 -I "$scripts/write-report.py" 2026-09

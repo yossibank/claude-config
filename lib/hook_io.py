@@ -7,6 +7,10 @@ import time
 
 SEGMENT = re.compile(r"&&|\|\||;|\|")
 OFF_SEPARATOR = re.compile(r"[\s,]+")
+EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
+RULES_UNREAD = "この編集に当たる決まりを、この会話でまだ読んでいない"
+BASH_EDITED = "Bash でファイルを書き換えた"
+PR_UNCHECKED = "push と PR の作成の前に"
 
 
 def read_payload():

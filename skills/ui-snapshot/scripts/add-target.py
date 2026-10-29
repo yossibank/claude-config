@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
@@ -14,7 +15,7 @@ def main():
     manifest, targets = sys.argv[1], sys.argv[2]
 
     dependencies = []
-    for line in open(targets, encoding="utf-8").read().split():
+    for line in Path(targets).read_text(encoding="utf-8").split():
         if ":" in line:
             product, package = line.split(":", 1)
             dependencies.append(f'.product(name: "{product}", package: "{package}")')
@@ -30,10 +31,10 @@ def main():
         "        ),\n"
     )
 
-    text = open(manifest, encoding="utf-8").read()
+    text = Path(manifest).read_text(encoding="utf-8")
     if ANCHOR not in text:
         fail(f"targets: [ が見つからない: {manifest}")
-    open(manifest, "w", encoding="utf-8").write(text.replace(ANCHOR, ANCHOR + target, 1))
+    Path(manifest).write_text(text.replace(ANCHOR, ANCHOR + target, 1), encoding="utf-8")
 
 
 if __name__ == "__main__":
