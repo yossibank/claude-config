@@ -3,12 +3,12 @@ import os
 import re
 import sys
 import tempfile
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import git, git_root, hook_off, read_payload, remove_stale, safe_name, split_commands, tool_input  # noqa: E402
-from hook_stops import BASH_EDITED  # noqa: E402
-from modules import load_hook  # noqa: E402
+from hook_io import BASH_EDITED, git, git_root, hook_off, read_payload, remove_stale, safe_name, split_commands, tool_input  # noqa: E402
+from loader import load_hook  # noqa: E402
 
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
@@ -47,14 +47,12 @@ def before(data):
         return
     os.makedirs(STATE, exist_ok=True)
     remove_stale(STATE, STALE)
-    with open(state_file(data), "w") as file:
-        json.dump({"root": root, "files": files}, file)
+    Path(state_file(data)).write_text(json.dumps({"root": root, "files": files}))
 
 
 def after(data):
     try:
-        with open(state_file(data)) as file:
-            earlier = json.load(file)
+        earlier = json.loads(Path(state_file(data)).read_text())
         os.remove(state_file(data))
     except (OSError, ValueError):
         return
@@ -88,13 +86,15 @@ def after(data):
 
 
 def main():
+    modes = {"pre": before, "post": after}
+    mode = sys.argv[1] if len(sys.argv) > 1 else ""
+    if mode not in modes:
+        print(f"rules-detect-bash-edits: 知らないモード「{mode}」。pre か post を渡す", file=sys.stderr)
+        sys.exit(1)
     data = read_payload()
     if data is None:
         return
-    if sys.argv[1:] == ["pre"]:
-        before(data)
-    else:
-        after(data)
+    modes[mode](data)
 
 
 if __name__ == "__main__":

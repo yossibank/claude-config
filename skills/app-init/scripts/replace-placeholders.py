@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
@@ -13,7 +14,7 @@ def replace(text, tokens):
 
 
 def summary_of(overview):
-    lines = open(overview, encoding="utf-8").read().split("\n")
+    lines = Path(overview).read_text(encoding="utf-8").split("\n")
     body = (line.strip() for line in lines[1:])
     first = next((line for line in body if line and not line.startswith(">")), "")
     if first.startswith(("<", "#", "|", "-")):
@@ -32,12 +33,12 @@ def main():
         for file in files:
             path = os.path.join(directory, file)
             try:
-                text = open(path, encoding="utf-8").read()
+                text = Path(path).read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 continue
             new = replace(text, tokens)
             if new != text:
-                open(path, "w", encoding="utf-8").write(new)
+                Path(path).write_text(new, encoding="utf-8")
         for item in files + folders:
             renamed = replace(item, tokens)
             if renamed != item:
@@ -46,8 +47,8 @@ def main():
     readme = os.path.join(root, "README.md")
     summary = summary_of(os.path.join(root, "docs", "overview.md"))
     if summary:
-        text = open(readme, encoding="utf-8").read()
-        open(readme, "w", encoding="utf-8").write(text.replace("<何のアプリかを 1 文で>", summary))
+        text = Path(readme).read_text(encoding="utf-8")
+        Path(readme).write_text(text.replace("<何のアプリかを 1 文で>", summary), encoding="utf-8")
 
 
 if __name__ == "__main__":

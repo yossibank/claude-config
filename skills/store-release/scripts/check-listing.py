@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
@@ -32,7 +33,7 @@ def main():
                 print(f"NG {name} が無い")
                 ok = False
             continue
-        text = open(path, encoding="utf-8").read().strip()
+        text = Path(path).read_text(encoding="utf-8").strip()
         count = len(text)
         if not text and name not in OPTIONAL:
             print(f"NG {name} が空")
@@ -48,11 +49,11 @@ def main():
 
     keywords = os.path.join(folder, "keywords.txt")
     if os.path.exists(keywords):
-        words = [w for w in open(keywords, encoding="utf-8").read().strip().split(",")]
+        text = Path(keywords).read_text(encoding="utf-8")
+        words = text.strip().split(",")
         if any(w != w.strip() for w in words):
             print("NG keywords.txt のカンマの前後に空白がある。字数の無駄になる")
             ok = False
-        text = open(keywords, encoding="utf-8").read()
         if "、" in text or "，" in text:
             print("NG keywords.txt は半角のカンマで区切る")
             ok = False

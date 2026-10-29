@@ -11,3 +11,7 @@ def to_jst(stamp):
 
 def month_start(month):
     return datetime.datetime.strptime(month, "%Y-%m").replace(tzinfo=JST)
+
+
+def month_of(stamp):
+    return to_jst(stamp).strftime("%Y-%m")

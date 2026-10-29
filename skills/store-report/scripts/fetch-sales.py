@@ -13,7 +13,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from months import MONTH  # noqa: E402
+from dates import MONTH  # noqa: E402
 from script_io import Failure, fail  # noqa: E402
 
 DOWNLOADS = {"1", "1F", "1T", "F1"}
@@ -91,7 +91,10 @@ def sales_by_app(month):
         raise Failure(f"レポートを読めなかった: {error.code}") from error
     except (urllib.error.URLError, OSError, subprocess.CalledProcessError) as error:
         raise Failure(f"レポートを読めなかった: {type(error).__name__}") from error
+    return summarize(text)
 
+
+def summarize(text):
     rows = list(csv.DictReader(io.StringIO(text), delimiter="\t"))
     apps_by_sku = {row["SKU"]: row["Apple Identifier"] for row in rows if not row.get("Parent Identifier", "").strip()}
 
