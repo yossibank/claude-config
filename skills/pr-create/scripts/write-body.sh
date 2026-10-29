@@ -7,7 +7,8 @@ source "$(dirname "$0")/../../../lib/git.sh"
 
 use_repo "$1"
 base=$(git -C "$repo" merge-base "$2" HEAD)
-size=$("$(dirname "$0")/classify-diff.sh" "$repo" "$2" | head -n 1) || size=""
+size=$("$(dirname "$0")/classify-diff.sh" "$repo" "$2") || size=""
+size=${size%%$'\n'*}
 shift 2
 
 record=$(git_file "$repo" pr-checks)
