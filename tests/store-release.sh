@@ -44,4 +44,27 @@ printf '家計簿,節約\n' >"$folder/keywords.txt"
 rm -f "$folder/subtitle.txt"
 expect "subtitle.txt が無い" "check-listing: 要るファイルが無ければ NG" python3 -I "$listing" "$folder"
 
+privacy="$root/skills/store-release/scripts/check-privacy.py"
+write_manifest() {
+    printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict><key>NSPrivacyAccessedAPITypes</key><array>%s</array></dict></plist>\n' "$2" >"$1/PrivacyInfo.xcprivacy"
+}
+declare_api() {
+    echo "<dict><key>NSPrivacyAccessedAPIType</key><string>$1</string><key>NSPrivacyAccessedAPITypeReasons</key><array><string>CA92.1</string></array></dict>"
+}
+mkdir -p "$work/priv/App" "$work/priv/Empty"
+echo 'let d = UserDefaults.standard' >"$work/priv/App/Store.swift"
+
+expect "NG 使い方" "check-privacy: 引数が無ければ NG" python3 -I "$privacy"
+expect "NG PrivacyInfo.xcprivacy が無い" "check-privacy: 申告のファイルが無ければ NG" python3 -I "$privacy" "$work/priv/Empty"
+write_manifest "$work/priv" ""
+expect "NG NSPrivacyAccessedAPICategoryUserDefaults" "check-privacy: 使っている API の申告が足りなければ NG" python3 -I "$privacy" "$work/priv"
+write_manifest "$work/priv" "$(declare_api NSPrivacyAccessedAPICategoryUserDefaults)"
+expect OK "check-privacy: 申告がそろっていれば OK" python3 -I "$privacy" "$work/priv"
+write_manifest "$work/priv" "$(declare_api NSPrivacyAccessedAPICategorySystemBootTime)"
+match "check-privacy: コードに無い申告は知らせる" "$(python3 -I "$privacy" "$work/priv")" "*-- NSPrivacyAccessedAPICategorySystemBootTime は申告しているが*"
+echo 'garbage' >"$work/priv/PrivacyInfo.xcprivacy"
+match "check-privacy: 壊れた申告のファイルは stdout に NG" "$(python3 -I "$privacy" "$work/priv" 2>/dev/null)" "NG*"
+printf '<?xml version="1.0"?>\n<plist version="1.0"><dict>\n' >"$work/priv/PrivacyInfo.xcprivacy"
+match "check-privacy: 途中で切れた XML の申告のファイルも stdout に NG" "$(python3 -I "$privacy" "$work/priv" 2>/dev/null)" "NG*"
+
 finish
