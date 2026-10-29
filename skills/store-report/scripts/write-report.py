@@ -5,8 +5,8 @@ import sys
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "lib"))
 
-from modules import load_module  # noqa: E402
-from months import MONTH  # noqa: E402
+from loader import load_module  # noqa: E402
+from dates import MONTH  # noqa: E402
 from script_io import Failure, fail  # noqa: E402
 
 

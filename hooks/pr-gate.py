@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import git_root, read_payload, split_commands, tool_input  # noqa: E402
-from hook_stops import PR_UNCHECKED  # noqa: E402
+from hook_io import PR_UNCHECKED  # noqa: E402
 
 CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "run-check.sh")
 PUSH_SKIPPED = {"--tags", "--delete", "-d"}

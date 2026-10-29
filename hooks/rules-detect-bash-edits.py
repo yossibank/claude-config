@@ -7,8 +7,8 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import git, git_root, hook_off, read_payload, remove_stale, safe_name, split_commands, tool_input  # noqa: E402
-from hook_stops import BASH_EDITED  # noqa: E402
-from modules import load_hook  # noqa: E402
+from hook_io import BASH_EDITED  # noqa: E402
+from loader import load_hook  # noqa: E402
 
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")

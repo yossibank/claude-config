@@ -5,7 +5,7 @@ import urllib.parse
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from app_store import ReviewPageError, clean, fetch_json, review_pages  # noqa: E402
-from months import MONTH, to_jst  # noqa: E402
+from dates import MONTH, to_jst  # noqa: E402
 from script_io import Failure, fail  # noqa: E402
 
 

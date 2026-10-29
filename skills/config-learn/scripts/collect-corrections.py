@@ -8,8 +8,8 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from hook_stops import BASH_EDITED, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
-from months import MONTH, month_start, to_jst  # noqa: E402
+from hook_io import BASH_EDITED, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
+from dates import MONTH, month_start, to_jst  # noqa: E402
 from script_io import fail  # noqa: E402
 from transcripts import entries, projects_dir, touched_since  # noqa: E402
 

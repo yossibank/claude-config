@@ -8,7 +8,7 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import git_root, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
-from hook_stops import RULES_UNREAD  # noqa: E402
+from hook_io import RULES_UNREAD  # noqa: E402
 from md_blocks import front_matter_end  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 

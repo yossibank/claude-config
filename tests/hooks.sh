@@ -221,7 +221,7 @@ printf '#!/bin/bash\necho "壊れた" >&2\nexit 3\n' >"$work/broken-check.sh"
 out=$(python3 -I - "$root" "$work/broken-check.sh" "$app" <<'EOF'
 import sys
 sys.path.insert(0, sys.argv[1] + "/lib")
-from modules import load_hook
+from loader import load_hook
 gate = load_hook("pr-gate")
 gate.CHECK_SH = sys.argv[2]
 print(gate.problems(sys.argv[3]))

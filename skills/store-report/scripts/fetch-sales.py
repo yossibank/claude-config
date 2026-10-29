@@ -13,7 +13,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from months import MONTH  # noqa: E402
+from dates import MONTH  # noqa: E402
 from script_io import Failure, fail  # noqa: E402
 
 DOWNLOADS = {"1", "1F", "1T", "F1"}
