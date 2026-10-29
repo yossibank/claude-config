@@ -36,6 +36,12 @@ echo c >>"$repo/a.md"
 expect "確認の後に変更がある" "body: 確認の後に変えたら止まる" bash "$scripts/write-body.sh" "$repo" origin/main
 git -C "$repo" checkout -q -- a.md
 
+lock="$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks).lock"
+mkdir "$lock"
+touch -t 202001010000 "$lock"
+expect OK "run-check: 古いロックは外して進む" bash "$scripts/run-check.sh" "$repo" stale true
+check "run-check: 終わったらロックを残さない" test ! -d "$lock"
+
 route="$scripts/route-pr.sh"
 echo body >"$work/body.txt"
 fake_gh 'echo "o n ${GH_PERMISSION:-WRITE}"'
