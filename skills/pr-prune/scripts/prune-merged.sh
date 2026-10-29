@@ -51,7 +51,7 @@ stacked_on() {
     local tip=$1 child
 
     git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads | while IFS= read -r child; do
-        [[ $child != "$main" ]] || continue
+        [[ $child != "$main" && $child != "$base_ref" ]] || continue
         git -C "$repo" merge-base --is-ancestor "$tip" "refs/heads/$child" || continue
         [[ $(git -C "$repo" rev-parse "refs/heads/$child") != "$tip" ]] || continue
         printf '%s\t%s\n' "$(git -C "$repo" rev-list --count "$tip..refs/heads/$child")" "$child"
@@ -96,10 +96,21 @@ rebase_onto() {
     return "$status"
 }
 
-push_restacked() {
-    local child=$1 remote_tip
+remote_tip_of() {
+    git -C "$repo" ls-remote origin "refs/heads/$1" | cut -f1
+}
 
-    remote_tip=$(git -C "$repo" ls-remote origin "refs/heads/$child" | cut -f1) || return 1
+behind_origin() {
+    local remote_tip=$1 local_tip=$2
+
+    [[ -n $remote_tip ]] || return 1
+    git -C "$repo" cat-file -e "$remote_tip^{commit}" 2>/dev/null || return 0
+    ! git -C "$repo" merge-base --is-ancestor "$remote_tip" "$local_tip"
+}
+
+push_restacked() {
+    local child=$1 remote_tip=$2
+
     [[ -n $remote_tip ]] || { echo "origin に無いので push していない"; return 0; }
     git -C "$repo" push -q --force-with-lease="refs/heads/$child:$remote_tip" origin "refs/heads/$child" 2>/dev/null || return 1
     echo "push した"
@@ -107,8 +118,8 @@ push_restacked() {
 
 restack() {
     local tip=$1
-    local olds=("$tip") news=("$(git -C "$repo" rev-parse "origin/$main")")
-    local child old best best_count count i pushed failed=0
+    local olds=("$tip") news=("$(git -C "$repo" rev-parse "origin/$base_ref")")
+    local child old best best_count count i pushed remote_tip ready failed=0
 
     while IFS= read -r child; do
         [[ -n $child ]] || continue
@@ -125,9 +136,15 @@ restack() {
         done
         olds+=("$old")
         reason="下のブランチを付け替えられなかった"
-        if [[ -n ${news[$best]} ]] && rebase_onto "$child" "${olds[$best]}" "${news[$best]}"; then
+        remote_tip=$(remote_tip_of "$child") || remote_tip=""
+        ready=${news[$best]:+1}
+        if [[ -n $ready ]] && behind_origin "$remote_tip" "$old"; then
+            reason="origin が手元より先に進んでいる。pull してからやり直す"
+            ready=""
+        fi
+        if [[ -n $ready ]] && rebase_onto "$child" "${olds[$best]}" "${news[$best]}"; then
             news+=("$(git -C "$repo" rev-parse "refs/heads/$child")")
-            if pushed=$(push_restacked "$child"); then
+            if pushed=$(push_restacked "$child" "$remote_tip"); then
                 echo "OK 付け替えた: ${child}（${pushed}）"
             else
                 echo "NG 付け替えたが push できない: ${child}。origin が先に進んでいないかを確かめる。付け替える前の先頭: $old"
@@ -149,9 +166,9 @@ branch=$2
 pr=$3
 name=$(basename "$repo")
 
-info=$(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName \
-    -q '"\(.state) \(.headRefOid) \(.headRefName)"') || fail "PR #$pr を gh pr view で読めない"
-read -r state head ref <<< "$info"
+info=$(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName,baseRefName \
+    -q '"\(.state) \(.headRefOid) \(.headRefName) \(.baseRefName)"') || fail "PR #$pr を gh pr view で読めない"
+read -r state head ref base_ref <<< "$info"
 [[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（${state}）"
 [[ $ref == "$branch" ]] || head=""
 if [[ -n $head ]] && ! git -C "$repo" cat-file -e "$head^{commit}" 2>/dev/null; then
@@ -170,6 +187,9 @@ tip=$head
 if git -C "$repo" rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
     merged "$branch" "$head" "$main" || fail "$branch の中身が $main に入っていない。ワークツリーとブランチは残した"
     tip=$(git -C "$repo" rev-parse "refs/heads/$branch")
+    if [[ -n $head ]] && git -C "$repo" merge-base --is-ancestor "$tip" "$head" 2>/dev/null; then
+        tip=$head
+    fi
     worktree=$(worktree_of "$branch")
     [[ -z $worktree ]] || git -C "$repo" worktree remove "$worktree" 2>/dev/null \
         || fail "ワークツリーを消せない。未 commit や未追跡のファイルを確かめる: $worktree"
@@ -181,8 +201,10 @@ remote=$(git -C "$repo" ls-remote --heads origin "$branch" | wc -l | tr -d ' ')
 [[ $remote == 0 ]] && left="なし" || left="残っている"
 derived=$(clean_derived_data)
 echo "OK $name: $(git -C "$repo" rev-parse --short HEAD) | 手元の $main は origin と一致 | GitHub 上のブランチ: $left | 消した DerivedData: $derived"
+base_ref=${base_ref:-$main}
 if [[ -n $tip ]] && git -C "$repo" cat-file -e "$tip^{commit}" 2>/dev/null \
-    && ! git -C "$repo" merge-base --is-ancestor "$tip" "origin/$main"; then
+    && git -C "$repo" rev-parse -q --verify "origin/$base_ref" >/dev/null \
+    && ! git -C "$repo" merge-base --is-ancestor "$tip" "origin/$base_ref"; then
     temp_tree=""
     trap remove_temp_tree EXIT
     restack "$tip" || exit 1

@@ -123,4 +123,58 @@ GH_PR="MERGED $base2_head feat/base2" expect "未 commit の変更がある" "re
 GH_PR="MERGED $base2_head feat/base2" expect "rebase か merge の途中である" "restack: rebase の途中のワークツリーは付け替えない" bash "$prune" "$repo" feat/base2 7
 check "restack: 途中の rebase を中止しない" test -d "$(git -C "$work/busy-tree" rev-parse --path-format=absolute --git-path rebase-merge)"
 
+git -C "$repo" checkout -q -b feat/integ main
+echo i >"$repo/i.md"
+commit "$repo" integ
+git -C "$repo" push -q origin feat/integ 2>/dev/null
+git -C "$repo" checkout -q -b feat/topic
+echo t1 >"$repo/t.md"
+commit "$repo" topic
+topic_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -b feat/topic-kid
+echo t2 >"$repo/t.md"
+commit "$repo" topic-kid
+git -C "$repo" checkout -q feat/integ
+git -C "$repo" merge -q --squash feat/topic >/dev/null && commit "$repo" "squash topic"
+git -C "$repo" push -q origin feat/integ 2>/dev/null
+git -C "$repo" checkout -q main
+out=$(GH_PR="MERGED $topic_head feat/topic feat/integ" bash "$prune" "$repo" feat/topic 9 2>&1)
+match "restack: 既定以外の base にマージした時は、その base に載せ直す" "$out" "*OK 付け替えた: feat/topic-kid*"
+check "restack: 子の親が PR の base の先頭になる" test "$(git -C "$repo" rev-parse feat/topic-kid^)" == "$(git -C "$repo" rev-parse origin/feat/integ)"
+
+git -C "$repo" checkout -q -b feat/base3 main
+echo c1 >"$repo/c.md"
+commit "$repo" base3
+base3_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -b feat/ahead-kid
+echo h1 >"$repo/h.md"
+commit "$repo" ahead-kid
+echo h2 >>"$repo/h.md"
+commit "$repo" "ahead-kid from another machine"
+git -C "$repo" push -q origin feat/ahead-kid 2>/dev/null
+ahead_remote=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q main
+git -C "$repo" branch -q -f feat/ahead-kid feat/ahead-kid~1
+git -C "$repo" merge -q --squash feat/base3 >/dev/null && commit "$repo" "squash base3"
+git -C "$repo" push -q origin main
+GH_PR="MERGED $base3_head feat/base3" expect "origin が手元より先に進んでいる" "restack: origin が手元より先に進んでいれば付け替えない" bash "$prune" "$repo" feat/base3 10
+check "restack: 先に進んだ origin の commit を消さない" test "$(git -C "$repo" ls-remote origin refs/heads/feat/ahead-kid | cut -f1)" == "$ahead_remote"
+
+git -C "$repo" checkout -q -b feat/base4 main
+echo s1 >"$repo/s.md"
+commit "$repo" base4
+echo s2 >>"$repo/s.md"
+commit "$repo" "base4 pushed later"
+base4_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -b feat/late-kid
+echo l >"$repo/l.md"
+commit "$repo" late-kid
+git -C "$repo" checkout -q main
+git -C "$repo" branch -q -f feat/base4 "$base4_head~1"
+git -C "$repo" merge -q --squash "$base4_head" >/dev/null && commit "$repo" "squash base4"
+git -C "$repo" push -q origin main
+out=$(GH_PR="MERGED $base4_head feat/base4" bash "$prune" "$repo" feat/base4 11 2>&1)
+match "restack: 手元が PR の head より遅れていても、PR の head の上の子を付け替える" "$out" "*OK 付け替えた: feat/late-kid*"
+check "restack: 遅れていた時も子の親が main の先頭になる" test "$(git -C "$repo" rev-parse feat/late-kid^)" == "$(git -C "$repo" rev-parse main)"
+
 finish
