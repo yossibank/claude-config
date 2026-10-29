@@ -126,7 +126,7 @@ app-init の `create-app.sh` は、app-plan の `templates/` を直接読む。
 | `tests/pr-create.sh` | ワークツリー・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
 | `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
-| `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |
+| `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか。積んだブランチを main に載せ直し、ぶつかる時は残すか |
 | `tests/rules-detect-bash-edits.sh` | Bash での書き換えを見つけ、git だけのコマンドは数えないか |
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
 | `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |

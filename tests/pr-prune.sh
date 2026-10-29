@@ -55,4 +55,72 @@ echo dirty >"$repo/dirty.md"
 GH_PR="MERGED x feat/x" expect "未 commit" "prune: 手元に変更があれば止まる" bash "$prune" "$repo" feat/x 3
 rm -f "$repo/dirty.md"
 
+export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+git -C "$repo" checkout -q -b feat/base main
+echo b1 >"$repo/b.md"
+commit "$repo" base
+git -C "$repo" push -q origin feat/base 2>/dev/null
+base_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -b feat/child
+echo b2 >"$repo/b.md"
+commit "$repo" child
+git -C "$repo" push -q origin feat/child 2>/dev/null
+git -C "$repo" checkout -q -b feat/grand
+echo g >"$repo/g.md"
+commit "$repo" grand
+git -C "$repo" checkout -q main
+git -C "$repo" worktree add -q "$work/child-tree" feat/child
+git -C "$repo" merge -q --squash feat/base >/dev/null && commit "$repo" "squash base"
+git -C "$repo" push -q origin main
+out=$(GH_PR="MERGED $base_head feat/base" bash "$prune" "$repo" feat/base 6 2>&1)
+match "restack: squash でマージした下のブランチの上の子を、main に載せ直して push する" "$out" "*OK 付け替えた: feat/child（push した）*"
+match "restack: 孫も、付け替えた子の上に載せ直す" "$out" "*OK 付け替えた: feat/grand（origin に無いので push していない）*"
+check "restack: 子の親が main の先頭になる" test "$(git -C "$repo" rev-parse feat/child^)" == "$(git -C "$repo" rev-parse main)"
+check "restack: 孫の親が付け替えた子になる" test "$(git -C "$repo" rev-parse feat/grand^)" == "$(git -C "$repo" rev-parse feat/child)"
+check "restack: 子の中身は子の変更のまま" test "$(cat "$work/child-tree/b.md")" == b2
+check "restack: origin の子も付け替えた先になる" test "$(git -C "$repo" rev-parse origin/feat/child)" == "$(git -C "$repo" rev-parse feat/child)"
+check "restack: 一時のワークツリーを残さない" test -z "$(git -C "$repo" worktree list | grep 'feat/grand')"
+
+git -C "$repo" checkout -q -b feat/ff main
+echo f >"$repo/f.md"
+commit "$repo" ff
+ff_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q main
+git -C "$repo" merge -q --ff-only feat/ff
+git -C "$repo" push -q origin main
+git -C "$repo" branch -q feat/after main
+after_head=$(git -C "$repo" rev-parse feat/after)
+out=$(GH_PR="MERGED $ff_head feat/ff" bash "$prune" "$repo" feat/ff 8 2>&1)
+match "restack: squash でないマージでは付け替えない" "$out" "OK repo:*"
+check "restack: main から切ったブランチはそのまま" test "$(git -C "$repo" rev-parse feat/after)" == "$after_head"
+
+git -C "$repo" checkout -q -b feat/base2 main
+echo x >"$repo/a.md"
+commit "$repo" base2
+base2_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -b feat/kid
+echo y >"$repo/a.md"
+commit "$repo" kid
+kid_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -b feat/dirty-kid feat/base2
+echo k >"$repo/k.md"
+commit "$repo" dirty-kid
+git -C "$repo" checkout -q -b feat/busy-kid feat/base2
+echo m >"$repo/m.md"
+commit "$repo" busy-kid
+git -C "$repo" checkout -q main
+git -C "$repo" worktree add -q "$work/dirty-tree" feat/dirty-kid
+git -C "$repo" worktree add -q "$work/busy-tree" feat/busy-kid
+mkdir -p "$(git -C "$work/busy-tree" rev-parse --path-format=absolute --git-path rebase-merge)"
+echo note >"$work/dirty-tree/note.md"
+git -C "$repo" merge -q --squash feat/base2 >/dev/null && commit "$repo" "squash base2"
+echo z >"$repo/a.md"
+commit "$repo" "change a after merge"
+git -C "$repo" push -q origin main
+GH_PR="MERGED $base2_head feat/base2" expect "NG 付け替えなかった: feat/kid（コンフリクトした）" "restack: コンフリクトしたら NG を出す" bash "$prune" "$repo" feat/base2 7
+check "restack: コンフリクトしたブランチは元のまま残す" test "$(git -C "$repo" rev-parse feat/kid)" == "$kid_head"
+GH_PR="MERGED $base2_head feat/base2" expect "未 commit の変更がある" "restack: ワークツリーに未 commit の変更があれば付け替えない" bash "$prune" "$repo" feat/base2 7
+GH_PR="MERGED $base2_head feat/base2" expect "rebase か merge の途中である" "restack: rebase の途中のワークツリーは付け替えない" bash "$prune" "$repo" feat/base2 7
+check "restack: 途中の rebase を中止しない" test -d "$(git -C "$work/busy-tree" rev-parse --path-format=absolute --git-path rebase-merge)"
+
 finish
