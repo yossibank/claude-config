@@ -35,7 +35,7 @@ APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
 SKILL_SECTIONS = ["起動条件", "入力", "手順", "報告", "制約"]
 DESCRIPTION_LIMIT = 120
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
-ASK_EVERY_TIME = {"store-release/scripts/archive-app.sh"}
+ASK_EVERY_TIME = {"store-release/scripts/archive-app.sh", "store-reply/scripts/send-replies.py"}
 
 
 @functools.cache

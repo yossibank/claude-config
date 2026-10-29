@@ -175,7 +175,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 スキルは、Claude が要る時に自分で呼ぶ。人は `/<スキル>` で呼ぶ。名前の頭が分類を表し、使う順は[使い方](#-使い方)の図にある。
 
 > [!IMPORTANT]
-> pr-create と store-release は外に出す操作を含む。人が言葉で頼んだ時だけ呼び、外に出す前に承認を得る。
+> pr-create・store-release・store-reply は外に出す操作を含む。人が言葉で頼んだ時だけ呼び、外に出す前に承認を得る。
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
@@ -190,6 +190,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | [pr-fix](skills/pr-fix/SKILL.md) | 🤝 人と Claude | 落ちた CI と未解決の指摘を直し、push し直す |
 | [pr-prune](skills/pr-prune/SKILL.md) | 🤝 人と Claude | マージされた PR を main に反映し、ワークツリーを片付ける |
 | [store-release](skills/store-release/SKILL.md) | 🙋 人が頼んだ時だけ | 申告・掲載情報・スクリーンショットを確かめ、アーカイブを送る |
+| [store-reply](skills/store-reply/SKILL.md) | 🙋 人が頼んだ時だけ | 返信していない低い評価のレビューに返信案を書き、承認された案を送る |
 | [store-report](skills/store-report/SKILL.md) | 🤝 人と Claude | 全アプリの月ごとのダウンロード・収益・評価を表にする |
 | [ui-record](skills/ui-record/SKILL.md) | 🧠 Claude だけ | シミュレーターを録画し、確かめたい場面のコマを並べる |
 | [ui-snapshot](skills/ui-snapshot/SKILL.md) | 🧠 Claude だけ | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
@@ -220,8 +221,8 @@ Claude の報告の形をそろえる。config-install.sh が settings.json に�
 
 | 変数 | 使う所 | 中身 |
 | --- | --- | --- |
-| `ASC_ISSUER_ID` ほか `ASC_*` | store-report | App Store Connect API のキー |
-| `CC_APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
+| `ASC_ISSUER_ID` ほか `ASC_*` | store-reply、store-report | App Store Connect API のキー |
+| `CC_APPS_DIR` | app-init、store-reply、store-report | アプリのリポジトリの置き場所 |
 | `CC_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr で知らせる |
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `CC_STORE_ARCHIVE_ONLY=1` | store-release | アーカイブだけを作り、送らない |

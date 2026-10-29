@@ -1,4 +1,3 @@
-import glob
 import os
 import sys
 from pathlib import Path
@@ -6,6 +5,7 @@ from pathlib import Path
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "lib"))
 
+from app_store import apps_dir, listed_apps  # noqa: E402
 from loader import load_module  # noqa: E402
 from script_io import Failure, fail, require_month  # noqa: E402
 
@@ -16,16 +16,12 @@ def failure_of(error):
 
 def main():
     month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: write-report.py <YYYY-MM>")
-    apps_dir = os.environ.get("CC_APPS_DIR", os.path.expanduser("~/Applications/AppStore"))
-    out_dir = os.path.join(apps_dir, "reports")
+    root = apps_dir()
+    out_dir = os.path.join(root, "reports")
 
-    apps = []
-    for path in sorted(glob.glob(os.path.join(apps_dir, "*", "store", "app-id.txt"))):
-        app_id = Path(path).read_text(encoding="utf-8").strip()
-        apps.append((os.path.basename(os.path.dirname(os.path.dirname(path))), app_id))
-
+    apps = listed_apps(root)
     if not apps:
-        fail(f"store/app-id.txt を持つアプリが無い: {apps_dir}")
+        fail(f"store/app-id.txt を持つアプリが無い: {root}")
 
     fetch_sales = load_module(os.path.join(HERE, "fetch-sales.py"))
     fetch_ratings = load_module(os.path.join(HERE, "fetch-ratings.py"))
