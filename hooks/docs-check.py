@@ -20,6 +20,8 @@ SIZE_LIMIT = 15_000
 ALERTS = ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"]
 STATE_BADGES = ["workflow", "release", "license"]
 INLINE_CODE_LIMIT = 40
+NOTE_LINES = 3
+SHORT_LIST = 2
 TOC_TITLES = {"目次", "contents", "table of contents"}
 
 COUNT = re.compile(r"([0-9０-９]+)\s*(つ|段|個|点|項目|種類|件)")
@@ -40,6 +42,8 @@ COMMAND = re.compile(
     r"^(\./|~/|/|\$\{|(make|git|gh|python3?|bash|sh|zsh|npx|npm|xcodebuild|xcrun|swift|jq|curl|rsync|mint|brew|pre-commit|claude)\s)"
 )
 MEMORY = re.compile(r"/\.claude/projects/[^/]+/memory/")
+POLITE = re.compile(r"(です|(?<![済冷覚澄])ます|ました|ません)(?=[。！？!?]|\s*$)")
+QUOTED = re.compile(r"「[^」]*」")
 
 
 def sentences_of(text):
@@ -194,6 +198,11 @@ def check_opening(doc, want):
     alert = ALERT.match(after.text.strip()) if after else None
     if want == "note" and not (alert and alert.group(1).upper() == "NOTE"):
         return [(title.number, "README 以外の人が読む文書は、タイトルの直後に [!NOTE] を置く")]
+    if want == "note":
+        start = rows.index(after) + 1
+        lines = list(takewhile(lambda row: row.what == "quote" and not ALERT.match(row.text.strip()), rows[start:]))
+        if len(lines) > NOTE_LINES:
+            return [(after.number, f"冒頭の [!NOTE] は {NOTE_LINES} 行までにする（{len(lines)} 行）。分かることだけを書く")]
     if want == "sentence" and not (after and after.what == "body" and not is_decoration(doc.lines[after.number - 1])):
         return [(title.number, "タイトルの直後に、何があるかを 1 文で書く")]
     return []
@@ -336,6 +345,45 @@ def check_list_endings(doc):
     return found
 
 
+def check_short_lists(doc):
+    found = []
+    groups = {}
+
+    def close(deeper_than):
+        for indent in [key for key in groups if key > deeper_than]:
+            first, count, plain = groups.pop(indent)
+            if plain and count <= SHORT_LIST:
+                found.append((first, f"箇条書きを {count} 項目に使わない。文で書く"))
+
+    for index, row in enumerate(doc.rows):
+        match = LIST_ITEM.match(row.spoken) if row.what == "list" else None
+        if row.what == "blank":
+            following = next((later for later in doc.rows[index + 1 :] if later.what != "blank"), None)
+            if following and following.what == "list":
+                continue
+        if not match:
+            if row.what not in ("body", "code") or not doc.lines[row.number - 1].startswith((" ", "\t")):
+                close(-1)
+            continue
+        indent, text = len(match.group(1)), match.group(2).strip()
+        close(indent)
+        plain = not re.match(r"\d+\.", row.spoken.strip()) and not text.startswith(("[ ]", "[x]"))
+        first, count, was_plain = groups.get(indent, (row.number, 0, True))
+        groups[indent] = (first, count + 1, was_plain and plain)
+    close(-1)
+    return found
+
+
+def check_polite(row):
+    if row.what not in ("body", "list", "table"):
+        return []
+    pieces = row.text.strip().strip("|").split("|") if row.what == "table" else [row.text]
+    for piece in pieces:
+        if POLITE.search(QUOTED.sub("", piece).strip()):
+            return [(row.number, "敬体（です・ます）を使わない。常体（である・する）で書く")]
+    return []
+
+
 def check_marks(doc, row):
     number, text = row.number, row.text
     found = []
@@ -384,6 +432,7 @@ def check_rows(doc):
         found += check_preface(doc.rows, index)
         found += check_marks(doc, row)
         found += check_length(row)
+        found += check_polite(row)
     return found
 
 
@@ -407,6 +456,7 @@ CHECKS = [
     (always, check_toc),
     (always, check_badges),
     (always, check_list_endings),
+    (always, check_short_lists),
     (lambda doc: doc.readme, check_readme_order),
     (lambda doc: doc.for_claude, check_inline_code),
     (opens_with_sentence, functools.partial(check_opening, want="sentence")),

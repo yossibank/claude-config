@@ -51,26 +51,26 @@ doc_case 2 "チルダの囲みの中のバッククォートで囲みを数え�
 doc_case 0 "4 つのバッククォートの囲みの中の 3 つは囲みを閉じない" docs/x.md "$note"$'\n````markdown\n```swift\n'"$long"$'\n```\n````'
 doc_case 0 "名前だけのフォルダの木は通る" README.md $'# t\n\nあ。\n\n```text\na/\n├── b/\n└── c.md\n```'
 doc_case 2 "フォルダの木に説明を書かない" README.md $'# t\n\nあ。\n\n```text\na/\n├── b/  # 部品\n└── c.md\n```' "名前だけを書く"
-doc_case 0 "本文の中のページ内リンクは目次にしない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)'
+doc_case 0 "本文の中のページ内リンクは目次にしない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)\n- りんご\n- みかん'
 doc_case 2 "手で目次を書かない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)\n- [決まり](#決まり)' "目次は GitHub が作る"
 doc_case 0 "バッジは状態の段の後に技術の段" README.md $'# t\n\nあ。\n\n'"$state_badge"$'\n\n'"$tech_badge"
 doc_case 2 "技術のバッジを状態のバッジより前に置かない" README.md $'# t\n\nあ。\n\n'"$tech_badge"$'\n\n'"$state_badge" "状態の段を技術の段より先"
-doc_case 0 "Claude が読む文書の短いコードは通る" rules/x.md $'# t\n\nあ。\n\n- `git log` で見る。'
+doc_case 0 "Claude が読む文書の短いコードは通る" rules/x.md $'# t\n\nあ。\n\n`git log` で見る。'
 doc_case 2 "Claude が読む文書の文の中に長いコマンドを書かない" rules/x.md $'# t\n\nあ。\n\n- `git log --oneline --graph a..b -- x y z w` を走らせる。' "長いコマンドを書かない"
 doc_case 2 "Claude が読む文書のタイトルの直後に 1 文を書く" rules/x.md $'# t\n\n- 項目である。' "タイトルの直後に、何があるかを 1 文"
-doc_case 0 "コマンドではない長いコード片は止めない" rules/x.md $'# t\n\nあ。\n\n- 向きは `App → Feature → Service → FeatureView → CoreUI` である。\n- `#expect(actual == expected, "ずれている時の説明")` で比べる。'
-doc_case 0 "語句だけの一覧は句点を付けなくてよい" README.md $'# t\n\nあ。\n\n- りんご\n- みかん'
-doc_case 0 "「」の中の句点は文の中の句点に数えない" README.md $'# t\n\nあ。\n\n- 「。」の使い方'
+doc_case 0 "コマンドではない長いコード片は止めない" rules/x.md $'# t\n\nあ。\n\n- 向きは `App → Feature → Service → FeatureView → CoreUI` である。\n- `#expect(actual == expected, "ずれている時の説明")` で比べる。\n- 三つ目である。'
+doc_case 0 "語句だけの一覧は句点を付けなくてよい" README.md $'# t\n\nあ。\n\n- りんご\n- みかん\n- ぶどう'
+doc_case 0 "「」の中の句点は文の中の句点に数えない" README.md $'# t\n\nあ。\n\n- 「。」の使い方\n- りんご\n- みかん'
 doc_case 2 "中に句点がある項目は末尾も句点で終える" README.md $'# t\n\nあ。\n\n- 一つ目。二つ目' "末尾も「。」"
 doc_case 2 "1 つの一覧の中で文末をそろえる" README.md $'# t\n\nあ。\n\n- 文である。\n- 語句' "文末をそろえる"
-doc_case 0 "入れ子の一覧は親と別に文末をそろえる" README.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n2. 次の手順である。'
+doc_case 0 "入れ子の一覧は親と別に文末をそろえる" README.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n   - 語句\n   - 語句\n2. 次の手順である。'
 doc_case 2 "パスで始まる長いコマンドは止める" rules/x.md $'# t\n\nあ。\n\n- `~/Applications/AI/claude-config/scripts/docs-section.sh <file>` を使う。' "長いコマンドを書かない"
 doc_case 0 "README と docs の外は ## の絵文字を表から選ばせない" .github/pull_request_template.md $'## 👀 見どころ\n\nあ。\n\n## 🔗 関連\n\nい。'
 doc_case 2 "タイトルの直後がバッジだけなら 1 文と数えない" README.md $'# t\n\n'"$state_badge"$'\n\nあ。' "タイトルの直後に、何があるかを 1 文"
 doc_case 0 "空白を含むファイル名は木の説明にしない" docs/x.md "$note"$'\n```text\nApp/\n├── My File.swift\n└── b.swift\n```'
 doc_case 2 "text 以外の囲みのフォルダの木も見る" docs/x.md "$note"$'\n```sh\nApp/\n├── Sources   # 説明\n```' "名前だけを書く"
 doc_case 2 "状態の段に固定のバッジを置かない" docs/x.md "$note"$'\n'"$state_badge"' ![License](https://img.shields.io/badge/License-MIT-blue)' "状態の段は動的なバッジにする"
-doc_case 0 "節の中のページ内リンクの一覧は目次にしない" docs/x.md "$note"$'\n## 📚 文書\n\n関係する節を次に置く。\n\n- [入れ方](#入れ方)\n- [使い方](#使い方)'
+doc_case 0 "節の中のページ内リンクの一覧は目次にしない" docs/x.md "$note"$'\n## 📚 文書\n\n関係する節を次に置く。\n\n- [入れ方](#入れ方)\n- [使い方](#使い方)\n- [直し方](#直し方)'
 doc_case 0 "小文字のアラートも種類を見分ける" docs/x.md $'# t\n\n> [!note]\n> 分かる。'
 doc_case 2 "節の名前を並べた表は目次として止める" rules/x.md $'# t\n\n決まり。\n\n| 節 | 決めること |\n| --- | --- |\n| 画面 | あ |\n| 文字 | い |\n\n## 画面\n\nう。\n\n## 文字\n\nえ。' "節の名前を並べた表は目次になる"
 doc_case 0 "節の名前と一部だけ重なる表は止めない" rules/x.md $'# t\n\n決まり。\n\n| 節 | 決めること |\n| --- | --- |\n| 画面 | あ |\n| 色 | い |\n\n## 画面\n\nう。'
@@ -80,5 +80,18 @@ doc_case 2 "2 列の表の 1 列目に同じ値を繰り返さない" rules/x.md
 doc_case 0 "決定の文書は理由の行を重ねてよい" docs/decisions/x.md "$note"$'\n## 📏 保存\n\n**決定：保存する。**\n\n| 項目 | 内容 |\n| --- | --- |\n| 理由 | あ |\n| 理由 | い |'
 doc_case 0 "条件を組み合わせる 3 列の表は 1 列目が重なってよい" rules/x.md $'# t\n\n案は次のとおり。\n\n| 決まり | 回数 | 案 |\n| --- | --- | --- |\n| 無い | 2 回 | 足す |\n| 無い | 1 回 | 待つ |'
 doc_case 0 "別の表なら 1 列目が同じでもよい" rules/x.md $'# t\n\n一つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 1 |\n\n二つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 2 |'
+
+doc_case 2 "箇条書きを 1 項目に使わない" rules/x.md $'# t\n\nあ。\n\n- 一つだけの項目である。' "箇条書きを 1 項目に使わない"
+doc_case 2 "箇条書きを 2 項目に使わない" README.md $'# t\n\nあ。\n\n- りんご\n- みかん' "箇条書きを 2 項目に使わない"
+doc_case 2 "入れ子の 2 項目の箇条書きも止める" rules/x.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n   - 語句\n2. 次の手順である。' "箇条書きを 2 項目に使わない"
+doc_case 0 "空行を挟んだ 3 項目の箇条書きは通る" README.md $'# t\n\nあ。\n\n- りんご\n\n- みかん\n\n- ぶどう'
+doc_case 0 "番号付きの手順は 2 項目でも通る" rules/x.md $'# t\n\nあ。\n\n1. 手順である。\n2. 次の手順である。'
+doc_case 0 "チェックリストは 1 項目でも通る" README.md $'# t\n\nあ。\n\n- [ ] 確かめる'
+doc_case 2 "冒頭の [!NOTE] を 4 行にしない" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> 四つ。' "冒頭の [!NOTE] は 3 行まで"
+doc_case 0 "冒頭の [!NOTE] は 3 行まで書ける" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。'
+doc_case 2 "敬体の文を書かない" rules/x.md $'# t\n\n設定を読みます。' "敬体"
+doc_case 2 "表のセルの敬体も止める" README.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| x | 使えます |' "敬体"
+doc_case 0 "コードの囲み・引用・インラインコードの敬体は止めない" rules/x.md $'# t\n\n`返します。` を出す。\n\n> 送ります。\n\n```text\nありがとうございます。\n```'
+doc_case 0 "「でした」で終わる常体は止めない" rules/x.md $'# t\n\n広い探索を自分でした。'
 
 finish
