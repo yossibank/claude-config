@@ -52,6 +52,15 @@ EOF
 )
 check "collect-reviews: 返信済みと星 3 以上を除き、次のページも読む" grep -q "^a:1:2026-10-02:書きかけ:False c:2:2026-10-02::False$" <<<"$collected"
 check "collect-reviews: 集め直しても書きかけの案を残す" grep -q "a:1:2026-10-02:書きかけ" <<<"$collected"
+check "collect-reviews: 一時ファイルを残さない" test -z "$(find "$apps/replies" -name '*.tmp')"
+
+today="$apps/replies/$(TZ=Asia/Tokyo date +%F).json"
+echo '[{"id": "a",' >"$today"
+CC_APPS_DIR="$apps" expect "返信案のファイルが JSON として読めない" "collect-reviews: 壊れた案のファイルは集める前に NG" python3 -I "$scripts/collect-reviews.py"
+echo '[{"reply": "id が無い"}]' >"$today"
+CC_APPS_DIR="$apps" expect "返信案の 1 件目にレビューの id が無い" "collect-reviews: id の無い項目は NG" python3 -I "$scripts/collect-reviews.py"
+echo '{"id": "a"}' >"$today"
+CC_APPS_DIR="$apps" expect "返信案のファイルはレビューの配列にする" "collect-reviews: 配列でない案のファイルは NG" python3 -I "$scripts/collect-reviews.py"
 
 drafts="$work/drafts.json"
 cat >"$drafts" <<'EOF'
@@ -91,22 +100,49 @@ EOF
 )
 check "send-replies: 送る JSON は customerReviewResponses の形" test "$shape" = True
 
-sent=$(ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH=z python3 -I - "$root" "$scripts/send-replies.py" "$drafts" <<'EOF'
+sending="$work/sending.json"
+cat >"$sending" <<'EOF'
+[
+  {"app": "foo", "id": "a", "reply": "ご不便をおかけしました。", "approved": true},
+  {"app": "foo", "id": "b", "reply": "未承認", "approved": false},
+  {"app": "foo", "id": "e", "reply": "返信済み", "approved": true}
+]
+EOF
+sent=$(ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH=z python3 -I - "$root" "$scripts/send-replies.py" "$sending" <<'EOF'
 import json
 import sys
+import urllib.error
 sys.path.insert(0, sys.argv[1] + "/lib")
 from loader import load_module
 
 module = load_module(sys.argv[2])
 drafts = sys.argv[3]
 calls = []
-module.asc_json = lambda url, body=None: calls.append((url, body)) or {"data": {"id": "new"}}
+
+
+def fake(url, body=None):
+    calls.append(("POST" if body else "GET", url, body))
+    if body:
+        return {"data": {"id": "new"}}
+    if url == "/v1/customerReviews/a/response":
+        raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
+    return {"data": {"type": "customerReviewResponses", "id": "old"}}
+
+
+module.asc_json = fake
 sys.argv = ["send-replies.py", drafts]
 module.main()
 entries = json.load(open(drafts, encoding="utf-8"))
-print(len(calls), calls[0][0], calls[0][1]["data"]["relationships"]["review"]["data"]["id"], entries[0].get("sent"), entries[1].get("sent"))
+print(" ".join(f"{method}:{url}" for method, url, _ in calls))
+print(calls[1][2]["data"]["relationships"]["review"]["data"]["id"])
+print(" ".join(str(entry.get("sent")) for entry in entries))
 EOF
 )
-check "send-replies: 承認された未送信の案だけを POST し、sent に返信の ID を書く" grep -q "^1 /v1/customerReviewResponses a new None$" <<<"$sent"
+check "send-replies: 送る前に返信の有無を確かめ、無いレビューだけを POST する" \
+    grep -qx "GET:/v1/customerReviews/a/response POST:/v1/customerReviewResponses GET:/v1/customerReviews/e/response" <<<"$sent"
+check "send-replies: POST の中身は確かめたレビューを指す" grep -qx "a" <<<"$sent"
+check "send-replies: 返信が既にあれば送らずに、その返信の ID を sent に書く" grep -qx "new None old" <<<"$sent"
+check "send-replies: 返信が既にあったことを知らせる" grep -q "^OK foo e 返信が既にあるので送らなかった" <<<"$sent"
+check "send-replies: 一時ファイルを残さない" test -z "$(find "$work" -maxdepth 1 -name '*.tmp')"
 
 finish

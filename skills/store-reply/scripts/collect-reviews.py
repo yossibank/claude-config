@@ -1,15 +1,13 @@
 import datetime
-import json
 import os
 import sys
 import urllib.parse
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ASC_ERRORS, ASC_KEYS, apps_dir, asc_json, asc_reason, listed_apps, require_keys  # noqa: E402
+from app_store import ASC_ERRORS, ASC_KEYS, apps_dir, asc_json, asc_reason, listed_apps, read_drafts, require_keys  # noqa: E402
 from dates import JST, to_jst  # noqa: E402
-from script_io import Failure, fail  # noqa: E402
+from script_io import Failure, fail, write_json  # noqa: E402
 
 LOW = 2
 
@@ -54,11 +52,10 @@ def unanswered(repo, app_id):
     return found
 
 
-def merged(path, found):
-    kept = {}
-    if os.path.exists(path):
-        kept = {entry["id"]: entry for entry in json.loads(Path(path).read_text(encoding="utf-8"))}
-    return [kept.get(entry["id"], entry) for entry in found]
+def drafts_so_far(path):
+    if not os.path.exists(path):
+        return {}
+    return {entry["id"]: entry for entry in read_drafts(path)}
 
 
 def main():
@@ -73,6 +70,11 @@ def main():
     apps = listed_apps(root)
     if not apps:
         fail(f"store/app-id.txt を持つアプリが無い: {root}")
+    path = os.path.join(root, "replies", f"{datetime.datetime.now(JST):%Y-%m-%d}.json")
+    try:
+        kept = drafts_so_far(path)
+    except Failure as error:
+        fail(str(error))
 
     found = []
     failed = 0
@@ -88,10 +90,8 @@ def main():
     if failed == len(apps):
         fail("どのアプリのレビューも集められなかった")
 
-    path = os.path.join(root, "replies", f"{datetime.datetime.now(JST):%Y-%m-%d}.json")
-    entries = merged(path, found)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    Path(path).write_text(json.dumps(entries, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    entries = [kept.get(entry["id"], entry) for entry in found]
+    write_json(path, entries)
     print(f"OK {path} {len(entries)} 件")
 
 

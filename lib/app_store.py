@@ -121,3 +121,18 @@ def listed_apps(root):
         app_id = Path(path).read_text(encoding="utf-8").strip()
         apps.append((os.path.basename(os.path.dirname(os.path.dirname(path))), app_id))
     return apps
+
+
+def read_drafts(path):
+    try:
+        entries = json.loads(Path(path).read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise Failure(f"返信案のファイルが無い: {path}") from error
+    except (OSError, ValueError) as error:
+        raise Failure(f"返信案のファイルが JSON として読めない: {path}") from error
+    if not isinstance(entries, list) or not all(isinstance(entry, dict) for entry in entries):
+        raise Failure(f"返信案のファイルはレビューの配列にする: {path}")
+    for number, entry in enumerate(entries, 1):
+        if not isinstance(entry.get("id"), str) or not entry["id"]:
+            raise Failure(f"返信案の {number} 件目にレビューの id が無い: {path}")
+    return entries

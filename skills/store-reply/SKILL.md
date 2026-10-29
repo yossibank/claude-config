@@ -21,7 +21,7 @@ App Store の低い評価のレビューに、返信案を書いて送る手順�
 | 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの |
 | 返信案 | `~/Applications/AppStore/replies/<YYYY-MM-DD>.json` |
 
-キーの環境変数は、[store-report](../store-report/SKILL.md) の「API のキー」と同じである。`ASC_VENDOR_NUMBER` は要らない。キーの役割は、「カスタマーサポート」以上にする。
+キーの環境変数と役割は、[store-report](../store-report/SKILL.md) の「API のキー」にある。`ASC_VENDOR_NUMBER` は要らない。
 
 ## 手順
 
@@ -56,7 +56,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/send-replies.py <返信案の JSON>
 
 `collect-reviews.py` は、アプリごとに星 2 以下のレビューを新しい順にすべて読む。返信のあるレビューを除き、返信案のファイルに書く。
 
-- 同じ日のファイルがあれば、書きかけの案と承認を残す。
+- 同じ日のファイルがあれば、書きかけの案と承認を残す。壊れていれば、集める前に `NG` で止まる。
 - 読めなかったアプリは stderr に知らせ、ほかのアプリを続ける。
 - どのアプリも読めなかった時は、`NG` で止まる。
 
@@ -92,9 +92,10 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/send-replies.py <返信案の JSON>
 `send-replies.py` は、`approved` が `true` で、`sent` の無い案だけを送る。
 
 - 送る前に全部の案を確かめ、空か 5970 字を超える案が 1 つでもあれば、何も送らずに `NG` を出す。
+- 送る前に、そのレビューに返信が既にあるかを確かめる。あれば送らずに、その返信の ID を `sent` に書く。
 - 1 件送るごとに `sent` をファイルに書く。失敗したら、そこで止まる。
 - 止まった後に走らせ直すと、残りの案だけを送る。
-- `--dry-run` を付けると、キーも通信も使わずに、送る JSON を 1 件 1 行で出す。
+- `--dry-run` を付けると、返信の確認もせず、キーも通信も使わずに送る JSON を 1 件 1 行で出す。
 
 ## 報告
 
