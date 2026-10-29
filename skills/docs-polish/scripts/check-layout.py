@@ -23,8 +23,8 @@ def human_docs(folder):
 
 def sections(lines):
     start = (front_matter_end(lines) or -1) + 1
-    current = {"line": 1, "title": "冒頭", "prose": 0, "shaped": False}
-    found = [current]
+    current = {"line": 1, "title": "", "prose": 0, "shaped": True}
+    found = []
     for number, (line, (mark, language)) in enumerate(zip(lines, fence_marks(lines)), 1):
         if number <= start:
             continue

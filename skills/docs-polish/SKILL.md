@@ -17,7 +17,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 | 入力 | 中身 |
 | --- | --- |
-| `$ARGUMENTS` | 見るファイルかフォルダ。省いたらリポジトリの根 |
+| `$ARGUMENTS` | 見るファイルかフォルダ。省いたら、リポジトリの根の `.` を渡す |
 
 ## 手順
 
@@ -38,7 +38,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-layout.py <ファイルかフォル
 
 ## check-layout.py の出力
 
-`check-layout.py` は、`##` 以下の節ごとに、表・箇条書き・図・アラートの無い文の行を数える。
+`check-layout.py` は、`##` 以下の節ごとに、表・箇条書き・図・アラートの無い文の行を数える。最初の `##` より前の冒頭は数えない。
 
 | 出力 | 中身 |
 | --- | --- |
