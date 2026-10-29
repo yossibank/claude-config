@@ -72,7 +72,7 @@
 
 | ファイル | 使う所 | 中身 |
 | --- | --- | --- |
-| [lib/app_store.py](../lib/app_store.py) | fetch-reviews.py、search-apps.py、fetch-ratings.py | App Store の検索とレビューの読み方 |
+| [lib/app_store.py](../lib/app_store.py) | fetch-reviews.py、search-apps.py、fetch-ratings.py | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文 |
 | [lib/dates.py](../lib/dates.py) | 月や日時を扱うスクリプト、rules-require-read | 日本時間、月の形、記録の日時の月 |
 | [lib/git.sh](../lib/git.sh) | スキルの .sh | リポジトリの根（`use_repo` は無ければ NG で止まる）、既定のブランチ、GitHub での書き込みの権限 |
 | [lib/hook_io.py](../lib/hook_io.py) | 各フック、collect-corrections.py、config-audit.py | 入力の JSON、コマンドの区切り、止めたフックの判定、タイムアウト付きの git、状態ファイルの掃除。編集する道具の名前と、フックが止める時の文の書き出し |

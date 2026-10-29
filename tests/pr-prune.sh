@@ -41,6 +41,16 @@ git -C "$repo" worktree add -q -b feat/kept "$work/kept-tree" main
 echo note >"$work/kept-tree/note.md"
 GH_PR="MERGED x feat/kept" expect "ワークツリーを消せない" "prune: 未追跡のファイルがあるワークツリーは消さずに止まる" bash "$prune" "$repo" feat/kept 4
 check "prune: 未追跡のファイルは残る" test -f "$work/kept-tree/note.md"
+git -C "$repo" checkout -q -b feat/rebased main
+echo r >"$repo/r.md"
+commit "$repo" rebased
+rebased_head=$(git -C "$repo" -c user.name=t -c user.email=t@t commit-tree "HEAD^{tree}" -p main -m "rebased on github")
+git -C "$repo" checkout -q main
+git -C "$repo" merge -q --squash feat/rebased >/dev/null && commit "$repo" "squash rebased"
+echo r2 >"$repo/r.md"
+commit "$repo" "change r after merge"
+git -C "$repo" push -q origin main
+GH_PR="MERGED $rebased_head feat/rebased" expect OK "prune: 中身がマージした PR の先頭と同じなら、コミットが違っても消す" bash "$prune" "$repo" feat/rebased 5
 echo dirty >"$repo/dirty.md"
 GH_PR="MERGED x feat/x" expect "未 commit" "prune: 手元に変更があれば止まる" bash "$prune" "$repo" feat/x 3
 rm -f "$repo/dirty.md"
