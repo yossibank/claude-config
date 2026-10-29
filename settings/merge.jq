@@ -15,6 +15,4 @@ def ours: (.command // "") | contains("claude-config/hooks/");
     )
     | with_entries(select(.value | length > 0))
 )
-| if $config.statusLine and (($current.statusLine == null) or (($current.statusLine.command // "") | contains("claude-config/")))
-    then .statusLine = $config.statusLine else . end
 | if $config.outputStyle and $current.outputStyle == null then .outputStyle = $config.outputStyle else . end

@@ -32,7 +32,6 @@ flowchart LR
     home --> rules["CLAUDE.md・rules/"]
     home --> skills["skills/・agents/"]
     home --> styles["output-styles/"]
-    settings -->|画面の下の行| statusLine["scripts/ctx-status-line.py"]
     settings -->|ツールの前後で呼ぶ| run["hooks/run.sh"]
     run --> hooks["hooks/*.py"]
     skills --> scripts["skills/*/scripts/"]
@@ -71,7 +70,7 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 | --- | --- |
 | 許可 | 足りないものだけを後ろに足す。前に入れて claude-config から消えた許可は外す |
 | フック | claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す |
-| 表示 | `statusLine` は、無い時か claude-config のものの時だけ入れ替える。`outputStyle` は、無い時だけ入れる |
+| 表示 | `outputStyle` は、無い時だけ入れる |
 
 ## 🚀 使い方
 
@@ -209,18 +208,11 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 ## 🖥️ 表示
 
-Claude Code の画面の下の行と、報告の形をそろえる。どちらも config-install.sh が settings.json に入れる。
+Claude の報告の形をそろえる。config-install.sh が settings.json に入れる。
 
 | 設定 | ファイル | 出すもの |
 | --- | --- | --- |
-| `statusLine` | [scripts/ctx-status-line.py](scripts/ctx-status-line.py) | フォルダ、ブランチ、文脈の量と割合、費用、増えた行と消えた行、モデル |
 | `outputStyle` | [output-styles/report.md](output-styles/report.md) | 結論を先に書き、表と状態の印で組む日本語の報告 |
-
-画面の下の行は、次のように出る。文脈の量は、`🟢` 半分まで・`🟡` 8 割まで・`🔴` 8 割を超えたで色が変わる。
-
-```text
-📂 claude-config 🌿 main · 🟢 52k（26%） · 💰 $1.23 · ✏️ +12/-3 · Opus
-```
 
 ## 🔧 環境変数
 

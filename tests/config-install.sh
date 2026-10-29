@@ -36,10 +36,8 @@ check "merge: ほかのフックを残す" jq -e '[.hooks.Stop[].hooks[].command
 check "merge: 古い claude-config のフックを外す" jq -e '[.. | .command? // empty] | map(select(contains("old.py"))) | length == 0' "$settings.new"
 check "merge: 今のフックを run.sh で入れる" jq -e '[.. | .command? // empty] | map(select(contains("hooks/run.sh"))) | length > 0' "$settings.new"
 check "install: output style をリンクする" test -L "$claude/output-styles/report.md"
-check "merge: 無い statusLine を入れる" jq -e '.statusLine.command | contains("ctx-status-line.py")' "$settings.new"
 check "merge: 自分で決めた outputStyle を残す" jq -e '.outputStyle == "mine"' "$settings.new"
-echo '{"statusLine": {"type": "command", "command": "mine.sh"}}' >"$work/own.json"
-check "merge: 自分の statusLine を残す" jq -e '.statusLine.command == "mine.sh"' <(jq -s -f "$config/settings/merge.jq" "$work/own.json" "$config/settings/settings.json" <(echo '[]'))
+echo '{}' >"$work/own.json"
 check "merge: 無い outputStyle を入れる" jq -e '.outputStyle == "report"' <(jq -s -f "$config/settings/merge.jq" "$work/own.json" "$config/settings/settings.json" <(echo '[]'))
 check "merge: 今の許可を前に残す" jq -e '.permissions.allow[0] == "Bash(ls *)"' "$settings.new"
 check "merge: claude-config から消えた許可を外す" jq -e '.permissions.allow | index("Bash(retired *)") | not' "$settings.new"
