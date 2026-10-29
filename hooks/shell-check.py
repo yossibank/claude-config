@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import read_payload, tool_input  # noqa: E402
+from hook_io import block_on_findings, target_paths  # noqa: E402
 
 VAR_BEFORE_WIDE = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]")
 
@@ -27,21 +27,7 @@ def check(path):
 
 
 def main():
-    if len(sys.argv) > 1:
-        paths = sys.argv[1:]
-    else:
-        data = read_payload()
-        if data is None:
-            return
-        paths = [tool_input(data).get("file_path", "")]
-    report = []
-    for path in map(os.path.abspath, filter(None, paths)):
-        if path.endswith(".sh") and os.path.isfile(path):
-            report += [f"{path}:{n}: {m}" for n, m in check(path)]
-    if report:
-        print("シェルスクリプトに直すところがある。", file=sys.stderr)
-        print("\n".join(report), file=sys.stderr)
-        sys.exit(2)
+    block_on_findings("シェルスクリプトに直すところがある。", target_paths(".sh"), check)
 
 
 if __name__ == "__main__":

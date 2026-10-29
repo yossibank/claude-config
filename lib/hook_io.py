@@ -7,7 +7,8 @@ import sys
 SEGMENT = re.compile(r"&&|\|\||;|\||\n")
 SEPARATOR_CHARS = set(";&|()\n")
 OFF_SEPARATOR = re.compile(r"[\s,]+")
-EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
+FILE_EDIT_TOOLS = ("Edit", "Write", "MultiEdit")
+EDIT_TOOLS = (*FILE_EDIT_TOOLS, "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 PREFIX_COMMANDS = {"builtin", "command", "env", "exec", "nice", "nohup", "time"}
 PREFIX_VALUE_OPTIONS = {"-a", "-n", "-u"}
@@ -20,6 +21,22 @@ def read_payload():
     except ValueError:
         return None
     return data if isinstance(data, dict) else None
+
+
+def target_paths(suffix):
+    if len(sys.argv) > 1:
+        paths = sys.argv[1:]
+    else:
+        data = read_payload()
+        paths = [tool_input(data).get("file_path", "")] if data else []
+    return [path for path in map(os.path.abspath, filter(None, paths)) if path.endswith(suffix) and os.path.isfile(path)]
+
+
+def block_on_findings(header, paths, check):
+    report = [f"{path}:{n}: {m}" for path in paths for n, m in check(path)]
+    if report:
+        print(header + "\n" + "\n".join(report), file=sys.stderr)
+        sys.exit(2)
 
 
 def hook_off(name):

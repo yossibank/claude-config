@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "lib"))
 
-from hook_io import EDIT_TOOLS  # noqa: E402
+from hook_io import EDIT_TOOLS, FILE_EDIT_TOOLS  # noqa: E402
 from loader import load_hook  # noqa: E402
 from md_blocks import fence_marks, front_matter, table_under  # noqa: E402
 from md_doc import body_emojis, heading_emojis, read_doc, readme_order, rule_table  # noqa: E402
@@ -25,6 +25,9 @@ EXIT_FAIL = re.compile(r"\s*exit [1-9]")
 RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
 HOOK_NAME = re.compile(r"claude-config/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
+INLINE_PYTHON = re.compile(r"\bpython3?(?: -I)? -c\b")
+SCRIPT_HEADER = "set -euo pipefail"
+WORKTREES_LITERAL = ".claude/worktrees"
 SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
 PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
@@ -44,12 +47,22 @@ def tracked_files():
     return tuple(path for path in out.split("\0") if path)
 
 
+def path_matches(path, pattern):
+    if "/" not in pattern:
+        return fnmatch.fnmatchcase(os.path.basename(path), pattern)
+    parts, wants = path.split("/"), pattern.split("/")
+    if wants[-1] == "**":
+        wants = wants[:-1]
+        parts = parts[: len(wants)] if len(parts) > len(wants) else []
+    return len(parts) == len(wants) and all(fnmatch.fnmatchcase(part, want) for part, want in zip(parts, wants))
+
+
 @functools.cache
 def tracked(*patterns):
     return tuple(
         os.path.join(ROOT, path)
         for path in tracked_files()
-        if any(fnmatch.fnmatchcase(path, pattern) for pattern in patterns)
+        if any(path_matches(path, pattern) for pattern in patterns)
     )
 
 
@@ -272,9 +285,9 @@ def check_prefixes():
         return
     names = {
         "skills": [(os.path.join(ROOT, "skills", name, "SKILL.md"), name) for name in skill_names()],
-        "hooks": [(path, os.path.basename(path)) for path in tracked("hooks/*.py") if "/lib/" not in path],
+        "hooks": [(path, os.path.basename(path)) for path in tracked("hooks/*.py")],
         "rules": [(path, os.path.basename(path)) for path in tracked("rules/*.md")],
-        "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*") if "/lib/" not in path],
+        "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*")],
     }
     for place, items in names.items():
         for path, name in items:
@@ -295,9 +308,7 @@ def check_script_verbs():
         yield NAMING, 1, "名前の付け方の動詞の表が読めない"
         return
     for path in tracked("skills/*/scripts/*"):
-        if len(os.path.relpath(path, ROOT).split(os.sep)) != 4:
-            continue
-        verb = os.path.basename(path).split(".")[0].split("-")[0]
+        verb =os.path.basename(path).split(".")[0].split("-")[0]
         if verb not in allowed:
             yield path, 1, f"スキルのスクリプトの頭の動詞が動詞の表に無い: {verb}"
 
@@ -349,7 +360,7 @@ def check_paths():
 
 
 def check_template_scripts():
-    files = [path for path in tracked("skills/*/templates/*") if path.endswith((".sh", "/Makefile"))]
+    files = [path for path in tracked("skills/*/templates/**") if path.endswith((".sh", "/Makefile"))]
     for path in files:
         for number, line in enumerate(read(path).split("\n"), 1):
             for reference in CONFIG_REF.findall(line):
@@ -369,6 +380,25 @@ def check_settings():
                 for name in names:
                     if not os.path.isfile(os.path.join(ROOT, "hooks", f"{name}.py")):
                         yield path, 1, f"フックのファイルが無い: hooks/{name}.py"
+            tools = set((entry.get("matcher") or "").split("|"))
+            if tools & set(FILE_EDIT_TOOLS) and tools != set(FILE_EDIT_TOOLS):
+                yield path, 1, f"編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ {'|'.join(FILE_EDIT_TOOLS)} にする: {entry.get('matcher')}"
+
+
+def check_script_rules():
+    for path in tracked("skills/*/scripts/*.sh", "scripts/*.sh"):
+        lines = read(path).split("\n")
+        if lines[1:2] != [SCRIPT_HEADER]:
+            yield path, 2, f"2 行目を {SCRIPT_HEADER} にする"
+        for number, line in enumerate(lines, 1):
+            if INLINE_PYTHON.search(line):
+                yield path, number, "bash の中に Python を書かない。.py に分けるか、jq と bash で書く"
+    for path in tracked("hooks/*", "scripts/*", "skills/*/scripts/*"):
+        if path == os.path.abspath(__file__):
+            continue
+        for number, line in enumerate(read(path).split("\n"), 1):
+            if WORKTREES_LITERAL in line:
+                yield path, number, "ワークツリーの置き場所は lib の worktree_root・WORKTREES を使う"
 
 
 def check_shell_scripts():
@@ -438,6 +468,9 @@ def check_python(path, tree):
     for node in tree.body:
         if runs_on_import(node):
             yield path, node.lineno, "読み込んだだけで処理が走る。main() に入れる"
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assert):
+            yield path, node.lineno, "assert は python -O で消え、トレースバックで落ちる。if で確かめて NG か例外にする"
     if os.path.relpath(path, ROOT).startswith("hooks/"):
         return
     for node in ast.walk(tree):
@@ -472,6 +505,7 @@ CHECKS = [
     check_template_scripts,
     check_settings,
     check_shell_scripts,
+    check_script_rules,
     check_python_scripts,
     check_docs,
 ]

@@ -2,6 +2,14 @@
 set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/lib/fixtures.sh"
+source "$root/lib/simulator.sh"
+
+fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPad Air\",\"udid\":\"PAD\"},{\"name\":\"iPhone 17\",\"udid\":\"PHONE\"}]}}'"
+check "pick_iphone: 先頭の iPhone の UDID を出す" test "$(pick_iphone)" == PHONE
+check "pick_iphone: CC_UI_DEVICE があればそれを出す" test "$(CC_UI_DEVICE=MINE pick_iphone)" == MINE
+fake_command xcrun "echo '{\"devices\":{}}'"
+check "pick_iphone: iPhone が無ければ何も出さない" test -z "$(pick_iphone)"
 
 add_target="$root/skills/ui-snapshot/scripts/add-target.py"
 manifest="$work/Package.swift"

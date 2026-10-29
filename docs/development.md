@@ -72,13 +72,16 @@
 
 | 対象 | 決まり |
 | --- | --- |
-| Python | 処理は `main()` に入れ、末尾を `if __name__ == "__main__":` にする |
+| Python | 処理は `main()` に入れ、末尾を `if __name__ == "__main__":` にする。`assert` は使わない |
+| シェル | スキルと `scripts/` の `.sh` は、2 行目を `set -euo pipefail` にする。終了コードを受ける所は `\|\| status=$?` で受ける |
+| 言語を混ぜない | `.sh` の中に `python3 -c` を書かない。JSON は jq で読み、長い処理は `.py` に分ける |
 | 結果 | stdout に `OK`・`NG` で始まる行で出す。失敗したら終了コード 1 で終える |
 | 引数 | 足りない時は `[[ $# -ge N ]]` で確かめ、`NG` を出す。`${N:?}` は使わない |
 | 知らせ | 失敗ではない知らせは stderr に出す |
 | フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
-| 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` で読む |
+| 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` か `source` で読む。ワークツリーの置き場所は lib にだけ書く |
 | フックの登録 | 拡張子で絞る `if` は、`Edit(//**/*.md)` と `Write(//**/*.md)` の 2 つの項目に分ける。`Edit(...)` は Write の呼び出しに当たらない |
+| 編集の matcher | 編集を受けるフックの matcher は、`hook_io` の `FILE_EDIT_TOOLS` と同じ道具を並べる |
 
 ## 📦 共通の処理
 
@@ -89,14 +92,16 @@
 | [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
 | [lib/dates.py](../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
 | [lib/git.py](../lib/git.py) | タイムアウト付きの git と、リポジトリの根。根は、まだ無いフォルダからも在る親をたどって探す |
-| [lib/git.sh](../lib/git.sh) | リポジトリの根（`use_repo` は無ければ NG で止まる）と、git のフォルダの中のパス（`git_file`）。既定のブランチと、GitHub での書き込みの権限 |
-| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON、コマンドの区切りと頭の読み飛ばし、止めたフックの判定、編集する道具の名前 |
+| [lib/git.sh](../lib/git.sh) | リポジトリの根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。既定のブランチと、GitHub での書き込みの権限 |
+| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし、止める時の出し方。止めたフックの判定と、編集する道具の名前 |
 | [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
-| [lib/hook_state.py](../lib/hook_state.py) | 状態ファイルの名前と、古い状態ファイルの掃除 |
+| [lib/hook_state.py](../lib/hook_state.py) | 状態フォルダの場所と名前、作る時の古い状態ファイルの掃除 |
 | [lib/loader.py](../lib/loader.py) | ファイルの場所から .py を読み込む |
+| [lib/log.sh](../lib/log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す `show_errors` |
 | [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
+| [lib/simulator.sh](../lib/simulator.sh) | 使うシミュレーターの UDID を出す `pick_iphone`。`CC_UI_DEVICE` が無ければ、先頭の iPhone を選ぶ |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
 
 ## 🧪 テスト

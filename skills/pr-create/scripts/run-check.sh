@@ -2,6 +2,7 @@
 set -euo pipefail
 
 source "$(dirname "$0")/../../../lib/git.sh"
+source "$(dirname "$0")/../../../lib/log.sh"
 
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <確認の名前 | --drop <名前> | --status> [コマンド…]"; exit 1; }
 
@@ -74,6 +75,6 @@ if [[ $result == OK ]]; then
     echo "OK $label"
 else
     echo "NG ${label}（終了コード ${status}）。ログ: $log"
-    grep -E -i 'error|fail' "$log" | tail -n 20 || true
+    show_errors "$log"
     exit 1
 fi
