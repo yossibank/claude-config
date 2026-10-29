@@ -4,7 +4,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import clean, fetch_json  # noqa: E402
+from app_store import clean, fetch_json, reason  # noqa: E402
 from script_io import fail  # noqa: E402
 
 
@@ -19,7 +19,7 @@ def main():
     try:
         results = fetch_json(f"https://itunes.apple.com/search?{query}")["results"]
     except Exception as error:
-        fail(f"検索できなかった: {error}")
+        fail(f"検索できなかった: {reason(error)}")
 
     for app in results:
         rating = app.get("averageUserRating", 0)

@@ -11,6 +11,14 @@ class ReviewPageError(Exception):
         self.page = page
         self.cause = cause
 
+    @property
+    def notice(self):
+        return f"{self.page} ページ目から先のレビューを読めなかった（{reason(self.cause)}）"
+
+
+def reason(error):
+    return type(error).__name__
+
 
 def clean(text):
     return " ".join(str(text).split())

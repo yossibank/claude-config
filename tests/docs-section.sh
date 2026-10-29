@@ -29,4 +29,13 @@ else
     ng "docs-section: 無い見出しは stdout に NG" "$out"
 fi
 
+printf '# t\n\n> ```sh\n> ## not\n> ```\n\n## a\n' >"$work/quoted.md"
+if [[ $(bash "$section" "$work/quoted.md" | wc -l | tr -d ' ') == 2 ]]; then
+    ok "docs-section: 引用の中のコードの # も見出しにしない"
+else
+    ng "docs-section: 引用の中のコードの # も見出しにしない" "$(bash "$section" "$work/quoted.md")"
+fi
+
+expect "NG 読めない" "docs-section: 無いファイルは NG" bash "$section" "$work/nothing.md"
+
 finish

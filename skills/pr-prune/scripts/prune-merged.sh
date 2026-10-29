@@ -51,6 +51,7 @@ merged() {
     [[ $tip == "$head" ]] && return 0
     git -C "$repo" merge-base --is-ancestor "$tip" "origin/$main" && return 0
     [[ -n $head ]] && git -C "$repo" merge-base --is-ancestor "$tip" "$head" 2>/dev/null && return 0
+    [[ -n $head ]] && git -C "$repo" diff --quiet "$head" "$tip" 2>/dev/null && return 0
     git -C "$repo" diff --quiet "origin/$main" "$branch" && return 0
     base=$(git -C "$repo" merge-base "origin/$main" "$branch")
     git -C "$repo" diff "$base" "$branch" | git -C "$repo" apply -R --check 2>/dev/null
