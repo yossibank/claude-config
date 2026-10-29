@@ -79,6 +79,7 @@
 | [lib/hook_io.py](../lib/hook_io.py) | 各フック、collect-corrections.py、config-audit.py | 入力の JSON、コマンドの区切り、止めたフックの判定、タイムアウト付きの git、状態ファイルの掃除。編集する道具の名前と、フックが止める時の文の書き出し |
 | [lib/loader.py](../lib/loader.py) | config-audit.py、write-report.py ほか | ファイルの場所から .py を読み込む |
 | [lib/md_blocks.py](../lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py、collect-corrections.py | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
+| [lib/md_doc.py](../lib/md_doc.py) | docs-check、config-audit.py | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | スキルの .py | `NG` を出して止める `fail` と、月の引数を確かめる `require_month` |
 | [lib/transcripts.py](../lib/transcripts.py) | collect-corrections.py、count-tokens.py、フック | 会話の記録の読み方 |
 
