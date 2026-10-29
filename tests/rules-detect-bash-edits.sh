@@ -25,6 +25,9 @@ run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t6 'sed
 echo 'z' >>"$app/docs/日本語.md"
 run rules-detect-bash-edits 2 "bash: 日本語の名前のファイルの書き換えも知らせる" "$(bash_call t6 'sed -i')" post
 rm -f "$app/docs/日本語.md"
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t8 'git commit -m \"a; sed -i\"')" pre
+echo 'w' >>"$app/docs/overview.md"
+run rules-detect-bash-edits 0 "bash: 引用符の中の ; に引きずられず、git だけと数える" "$(bash_call t8 'git commit -m \"a; sed -i\"')" post
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t7 'sed -i')" pre
 printf '# t\n\n```\nx\n```\n' >"$app/docs/off.md"
 out=$(bash_call t7 'sed -i' | CLAUDE_HOOKS_OFF="docs-check,rules-require-read" bash "$hooks" rules-detect-bash-edits post 2>&1)
