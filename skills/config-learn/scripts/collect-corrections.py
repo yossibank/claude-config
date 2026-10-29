@@ -11,7 +11,8 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from dates import month_of, month_start, to_jst  # noqa: E402
-from hook_io import BASH_EDITED, EDIT_TOOLS, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
+from hook_io import EDIT_TOOLS  # noqa: E402
+from hook_messages import BASH_EDITED, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
 from script_io import require_month  # noqa: E402
 from transcripts import entries, projects_dir, touched_since  # noqa: E402

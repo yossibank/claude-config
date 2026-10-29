@@ -6,7 +6,10 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import BASH_EDITED, git, git_root, hook_off, read_payload, remove_stale, safe_name, split_commands, tool_input  # noqa: E402
+from git import git, git_root  # noqa: E402
+from hook_io import hook_off, read_payload, split_commands, tool_input  # noqa: E402
+from hook_messages import BASH_EDITED  # noqa: E402
+from hook_state import remove_stale, safe_name  # noqa: E402
 from loader import load_hook  # noqa: E402
 
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")

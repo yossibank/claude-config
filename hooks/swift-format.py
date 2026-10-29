@@ -5,7 +5,8 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import git_root, read_payload, tool_input  # noqa: E402
+from git import git_root  # noqa: E402
+from hook_io import read_payload, tool_input  # noqa: E402
 
 TIMEOUT = 60
 
