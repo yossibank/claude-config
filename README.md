@@ -6,9 +6,18 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 ![Python 3.9+](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)
 ![Bash](https://img.shields.io/badge/Bash-4EAA25?logo=gnubash&logoColor=white)
 
+したいことに合わせて、次の節から読む。
+
+| したいこと | 読む節 | 次に読む |
+| --- | --- | --- |
+| 入れて使い始める | [入れ方](#-入れ方) | [決まり](#-決まり) |
+| アプリを作る | [スキル](#-スキル) | [docs/architecture-ios.md](docs/architecture-ios.md) |
+| 止められた理由を知る | [フック](#-フック) | [環境変数](#-環境変数) |
+| スキルやフックを足す | [全体像](#-全体像) | [docs/development.md](docs/development.md) |
+
 ## 🗺️ 全体像
 
-フォルダは、Claude が読むものと、決まりを守らせる仕組みに分かれる。
+フォルダごとの役割と、読むのが Claude・人・仕組みのどれかを次に示す。
 
 | フォルダ | 役割 | 読み手 |
 | --- | --- | --- |
@@ -97,9 +106,21 @@ squash でマージしても、積んだ PR がぶつからないように、使
 
 CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを読み書きする時だけ読み込まれる。
 
+矢印の先の rules は、元の rules に足して読み込まれる。
+
+```mermaid
+flowchart LR
+    docsCore["docs-core"] --> docsHuman["docs-human"]
+    docsCore --> docsClaude["docs-claude"]
+    docsCore --> docsApp["docs-app"]
+    swiftCore["swift-core"] --> swiftUi["swift-ui"]
+    swiftCore --> swiftTest["swift-test"]
+```
+
 | ファイル | 読み込まれる時 | 決めること |
 | --- | --- | --- |
 | [CLAUDE.md](CLAUDE.md) | いつも | 言語、進め方、使う量、報告、ブランチ・commit・PR |
+| [output-styles/report.md](output-styles/report.md) | いつも。config-install.sh が `outputStyle` に入れる | 結論を先に書き、表と状態の印で組む日本語の報告の形 |
 | [rules/code-comments.md](rules/code-comments.md) | Swift・Kotlin・設定・シェル | コメントを書かない |
 | [rules/docs-app.md](rules/docs-app.md) | `docs/`・`spec/`・README・CLAUDE.md | アプリの文書ごとの役割と、足す条件 |
 | [rules/docs-claude.md](rules/docs-claude.md) | CLAUDE.md・rules・SKILL.md・agents | 飾らない形と、節の並び |
@@ -111,7 +132,7 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 
 ## 🪝 フック
 
-フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。検査のフックは `if` で拡張子を絞り、当たらないファイルではプロセスを起動しない。どれも [hooks/run.sh](hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
+フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。どれも [hooks/run.sh](hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
 
 図の色は、フックの動きを表す。赤は道具を止め、青は止めずに知らせ、緑はファイルを整える。
 
@@ -196,43 +217,35 @@ flowchart LR
 > [!IMPORTANT]
 > pr-create・store-release・store-reply は外に出す操作を含む。人が言葉で頼んだ時だけ呼び、外に出す前に承認を得る。
 
-| スキル | 呼ぶ人 | すること |
-| --- | --- | --- |
-| [app-init](skills/app-init/SKILL.md) | 🤝 人と Claude | ひな形から、ビルドとテストが通るアプリのリポジトリを作る |
-| [app-plan](skills/app-plan/SKILL.md) | 🤝 人と Claude | 競合のレビューの不満を集め、overview と roadmap の下書きを作る |
-| [code-debug](skills/code-debug/SKILL.md) | 🤝 人と Claude | 再現・3 つの仮説・検証で原因を確かめ、承認された直し方と再現テストを入れる |
-| [config-learn](skills/config-learn/SKILL.md) | 🤝 人と Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
-| [ctx-handoff](skills/ctx-handoff/SKILL.md) | 🤝 人と Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
-| [ctx-report](skills/ctx-report/SKILL.md) | 🤝 人と Claude | 月ごとに、トークンを多く使った作業を表にする |
-| [docs-polish](skills/docs-polish/SKILL.md) | 🤝 人と Claude | 文字だけが続く節を見つけ、表・図・絵文字で見やすくする案を見本付きで出す |
-| [pr-create](skills/pr-create/SKILL.md) | 🙋 人が頼んだ時だけ | 差分の大きさに合わせた確認とレビューを通して PR を作る |
-| [pr-fix](skills/pr-fix/SKILL.md) | 🤝 人と Claude | 落ちた CI と未解決の指摘を直し、push し直す |
-| [pr-prune](skills/pr-prune/SKILL.md) | 🤝 人と Claude | マージされた PR を main に反映し、ワークツリーを片付ける |
-| [store-release](skills/store-release/SKILL.md) | 🙋 人が頼んだ時だけ | 申告・掲載情報・スクリーンショットを確かめ、アーカイブを送る |
-| [store-reply](skills/store-reply/SKILL.md) | 🙋 人が頼んだ時だけ | 返信していない低い評価のレビューに返信案を書き、承認された案を送る |
-| [store-report](skills/store-report/SKILL.md) | 🤝 人と Claude | 全アプリの月ごとのダウンロード・収益・評価を表にする |
-| [ui-record](skills/ui-record/SKILL.md) | 🧠 Claude だけ | シミュレーターを録画し、確かめたい場面のコマを並べる |
-| [ui-snapshot](skills/ui-snapshot/SKILL.md) | 🧠 Claude だけ | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
+| 段 | スキル | 呼ぶ人 | すること |
+| --- | --- | --- | --- |
+| 企画と立ち上げ | [app-plan](skills/app-plan/SKILL.md) | 🤝 人と Claude | 競合のレビューの不満を集め、overview と roadmap の下書きを作る |
+| 企画と立ち上げ | [app-init](skills/app-init/SKILL.md) | 🤝 人と Claude | ひな形から、ビルドとテストが通るアプリのリポジトリを作る |
+| 作って出す | [ui-snapshot](skills/ui-snapshot/SKILL.md) | 🧠 Claude だけ | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
+| 作って出す | [ui-record](skills/ui-record/SKILL.md) | 🧠 Claude だけ | シミュレーターを録画し、確かめたい場面のコマを並べる |
+| 作って出す | [code-debug](skills/code-debug/SKILL.md) | 🤝 人と Claude | 再現・3 つの仮説・検証で原因を確かめ、承認された直し方と再現テストを入れる |
+| 作って出す | [pr-create](skills/pr-create/SKILL.md) | 🙋 人が頼んだ時だけ | 差分の大きさに合わせた確認とレビューを通して PR を作る |
+| 作って出す | [pr-fix](skills/pr-fix/SKILL.md) | 🤝 人と Claude | 落ちた CI と未解決の指摘を直し、push し直す |
+| 作って出す | [pr-prune](skills/pr-prune/SKILL.md) | 🤝 人と Claude | マージされた PR を main に反映し、ワークツリーを片付ける |
+| App Store | [store-release](skills/store-release/SKILL.md) | 🙋 人が頼んだ時だけ | 申告・掲載情報・スクリーンショットを確かめ、アーカイブを送る |
+| App Store | [store-report](skills/store-report/SKILL.md) | 🤝 人と Claude | 全アプリの月ごとのダウンロード・収益・評価を表にする |
+| App Store | [store-reply](skills/store-reply/SKILL.md) | 🙋 人が頼んだ時だけ | 返信していない低い評価のレビューに返信案を書き、承認された案を送る |
+| 手入れ | [ctx-handoff](skills/ctx-handoff/SKILL.md) | 🤝 人と Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
+| 手入れ | [ctx-report](skills/ctx-report/SKILL.md) | 🤝 人と Claude | 月ごとに、トークンを多く使った作業を表にする |
+| 手入れ | [config-learn](skills/config-learn/SKILL.md) | 🤝 人と Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
+| 手入れ | [docs-polish](skills/docs-polish/SKILL.md) | 🤝 人と Claude | 文字だけが続く節を見つけ、表・図・絵文字で見やすくする案を見本付きで出す |
 
 ## 👷 エージェント
 
 エージェントは、仕事の重さに合わせてモデルを分ける。
 
-| エージェント | モデル | 任せること |
-| --- | --- | --- |
-| [debugger](agents/debugger.md) | Opus | 仮説ごとに裏付けと反証を集めて返す。書き換えない |
-| [explorer](agents/explorer.md) | Haiku | 場所と事実を探して短く返す。書き換えない |
-| [implementer](agents/implementer.md) | Sonnet | 方針の決まった実装、削除、名前の変更、文書の書き換え |
-| [reviewer](agents/reviewer.md) | Opus | 差分を読み、マージすると困る所を 5 件まで返す |
-| [tester](agents/tester.md) | Sonnet | 正常・異常・境界のテストを書いて通す。本体は直さない |
-
-## 🖥️ 表示
-
-Claude の報告の形をそろえる。config-install.sh が settings.json に入れる。
-
-| 設定 | ファイル | 出すもの |
-| --- | --- | --- |
-| `outputStyle` | [output-styles/report.md](output-styles/report.md) | 結論を先に書き、表と状態の印で組む日本語の報告 |
+| エージェント | モデル | 呼ぶ所 | 任せること |
+| --- | --- | --- | --- |
+| [debugger](agents/debugger.md) | Opus | code-debug、CLAUDE.md の「任せる」 | 仮説ごとに裏付けと反証を集めて返す。書き換えない |
+| [explorer](agents/explorer.md) | Haiku | CLAUDE.md の「任せる」 | 場所と事実を探して短く返す。書き換えない |
+| [implementer](agents/implementer.md) | Sonnet | CLAUDE.md の「任せる」と「並べる」 | 方針の決まった実装、削除、名前の変更、文書の書き換え |
+| [reviewer](agents/reviewer.md) | Opus | pr-create | 差分を読み、マージすると困る所を 5 件まで返す |
+| [tester](agents/tester.md) | Sonnet | code-debug、CLAUDE.md の「任せる」 | 正常・異常・境界のテストを書いて通す。本体は直さない |
 
 ## 🔧 環境変数
 
@@ -248,26 +261,6 @@ Claude の報告の形をそろえる。config-install.sh が settings.json に�
 | `CC_STORE_EXPORT=export` | store-release | 送らずに IPA を書き出す |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
 
-## 📜 スクリプト
-
-入れる時、確かめる時、文書を読む時に、次のスクリプトを使う。
-
-| スクリプト | 呼ぶ時 | すること |
-| --- | --- | --- |
-| [scripts/config-audit.py](scripts/config-audit.py) | `make audit` の時 | README の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
-| [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
-| [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
-
 ## 🧪 確かめ方
 
-claude-config を変えたら、`make verify` を通す。
-
-> [!IMPORTANT]
-> CI は置かない。PR は、Claude が pr-create の確認で `make verify` を通してから作る。
-
-| コマンド | 確かめること |
-| --- | --- |
-| `make verify` | `make audit` と `make test` を順に走らせる |
-| `make audit` | config-audit.py で、文書と名前と書き方の決まり |
-| `make test` | `tests/*.sh` の全部で、フックとスクリプトの振る舞い。1 本ずつの中身は [テスト](docs/development.md#-テスト) にある |
-| `make test-<対象>` | `tests/<対象>.sh` の 1 本だけ |
+claude-config を変えたら、`make verify` を通す。コマンドとスクリプトは [development.md](docs/development.md#-確かめ方) にある。スクリプトには [config-audit.py](scripts/config-audit.py) と [docs-section.sh](scripts/docs-section.sh) がある。
