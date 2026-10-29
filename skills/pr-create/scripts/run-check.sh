@@ -15,8 +15,14 @@ update_record() {
     local drop=$1
     local line=${2:-}
     local tmp
+    local tries=0
 
     until mkdir "$lock" 2>/dev/null; do
+        if [[ -n $(find "$lock" -maxdepth 0 -mmin +1 2>/dev/null) ]]; then
+            rmdir "$lock" 2>/dev/null
+            continue
+        fi
+        (( ++tries < 100 )) || { echo "NG 確認の記録のロックが外れない: $lock"; exit 1; }
         sleep 0.1
     done
     trap 'rmdir "$lock" 2>/dev/null' EXIT
@@ -59,7 +65,7 @@ mkdir -p "$logs"
 (cd "$repo" && "$@") >| "$log" 2>&1
 status=$?
 [[ $status == 0 ]] && result=OK || result=NG
-state=$("$(dirname "$0")/hash-state.sh" "$repo")
+state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG 作業場所の状態を読めない"; exit 1; }
 
 update_record "$label" "$(printf '%s\t%s\t%s' "$result" "$label" "$state")"
 

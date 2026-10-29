@@ -3,24 +3,10 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
+source "$(dirname "$0")/lib/hooks.sh"
 
-export TMPDIR="$work/state/"
-mkdir -p "$TMPDIR"
-hooks="$root/hooks/run.sh"
 collect="$root/skills/config-learn/scripts/collect-corrections.py"
-
-app="$work/app"
-mkdir -p "$app/ios/Features" "$app/docs"
-echo 'struct A {}' >"$app/ios/Features/HomeView.swift"
-echo '# 概要' >"$app/docs/overview.md"
-git -C "$app" init -q
-commit "$app" init
-swift="$app/ios/Features/HomeView.swift"
 : >"$work/empty.jsonl"
-
-bash_call() {
-    echo "{\"session_id\":\"b\",\"tool_use_id\":\"$1\",\"cwd\":\"$app\",\"tool_input\":{\"command\":\"$2\"}}"
-}
 
 expect "NG 使い方" "collect: 月が無ければ NG" python3 -I "$collect"
 
