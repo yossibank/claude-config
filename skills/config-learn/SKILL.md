@@ -31,9 +31,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 3. 手直しの材料を仕分ける。アプリの機能や見た目への注文は外し、Claude の作り方・書き方・進め方への手直しだけを残す。
 4. 残ったものを、同じ指摘ごとにまとめる。
-5. まとまりごとに、今の決まりを探す。
-   - claude-config の CLAUDE.md・`rules/`・`skills/`・`agents/`
-   - アプリの CLAUDE.md・`.claude/rules/`
+5. まとまりごとに、今の決まりを探す。claude-config では CLAUDE.md・`rules/`・`skills/`・`agents/` を見る。アプリでは CLAUDE.md・`.claude/rules/` を見る。
 6. 下の表で、案の種類を決める。
 7. 案を人に見せ、選んでもらう。
 8. 選ばれた案だけを、作業の区切りで直す。決まりに移したメモリは消す。

@@ -63,4 +63,4 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/count-tokens.py <YYYY-MM> [件数]
 
 ## 制約
 
-- 決まりの直しは提案に留め、人が決めてから直す。
+決まりの直しは提案に留め、人が決めてから直す。
