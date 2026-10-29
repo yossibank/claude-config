@@ -1,6 +1,6 @@
 # __DisplayName__
 
-<何のアプリかを 1 文で>
+__Summary__
 
 ![iOS 18+](https://img.shields.io/badge/iOS-18+-000000?logo=apple&logoColor=white)
 ![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)

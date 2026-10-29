@@ -12,7 +12,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 ## 手順
 
 1. `write-report.py` で表を作る。
-2. 星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには `app-plan` の `fetch-reviews.py` を使う。
+2. 星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには `app-plan` の `fetch-rival-reviews.py` を使う。
 3. 表と、前の月から大きく変わった所と、2 の不満を報告する。
 
 ```sh

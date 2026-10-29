@@ -31,10 +31,12 @@ WORKTREES_LITERAL = ".claude/worktrees"
 SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
 PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
+TEMPLATE_TOKEN = re.compile(r"__[A-Za-z]+__")
 WRITE_TOOLS = re.compile(rf"\b(?:{'|'.join(EDIT_TOOLS)})\b")
 NAMING = os.path.join(ROOT, "docs", "development.md")
 APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
 APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
+REPLACER = os.path.join(ROOT, "skills", "app-init", "scripts", "replace-placeholders.py")
 SKILL_SECTIONS = ["起動条件", "入力", "手順", "報告", "制約"]
 DESCRIPTION_LIMIT = 120
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
@@ -368,6 +370,46 @@ def check_template_scripts():
                     yield path, number, f"claude-config の参照先が無い: {reference}"
 
 
+def replacer_tokens(tree):
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.List):
+            continue
+        for item in node.elts:
+            if isinstance(item, ast.Tuple) and len(item.elts) == 2 and isinstance(item.elts[0], ast.Constant):
+                yield item.lineno, item.elts[0].value
+
+
+def literal_replaces(tree):
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "replace":
+            if node.args and isinstance(node.args[0], ast.Constant):
+                yield node.lineno, node.args[0].value
+
+
+def template_tokens(path):
+    yield 1, os.path.relpath(path, ROOT)
+    try:
+        yield from enumerate(read(path).split("\n"), 1)
+    except UnicodeDecodeError:
+        return
+
+
+def check_template_tokens():
+    tree = ast.parse(read(REPLACER))
+    tokens = set()
+    for number, token in replacer_tokens(tree):
+        if isinstance(token, str) and TEMPLATE_TOKEN.fullmatch(token):
+            tokens.add(token)
+        else:
+            yield REPLACER, number, f"tokens に __<名前>__ でない文字列がある: {token}"
+    for number, text in literal_replaces(tree):
+        yield REPLACER, number, f"tokens を通さずに文字列を置き換えている: {text}"
+    for path in tracked("skills/app-init/templates/*", "skills/app-plan/templates/*"):
+        for number, line in template_tokens(path):
+            for token in sorted(set(TEMPLATE_TOKEN.findall(line)) - tokens):
+                yield path, number, f"replace-placeholders.py の tokens に無い印: {token}"
+
+
 def check_settings():
     path = os.path.join(ROOT, "settings", "settings.json")
     for group in json.loads(read(path)).get("hooks", {}).values():
@@ -503,6 +545,7 @@ CHECKS = [
     check_links,
     check_paths,
     check_template_scripts,
+    check_template_tokens,
     check_settings,
     check_shell_scripts,
     check_script_rules,

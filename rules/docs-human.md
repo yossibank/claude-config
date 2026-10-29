@@ -7,7 +7,7 @@ paths:
 
 # 人が読む文書の形
 
-README と `docs/`・`spec/` を読み書きするときに読み込まれる決まり。`docs-writing.md` に足して、見出しの絵文字・バッジ・README の節の順を決める。
+README と `docs/`・`spec/` を読み書きするときに読み込まれる決まり。`docs-core.md` に足して、見出しの絵文字・バッジ・README の節の順を決める。
 
 ## 見出しの絵文字
 
