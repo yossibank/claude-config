@@ -25,6 +25,7 @@ REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
 SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
 PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
+WRITE_TOOLS = re.compile(r"\b(Multi|Notebook)?Edit\b|\bWrite\b")
 VERB_ROW = re.compile(r"^\| ((?:`[a-z]+`・?)+) \|", re.M)
 APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
 APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
@@ -174,8 +175,8 @@ def check_agents():
             ng(path, found[-1][0] if found else 1, "agents の最後の ## は「返す形」にする")
         body = read(path).split("\n---\n", 1)[-1]
         tools = fields.get("tools")
-        if "書き換えない" in body and (tools is None or re.search(r"\b(Edit|Write)\b", tools)):
-            ng(path, 1, "書き換えないエージェントの tools に Edit・Write を入れない")
+        if "書き換えない" in body and (tools is None or WRITE_TOOLS.search(tools)):
+            ng(path, 1, "書き換えないエージェントは tools を書き、Edit・Write・MultiEdit・NotebookEdit を入れない")
 
 
 def check_claude_templates():

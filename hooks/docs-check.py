@@ -38,6 +38,11 @@ ALERT = re.compile(r"^>\s*\[!([A-Za-z]+)\]")
 TREE = re.compile(r"[├└]──")
 BADGE = re.compile(r"!\[[^\]]*\]\((https://img\.shields\.io/[^)\s]+)\)")
 TOC_ITEM = re.compile(r"^([-*]|\d+\.)\s+\[[^\]]+\]\(#[^)]*\)\s*$")
+DECORATION = re.compile(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|!\[[^\]]*\]\([^)]*\)|</?[A-Za-z][A-Za-z0-9]*(\s[^>]*)?/?>")
+TREE_NOTE = re.compile(r"#|\s{2,}\S")
+COMMAND = re.compile(
+    r"^(\./|~/|/|\$\{|(make|git|gh|python3?|bash|sh|zsh|npx|npm|xcodebuild|xcrun|swift|jq|curl|rsync|mint|brew|pre-commit|claude)\s)"
+)
 MEMORY = re.compile(r"/\.claude/projects/[^/]+/memory/")
 FOR_CLAUDE = re.compile(r"(^|/)(CLAUDE|SKILL)\.md$|/(rules|agents)/[^/]+\.md$")
 
@@ -132,7 +137,7 @@ def check_size(path):
     return []
 
 
-def check_headings(rows, for_claude, readme):
+def check_headings(rows, for_claude, readme, human):
     found = []
     heading = None
     marked = {}
@@ -151,14 +156,14 @@ def check_headings(rows, for_claude, readme):
                 found.append((number, "見出しの絵文字は頭に 1 つだけにする"))
             if level == 2:
                 marked[number] = bool(emojis)
-                if emojis and not for_claude and allowed and bare(emojis[0]) not in allowed:
+                if emojis and human and allowed and bare(emojis[0]) not in allowed:
                     found.append((number, f"## の見出しの絵文字は rules/docs-writing.md の表から選ぶ（{emojis[0]}）"))
         elif what in ("body", "quote") and heading:
             heading[1] = True
     if readme and marked and not all(marked.values()):
         first = min(number for number, has in marked.items() if not has)
         found.append((first, "README の ## の見出しには、頭に絵文字を 1 つ付ける"))
-    elif len(set(marked.values())) > 1:
+    elif human and len(set(marked.values())) > 1:
         first = min(number for number, has in marked.items() if has != marked[min(marked)])
         found.append((first, "## の見出しは、すべてに絵文字を付けるか、どれにも付けないかにそろえる"))
     return found
@@ -204,16 +209,20 @@ def check_readme_order(rows):
     return found
 
 
-def check_opening(rows, want):
+def is_decoration(line):
+    return not DECORATION.sub("", line).strip()
+
+
+def check_opening(rows, want, lines):
     titles = [index for index, row in enumerate(rows) if row[3] == "heading"]
     if not titles or heading_level(rows[titles[0]][1]) != 1:
         return []
     index = titles[0]
     after = next((row for row in rows[index + 1 :] if row[3] != "blank"), None)
     alert = ALERT.match(after[1].strip()) if after else None
-    if want == "note" and not (alert and alert.group(1) == "NOTE"):
+    if want == "note" and not (alert and alert.group(1).upper() == "NOTE"):
         return [(rows[index][0], "README 以外の人が読む文書は、タイトルの直後に [!NOTE] を置く")]
-    if want == "sentence" and not (after and after[3] == "body"):
+    if want == "sentence" and not (after and after[3] == "body" and not is_decoration(lines[after[0] - 1])):
         return [(rows[index][0], "タイトルの直後に、何があるかを 1 文で書く")]
     return []
 
@@ -233,9 +242,9 @@ def check_sections(rows):
         if before < 2 <= bolds:
             found.append((number, "太字は 1 節に 1 か所までにする"))
         alert = ALERT.match(text.strip()) if what == "quote" else None
-        if alert and alert.group(1) not in ALERTS:
+        if alert and alert.group(1).upper() not in ALERTS:
             found.append((number, f"アラートは {'・'.join(ALERTS)} だけを使う（{alert.group(1)}）"))
-        if alert and not (after_title and alert.group(1) == "NOTE"):
+        if alert and not (after_title and alert.group(1).upper() == "NOTE"):
             alerts += 1
             if alerts == 2:
                 found.append((number, "アラートは、冒頭の [!NOTE] を除いて 1 節に 1 つまでにする"))
@@ -254,7 +263,7 @@ def check_blocks(lines):
             block = []
             if not info:
                 found.append((number, "コードブロックに言語を付ける。文字だけなら text にする"))
-        elif mark == "close" and language == "text":
+        elif mark == "close":
             found += check_tree(block)
         elif mark == "code":
             block.append((number, raw))
@@ -265,13 +274,15 @@ def check_tree(block):
     if not any(TREE.search(line) for _, line in block):
         return []
     names = ((number, line.strip().lstrip("│├└─ \u00a0")) for number, line in block)
-    return [(number, "フォルダの木には名前だけを書く。説明は表に分ける") for number, name in names if re.search(r"\s", name)]
+    return [(number, "フォルダの木には名前だけを書く。説明は表に分ける") for number, name in names if TREE_NOTE.search(name)]
 
 
 def check_toc(rows, lines):
     found = []
     run = 0
-    for number, _, _, what in rows:
+    for number, text, _, what in rows:
+        if what == "heading" and heading_level(text) >= 2:
+            break
         run = run + 1 if what == "list" and TOC_ITEM.match(lines[number - 1].strip()) else 0
         if run == 2:
             found.append((number - 1, "目次は GitHub が作るので、手で書かない"))
@@ -283,7 +294,11 @@ def check_badges(rows, lines):
     found = []
     first_tech = last_state = None
     rank = 0
+    dynamic_lines = {number for number, url in badges if "/badge/" not in url}
     for number, url in badges:
+        if "/badge/" in url and (number in dynamic_lines or any(key in url.lower() for key in STATE_BADGES)):
+            found.append((number, "状態の段は動的なバッジにする。/badge/ の固定のバッジを置かない"))
+            continue
         if "/badge/" in url:
             first_tech = first_tech or number
             continue
@@ -307,7 +322,7 @@ def check_inline_code(rows, lines):
         if what in ("code", "blank", "heading"):
             continue
         for span in CODE.findall(without_links(lines[number - 1])):
-            if len(span) > INLINE_CODE_LIMIT and re.search(r"\s", span):
+            if len(span) > INLINE_CODE_LIMIT and re.search(r"\s", span) and COMMAND.match(span):
                 found.append((number, f"文の中に長いコマンドを書かない（{len(span)} 字）。コードブロックに出す"))
     return found
 
@@ -369,7 +384,8 @@ def check(path):
     lines = open(path, encoding="utf-8", errors="replace").read().split("\n")
     rows = rows_of(lines)
     readme = os.path.basename(path).lower() == "readme.md"
-    found = check_size(path) + check_headings(rows, for_claude, readme)
+    human = readme or "/docs/" in path or "/spec/" in path
+    found = check_size(path) + check_headings(rows, for_claude, readme, human)
     found += check_heading_names(rows) + check_sections(rows) + check_blocks(lines)
     found += check_toc(rows, lines) + check_badges(rows, lines)
     if readme:
@@ -377,9 +393,9 @@ def check(path):
     if for_claude:
         found += check_inline_code(rows, lines)
     if for_claude or readme:
-        found += check_opening(rows, "sentence")
-    elif "/docs/" in path or "/spec/" in path:
-        found += check_opening(rows, "note")
+        found += check_opening(rows, "sentence", lines)
+    elif human:
+        found += check_opening(rows, "note", lines)
     for index, (number, text, spoken, what) in enumerate(rows):
         if what in ("code", "blank", "heading"):
             continue

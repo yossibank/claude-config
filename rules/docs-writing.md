@@ -113,7 +113,7 @@ CLAUDE.md・rules・SKILL.md・agents は、飾りを使わずに、決まった
 | 飾り | 絵文字と画像を使わない |
 | 冒頭 | タイトルの直後の 1 文で、読み込まれる時と決めることを書く |
 | 決まり | 守ることは表か箇条書きにし、例はその後のコードブロックに置く |
-| コマンド | 空白を含む 40 字を超えるコマンドは、文の中に書かない。コードブロックに出し、文では名前で呼ぶ |
+| コマンド | パス・`${`・`git` などのコマンド名で始まり、空白を含む 40 字を超えるものは文の中に書かない。コードブロックに出し、文では名前で呼ぶ |
 | 手順の文末 | 番号付きの手順の項目は、「。」で終える |
 
 ### SKILL.md の節
@@ -155,7 +155,7 @@ frontmatter には、次の項目を書く。
 | `name` | ファイル名と同じ名前 |
 | `description` | 使う時と使わない時 |
 | `model` | 使うモデル。省かない |
-| `tools` | 使える道具。書き換えないエージェントは、Edit と Write を入れない |
+| `tools` | 書き換えないエージェントは必ず書き、Edit・Write・MultiEdit・NotebookEdit を入れない。書き換えるエージェントは省いてよく、省くと全部の道具を使える |
 
 ## CLAUDE.md の形
 
@@ -265,17 +265,19 @@ README は、次の順に書く。無い節は作らない。
 | 仕組み | 見ること |
 | --- | --- |
 | `hooks/docs-check.py` | 一文の長さ、段落・項目・表のセルの文の数、一覧の前置きの項目の数 |
-| `hooks/docs-check.py` | 見出しの絵文字の数と位置、表にあるか、`##` の絵文字のそろえ方（README は付ける） |
-| `hooks/docs-check.py` | 見出しと小見出しの間の本文、同じ親の下の同じ名前の見出し、手で書いた目次 |
+| `hooks/docs-check.py` | 見出しの絵文字の数と位置。README と `docs/`・`spec/` では、表にあるかと `##` のそろえ方（README は付ける） |
+| `hooks/docs-check.py` | 見出しと小見出しの間の本文、同じ親の下の同じ名前の見出し、最初の `##` より前に手で書いた目次 |
 | `hooks/docs-check.py` | タイトルの直後。Claude が読む文書と README は 1 文、`docs/`・`spec/` は `[!NOTE]` |
+| `hooks/docs-check.py` | タイトルの直後の 1 文。画像・バッジ・HTML だけの行は 1 文に数えない |
 | `hooks/docs-check.py` | 1 節の太字とアラートの数、アラートの種類 |
-| `hooks/docs-check.py` | コードブロックの言語、フォルダの木の説明、バッジの段の並び |
-| `hooks/docs-check.py` | README の節の順、Claude が読む文書の文の中の長いコマンド |
+| `hooks/docs-check.py` | コードブロックの言語、フォルダの木の説明、バッジの段の並びと状態の段が動的なバッジか |
+| `hooks/docs-check.py` | README の節の順、Claude が読む文書の文の中の長いコマンド（パス・`${`・コマンド名で始まるもの） |
 | `hooks/docs-check.py` | Claude が読む文書の絵文字・本文の絵文字の表・斜体・日本語と英数字の間 |
 | `hooks/docs-check.py` | README と `docs/` の外の HTML、使ってよいタグ、`docs/` の 1 ファイルの大きさ |
 | `scripts/config-audit.py` | SKILL.md の「手順」と「報告」の有無、固定の節の順、ほかの節の置き場所 |
 | `scripts/config-audit.py` | SKILL.md の description の文末と字数 |
-| `scripts/config-audit.py` | agents の `name`・`model`・`tools` と最後の「返す形」、rules の `paths` |
+| `scripts/config-audit.py` | agents の `name`・`model` と最後の「返す形」、rules の `paths` |
+| `scripts/config-audit.py` | 本文に「書き換えない」とある agents の `tools` |
 | `scripts/config-audit.py` | ひな形の CLAUDE.md の節の順 |
 | `scripts/config-audit.py` | ひな形の Makefile と `.sh` が呼ぶ claude-config のファイルがあるか |
 | `scripts/config-audit.py` | skills・agents・rules・hooks・scripts が README の表にあるか。リンク先とパスの参照先があるか |

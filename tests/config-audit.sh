@@ -177,7 +177,15 @@ expect_audit "$d" OK "書き換えるエージェントは Edit を持てる"
 d=$(copy agent-tools-ng)
 replace "$d/agents/explorer.md" 'tools: Read, Grep, Glob, Bash
 ' ''
-expect_audit "$d" "書き換えないエージェントの tools に Edit・Write を入れない" "書き換えないエージェントが全部の道具を持つ"
+expect_audit "$d" "書き換えないエージェントは tools を書き" "書き換えないエージェントが全部の道具を持つ"
+
+d=$(copy agent-tools-multi-edit)
+replace "$d/agents/explorer.md" 'tools: Read, Grep, Glob, Bash' 'tools: Read, Grep, Glob, Bash, MultiEdit'
+expect_audit "$d" "書き換えないエージェントは tools を書き" "書き換えないエージェントが MultiEdit を持つ"
+
+d=$(copy agent-tools-notebook-edit)
+replace "$d/agents/reviewer.md" 'tools: Read, Grep, Glob, Bash' 'tools: Read, Grep, Glob, Bash, NotebookEdit'
+expect_audit "$d" "書き換えないエージェントは tools を書き" "書き換えないエージェントが NotebookEdit を持つ"
 
 d=$(copy claude-template-ok)
 replace "$d/skills/app-init/templates/ios-app/CLAUDE.md" '## 構成
