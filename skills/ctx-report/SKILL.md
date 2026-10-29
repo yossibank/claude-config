@@ -17,7 +17,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/count-tokens.py <YYYY-MM> [件数]
 ```
 
-会話は、始まった日（日本時間）の月に数える。記録の置き場所は `CLAUDE_PROJECTS` で変えられる。
+会話は、始まった日（日本時間）の月に数える。記録の置き場所は `CC_PROJECTS_DIR` で変えられる。
 
 ## count-tokens.py の出力
 

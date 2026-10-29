@@ -14,7 +14,7 @@ SwiftUI のビューを `ImageRenderer` で PNG に描き、見た目を確か�
 描く時は、次の順に進める。
 
 1. 描く場合のセットを用意する。無ければ、下の「セット」に従って作る。
-2. `render-snapshots.sh` を実行する。シミュレーターは、`DEVICE` に UDID を渡して選べる。渡さない時は、使える iPhone の最初の 1 台を使う。
+2. `render-snapshots.sh` を実行する。シミュレーターは、`CC_UI_DEVICE` に UDID を渡して選べる。渡さない時は、使える iPhone の最初の 1 台を使う。
 3. 描いた PNG を、下の「出力の読み方」に従って読む。
 
 ```sh

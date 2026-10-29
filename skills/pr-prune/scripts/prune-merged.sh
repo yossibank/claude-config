@@ -5,7 +5,7 @@ source "$(dirname "$0")/../../../lib/git.sh"
 
 [[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <ブランチ名> <PR 番号>"; exit 1; }
 
-repo=$(resolve_repo "$1") || { echo "$repo"; exit 1; }
+use_repo "$1"
 branch=$2
 pr=$3
 name=$(basename "$repo")
