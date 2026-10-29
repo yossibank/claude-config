@@ -105,8 +105,6 @@
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
 
-app-init の `create-app.sh` は、app-plan の `templates/` を直接読む。
-
 ## 🧪 テスト
 
 テストは `tests/<対象>.sh` に置き、`make test` で全部を走らせる。1 本だけは `make test-<対象>` で走らせる。

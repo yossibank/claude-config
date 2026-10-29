@@ -206,7 +206,7 @@ replace "$d/skills/app-init/templates/ios-app/Makefile" 'scripts/render-snapshot
 expect_audit "$d" "claude-config の参照先が無い: skills/ui-snapshot/scripts/render.sh" "ひな形の Makefile が無いスクリプトを呼ぶ"
 
 d=$(copy template-token-ng)
-printf '\n__Nothing__\n' >>"$d/skills/app-plan/templates/roadmap.md"
+printf '\n__Nothing__\n' >>"$d/skills/app-init/templates/ios-app/docs/roadmap.md"
 expect_audit "$d" "tokens に無い印: __Nothing__" "ひな形に置き換えない印がある"
 
 d=$(copy template-token-deep-ng)
