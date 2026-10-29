@@ -1,11 +1,11 @@
+import os
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
+
+from script_io import fail  # noqa: E402
+
 ANCHOR = "    targets: [\n"
-
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
 
 
 def main():

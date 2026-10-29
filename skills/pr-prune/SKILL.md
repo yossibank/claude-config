@@ -2,31 +2,42 @@
 name: pr-prune
 description: マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける。PR がマージされたと分かった時や、人が片付けを頼んだ時に使う。
 argument-hint: "<リポジトリ> <ブランチ> <PR 番号> [...]"
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune.sh *)
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh *)
 ---
 
 # マージの後の片付け
 
-マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける手順。マージそのものは、この skill ではしない。
+マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける手順。
+
+## 入力
+
+| 入力 | 中身 |
+| --- | --- |
+| `$ARGUMENTS` | PR ごとの「リポジトリ・ブランチ・PR 番号」の組 |
 
 ## 手順
 
-`$ARGUMENTS` には、PR ごとに「リポジトリ・ブランチ・PR 番号」の組を渡す。組ごとに、次を実行する。
+片付けは、次の順に進める。
+
+1. 今のセッションが入っているワークツリーがあれば、下の「入っているワークツリーの消し方」で先に消す。prune-merged.sh では消せない。
+2. 組ごとに、prune-merged.sh を実行する。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/prune.sh <リポジトリ> <ブランチ> <PR 番号>
+${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh <リポジトリ> <ブランチ> <PR 番号>
 ```
 
-今のセッションが入っているワークツリーは、prune.sh では消せない。次の順に消してから、prune.sh を実行する。
+## 入っているワークツリーの消し方
+
+今のセッションが入っているワークツリーは、次の順に消す。
 
 1. `git fetch` する。
 2. 中身が既定のブランチと同じかを、`git diff --quiet origin/<既定のブランチ> HEAD` で確かめる。
 3. `git status --porcelain` が空かを確かめる。
 4. 両方を満たしたら、`ExitWorktree` で消す。
 
-## prune.sh が確かめること
+## prune-merged.sh がすること
 
-prune.sh は、上から順に確かめる。満たさないものがあれば、`NG` の行を出して止まる。
+prune-merged.sh は、上から順に確かめる。満たさないものがあれば、`NG` の行を出して止まる。
 
 | 確かめること | 満たさないとき |
 | --- | --- |
@@ -46,4 +57,8 @@ prune.sh は、上から順に確かめる。満たさないものがあれば�
 
 ## 報告
 
-prune.sh が出す `OK` と `NG` の行を、リポジトリごとの表にして返す。`NG` があれば、その理由と、次にすることを書く。
+prune-merged.sh が出す `OK` と `NG` の行を、リポジトリごとの表にして返す。`NG` があれば、その理由と、次にすることを書く。
+
+## 制約
+
+- マージそのものは、この skill ではしない。

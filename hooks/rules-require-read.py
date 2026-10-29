@@ -1,14 +1,16 @@
 import calendar
-import json
 import os
 import re
 import sys
 import tempfile
 import time
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import git_root, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
+from hook_stops import RULES_UNREAD  # noqa: E402
+from md_blocks import front_matter_end  # noqa: E402
+from transcripts import parse_entry, tail_lines  # noqa: E402
 
 RULES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
 STATE = os.path.join(tempfile.gettempdir(), "claude-rules-read")
@@ -39,12 +41,10 @@ def to_regex(pattern):
 
 def rule_paths(path):
     lines = open(path, encoding="utf-8").read().split("\n")
-    if not lines or lines[0] != "---":
+    if lines[:1] != ["---"]:
         return []
     patterns = []
-    for line in lines[1:]:
-        if line == "---":
-            break
+    for line in lines[1 : front_matter_end(lines)]:
         match = re.match(r'^\s*-\s*"?([^"]+)"?\s*$', line)
         if match:
             patterns.append(to_regex(match.group(1)))
@@ -83,41 +83,27 @@ def is_rule(path):
     return os.path.dirname(real) == os.path.realpath(RULES) or path.startswith(os.path.expanduser("~/.claude/rules/"))
 
 
-def tail_after_compaction(transcript, chunk=4_000_000):
-    with open(transcript, "rb") as file:
-        file.seek(0, os.SEEK_END)
-        position = file.tell()
-        data = b""
-        while position > 0 and len(data) < TAIL_LIMIT:
-            step = min(chunk, position)
-            position -= step
-            file.seek(position)
-            data = file.read(step) + data
-            index = data.rfind(b'"compact_boundary"')
-            if index >= 0:
-                return data[data.rfind(b"\n", 0, index) + 1 :].decode("utf-8", "ignore").splitlines()
-    return data.decode("utf-8", "ignore").splitlines()
-
-
 def scan(transcript):
     compacted = 0.0
     loaded = set()
     if not transcript or not os.path.isfile(transcript):
         return compacted, loaded
-    for line in tail_after_compaction(transcript):
+    for line in tail_lines(transcript, TAIL_LIMIT, b'"compact_boundary"'):
         if '"compact_boundary"' in line:
+            stamp = (parse_entry(line) or {}).get("timestamp", "")
             try:
-                stamp = json.loads(line).get("timestamp", "")
                 compacted = max(compacted, calendar.timegm(time.strptime(stamp[:19], "%Y-%m-%dT%H:%M:%S")))
             except (ValueError, TypeError):
                 pass
             loaded = set()
         elif '"instructions"' in line and "/rules/" in line:
-            try:
-                files = json.loads(line).get("attachment", {}).get("files") or []
-            except ValueError:
+            entry = parse_entry(line)
+            if entry is None:
                 continue
-            loaded |= {os.path.basename(str(item.get("path", ""))) for item in files if is_rule(str(item.get("path", "")))}
+            attachment = entry.get("attachment")
+            files = attachment.get("files") if isinstance(attachment, dict) else None
+            paths = [str(item.get("path", "")) for item in files if isinstance(item, dict)] if isinstance(files, list) else []
+            loaded |= {os.path.basename(path) for path in paths if is_rule(path)}
     return compacted, loaded
 
 
@@ -140,7 +126,7 @@ def check_edit(data, path):
     missing = [name for name in rules if read_time(data, name) <= compacted and name not in loaded]
     if missing:
         print(
-            "この編集に当たる決まりを、この会話でまだ読んでいない。"
+            f"{RULES_UNREAD}。"
             "次を Read で読んでから、同じ編集をやり直す: " + "、".join(os.path.join(RULES, name) for name in missing),
             file=sys.stderr,
         )
@@ -148,8 +134,6 @@ def check_edit(data, path):
 
 
 def main():
-    if os.environ.get("CLAUDE_RULES_GUARD") == "off":
-        return
     data = read_payload()
     if data is None:
         return

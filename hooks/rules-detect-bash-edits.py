@@ -1,15 +1,15 @@
-import importlib.util
 import json
 import os
 import re
 import sys
 import tempfile
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import git, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
+from hook_io import git, git_root, hook_off, read_payload, remove_stale, safe_name, split_commands, tool_input  # noqa: E402
+from hook_stops import BASH_EDITED  # noqa: E402
+from modules import load_hook  # noqa: E402
 
-HOOKS = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
 TOOLS = re.compile(r"^\s*(git|make|mint|swiftformat|pre-commit|gh|brew|xcodebuild|swift|cd)\b")
@@ -18,10 +18,9 @@ STALE = 24 * 60 * 60
 
 def changed_files(cwd):
     result = git(cwd, "status", "--porcelain", "-z", "--untracked-files=all")
-    top = git(cwd, "rev-parse", "--show-toplevel", timeout=5)
-    if not result or result.returncode or not top or top.returncode:
+    root = git_root(cwd)
+    if not result or result.returncode or not root:
         return None, {}
-    root = top.stdout.strip()
     files = {}
     entries = iter(result.stdout.split("\0"))
     for entry in entries:
@@ -37,15 +36,8 @@ def state_file(data):
     return os.path.join(STATE, safe_name(f"{data.get('session_id', '')}-{data.get('tool_use_id', '')}"))
 
 
-def load_hook(name):
-    spec = importlib.util.spec_from_file_location(name.replace("-", "_"), os.path.join(HOOKS, f"{name}.py"))
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
 def only_tools(command):
-    parts = [part for part in re.split(r"&&|\|\||;|\|", command) if part.strip()]
+    parts = [part for part in split_commands(command) if part.strip()]
     return bool(parts) and all(TOOLS.match(part) for part in parts)
 
 
@@ -78,18 +70,19 @@ def after(data):
     if not edited:
         return
     lines = [
-        "Bash でファイルを書き換えた。ファイルの変更は Edit・Write で行う。書き換えたファイルに、Edit の後と同じ検査をかけた。",
+        f"{BASH_EDITED}。ファイルの変更は Edit・Write で行う。書き換えたファイルに、Edit の後と同じ検査をかけた。",
         *edited,
     ]
-    guard = load_hook("rules-require-read")
-    rules = sorted({name for path in edited for name in guard.matching_rules(path)})
-    if rules:
-        lines.append("当たる決まり（まだ読んでいなければ Read で読む）: " + "、".join(rules))
-    docs = load_hook("docs-check")
-    shell = load_hook("shell-check")
+    if not hook_off("rules-require-read"):
+        guard = load_hook("rules-require-read")
+        rules = sorted({name for path in edited for name in guard.matching_rules(path)})
+        if rules:
+            lines.append("当たる決まり（まだ読んでいなければ Read で読む）: " + "、".join(rules))
+    checks = {".md": "docs-check", ".sh": "shell-check"}
     for path in edited:
-        found = docs.check(path) if path.endswith(".md") else shell.check(path) if path.endswith(".sh") else []
-        lines += [f"{path}:{n}: {m}" for n, m in found]
+        name = next((hook for suffix, hook in checks.items() if path.endswith(suffix)), None)
+        if name and not hook_off(name):
+            lines += [f"{path}:{n}: {m}" for n, m in load_hook(name).check(path)]
     print("\n".join(lines), file=sys.stderr)
     sys.exit(2)
 

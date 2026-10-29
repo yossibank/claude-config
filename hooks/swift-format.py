@@ -3,9 +3,11 @@ import shutil
 import subprocess
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import git_root, read_payload, tool_input  # noqa: E402
+
+TIMEOUT = 60
 
 
 def pinned(root):
@@ -34,10 +36,10 @@ def main():
             cwd=root,
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=TIMEOUT,
         )
     except subprocess.TimeoutExpired:
-        print("swiftformat が 60 秒で終わらなかった", file=sys.stderr)
+        print(f"swiftformat が {TIMEOUT} 秒で終わらなかった", file=sys.stderr)
         return
     if result.returncode != 0:
         print(f"swiftformat が失敗した：{result.stderr.strip()[-500:]}", file=sys.stderr)

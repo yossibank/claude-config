@@ -1,20 +1,19 @@
 import os
-import re
 import shlex
 import subprocess
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import git_root, read_payload, tool_input  # noqa: E402
+from hook_io import git_root, read_payload, split_commands, tool_input  # noqa: E402
+from hook_stops import PR_UNCHECKED  # noqa: E402
 
-CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "check.sh")
-SEGMENT = re.compile(r"&&|\|\||;|\|")
+CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "run-check.sh")
 PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 
 
 def gated_repo(command, cwd):
-    for part in SEGMENT.split(command):
+    for part in split_commands(command):
         try:
             words = shlex.split(part, posix=True)
         except ValueError:
@@ -46,12 +45,14 @@ def problems(repo):
         return []
     if result.returncode == 0:
         return []
-    return [line[3:] for line in result.stdout.splitlines() if line.startswith("NG ")] or [result.stdout.strip()]
+    found = [line[3:] for line in result.stdout.splitlines() if line.startswith("NG ")]
+    if found or result.stdout.strip():
+        return found or [result.stdout.strip()]
+    reason = result.stderr.strip().splitlines()[-1:]
+    return [f"run-check.sh が失敗した（終了コード {result.returncode}）" + "".join(f": {line}" for line in reason)]
 
 
 def main():
-    if os.environ.get("CLAUDE_PR_GATE") == "off":
-        return
     data = read_payload()
     if data is None:
         return
@@ -61,7 +62,7 @@ def main():
     found = problems(repo)
     if found:
         print(
-            "push と PR の作成の前に、pr-create の手順の確認を通す（check.sh で通し直すか、要らない記録は check.sh <作業場所> --drop <名前> で外す）。\n"
+            f"{PR_UNCHECKED}、pr-create の手順の確認を通す（run-check.sh で通し直すか、要らない記録は run-check.sh <作業場所> --drop <名前> で外す）。\n"
             + "\n".join(found),
             file=sys.stderr,
         )

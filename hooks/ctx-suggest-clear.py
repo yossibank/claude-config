@@ -4,28 +4,26 @@ import re
 import sys
 import tempfile
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import read_payload, safe_name, tool_input  # noqa: E402
+from transcripts import parse_entry, tail_lines  # noqa: E402
 
 STEP = 200_000
 TAIL = 4_000_000
 STATE = os.path.join(tempfile.gettempdir(), "claude-suggest-clear")
 KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
 PR_URL = re.compile(r"https://github\.com/[^/\s]+/[^/\s]+/pull/\d+")
+LONG_MESSAGE = "会話の文脈が約 {} 万トークンになりました。区切りのよいところで /ctx-handoff で引き継ぎメモを書き、/clear すると、使う量を抑えられます。"
+PR_MESSAGE = "PR を作りました。この依頼が済んだら、/ctx-handoff で引き継ぎメモを書いてから /clear で区切ると、次の作業が軽くなります。"
 
 
 def context_tokens(path):
-    size = os.path.getsize(path)
-    with open(path, "rb") as file:
-        file.seek(max(size - TAIL, 0))
-        lines = file.read().decode("utf-8", "ignore").splitlines()
-    for line in reversed(lines):
+    for line in reversed(tail_lines(path, TAIL)):
         if '"usage"' not in line:
             continue
-        try:
-            entry = json.loads(line)
-        except ValueError:
+        entry = parse_entry(line)
+        if entry is None:
             continue
         message = entry.get("message")
         if entry.get("isSidechain") or not isinstance(message, dict):
@@ -59,10 +57,7 @@ def long_context(payload):
     if level < 1 or level <= notified_level(session):
         return None
     save_level(session, level)
-    return f"会話の文脈が約 {tokens // 10_000} 万トークンになりました。区切りのよいところで /ctx-handoff で引き継ぎメモを書き、/clear すると、使う量を抑えられます。"
-
-
-PR_MESSAGE = "PR を作りました。この依頼が済んだら、/ctx-handoff で引き継ぎメモを書いてから /clear で区切ると、次の作業が軽くなります。"
+    return LONG_MESSAGE.format(tokens // 10_000)
 
 
 def created_pr(payload):

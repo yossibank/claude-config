@@ -14,19 +14,19 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 表は、次のコマンドで作る。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/monthly.py <YYYY-MM>
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 ```
 
-`monthly.py` は、アプリを集めて表を書く。置き場所は `APPS_DIR` で変えられる。
+`write-report.py` は、アプリを集めて表を書く。置き場所は `APPS_DIR` で変えられる。
 
 | 読むもの・書くもの | 場所 |
 | --- | --- |
 | 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
 | 表 | `~/Applications/AppStore/reports/<YYYY-MM>.md` |
 
-## 表の中身
+## write-report.py の出力
 
-表の列は、次のとおりである。
+`write-report.py` が書く表の列は、次のとおりである。
 
 | 列 | 出どころ | 要るもの |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/monthly.py <YYYY-MM>
 
 人には、表と、前の月から大きく変わった所だけを返す。
 
-星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには、`app-plan` のスキルの `reviews.py` を使う。
+星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには、`app-plan` のスキルの `fetch-reviews.py` を使う。
 
 > [!WARNING]
 > 売上のレポートの取得は、キーが無いので確かめていない。署名は、テスト用の鍵で `openssl` の検証に通ることだけを確かめた。

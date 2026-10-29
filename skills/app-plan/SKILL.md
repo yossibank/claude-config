@@ -17,19 +17,24 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
    - アプリの名前（英小文字。リポジトリの名前になる）
    - 自分でも使うか
    - 守ること（データを送らない先など）
-2. 競合を探す。`search.py` で題材の語を 2〜3 通り検索し、評価の数の多い順に 3〜5 本を選ぶ。
-3. 不満を集める。選んだ競合ごとに `reviews.py` で星 2 以下のレビューを出し、同じ不満をまとめて数える。
-4. 不満の表を作る。多い順に並べ、作る人 1 人で応えられるものに、対応する機能を付ける。
+2. 競合を探す。`search-apps.py` で題材の語を 2〜3 通り検索する。評価の数の多い順に 3〜5 本を選ぶ。
+3. 不満を集める。選んだ競合ごとに、`fetch-reviews.py` で星 2 以下のレビューを出す。同じ不満はまとめて数える。
+4. 不満の表を作る。多い順に並べ、「不満の重さ」の節に従って重さを付ける。作る人 1 人で応えられるものには、対応する機能を付ける。
 5. 最初のリリースの機能を決める。不満の上位に応える機能だけにし、ほかは「この先の段階」に回す。
-6. `${CLAUDE_SKILL_DIR}/templates/` の 2 つを写して埋め、下書きを書く。
+6. `${CLAUDE_SKILL_DIR}/templates/` の 2 つを写して埋め、下書きを書く。未決は、overview の「未決」に `- [ ]` の項目で 1 つずつ書く。roadmap の状態は、すべて未着手にする。
 7. 下書きと、人が決めることを人に見せる。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/search.py <語> [件数]
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/reviews.py <アプリの ID> [星の上限]
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/search-apps.py <語> [件数]
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-reviews.py <アプリの ID> [星の上限]
 ```
 
-`search.py` は、ID・評価・評価の数・値段・名前をタブ区切りで出す。`reviews.py` は、新しい順に最大 500 件から、星の上限以下のものを 1 行 200 字で出す。どちらも日本の App Store を見る。
+どちらのスクリプトも日本の App Store を見て、次のものを出す。
+
+| スクリプト | 出力 |
+| --- | --- |
+| `search-apps.py` | ID・評価・評価の数・値段・名前を、タブ区切りで 1 行に 1 本 |
+| `fetch-reviews.py` | 新しい順に最大 500 件のうち、星の上限以下のレビューを 1 行 200 字で |
 
 ## 書き出す先
 
@@ -39,6 +44,16 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/reviews.py <アプリの ID> [星の上�
 | --- | --- | --- |
 | `docs/overview.md` | `${CLAUDE_SKILL_DIR}/templates/overview.md` | 5KB まで |
 | `docs/roadmap.md` | `${CLAUDE_SKILL_DIR}/templates/roadmap.md` | 3KB まで |
+
+## 不満の重さ
+
+不満の表の重さは、次の決まりで付ける。印は、ひな形の表と同じ絵文字と語にする。
+
+| 重さ | 付ける時 |
+| --- | --- |
+| 高 | 選んだ競合の 2 本以上で、多い方から上位に出る |
+| 中 | 1 本の競合だけで、多い方から上位に出る |
+| 低 | 上位には出ないが、最初のリリースで応えやすい |
 
 ## 最初のリリースの決め方
 
@@ -51,7 +66,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/reviews.py <アプリの ID> [星の上�
 
 ## 人が決めること
 
-次は、決めずに人に聞く。下書きでは「未決」に書く。
+次は、決めずに人に聞く。下書きでは「未決」の `- [ ]` の項目に書く。
 
 - 名前と、ストアの表示名
 - 本業と競合しないか（副業の規定）

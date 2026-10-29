@@ -15,14 +15,14 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 
 1. 動きを自動で起こす一時の仕掛けを入れる。下の「一時の仕掛け」に従う。
 2. アプリをビルドしてシミュレーターに入れ、起動する。
-3. `record.sh` で録画する。
-4. `frames.sh` で、はじめは低いコマ数で全体を並べ、動きの起きる時刻を見つける。
+3. `record-video.sh` で録画する。
+4. `tile-frames.sh` で、はじめは低いコマ数で全体を並べ、動きの起きる時刻を見つける。
 5. その時刻の前後だけを、高いコマ数で切り出して並べ直す。
 6. 一時の仕掛けを戻す。`git diff` に残っていないことを確かめる。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/record.sh <UDID> <秒数> <出力先>/before.mp4
-${CLAUDE_SKILL_DIR}/scripts/frames.sh <出力先>/before.mp4 <開始秒> <長さ秒> <コマ数/秒> <crop> <列数> <出力先>/sheet.png
+${CLAUDE_SKILL_DIR}/scripts/record-video.sh <UDID> <秒数> <出力先>/before.mp4
+${CLAUDE_SKILL_DIR}/scripts/tile-frames.sh <出力先>/before.mp4 <開始秒> <長さ秒> <コマ数/秒> <crop> <列数> <出力先>/sheet.png
 ```
 
 `crop` は ffmpeg の `幅:高さ:x:y` を元の解像度で書く。画面全体なら `full` を渡す。
@@ -37,9 +37,7 @@ ${CLAUDE_SKILL_DIR}/scripts/frames.sh <出力先>/before.mp4 <開始秒> <長さ
 | タブや画面の切り替え | 親の画面に `.task` を足し、一定の間隔で選択を切り替える |
 | 最初の設定や起動時のシートが邪魔をする | その分岐を一時的に飛ばす。開いたシートは仕掛けの中で閉じる |
 
-仕掛けのファイルと書き換えは、終わったら必ず戻す。ほかの変更を消さないよう、`git checkout` で戻す前に `git diff` で中身を確かめる。
-
-## 画像の読み方
+## 出力の読み方
 
 画像は大きくなりやすいので、次のとおり読む。
 
@@ -50,3 +48,8 @@ ${CLAUDE_SKILL_DIR}/scripts/frames.sh <出力先>/before.mp4 <開始秒> <長さ
 ## 報告
 
 人には、見つけた動きのずれと、その時刻を返す。比べた画像は、直す前と後を 1 枚ずつ示す。
+
+## 制約
+
+- 一時の仕掛けのファイルと書き換えは、終わったら必ず戻す。
+- ほかの変更を消さないよう、`git checkout` で戻す前に `git diff` で中身を確かめる。

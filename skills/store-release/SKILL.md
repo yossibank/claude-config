@@ -2,7 +2,7 @@
 name: store-release
 description: App Store に出す前の申告・掲載情報・スクリーンショット・版を確かめ、アーカイブを TestFlight に送る。人がストアへの公開や配布を頼んだ時に使う。
 argument-hint: "[<アプリのリポジトリ>]"
-allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/screenshot.sh *)
+allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh *)
 ---
 
 # ストアに出す
@@ -15,13 +15,13 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 
 | ファイル | ひな形 | 中身 |
 | --- | --- | --- |
-| `ios/<App>/PrivacyInfo.xcprivacy` | claude-config の `templates/ios-app/` にある同じ名前のファイル | 理由の申告が要る API と、集めるデータ |
-| `store/ja/*.txt` | `templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
+| `ios/<App>/PrivacyInfo.xcprivacy` | `${CLAUDE_SKILL_DIR}/../app-init/templates/ios-app/` の同じ名前 | 理由の申告が要る API と、集めるデータ |
+| `store/ja/*.txt` | `${CLAUDE_SKILL_DIR}/templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
 | `store/screenshots/` | | 6.9 インチの PNG |
 
 ## 手順
 
-公開の準備は、次の順に進める。1 つでも `NG` が出たら、直してから次へ進む。
+公開の準備は、次の順に進める。1 つでも `NG` が出たら、直してから次へ進む。各段のやり方は、同じ名前の節にある。
 
 1. プライバシーの申告を確かめる。
 2. 掲載情報を書いて確かめる。
@@ -30,7 +30,7 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 5. アーカイブを作って送る。
 6. 人に、App Store Connect でする作業を渡す。
 
-### 1. プライバシーの申告
+## プライバシーの申告
 
 `check-privacy.py` は、Swift のコードから理由の申告が要る API を探し、申告と突き合わせる。
 
@@ -46,36 +46,46 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-privacy.py <アプリのリポジ�
 
 理由が選べない時は、人に聞く。ライブラリは、それぞれが持つ申告を使う。
 
-### 2. 掲載情報
+## 掲載情報
 
-`store/ja/` の文を書き、`check-listing.py` で字数と抜けを確かめる。上限は、名前とサブタイトルが 30 字、キーワードが 100 字、宣伝文が 170 字、説明が 4000 字である。
+`store/ja/` の文を書き、`check-listing.py` で字数と抜けを確かめる。
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-listing.py <アプリのリポジトリ>/store/ja
 ```
 
-説明の文は、overview の「解決したい不満」と「最初のリリースの機能」から書く。キーワードはカンマで区切り、名前とサブタイトルにある語は入れない。
+字数の上限は、次のとおりである。
 
-### 3. スクリーンショット
+| 項目 | 上限 |
+| --- | --- |
+| 名前 | 30 字 |
+| サブタイトル | 30 字 |
+| キーワード | 100 字 |
+| 宣伝文 | 170 字 |
+| 説明 | 4000 字 |
 
-6.9 インチのシミュレーター（iPhone 18 Pro Max など）でアプリを開き、見せたい画面ごとに撮る。`screenshot.sh` は、状態バーを 9:41・電池 100% に固定して撮り、大きさを確かめる。
+説明の文は、overview の「解決したい不満」と「最初のリリースの機能」から書く。キーワードはカンマで区切る。名前とサブタイトルにある語は、キーワードに入れない。
+
+## スクリーンショット
+
+6.9 インチのシミュレーター（iPhone 18 Pro Max など）でアプリを開き、見せたい画面ごとに撮る。`take-screenshot.sh` は、状態バーを 9:41・電池 100% に固定して撮り、大きさを確かめる。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/screenshot.sh <UDID> <アプリのリポジトリ>/store/screenshots/<番号>-<画面>.png
+${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh <UDID> <アプリのリポジトリ>/store/screenshots/<番号>-<画面>.png
 ```
 
 撮る画面は 3〜5 枚にし、overview の「解決したい不満」の上位に応える画面から並べる。見せたい状態のデータは、テストデータを入れて作る。
 
-### 4. 版の番号
+## 版の番号
 
 `MARKETING_VERSION` を人に確かめる。ビルドの番号は、送る時に Xcode が上げる。
 
-### 5. アーカイブと送信
+## アーカイブと送信
 
-`archive.sh` は、Release でアーカイブを作り、App Store Connect に送る。外に出す操作なので、走らせる前に人の承認を得る。
+`archive-app.sh` は、Release でアーカイブを作り、App Store Connect に送る。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/archive.sh <ワークスペース> <スキーム> <出力先のフォルダ>
+${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム> <出力先のフォルダ>
 ```
 
 | 変数 | すること |
@@ -97,3 +107,7 @@ ${CLAUDE_SKILL_DIR}/scripts/archive.sh <ワークスペース> <スキーム> <�
 
 > [!WARNING]
 > 書き出しと送信には、配布用の署名と App Store Connect のアカウントが要る。手元では確かめていない。
+
+## 制約
+
+- `archive-app.sh` は外に出す操作なので、走らせる前に人の承認を得る。
