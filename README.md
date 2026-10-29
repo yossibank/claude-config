@@ -126,10 +126,10 @@ flowchart LR
 | [shell-check](hooks/shell-check.py) | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
 | [swift-format](hooks/swift-format.py) | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 
-フックを止める時は、[環境変数](#-環境変数)の `CLAUDE_HOOKS_OFF` に名前を並べる。
+フックを止める時は、[環境変数](#-環境変数)の `CC_HOOKS_OFF` に名前を並べる。
 
 ```sh
-CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
+CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 ```
 
 ## 🧰 スキル
@@ -172,11 +172,11 @@ CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
 | --- | --- | --- |
 | `ASC_ISSUER_ID` ほか `ASC_*` | store-report | App Store Connect API のキー |
 | `CC_APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
+| `CC_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr で知らせる |
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `CC_STORE_ARCHIVE_ONLY=1` | store-release | アーカイブだけを作り、送らない |
 | `CC_STORE_EXPORT=export` | store-release | 送らずに IPA を書き出す |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
-| `CLAUDE_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr で知らせる |
 
 ## 📜 スクリプト
 

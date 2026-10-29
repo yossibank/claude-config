@@ -24,7 +24,7 @@ def read_payload():
 
 
 def hook_off(name):
-    return name in OFF_SEPARATOR.split(os.environ.get("CLAUDE_HOOKS_OFF", ""))
+    return name in OFF_SEPARATOR.split(os.environ.get("CC_HOOKS_OFF", ""))
 
 
 def tool_input(payload):

@@ -30,7 +30,7 @@ for name in docs-writing.md docs-app.md docs-human.md; do read_rule s2 main "$na
 run rules-require-read 2 "rules: サブエージェントは親の記録を使わない" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
 for name in docs-writing.md docs-app.md docs-human.md; do read_rule s2 a1 "$name"; done
 run rules-require-read 0 "rules: サブエージェントが自分で読めば通る" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
-CLAUDE_HOOKS_OFF="pr-gate rules-require-read" run rules-require-read 0 "rules: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(edit s9 main "$fresh" "$swift")"
+CC_HOOKS_OFF="pr-gate rules-require-read" run rules-require-read 0 "rules: CC_HOOKS_OFF に名前があれば止めない" "$(edit s9 main "$fresh" "$swift")"
 run rules-require-read 0 "rules: 壊れた入力では止めない" "not json"
 odd="$work/odd.jsonl"
 printf '%s\n' '{"type":"x","note":"instructions","attachment":"/rules/"}' '{"type":"attachment","attachment":{"type":"instructions","files":["/rules/x.md"]}}' >"$odd"
