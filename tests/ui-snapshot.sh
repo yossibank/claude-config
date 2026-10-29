@@ -54,4 +54,18 @@ CC_UI_DEVICE=MINE expect "NG パッケージのスキームが見つからない
 mkdir -p "$package/Tests/UISnapshotTests"
 expect "NG 前の回の後片付けが済んでいない" "render-snapshots: 前の回のテストが残っていれば NG" bash "$render" "$package" "$set_dir" "$work/out"
 
+rm -rf "$package/Tests"
+cp "$manifest" "$package/Package.swift"
+printf 'Core\n' >"$set_dir/targets.txt"
+printf 'let directory = "__OUT__"\n' >"$set_dir/SnapshotTests.swift"
+fake_command xcodebuild "
+if [[ \$1 == -list ]]; then
+    echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
+    exit 0
+fi
+cp Tests/UISnapshotTests/SnapshotTests.swift '$work/written.swift'
+exit 1"
+CC_UI_DEVICE=MINE /bin/bash "$render" "$package" "$set_dir" "$work/out" >/dev/null
+check "render-snapshots: macOS の bash でも出力先のパスを引用符なしで入れる" grep -qxF "let directory = \"$work/out\"" "$work/written.swift"
+
 finish
