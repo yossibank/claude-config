@@ -34,6 +34,14 @@ check "merge: ほかのフックを残す" jq -e '[.hooks.Stop[].hooks[].command
 check "merge: 古い claude-config のフックを外す" jq -e '[.. | .command? // empty] | map(select(contains("old.py"))) | length == 0' "$settings.new"
 check "merge: 今のフックを run.sh で入れる" jq -e '[.. | .command? // empty] | map(select(contains("hooks/run.sh"))) | length > 0' "$settings.new"
 check "merge: 今の許可を前に残す" jq -e '.permissions.allow[0] == "Bash(ls *)"' "$settings.new"
+expect OK "install: 入れた先の run.sh でフックが動く" bash -c 'echo "{}" | bash "$1/hooks/run.sh" docs-check' _ "$config"
+repo="$work/repo"
+mkdir -p "$repo"
+git -C "$repo" init -q
+echo a >"$repo/a.md"
+git -C "$repo" add -A
+git -C "$repo" -c user.name=t -c user.email=t@t commit -q -m init
+expect OK "install: リンクを通したスキルのスクリプトが lib を読める" bash "$claude/skills/pr-create/scripts/hash-state.sh" "$repo"
 
 mv -f "$settings.new" "$settings"
 out=$(bash "$config/scripts/config-install.sh" 2>&1)

@@ -4,6 +4,19 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 
 listing="$root/skills/store-release/scripts/check-listing.py"
+archive="$root/skills/store-release/scripts/archive-app.sh"
+
+expect "NG 使い方" "archive-app: 引数が足りなければ NG" bash "$archive" a b
+EXPORT_DESTINATION=x expect "NG EXPORT_DESTINATION は upload か export" "archive-app: 送り先が違えば NG" bash "$archive" a b "$work/out"
+log="$work/archive.log"
+printf 'x\na.swift:1: error: 型が無い\na.swift:1: error: 型が無い\nb.swift:2: warning: 使っていない\n' >"$log"
+fail_with_log=$(awk '/^fail_with_log\(\) \{/,/^\}/' "$archive")
+out=$(log=$log bash -c "${fail_with_log}"$'\nfail_with_log アーカイブ')
+status=$?
+check "archive-app: 失敗したら終了コード 1 で終える" test "$status" -eq 1
+check "archive-app: ログの error の行を 1 回ずつ出す" test "$(grep -c 'error: 型が無い' <<<"$out")" -eq 1
+check "archive-app: warning の行は出さない" test -z "$(grep warning <<<"$out")"
+check "archive-app: 何が失敗したかとログの場所を NG で出す" grep -qxF "NG アーカイブ（全ログ: ${log}）" <<<"$out"
 folder="$work/ja"
 mkdir -p "$folder"
 printf 'カケイボ\n' >"$folder/name.txt"

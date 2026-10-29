@@ -14,10 +14,11 @@ else
     ng "docs-section: コードの中の # を見出しにしない"
 fi
 
-if [[ $(bash "$section" "$work/section.md" a) == *x* ]]; then
+out=$(bash "$section" "$work/section.md" a)
+if [[ $out == *x* && $out != *y* && $out != *"## b"* ]]; then
     ok "docs-section: 節だけを出す"
 else
-    ng "docs-section: 節だけを出す"
+    ng "docs-section: 節だけを出す" "$out"
 fi
 
 out=$(bash "$section" "$work/section.md" none)

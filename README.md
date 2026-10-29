@@ -271,9 +271,11 @@ flowchart LR
 | `tests/pr-create.sh` | 作業場所・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |
-| `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか |
-| `tests/app-init.sh` | ひな形の印を置き換えられるか |
-| `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか |
+| `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか。入れた先からフックとスキルのスクリプトが動くか |
+| `tests/app-init.sh` | ひな形の印を置き換え、一時のフォルダに新しいアプリを作れるか |
+| `tests/app-plan.sh` | 通信せずに、引数の NG と通信できない時の NG を出すか |
+| `tests/ctx-report.sh` | 作り物の会話の記録から、月ごとのトークンを数えられるか |
+| `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
 | `tests/store-report.sh` | 通信せずに、引数の NG と、取れなかった数字を WARNING に書くかを確かめる |
 | `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
 

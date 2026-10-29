@@ -15,11 +15,20 @@ replace() {
     python3 -I -c 'import sys; p, a, b = sys.argv[1:]; t = open(p).read(); assert a in t, a; open(p, "w").write(t.replace(a, b))' "$@"
 }
 
+audit_matches() {
+    local want=$1 out=$2
+    if [[ $want == OK ]]; then
+        [[ $out == "OK config-audit" ]]
+    else
+        grep -q -- "$want" <<<"$out"
+    fi
+}
+
 expect_audit() {
     local dir=$1 want=$2 label=$3 out
     git -C "$dir" add -A
     out=$(python3 -I "$dir/scripts/config-audit.py")
-    if [[ $want == OK ]] && [[ $out == "OK config-audit" ]] || [[ $want != OK ]] && grep -q -- "$want" <<<"$out"; then
+    if audit_matches "$want" "$out"; then
         ok "$label"
     else
         ng "${label}: 期待は「${want}」" "$out"
