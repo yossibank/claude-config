@@ -105,8 +105,6 @@
 | [lib/simulator.sh](../lib/simulator.sh) | 使うシミュレーターの UDID を出す `pick_iphone`。`CC_UI_DEVICE` が無ければ、先頭の iPhone を選ぶ |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
 
-app-init の `create-app.sh` は、app-plan の `templates/` を直接読む。
-
 ## 🧪 確かめ方
 
 claude-config を変えたら、`make verify` を通す。
