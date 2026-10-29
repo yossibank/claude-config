@@ -29,7 +29,7 @@ link() {
     echo "OK リンク: $dest"
 }
 
-mkdir -p "$claude/skills"
+mkdir -p "$claude/skills" "$claude/output-styles"
 
 link "$root/CLAUDE.md" "$claude/CLAUDE.md"
 link "$root/rules" "$claude/rules"
@@ -39,7 +39,11 @@ for skill in "$root"/skills/*/; do
     link "${skill%/}" "$claude/skills/$(basename "$skill")"
 done
 
-for dest in "$claude"/skills/*; do
+for style in "$root"/output-styles/*.md; do
+    link "$style" "$claude/output-styles/$(basename "$style")"
+done
+
+for dest in "$claude"/skills/* "$claude"/output-styles/*; do
     if [[ -L $dest && ! -e $dest ]]; then
         rm "$dest"
         echo "OK 壊れたリンクを消した: $dest"

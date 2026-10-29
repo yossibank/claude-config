@@ -16,6 +16,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | `CLAUDE.md`・`rules/` | いつも、または当たるファイルを触る時に読み込まれる決まり | Claude |
 | `docs/` | アプリの共通の構成と、claude-config を直す時の決まり | 人・Claude |
 | `hooks/` | 決まりを守らせるフック | 仕組み |
+| `output-styles/` | 報告の形 | Claude |
 | `lib/` | フックとスクリプトが共通で使う処理 | 仕組み |
 | `scripts/` | 入れる、検査する、文書を読むスクリプト | 人・仕組み |
 | `settings/` | フックと許可の登録 | 仕組み |
@@ -30,6 +31,8 @@ flowchart LR
     install -->|混ぜる| settings["settings.json"]
     home --> rules["CLAUDE.md・rules/"]
     home --> skills["skills/・agents/"]
+    home --> styles["output-styles/"]
+    settings -->|画面の下の行| statusLine["scripts/ctx-status-line.py"]
     settings -->|ツールの前後で呼ぶ| run["hooks/run.sh"]
     run --> hooks["hooks/*.py"]
     skills --> scripts["skills/*/scripts/"]
@@ -52,8 +55,8 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 
 スクリプトは、次の順に進む。
 
-1. CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクする。同じ名前の実体があれば `NG` を出して止まる。
-2. 壊れたスキルのリンクを消す。
+1. CLAUDE.md・rules・agents・スキル・output style を `~/.claude` からリンクする。同じ名前の実体があれば `NG` を出して止まる。
+2. 壊れたスキルと output style のリンクを消す。
 3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。入れる許可の一覧は `claude-config-allow.json.new` に書く。
 4. 表示された `mv` のコマンドで、差分を確かめてから 2 つを置き換える。変わらない時は、許可の一覧だけをその場で置き換える。
 
@@ -68,6 +71,7 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 | --- | --- |
 | 許可 | 足りないものだけを後ろに足す。前に入れて claude-config から消えた許可は外す |
 | フック | claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す |
+| 表示 | `statusLine` は、無い時か claude-config のものの時だけ入れ替える。`outputStyle` は、無い時だけ入れる |
 
 ## 🚀 使い方
 
@@ -202,6 +206,24 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | [implementer](agents/implementer.md) | Sonnet | 方針の決まった実装、削除、名前の変更、文書の書き換え |
 | [reviewer](agents/reviewer.md) | Opus | 差分を読み、マージすると困る所を 5 件まで返す |
 | [tester](agents/tester.md) | Sonnet | 正常・異常・境界のテストを書いて通す。本体は直さない |
+
+## 🖥️ 表示
+
+Claude Code の画面の下の行と、報告の形をそろえる。どちらも config-install.sh が settings.json に入れる。
+
+| 設定 | ファイル | 出すもの |
+| --- | --- | --- |
+| `statusLine` | [scripts/ctx-status-line.py](scripts/ctx-status-line.py) | フォルダ、ブランチ、文脈の量と割合、費用、増えた行と消えた行、モデル |
+| `outputStyle` | [output-styles/report.md](output-styles/report.md) | 結論を先に書き、表と状態の印で組む日本語の報告 |
+
+画面の下の行は、次のように出る。文脈の量は、`🟢` 半分まで・`🟡` 8 割まで・`🔴` 8 割を超えたで色が変わる。
+
+```text
+📂 claude-config 🌿 main · 🟢 52k（26%） · 💰 $1.23 · ✏️ +12/-3 · Opus
+```
+
+> [!TIP]
+> 報告の形は、`/output-style` で会話ごとに切り替えられる。
 
 ## 🔧 環境変数
 

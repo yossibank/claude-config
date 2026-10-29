@@ -114,5 +114,11 @@
         ]
       }
     ]
+  },
+  "outputStyle": "report",
+  "statusLine": {
+    "type": "command",
+    "command": "python3 -I \"$HOME/Applications/AI/claude-config/scripts/ctx-status-line.py\"",
+    "padding": 0
   }
 }
