@@ -7,7 +7,7 @@ skill=$(cd "$(dirname "$0")/.." && pwd -P)
 config=$(cd "$skill/../.." && pwd)
 name="$1"
 display="$2"
-root="${APPS_DIR:-$HOME/Applications/AppStore}/$name"
+root="${CC_APPS_DIR:-$HOME/Applications/AppStore}/$name"
 
 [[ "$name" =~ ^[a-z][a-z0-9]*$ ]] || { echo "NG 名前は英小文字と数字だけにする: $name"; exit 1; }
 case "$name" in

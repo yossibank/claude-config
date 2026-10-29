@@ -7,7 +7,7 @@ from dates import JST
 
 
 def projects_dir():
-    return os.environ.get("CLAUDE_PROJECTS", os.path.expanduser("~/.claude/projects"))
+    return os.environ.get("CC_PROJECTS_DIR", os.path.expanduser("~/.claude/projects"))
 
 
 def touched_since(pattern, start):

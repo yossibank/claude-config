@@ -90,8 +90,8 @@ ${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム
 
 | 変数 | すること |
 | --- | --- |
-| `ARCHIVE_ONLY=1` | アーカイブだけを作り、送らない |
-| `EXPORT_DESTINATION=export` | 送らずに、出力先に IPA を書き出す |
+| `CC_STORE_ARCHIVE_ONLY=1` | アーカイブだけを作り、送らない |
+| `CC_STORE_EXPORT=export` | 送らずに、出力先に IPA を書き出す |
 
 全ログは、出力先の `archive.log` にある。失敗した時は、`error:` の行だけを出す。
 

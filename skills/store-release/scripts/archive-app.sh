@@ -9,11 +9,11 @@ out=$(mkdir -p "$3" && cd "$3" && pwd)
 archive="$out/$scheme.xcarchive"
 log="$out/archive.log"
 options="$out/ExportOptions.plist"
-destination="${EXPORT_DESTINATION:-upload}"
+destination="${CC_STORE_EXPORT:-upload}"
 
 case "$destination" in
     upload | export) ;;
-    *) echo "NG EXPORT_DESTINATION は upload か export にする: $destination"; exit 1 ;;
+    *) echo "NG CC_STORE_EXPORT は upload か export にする: $destination"; exit 1 ;;
 esac
 
 fail_with_log() {
@@ -53,7 +53,7 @@ xcodebuild archive \
     -allowProvisioningUpdates >|"$log" 2>&1 || fail_with_log "アーカイブ"
 echo "OK アーカイブ $archive"
 
-[[ ${ARCHIVE_ONLY:-0} == 1 ]] && exit 0
+[[ ${CC_STORE_ARCHIVE_ONLY:-0} == 1 ]] && exit 0
 
 xcodebuild -exportArchive \
     -archivePath "$archive" \

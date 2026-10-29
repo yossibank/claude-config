@@ -166,17 +166,17 @@ CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 ## 🔧 環境変数
 
-フックとスクリプトの動きは、次の環境変数で変えられる。
+フックとスクリプトの動きは、次の環境変数で変えられる。claude-config だけの変数は、`CC_` と分類で始める。
 
 | 変数 | 使う所 | 中身 |
 | --- | --- | --- |
-| `APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
-| `ARCHIVE_ONLY=1` | store-release | アーカイブだけを作り、送らない |
 | `ASC_ISSUER_ID` ほか `ASC_*` | store-report | App Store Connect API のキー |
+| `CC_APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
+| `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
+| `CC_STORE_ARCHIVE_ONLY=1` | store-release | アーカイブだけを作り、送らない |
+| `CC_STORE_EXPORT=export` | store-release | 送らずに IPA を書き出す |
+| `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
 | `CLAUDE_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr で知らせる |
-| `CLAUDE_PROJECTS` | config-learn、ctx-report | 会話の記録の置き場所 |
-| `DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
-| `EXPORT_DESTINATION=export` | store-release | 送らずに IPA を書き出す |
 
 ## 📜 スクリプト
 

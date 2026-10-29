@@ -31,7 +31,7 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 
 ## create-app.sh がすること
 
-`create-app.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `APPS_DIR` で変えられる。
+`create-app.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `CC_APPS_DIR` で変えられる。
 
 - フォルダに `docs/` のほかの中身があれば、`NG` を出して止まる。
 - 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる。

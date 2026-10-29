@@ -17,6 +17,7 @@
 | scripts | `<分類>-<すること>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
+| 環境変数 | `CC_[<分類>_]<中身>`。分類は接頭語の表の名前を大文字にする | `CC_UI_DEVICE`、`CC_APPS_DIR` |
 | ひな形の印 | スクリプトが置き換える所は `__<名前>__`、人が書く所は `<中身>` | `__App__`、`<名前>` |
 
 ### 接頭語の表
@@ -73,7 +74,7 @@
 | --- | --- | --- |
 | [lib/app_store.py](../lib/app_store.py) | fetch-reviews.py、search-apps.py、fetch-ratings.py | App Store の検索とレビューの読み方 |
 | [lib/dates.py](../lib/dates.py) | 月や日時を扱うスクリプト、rules-require-read | 日本時間、月の形、記録の日時の月 |
-| [lib/git.sh](../lib/git.sh) | スキルの .sh | リポジトリの根、既定のブランチ、GitHub での書き込みの権限 |
+| [lib/git.sh](../lib/git.sh) | スキルの .sh | リポジトリの根（`use_repo` は無ければ NG で止まる）、既定のブランチ、GitHub での書き込みの権限 |
 | [lib/hook_io.py](../lib/hook_io.py) | 各フック、collect-corrections.py、config-audit.py | 入力の JSON、コマンドの区切り、止めたフックの判定、タイムアウト付きの git、状態ファイルの掃除。編集する道具の名前と、フックが止める時の文の書き出し |
 | [lib/loader.py](../lib/loader.py) | config-audit.py、write-report.py ほか | ファイルの場所から .py を読み込む |
 | [lib/md_blocks.py](../lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py、collect-corrections.py | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
@@ -82,7 +83,7 @@
 
 ## 🧪 テスト
 
-テストは `tests/<対象>.sh` に置き、`make test` で順に走らせる。
+テストは `tests/<対象>.sh` に置き、`make test` で全部を走らせる。1 本だけは `make test-<対象>` で走らせる。
 
 | テスト | 確かめること |
 | --- | --- |
@@ -91,14 +92,21 @@
 | `tests/config-audit.sh` | わざと壊した写しで、config-audit が違反を見逃さないか |
 | `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか。入れた先からフックとスキルのスクリプトが動くか |
 | `tests/config-learn.sh` | フックが止めた回数を、config-learn が数えられるか |
+| `tests/ctx-limit-read.sh` | 大きいファイルを範囲なしで読む時だけ止めるか |
 | `tests/ctx-report.sh` | 作り物の会話の記録から、月ごとのトークンを数えられるか |
+| `tests/ctx-suggest-clear.sh` | 文脈が大きい時に、同じ段で 1 回だけ区切りを勧めるか |
+| `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
-| `tests/hooks.sh` | 作り物のリポジトリで、フックが止めるべき時に止めるか |
 | `tests/pr-create.sh` | 作業場所・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
+| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |
+| `tests/rules-detect-bash-edits.sh` | Bash での書き換えを見つけ、git だけのコマンドは数えないか |
+| `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
+| `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |
 | `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
 | `tests/store-report.sh` | 通信せずに、引数の NG、売上の表の集計、取れなかった数字を WARNING に書くかを確かめる |
+| `tests/swift-format.sh` | `.swiftformat` が無ければ何もしないか |
 | `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
 
 テストが共通で使う処理は、`tests/lib/` に置く。
@@ -107,3 +115,4 @@
 | --- | --- |
 | [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、結果の数え方 |
 | [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh |
+| [tests/lib/hooks.sh](../tests/lib/hooks.sh) | フックのテストの作り物のアプリと、フックへの入力の作り方 |

@@ -21,8 +21,8 @@ if [[ ! -f $marker && -n $(ls -A "$out") ]]; then
 fi
 [[ -e $tests ]] && { echo "NG 前の回の後片付けが済んでいない: ${tests}。退避のフォルダから戻すか、git で戻してから走らせる"; exit 1; }
 
-device="${DEVICE:-$(xcrun simctl list devices available -j | python3 -I -c 'import json, sys; ids = [d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")]; print(ids[0] if ids else "")')}"
-[[ -n $device ]] || { echo "NG iPhone のシミュレーターが無い。DEVICE に UDID を渡す"; exit 1; }
+device="${CC_UI_DEVICE:-$(xcrun simctl list devices available -j | python3 -I -c 'import json, sys; ids = [d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")]; print(ids[0] if ids else "")')}"
+[[ -n $device ]] || { echo "NG iPhone のシミュレーターが無い。CC_UI_DEVICE に UDID を渡す"; exit 1; }
 scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | python3 -I -c '
 import json, sys
 schemes = json.load(sys.stdin)["workspace"]["schemes"]

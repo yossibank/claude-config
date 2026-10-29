@@ -17,7 +17,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 ```
 
-`write-report.py` は、アプリを集めて表を書く。置き場所は `APPS_DIR` で変えられる。
+`write-report.py` は、アプリを集めて表を書く。置き場所は `CC_APPS_DIR` で変えられる。
 
 | 読むもの・書くもの | 場所 |
 | --- | --- |
