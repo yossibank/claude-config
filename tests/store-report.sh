@@ -39,13 +39,13 @@ check "fetch-sales: 課金をアプリにまとめ、ダウンロードと通貨
 
 expect "月は YYYY-MM で書く" "write-report: 月の形が違えば NG" python3 -I "$scripts/write-report.py" 2026-13
 mkdir -p "$work/none"
-APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "write-report: アプリが無ければ NG" python3 -I "$scripts/write-report.py" 2026-09
+CC_APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "write-report: アプリが無ければ NG" python3 -I "$scripts/write-report.py" 2026-09
 
 apps="$work/apps"
 mkdir -p "$apps/foo/store" "$apps/bar/store"
 echo 123 >"$apps/foo/store/app-id.txt"
 echo abc >"$apps/bar/store/app-id.txt"
-out=$(APPS_DIR="$apps" python3 -I "$scripts/write-report.py" 2026-09)
+out=$(CC_APPS_DIR="$apps" python3 -I "$scripts/write-report.py" 2026-09)
 check "write-report: 通信できなくても表を書く" test -f "$apps/reports/2026-09.md"
 check "write-report: 取れなかったものを WARNING にまとめる" grep -qx '> \[!WARNING\]' <<<"$out"
 check "write-report: 売上が取れなければ WARNING の行に書く" grep -q "売上とダウンロードは取れなかった（NG 環境変数が無い" <<<"$out"

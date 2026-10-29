@@ -24,3 +24,10 @@ repo_access() {
         *) echo "$owner $name read" ;;
     esac
 }
+
+use_repo() {
+    repo=$(resolve_repo "$1") || {
+        echo "$repo"
+        exit 1
+    }
+}

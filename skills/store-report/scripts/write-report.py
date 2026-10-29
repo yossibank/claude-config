@@ -16,7 +16,7 @@ def failure_of(error):
 
 def main():
     month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: write-report.py <YYYY-MM>")
-    apps_dir = os.environ.get("APPS_DIR", os.path.expanduser("~/Applications/AppStore"))
+    apps_dir = os.environ.get("CC_APPS_DIR", os.path.expanduser("~/Applications/AppStore"))
     out_dir = os.path.join(apps_dir, "reports")
 
     apps = []

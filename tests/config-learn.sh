@@ -58,7 +58,7 @@ text = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
 open(path, "w").write(text + text)
 EOF
 touch -t 202610150000 "$projects/demo/s.jsonl"
-report=$(CLAUDE_PROJECTS="$projects" python3 -I "$collect" 2026-10)
+report=$(CC_PROJECTS_DIR="$projects" python3 -I "$collect" 2026-10)
 if grep -q '^| app | 1 | 1 | 1 | 1 |$' <<<"$report"; then
     ok "collect: 3 つのフックが止めた回数を数える"
 else
