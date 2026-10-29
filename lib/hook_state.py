@@ -1,10 +1,20 @@
 import os
 import re
+import tempfile
 import time
 
 
 def safe_name(text):
     return re.sub(r"[^A-Za-z0-9_-]", "_", text)
+
+
+def state_folder(name):
+    return os.path.join(tempfile.gettempdir(), f"claude-{name}")
+
+
+def prepare_state(folder, age):
+    os.makedirs(folder, exist_ok=True)
+    remove_stale(folder, age)
 
 
 def remove_stale(folder, age):

@@ -7,7 +7,8 @@ import sys
 SEGMENT = re.compile(r"&&|\|\||;|\||\n")
 SEPARATOR_CHARS = set(";&|()\n")
 OFF_SEPARATOR = re.compile(r"[\s,]+")
-EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
+FILE_EDIT_TOOLS = ("Edit", "Write", "MultiEdit")
+EDIT_TOOLS = (*FILE_EDIT_TOOLS, "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 PREFIX_COMMANDS = {"builtin", "command", "env", "exec", "nice", "nohup", "time"}
 PREFIX_VALUE_OPTIONS = {"-a", "-n", "-u"}
