@@ -210,7 +210,7 @@ def check_readme():
     readme = os.path.join(ROOT, "README.md")
     links = {target.rstrip("/") for target in LINK.findall(read(readme))}
     entries = [f"skills/{name}/SKILL.md" for name in skill_names()]
-    entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "rules/*.md", "hooks/*.py", "hooks/*.sh", "scripts/*")]
+    entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "output-styles/*.md", "rules/*.md", "hooks/*.py", "hooks/*.sh", "scripts/*")]
     for entry in entries:
         if entry not in links:
             yield readme, 1, f"README の表に載っていない: {entry}"

@@ -30,7 +30,7 @@ paths:
 
 | 読み手 | 文書 | 形 | 決まり |
 | --- | --- | --- | --- |
-| Claude | CLAUDE.md、`rules/`、`SKILL.md`、`agents/` | 飾らず、決まった節の並びと表で読ませる | `rules/docs-claude.md` |
+| Claude | CLAUDE.md、`rules/`、`SKILL.md`、`agents/`、`output-styles/` | 飾らず、決まった節の並びと表で読ませる | `rules/docs-claude.md` |
 | 人 | README、`docs/`、`spec/` | 見出しの絵文字・アラート・図・バッジで目立たせる | `rules/docs-human.md` |
 
 ## 文・見出し・用語
