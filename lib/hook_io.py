@@ -8,6 +8,10 @@ SEGMENT = re.compile(r"&&|\|\||;|\||\n")
 SEPARATOR_CHARS = set(";&|()\n")
 OFF_SEPARATOR = re.compile(r"[\s,]+")
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
+ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+PREFIX_COMMANDS = {"builtin", "command", "env", "exec", "nice", "nohup", "time"}
+PREFIX_VALUE_OPTIONS = {"-n", "-u"}
+GIT_VALUE_OPTIONS = {"-C", "-c", "--config-env", "--exec-path", "--git-dir", "--namespace", "--work-tree"}
 
 
 def read_payload():
@@ -43,3 +47,30 @@ def split_commands(command):
         else:
             parts[-1].append(token)
     return [words for words in parts if words]
+
+
+def command_words(words):
+    index = 0
+    while index < len(words):
+        if ASSIGNMENT.match(words[index]):
+            index += 1
+        elif os.path.basename(words[index]) in PREFIX_COMMANDS:
+            index += 1
+            while index < len(words) and words[index].startswith("-"):
+                index += 2 if words[index] in PREFIX_VALUE_OPTIONS else 1
+        else:
+            return [os.path.basename(words[index]), *words[index + 1 :]]
+    return []
+
+
+def git_subcommand(words):
+    directories = []
+    index = 1
+    while index < len(words) and words[index].startswith("-"):
+        if words[index] in GIT_VALUE_OPTIONS and index + 1 < len(words):
+            if words[index] == "-C":
+                directories.append(words[index + 1])
+            index += 2
+        else:
+            index += 1
+    return directories, words[index:]

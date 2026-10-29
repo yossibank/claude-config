@@ -15,7 +15,7 @@ REVIEWS = "https://itunes.apple.com/jp/rss/customerreviews/page={page}/id={app}/
 PAGES = 10
 ASC_API = "https://api.appstoreconnect.apple.com"
 ASC_KEYS = ["ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_KEY_PATH"]
-ASC_ERRORS = (urllib.error.URLError, OSError, CalledProcessError, ValueError)
+ASC_ERRORS = (urllib.error.URLError, OSError, CalledProcessError, subprocess.TimeoutExpired, ValueError)
 
 
 class ReviewPageError(Exception):
@@ -67,11 +67,14 @@ def b64(data):
 
 def raw_signature(der):
     def integer(data, at):
-        assert data[at] == 0x02
+        if len(data) < at + 2 or data[at] != 0x02:
+            raise ValueError("openssl の署名が DER の整数の形でない")
         length = data[at + 1]
         value = data[at + 2 : at + 2 + length]
         return value.lstrip(b"\0").rjust(32, b"\0"), at + 2 + length
 
+    if len(der) < 2:
+        raise ValueError("openssl の署名が空")
     at = 2 if der[1] < 0x80 else 3
     r, at = integer(der, at)
     s, _ = integer(der, at)
@@ -88,6 +91,7 @@ def token():
         input=signing,
         capture_output=True,
         check=True,
+        timeout=30,
     ).stdout
     return (signing + b"." + b64(raw_signature(der))).decode()
 

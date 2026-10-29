@@ -1,9 +1,14 @@
 import datetime
+import functools
 import glob
 import json
 import os
+from pathlib import Path
 
 from dates import JST
+
+WORKTREES = os.path.expanduser("~/.claude/worktrees/")
+INNER_WORKTREES = "/.claude/worktrees/"
 
 
 def projects_dir():
@@ -25,10 +30,28 @@ def parse_entry(line):
 
 
 def entries(path):
-    for line in open(path, encoding="utf-8", errors="ignore"):
-        entry = parse_entry(line)
-        if entry is not None:
-            yield entry
+    with open(path, encoding="utf-8", errors="ignore") as file:
+        for line in file:
+            entry = parse_entry(line)
+            if entry is not None:
+                yield entry
+
+
+@functools.cache
+def repo_of(path):
+    if path.startswith(WORKTREES):
+        return path[len(WORKTREES) :].split("/")[0]
+    if INNER_WORKTREES in path:
+        return os.path.basename(path.split(INNER_WORKTREES)[0])
+    while path not in ("", "/"):
+        marker = os.path.join(path, ".git")
+        if os.path.isfile(marker):
+            gitdir = Path(marker).read_text(encoding="utf-8").removeprefix("gitdir:").strip()
+            return os.path.basename(gitdir.split("/.git/worktrees/")[0])
+        if os.path.isdir(marker):
+            return os.path.basename(path)
+        path = os.path.dirname(path)
+    return ""
 
 
 def tail_lines(path, limit, marker=None, chunk=4_000_000):

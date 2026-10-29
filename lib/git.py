@@ -11,5 +11,7 @@ def git(cwd, *args, timeout=10):
 
 def git_root(path):
     folder = path if os.path.isdir(path) else os.path.dirname(path) or "."
+    while not os.path.isdir(folder) and os.path.dirname(folder) != folder:
+        folder = os.path.dirname(folder)
     result = git(folder, "rev-parse", "--show-toplevel", timeout=5)
     return result.stdout.strip() if result and result.returncode == 0 else ""

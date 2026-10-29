@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git, git_root  # noqa: E402
-from hook_io import hook_off, read_payload, split_commands, tool_input  # noqa: E402
+from hook_io import command_words, hook_off, read_payload, split_commands, tool_input  # noqa: E402
 from hook_messages import BASH_EDITED  # noqa: E402
 from hook_state import remove_stale, safe_name  # noqa: E402
 from loader import load_hook  # noqa: E402
@@ -39,8 +39,8 @@ def state_file(data):
 
 
 def only_tools(command):
-    parts = split_commands(command)
-    return bool(parts) and all(words[0] in TOOLS for words in parts)
+    parts = [command_words(words) for words in split_commands(command)]
+    return bool(parts) and all(words[:1] and words[0] in TOOLS for words in parts)
 
 
 def before(data):
