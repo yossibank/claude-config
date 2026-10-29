@@ -10,8 +10,8 @@ OFF_SEPARATOR = re.compile(r"[\s,]+")
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 PREFIX_COMMANDS = {"builtin", "command", "env", "exec", "nice", "nohup", "time"}
-PREFIX_VALUE_OPTIONS = {"-n", "-u"}
-GIT_VALUE_OPTIONS = {"-C", "-c", "--config-env", "--exec-path", "--git-dir", "--namespace", "--work-tree"}
+PREFIX_VALUE_OPTIONS = {"-a", "-n", "-u"}
+GIT_VALUE_OPTIONS = {"-C", "-c", "--attr-source", "--config-env", "--exec-path", "--git-dir", "--namespace", "--work-tree"}
 
 
 def read_payload():

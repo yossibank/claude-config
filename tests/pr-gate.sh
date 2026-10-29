@@ -31,6 +31,7 @@ run pr-gate 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git 
 run pr-gate 2 "pr: 頭の環境変数を読み飛ばして止める" "$(push "$app" 'FOO=1 git push')"
 run pr-gate 2 "pr: env と command を読み飛ばして止める" "$(push "$app" 'env -u X command git push')"
 run pr-gate 2 "pr: git の -c と --no-pager を読み飛ばして止める" "$(push "$app" 'git -c core.x=y --no-pager push')"
+run pr-gate 2 "pr: exec -a の値と git --attr-source の値を読み飛ばして止める" "$(push "$app" 'exec -a x git --attr-source HEAD push')"
 run pr-gate 2 "pr: パスで呼んだ git も止める" "$(push "$app" '/usr/bin/git push')"
 run pr-gate 2 "pr: 環境変数の後の gh pr create も止める" "$(push "$app" 'GH_TOKEN=x gh pr create --title x')"
 run pr-gate 0 "pr: -c の値が push でも、サブコマンドで判定する" "$(push "$app" 'git -c push status')"
