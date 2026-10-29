@@ -19,7 +19,7 @@ case "$destination" in
 esac
 
 fail_with_log() {
-    show_errors "$log"
+    show_errors "$log" first
     echo "NG ${1}（全ログ: ${log}）"
     exit 1
 }

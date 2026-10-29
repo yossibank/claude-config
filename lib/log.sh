@@ -1,3 +1,5 @@
 show_errors() {
-    { grep -E 'error:|[Ff]ailed|^NG |\*\*\*' "$1" || true; } | awk '!seen[$0]++' | tail -n "${2:-20}"
+    local cut=tail
+    [[ ${2:-} == first ]] && cut=head
+    { grep -E -i 'error:|fail|^NG ' "$1" || true; } | awk '!seen[$0]++' | "$cut" -n 20
 }
