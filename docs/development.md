@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > claude-config のフック・スクリプト・スキルを足したり直したりする時の決まりが分かる。
-> 名前の付け方、スクリプトの書き方、共通の処理、テストの置き場所がある。
+> 名前の付け方、スクリプトの書き方、共通の処理、確かめ方、足し方がある。
 > 使い方と入れ方は [README](../README.md) にある。
 
 ## 🏷️ 名前の付け方
@@ -81,7 +81,7 @@
 | 知らせ | 失敗ではない知らせは stderr に出す |
 | フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
 | 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` か `source` で読む。ワークツリーの置き場所は lib にだけ書く |
-| フックの登録 | 拡張子で絞る `if` は、`Edit(//**/*.md)` と `Write(//**/*.md)` の 2 つの項目に分ける。`Edit(...)` は Write の呼び出しに当たらない |
+| フックの登録 | 検査のフックは `if` で拡張子を絞り、当たらないファイルでは起動しない。`Edit(//**/*.md)` は Write に当たらないので、`Write(//**/*.md)` も並べる |
 | 編集の matcher | 編集を受けるフックの matcher は、`hook_io` の `FILE_EDIT_TOOLS` と同じ道具を並べる |
 
 ## 📦 共通の処理
@@ -107,9 +107,23 @@
 
 app-init の `create-app.sh` は、app-plan の `templates/` を直接読む。
 
-## 🧪 テスト
+## 🧪 確かめ方
 
-テストは `tests/<対象>.sh` に置き、`make test` で全部を走らせる。1 本だけは `make test-<対象>` で走らせる。
+claude-config を変えたら、`make verify` を通す。
+
+> [!IMPORTANT]
+> CI は置かない。PR は、Claude が pr-create の確認で `make verify` を通してから作る。
+
+| コマンド | 確かめること |
+| --- | --- |
+| `make verify` | `make audit` と `make test` を順に走らせる |
+| `make audit` | config-audit.py で、文書と名前と書き方の決まり |
+| `make test` | `tests/*.sh` の全部で、フックとスクリプトの振る舞い |
+| `make test-<対象>` | `tests/<対象>.sh` の 1 本だけ |
+
+### テスト
+
+テストは `tests/<対象>.sh` に置く。1 本ずつが確かめることは、次のとおりである。
 
 | テスト | 確かめること |
 | --- | --- |
@@ -145,3 +159,24 @@ app-init の `create-app.sh` は、app-plan の `templates/` を直接読む。
 | [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、出力が型に合うかを確かめる `match`、結果の数え方 |
 | [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh・偽のコマンド（`fake_command`） |
 | [tests/lib/hooks.sh](../tests/lib/hooks.sh) | フックのテストの作り物のアプリと、フックへの入力の作り方 |
+
+## 📜 スクリプト
+
+入れる時、確かめる時、文書を読む時に、次のスクリプトを使う。
+
+| スクリプト | 呼ぶ時 | すること |
+| --- | --- | --- |
+| [scripts/config-audit.py](../scripts/config-audit.py) | `make audit` の時 | README の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
+| [scripts/config-install.sh](../scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
+| [scripts/docs-section.sh](../scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
+
+## 🚀 足し方
+
+スキル・フック・スクリプトを足す時は、次の順に進める。
+
+1. 名前の頭を [接頭語の表](#接頭語の表) で確かめる。スキルのスクリプトは、頭の動詞を [動詞の表](#動詞の表) で確かめる。
+2. 本体を置く。スキルは `skills/<名前>/SKILL.md`、フックは `hooks/<名前>.py`、スクリプトは `scripts/` に置く。
+3. フックは、`settings/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。
+4. `tests/<名前>.sh` を足し、[テスト](#テスト) の表に行を足す。
+5. README の表に行を足す。スキルは、README の使う順の図にも足す。
+6. [確かめ方](#-確かめ方) の `make verify` を通す。
