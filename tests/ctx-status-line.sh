@@ -23,6 +23,10 @@ out=$(input 'claude-opus-5-5[1m]' | python3 -I "$line")
 check "status-line: 1M の文脈のモデルは 100 万で割る" grep -qF "🟢 112k（11%）" <<<"$out"
 out=$(echo "{\"cwd\":\"$work\"}" | python3 -I "$line")
 check "status-line: リポジトリの外ではフォルダだけを出す" test "$out" == "📂 ${work##*/}"
+out=$(echo "{\"cwd\":\"$repo\",\"transcript_path\":\"$work/talk.jsonl\",\"context_window\":{\"context_window_size\":400000}}" | python3 -I "$line")
+check "status-line: 入力に窓の大きさがあれば、それで割る" grep -qF "🟢 112k（28%）" <<<"$out"
+out=$(echo "{\"cwd\":\"$repo\",\"model\":\"opus\",\"cost\":[1],\"workspace\":3}" | python3 -I "$line" 2>&1)
+check "status-line: 形の違う項目は飛ばして出す" test "$out" == "📂 repo 🌿 feat/x"
 out=$(echo "not json" | python3 -I "$line" 2>&1)
 check "status-line: 壊れた入力では何も出さずに終わる" test -z "$out"
 check "status-line: git のロックを作らない" test ! -e "$repo/.git/index.lock"
