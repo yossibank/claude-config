@@ -26,6 +26,7 @@ SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
 PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
 WRITE_TOOLS = re.compile(r"\b(Multi|Notebook)?Edit\b|\bWrite\b")
+NAMING = os.path.join(ROOT, "docs", "development.md")
 VERB_ROW = re.compile(r"^\| ((?:`[a-z]+`・?)+) \|", re.M)
 APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
 APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
@@ -182,7 +183,7 @@ def check_agents():
 def check_claude_templates():
     order = [row[1] for row in load_hook("docs-check").rule_table("## CLAUDE.md の形", "順")][1:-1]
     if not order:
-        ng(os.path.join(ROOT, "rules", "docs-writing.md"), 1, "CLAUDE.md の形の表が読めない")
+        ng(os.path.join(ROOT, "rules", "docs-claude.md"), 1, "CLAUDE.md の形の表が読めない")
         return
     for path in tracked("skills/*/templates/*/CLAUDE.md"):
         top = 0
@@ -210,16 +211,15 @@ def check_readme():
 
 
 def prefixes():
-    text = read(os.path.join(ROOT, "README.md"))
+    text = read(NAMING)
     rows = re.findall(r"^\| `([a-z]+-)` \| [^|]+ \| ([^|]+) \|$", text, re.M)
     return {prefix: {place.strip() for place in places.split("、")} for prefix, places in rows}
 
 
 def check_prefixes():
     table = prefixes()
-    readme = os.path.join(ROOT, "README.md")
     if not table:
-        ng(readme, 1, "名前の付け方の接頭語の表が読めない")
+        ng(NAMING, 1, "名前の付け方の接頭語の表が読めない")
         return
     names = {
         "skills": [(os.path.join(ROOT, "skills", name, "SKILL.md"), name) for name in skill_names()],
@@ -231,28 +231,27 @@ def check_prefixes():
         for path, name in items:
             prefix = next((p for p in table if name.startswith(p)), None)
             if prefix is None:
-                ng(path, 1, f"名前の接頭語が README の表に無い: {name}")
+                ng(path, 1, f"名前の接頭語が接頭語の表に無い: {name}")
             elif place not in table[prefix]:
-                ng(path, 1, f"接頭語 {prefix} は {place} に使わない（README の表の使う所）")
+                ng(path, 1, f"接頭語 {prefix} は {place} に使わない（接頭語の表の使う所）")
 
 
 def verbs():
-    text = read(os.path.join(ROOT, "README.md"))
+    text = read(NAMING)
     return {verb for cell in VERB_ROW.findall(text) for verb in re.findall(r"`([a-z]+)`", cell)}
 
 
 def check_script_verbs():
     allowed = verbs()
-    readme = os.path.join(ROOT, "README.md")
     if not allowed:
-        ng(readme, 1, "名前の付け方の動詞の表が読めない")
+        ng(NAMING, 1, "名前の付け方の動詞の表が読めない")
         return
     for path in tracked("skills/*/scripts/*"):
         if len(os.path.relpath(path, ROOT).split(os.sep)) != 4:
             continue
         verb = os.path.basename(path).split(".")[0].split("-")[0]
         if verb not in allowed:
-            ng(path, 1, f"スキルのスクリプトの頭の動詞が README の表に無い: {verb}")
+            ng(path, 1, f"スキルのスクリプトの頭の動詞が動詞の表に無い: {verb}")
 
 
 def in_app(path):
@@ -398,7 +397,7 @@ def check_python(path, tree):
 def check_docs():
     docs = load_hook("docs-check")
     if not docs.heading_emojis() or not docs.readme_order():
-        ng(docs.RULES, 1, "見出しの絵文字の表か、README の形の表が読めない")
+        ng(os.path.join(ROOT, "rules", "docs-human.md"), 1, "見出しの絵文字の表か、README の形の表が読めない")
     for path in tracked("*.md"):
         for number, message in docs.check(path):
             ng(path, number, message)
