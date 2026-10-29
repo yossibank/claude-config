@@ -105,15 +105,16 @@
 | `tests/rules-detect-bash-edits.sh` | Bash での書き換えを見つけ、git だけのコマンドは数えないか |
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
 | `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |
-| `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
+| `tests/store-release.sh` | 掲載情報の字数と形、プライバシーの申告の足りなさを確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
 | `tests/store-report.sh` | 通信せずに、引数の NG と売上の表の集計を出せるか。取れなかった数字を WARNING に書くか |
 | `tests/swift-format.sh` | `.swiftformat` が無ければ何もしないか |
-| `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
+| `tests/ui-record.sh` | 偽の ffmpeg と偽の xcrun で、コマ数と出力先を決められ、引数の NG を出すか |
+| `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せ、引数や出力先が違う時は走らせる前に NG にするか |
 
 テストが共通で使う処理は、`tests/lib/` に置く。
 
 | ファイル | 中身 |
 | --- | --- |
-| [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、結果の数え方 |
-| [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh |
+| [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、出力が型に合うかを確かめる `match`、結果の数え方 |
+| [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh・偽のコマンド（`fake_command`） |
 | [tests/lib/hooks.sh](../tests/lib/hooks.sh) | フックのテストの作り物のアプリと、フックへの入力の作り方 |

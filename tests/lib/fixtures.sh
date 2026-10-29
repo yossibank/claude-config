@@ -15,8 +15,16 @@ clone_with_origin() {
 }
 
 fake_gh() {
+    fake_command gh "$1"
+}
+
+fake_command() {
     mkdir -p "$work/bin"
-    printf '#!/bin/bash\n%s\n' "$1" >"$work/bin/gh"
-    chmod +x "$work/bin/gh"
+    if [[ $2 == '#!'* ]]; then
+        printf '%s\n' "$2" >"$work/bin/$1"
+    else
+        printf '#!/bin/bash\n%s\n' "$2" >"$work/bin/$1"
+    fi
+    chmod +x "$work/bin/$1"
     [[ :$PATH: == *":$work/bin:"* ]] || export PATH="$work/bin:$PATH"
 }

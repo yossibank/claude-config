@@ -8,11 +8,7 @@ printf '# t\n\n## a\n\nx\n\n```sh\n## not\n```\n\n## b\n\ny\n' >"$work/section.m
 
 expect "NG 使い方" "docs-section: 引数が無ければ NG" bash "$section"
 
-if [[ $(bash "$section" "$work/section.md" | wc -l | tr -d ' ') == 3 ]]; then
-    ok "docs-section: コードの中の # を見出しにしない"
-else
-    ng "docs-section: コードの中の # を見出しにしない"
-fi
+match "docs-section: コードの中の # を見出しにしない" "$(bash "$section" "$work/section.md" | wc -l | tr -d ' ')" 3
 
 out=$(bash "$section" "$work/section.md" a)
 if [[ $out == *x* && $out != *y* && $out != *"## b"* ]]; then
@@ -30,11 +26,7 @@ else
 fi
 
 printf '# t\n\n> ```sh\n> ## not\n> ```\n\n## a\n' >"$work/quoted.md"
-if [[ $(bash "$section" "$work/quoted.md" | wc -l | tr -d ' ') == 2 ]]; then
-    ok "docs-section: 引用の中のコードの # も見出しにしない"
-else
-    ng "docs-section: 引用の中のコードの # も見出しにしない" "$(bash "$section" "$work/quoted.md")"
-fi
+match "docs-section: 引用の中のコードの # も見出しにしない" "$(bash "$section" "$work/quoted.md" | wc -l | tr -d ' ')" 2
 
 expect "NG 読めない" "docs-section: 無いファイルは NG" bash "$section" "$work/nothing.md"
 

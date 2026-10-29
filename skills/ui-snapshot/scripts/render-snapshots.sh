@@ -3,6 +3,9 @@ set -euo pipefail
 
 [[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>"; exit 1; }
 
+[[ -d $1 ]] || { echo "NG パッケージのフォルダが無い: $1"; exit 1; }
+[[ -d $2 ]] || { echo "NG セットのフォルダが無い: $2"; exit 1; }
+
 skill=$(cd "$(dirname "$0")/.." && pwd)
 package=$(cd "$1" && pwd)
 set_dir=$(cd "$2" && pwd)
