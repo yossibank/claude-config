@@ -13,7 +13,7 @@ RULES = [os.path.join(ROOT, "rules", name) for name in ("docs-writing.md", "docs
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⬀-⯿]️?")
 CODE = re.compile(r"`([^`]*)`")
 LIST = re.compile(r"^([-*]|\d+\.)\s")
-FOR_CLAUDE = re.compile(r"(^|/)(CLAUDE|SKILL)\.md$|/(rules|agents)/[^/]+\.md$")
+FOR_CLAUDE = re.compile(r"(^|/)(CLAUDE|SKILL)\.md$|/(rules|agents|output-styles)/[^/]+\.md$")
 
 
 class Row(NamedTuple):

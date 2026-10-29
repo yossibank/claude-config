@@ -4,11 +4,12 @@ paths:
   - "**/SKILL.md"
   - "**/agents/**/*.md"
   - "**/rules/**/*.md"
+  - "**/output-styles/*.md"
 ---
 
 # Claude が読む文書の形
 
-CLAUDE.md・rules・SKILL.md・agents を読み書きするときに読み込まれる決まり。`docs-writing.md` に足して、飾らない形と節の並びを決める。
+Claude が読む文書を読み書きするときに読み込まれる決まり。CLAUDE.md・rules・SKILL.md・agents・output-styles に当たる。`docs-writing.md` に足して、飾らない形と節の並びを決める。
 
 ## 共通の形
 
