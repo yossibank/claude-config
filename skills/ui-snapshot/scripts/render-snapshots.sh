@@ -44,7 +44,8 @@ python3 -I "$skill/scripts/add-target.py" "$package/Package.swift" "$set_dir/tar
 [[ -f $set_dir/patch.py ]] && python3 -I "$set_dir/patch.py" "$package"
 mkdir -p "$tests"
 source_text=$(<"$set_dir/SnapshotTests.swift")
-printf '%s\n' "${source_text//__OUT__/"$out"}" >|"$tests/SnapshotTests.swift"
+test_text=${source_text//__OUT__/$out}
+printf '%s\n' "$test_text" >|"$tests/SnapshotTests.swift"
 rm -f "$out"/*.png
 touch "$marker"
 
