@@ -5,11 +5,13 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from md_blocks import fence_marks, front_matter_end  # noqa: E402
+from md_blocks import fence_marks  # noqa: E402
+from md_doc import body_start, kind  # noqa: E402
 from script_io import fail  # noqa: E402
 
 HEADING = re.compile(r"^(#{2,6})\s+(.*)$")
-LIST = re.compile(r"^\s*([-*+]|\d+\.)\s")
+SHAPED_KINDS = ("table", "list", "quote")
+SHAPED_STARTS = ("![", "[![", "<")
 PROSE_LIMIT = 4
 HUMAN_DOCS = ("README.md", "docs/**/*.md", "spec/**/*.md")
 
@@ -22,24 +24,23 @@ def human_docs(folder):
 
 
 def sections(lines):
-    start = (front_matter_end(lines) or -1) + 1
+    start = body_start(lines)
     current = {"line": 1, "title": "", "prose": 0, "shaped": True}
     found = []
-    for number, (line, (mark, language)) in enumerate(zip(lines, fence_marks(lines)), 1):
-        if number <= start:
-            continue
+    for number, (line, (mark, language)) in enumerate(zip(lines[start:], fence_marks(lines[start:])), start + 1):
         if mark == "open":
             current["shaped"] = current["shaped"] or bool(language)
             continue
         if mark in ("code", "close"):
             continue
         heading = HEADING.match(line)
+        what = kind(line.strip())
         if heading:
             current = {"line": number, "title": heading.group(2).strip(), "prose": 0, "shaped": False}
             found.append(current)
-        elif line.startswith(("|", ">", "![", "[![")) or LIST.match(line) or line.lstrip().startswith("<"):
+        elif what in SHAPED_KINDS or line.lstrip().startswith(SHAPED_STARTS):
             current["shaped"] = True
-        elif line.strip() and not line.startswith("#"):
+        elif what == "body":
             current["prose"] += 1
     return found
 
