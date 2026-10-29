@@ -77,20 +77,21 @@ def main():
         fail(str(error))
 
     found = []
-    failed = 0
+    failed = set()
     for repo, app_id in apps:
         try:
             reviews = unanswered(repo, app_id)
         except Failure as error:
-            failed += 1
+            failed.add(repo)
             print(f"{repo} のレビューは集められなかった（NG {error}）", file=sys.stderr)
             continue
         found += reviews
         print(f"{repo}\t{len(reviews)} 件", file=sys.stderr)
-    if failed == len(apps):
+    if len(failed) == len(apps):
         fail("どのアプリのレビューも集められなかった")
 
     entries = [kept.get(entry["id"], entry) for entry in found]
+    entries += [entry for entry in kept.values() if entry.get("app") in failed]
     write_json(path, entries)
     print(f"OK {path} {len(entries)} 件")
 

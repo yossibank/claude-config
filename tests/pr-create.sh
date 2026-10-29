@@ -28,6 +28,12 @@ else
     ng "classify: コードが混ざれば small" "$out"
 fi
 rm -f "$repo/hooks.py" "$repo/日本語.md"
+printf '\0\1' >"$repo/a.bin"
+out=$(bash "$scripts/classify-diff.sh" "$repo" origin/main)
+match "classify: 行の無いファイルだけの差分も、差分が無いとしない" "$out" "small | 0 行*"
+rm -f "$repo/a.bin"
+expect "NG nope との分かれ目が見つからない" "classify: base が無ければ NG" bash "$scripts/classify-diff.sh" "$repo" nope
+expect "NG nope との分かれ目が見つからない" "body: base が無ければ NG" bash "$scripts/write-body.sh" "$repo" nope
 
 expect "確認が無い" "body: 確認が無ければ本文を作らない" bash "$scripts/write-body.sh" "$repo" origin/main
 echo b >"$repo/a|b.md"
@@ -63,6 +69,10 @@ mkdir "$lock"
 touch -t 202001010000 "$lock"
 expect OK "run-check: 古いロックは外して進む" bash "$scripts/run-check.sh" "$repo" stale true
 check "run-check: 終わったらロックを残さない" test ! -d "$lock"
+expect "確認の間にワークツリーが変わった" "run-check: 確認の間にワークツリーが変われば NG" bash "$scripts/run-check.sh" "$repo" touchy sh -c 'echo x >changed.txt'
+check "run-check: 確認の間に変わった記録を NG で残す" grep -q "^NG	touchy	" "$(git_file "$repo" pr-checks)"
+rm -f "$repo/changed.txt"
+bash "$scripts/run-check.sh" "$repo" --drop touchy >/dev/null
 
 route="$scripts/route-pr.sh"
 echo body >"$work/body.txt"

@@ -51,4 +51,16 @@ else
     ng "collect: 3 つのフックが止めた回数を数える" "$(grep "^|" <<<"$report")"
 fi
 
+memory_home="$work/memory-home"
+mkdir -p "$memory_home/Applications/My_App"
+key=$(sed 's/[^A-Za-z0-9]/-/g' <<<"$memory_home/Applications/My_App")
+mkdir -p "$projects/$key/memory" "$projects/${key}--claude-worktrees-x/memory" "$projects/-other/memory"
+printf -- '---\nname: a\ndescription: 本体の説明\nmetadata:\n  node_type: memory\n  type: feedback\n---\n' >"$projects/$key/memory/a.md"
+printf -- '---\nname: b\ndescription: ワークツリーの説明\ntype: feedback\n---\n' >"$projects/${key}--claude-worktrees-x/memory/b.md"
+printf -- '---\nname: c\ndescription: 対象外\ntype: feedback\n---\n' >"$projects/-other/memory/c.md"
+report=$(HOME="$memory_home" CC_PROJECTS_DIR="$projects" python3 -I "$collect" 2026-10)
+check "collect: _ や . を含むフォルダのメモリを、元の名前で拾う" grep -qF -- "- My_App／a.md：本体の説明" <<<"$report"
+check "collect: ワークツリーのメモリも、元のリポジトリの名前で拾う" grep -qF -- "- My_App／b.md：ワークツリーの説明" <<<"$report"
+check "collect: Applications の外のメモリは拾わない" bash -c '! grep -q "対象外" <<<"$1"' _ "$report"
+
 finish

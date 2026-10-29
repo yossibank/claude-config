@@ -4,14 +4,26 @@ import re
 import shlex
 import sys
 
+from hook_messages import GATE_FAILED
+
 SEGMENT = re.compile(r"&&|\|\||;|\||\n")
 SEPARATOR_CHARS = set(";&|()\n")
 OFF_SEPARATOR = re.compile(r"[\s,]+")
 FILE_EDIT_TOOLS = ("Edit", "Write", "MultiEdit")
 EDIT_TOOLS = (*FILE_EDIT_TOOLS, "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
-PREFIX_COMMANDS = {"builtin", "command", "env", "exec", "nice", "nohup", "time"}
-PREFIX_VALUE_OPTIONS = {"-a", "-n", "-u"}
+PREFIX_VALUE_OPTIONS = {
+    "builtin": set(),
+    "command": set(),
+    "env": {"-u"},
+    "exec": {"-a"},
+    "nice": {"-n"},
+    "nohup": set(),
+    "sudo": {"-C", "-D", "-g", "-p", "-R", "-T", "-U", "-u"},
+    "time": set(),
+    "timeout": {"-k", "-s"},
+}
+PREFIX_ARGUMENTS = {"timeout": 1}
 GIT_VALUE_OPTIONS = {"-C", "-c", "--attr-source", "--config-env", "--exec-path", "--git-dir", "--namespace", "--work-tree"}
 
 
@@ -36,6 +48,14 @@ def block_on_findings(header, paths, check):
     report = [f"{path}:{n}: {m}" for path in paths for n, m in check(path)]
     if report:
         print(header + "\n" + "\n".join(report), file=sys.stderr)
+        sys.exit(2)
+
+
+def run_gate(name, main):
+    try:
+        main()
+    except Exception as error:
+        print(f"{GATE_FAILED}（{name}: {type(error).__name__}: {error}）。直すまでは CC_HOOKS_OFF={name} で外せる", file=sys.stderr)
         sys.exit(2)
 
 
@@ -71,10 +91,12 @@ def command_words(words):
     while index < len(words):
         if ASSIGNMENT.match(words[index]):
             index += 1
-        elif os.path.basename(words[index]) in PREFIX_COMMANDS:
+        elif os.path.basename(words[index]) in PREFIX_VALUE_OPTIONS:
+            name = os.path.basename(words[index])
             index += 1
             while index < len(words) and words[index].startswith("-"):
-                index += 2 if words[index] in PREFIX_VALUE_OPTIONS else 1
+                index += 2 if words[index] in PREFIX_VALUE_OPTIONS[name] else 1
+            index += PREFIX_ARGUMENTS.get(name, 0)
         else:
             return [os.path.basename(words[index]), *words[index + 1 :]]
     return []

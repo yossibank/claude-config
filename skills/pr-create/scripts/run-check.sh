@@ -63,16 +63,21 @@ logs=$(git_file "$repo" pr-check-logs)
 log="$logs/${label//[^A-Za-z0-9._-]/_}.log"
 mkdir -p "$logs"
 
+before=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG ワークツリーの状態を読めない"; exit 1; }
 status=0
 (cd "$repo" && "$@") >| "$log" 2>&1 || status=$?
 [[ $status == 0 ]] && result=OK || result=NG
 state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG ワークツリーの状態を読めない"; exit 1; }
+[[ $state == "$before" ]] || result=NG
 
 update_record "$label" "$(printf '%s\t%s\t%s' "$result" "$label" "$state")"
 
 if [[ $result == OK ]]; then
     rm -f "$log"
     echo "OK $label"
+elif [[ $status == 0 ]]; then
+    echo "NG ${label}: 確認の間にワークツリーが変わった。変更を終えてから通し直す"
+    exit 1
 else
     echo "NG ${label}（終了コード ${status}）。ログ: $log"
     show_errors "$log"

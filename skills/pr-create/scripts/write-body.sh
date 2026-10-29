@@ -6,7 +6,7 @@ source "$(dirname "$0")/../../../lib/git.sh"
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <base のブランチ>"; exit 1; }
 
 use_repo "$1"
-base=$(git -C "$repo" merge-base "$2" HEAD)
+base=$(git -C "$repo" merge-base "$2" HEAD 2>/dev/null) || { echo "NG $2 との分かれ目が見つからない"; exit 1; }
 size=$("$(dirname "$0")/classify-diff.sh" "$repo" "$2") || size=""
 size=${size%%$'\n'*}
 shift 2

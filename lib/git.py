@@ -4,7 +4,7 @@ import subprocess
 
 def git(cwd, *args, timeout=10):
     try:
-        return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True, timeout=timeout)
+        return subprocess.run(["git", "--no-optional-locks", "-C", cwd, *args], capture_output=True, text=True, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired):
         return None
 

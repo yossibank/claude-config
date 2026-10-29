@@ -22,7 +22,7 @@ CUE = re.compile(
 )
 WIDTH = 120
 APPS = os.path.expanduser("~/Applications")
-PREFIX = APPS.replace("/", "-") + "-"
+PROJECT_KEY = re.compile(r"[^A-Za-z0-9]")
 GUARDS = {"rules": RULES_UNREAD, "bash": BASH_EDITED, "pr": PR_UNCHECKED}
 HOOK_ERROR = re.compile(r"PreToolUse:\w+ hook error: ")
 GIT_C = re.compile(r"\bgit\s+-C\s+(\S+)")
@@ -128,16 +128,22 @@ def record_correction(entry, path, when, tally):
         tally.corrections.append((when, place, flat))
 
 
+def repo_names():
+    folders = glob.glob(os.path.join(APPS, "*")) + glob.glob(os.path.join(APPS, "*", "*"))
+    return {PROJECT_KEY.sub("-", folder): os.path.basename(folder) for folder in folders if os.path.isdir(folder)}
+
+
 def feedback_memories(projects):
+    names = repo_names()
     memories = []
     for path in sorted(glob.glob(os.path.join(projects, "*", "memory", "*.md"))):
         fields = front_matter(Path(path).read_text(encoding="utf-8", errors="ignore").split("\n")) or {}
         if fields.get("type") != "feedback":
             continue
         project = os.path.basename(os.path.dirname(os.path.dirname(path)))
-        if not project.startswith(PREFIX):
+        repo = names.get(project.split("--claude-worktrees-")[0])
+        if repo is None:
             continue
-        repo = project[len(PREFIX) :].split("--claude-worktrees-")[0]
         memories.append((repo, os.path.basename(path), fields.get("description", "")))
     return memories
 
