@@ -29,12 +29,17 @@ fi
 rm -f "$repo/hooks.py" "$repo/日本語.md"
 
 expect "確認が無い" "body: 確認が無ければ本文を作らない" bash "$scripts/write-body.sh" "$repo" origin/main
+echo b >"$repo/a|b.md"
 bash "$scripts/run-check.sh" "$repo" true true >/dev/null
 expect OK "body: 確認が通れば本文を作る" bash "$scripts/write-body.sh" "$repo" origin/main "画面"
-check "body: 未検証の項目を付ける" grep -q -- '- \[ \] 画面（未検証）' "$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-body.txt)"
+pr_body="$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-body.txt)"
+check "body: 通った確認に ✅ を付ける" grep -qF '| true | ✅ 通った |' "$pr_body"
+check "body: 未検証の項目に ⬜ を付ける" grep -qF '| 画面 | ⬜ 未検証 |' "$pr_body"
+check "body: 変えたファイルを表の行にし、| を逃がす" grep -qF '| `a\|b.md` | |' "$pr_body"
 echo c >>"$repo/a.md"
 expect "確認の後に変更がある" "body: 確認の後に変えたら止まる" bash "$scripts/write-body.sh" "$repo" origin/main
 git -C "$repo" checkout -q -- a.md
+rm -f "$repo/a|b.md"
 
 lock="$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks).lock"
 mkdir "$lock"
