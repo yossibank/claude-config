@@ -89,6 +89,42 @@ def check_headings(doc):
     return found
 
 
+def check_heading_emoji_repeats(doc):
+    found = []
+    seen = set()
+    for number, text, _, what in doc.rows:
+        if what != "heading" or heading_level(text) != 2:
+            continue
+        emojis = EMOJI.findall(text)
+        if not emojis:
+            continue
+        if bare(emojis[0]) in seen:
+            found.append((number, f"## の見出しに同じ絵文字を 2 度使わない（{emojis[0]}）。節をまとめるか、別の絵文字にする"))
+        seen.add(bare(emojis[0]))
+    return found
+
+
+def table_cells(line):
+    return [cell.strip() for cell in line.replace("\\|", "\0").strip().strip("|").split("|")]
+
+
+def check_table_first_column(doc):
+    found = []
+    seen = {}
+    for index, row in enumerate(doc.rows):
+        if row.what != "table":
+            seen = {}
+            continue
+        if index == 0 or doc.rows[index - 1].what != "table" or set(row.text.strip()) <= set("|-: "):
+            continue
+        cells = table_cells(doc.lines[row.number - 1])
+        first = cells[0]
+        if len(cells) == 2 and first and first in seen:
+            found.append((row.number, f"表の 1 列目に同じ値を繰り返さない（{first}）。値ごとに見出しか箇条書きに分ける"))
+        seen[first] = row.number
+    return found
+
+
 def check_heading_names(doc):
     found = []
     stack = [(0, set())]
@@ -344,6 +380,8 @@ CHECKS = [
     (always, check_size),
     (always, check_headings),
     (always, check_heading_names),
+    (lambda doc: doc.human, check_heading_emoji_repeats),
+    (lambda doc: "/docs/decisions/" not in doc.path, check_table_first_column),
     (always, check_sections),
     (always, check_blocks),
     (always, check_toc),

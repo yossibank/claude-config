@@ -71,22 +71,22 @@
 
 ## 📦 共通の処理
 
-フックとスクリプトが共通で使う処理は、`lib/` に置く。
+フックとスクリプトが共通で使う処理は、`lib/` に置く。使う所は、モジュールの名前を `git grep` で探す。
 
-| ファイル | 使う所 | 中身 |
-| --- | --- | --- |
-| [lib/app_store.py](../lib/app_store.py) | app-plan・store-report・store-reply のスクリプト | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
-| [lib/dates.py](../lib/dates.py) | 月や日時を扱うスクリプト、rules-require-read | 日本時間、月の形、記録の日時の月 |
-| [lib/git.py](../lib/git.py) | フック | タイムアウト付きの git と、リポジトリの根 |
-| [lib/git.sh](../lib/git.sh) | スキルの .sh、テスト | リポジトリの根（`use_repo` は無ければ NG で止まる）と、git のフォルダの中のパス（`git_file`）。既定のブランチと、GitHub での書き込みの権限 |
-| [lib/hook_io.py](../lib/hook_io.py) | 各フック、collect-corrections.py、config-audit.py | 入力の JSON、コマンドの区切り、止めたフックの判定、編集する道具の名前 |
-| [lib/hook_messages.py](../lib/hook_messages.py) | フック、collect-corrections.py | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
-| [lib/hook_state.py](../lib/hook_state.py) | フック | 状態ファイルの名前と、古い状態ファイルの掃除 |
-| [lib/loader.py](../lib/loader.py) | config-audit.py、write-report.py ほか | ファイルの場所から .py を読み込む |
-| [lib/md_blocks.py](../lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py、collect-corrections.py | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
-| [lib/md_doc.py](../lib/md_doc.py) | docs-check、config-audit.py | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
-| [lib/script_io.py](../lib/script_io.py) | スキルの .py | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
-| [lib/transcripts.py](../lib/transcripts.py) | collect-corrections.py、count-tokens.py、フック | 会話の記録の読み方 |
+| ファイル | 中身 |
+| --- | --- |
+| [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
+| [lib/dates.py](../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
+| [lib/git.py](../lib/git.py) | タイムアウト付きの git と、リポジトリの根。根は、まだ無いフォルダからも在る親をたどって探す |
+| [lib/git.sh](../lib/git.sh) | リポジトリの根（`use_repo` は無ければ NG で止まる）と、git のフォルダの中のパス（`git_file`）。既定のブランチと、GitHub での書き込みの権限 |
+| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON、コマンドの区切りと頭の読み飛ばし、止めたフックの判定、編集する道具の名前 |
+| [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
+| [lib/hook_state.py](../lib/hook_state.py) | 状態ファイルの名前と、古い状態ファイルの掃除 |
+| [lib/loader.py](../lib/loader.py) | ファイルの場所から .py を読み込む |
+| [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
+| [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
+| [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
+| [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、作業場所のパスからリポジトリの名前を出す `repo_of` |
 
 ## 🧪 テスト
 

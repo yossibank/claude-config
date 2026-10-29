@@ -72,5 +72,10 @@ doc_case 2 "text 以外の囲みのフォルダの木も見る" docs/x.md "$note
 doc_case 2 "状態の段に固定のバッジを置かない" docs/x.md "$note"$'\n'"$state_badge"' ![License](https://img.shields.io/badge/License-MIT-blue)' "状態の段は動的なバッジにする"
 doc_case 0 "節の中のページ内リンクの一覧は目次にしない" docs/x.md "$note"$'\n## 📚 文書\n\n関係する節を次に置く。\n\n- [入れ方](#入れ方)\n- [使い方](#使い方)'
 doc_case 0 "小文字のアラートも種類を見分ける" docs/x.md $'# t\n\n> [!note]\n> 分かる。'
+doc_case 2 "## の見出しに同じ絵文字を 2 度使わない" README.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 🚀 使い方\n\nい。' "同じ絵文字を 2 度使わない（🚀）"
+doc_case 2 "2 列の表の 1 列目に同じ値を繰り返さない" rules/x.md $'# t\n\n決まりは次のとおり。\n\n| 場面 | 決まり |\n| --- | --- |\n| 作る時 | あ |\n| 作る時 | い |' "1 列目に同じ値を繰り返さない（作る時）"
+doc_case 0 "決定の文書は理由の行を重ねてよい" docs/decisions/x.md "$note"$'\n## 📏 保存\n\n**決定：保存する。**\n\n| 項目 | 内容 |\n| --- | --- |\n| 理由 | あ |\n| 理由 | い |'
+doc_case 0 "条件を組み合わせる 3 列の表は 1 列目が重なってよい" rules/x.md $'# t\n\n案は次のとおり。\n\n| 決まり | 回数 | 案 |\n| --- | --- | --- |\n| 無い | 2 回 | 足す |\n| 無い | 1 回 | 待つ |'
+doc_case 0 "別の表なら 1 列目が同じでもよい" rules/x.md $'# t\n\n一つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 1 |\n\n二つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 2 |'
 
 finish
