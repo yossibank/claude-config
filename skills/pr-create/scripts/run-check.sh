@@ -1,5 +1,5 @@
 #!/bin/bash
-set -uo pipefail
+set -euo pipefail
 
 source "$(dirname "$0")/../../../lib/git.sh"
 
@@ -19,7 +19,7 @@ update_record() {
 
     until mkdir "$lock" 2>/dev/null; do
         if [[ -n $(find "$lock" -maxdepth 0 -mmin +1 2>/dev/null) ]]; then
-            rmdir "$lock" 2>/dev/null
+            rmdir "$lock" 2>/dev/null || true
             continue
         fi
         (( ++tries < 100 )) || { echo "NG 確認の記録のロックが外れない: $lock"; exit 1; }
@@ -62,8 +62,8 @@ logs=$(git_file "$repo" pr-check-logs)
 log="$logs/${label//[^A-Za-z0-9._-]/_}.log"
 mkdir -p "$logs"
 
-(cd "$repo" && "$@") >| "$log" 2>&1
-status=$?
+status=0
+(cd "$repo" && "$@") >| "$log" 2>&1 || status=$?
 [[ $status == 0 ]] && result=OK || result=NG
 state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG 作業場所の状態を読めない"; exit 1; }
 
@@ -74,6 +74,6 @@ if [[ $result == OK ]]; then
     echo "OK $label"
 else
     echo "NG ${label}（終了コード ${status}）。ログ: $log"
-    grep -E -i 'error|fail' "$log" | tail -n 20
+    grep -E -i 'error|fail' "$log" | tail -n 20 || true
     exit 1
 fi
