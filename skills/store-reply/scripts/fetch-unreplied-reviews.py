@@ -60,7 +60,7 @@ def drafts_so_far(path):
 
 def main():
     if len(sys.argv) > 1:
-        fail("使い方: collect-reviews.py")
+        fail("使い方: fetch-unreplied-reviews.py")
     try:
         require_keys(ASC_KEYS)
     except Failure as error:
