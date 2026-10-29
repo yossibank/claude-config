@@ -79,6 +79,26 @@ d=$(copy steps)
 replace "$d/skills/ctx-report/SKILL.md" '1. `count-tokens.py` で表を出す。' '`count-tokens.py` で表を出す。'
 expect_audit "$d" "skills/ctx-report/SKILL.md:1 「手順」は番号付きの箇条書きで書く" "番号の無い手順"
 
+d=$(copy header)
+replace "$d/skills/ui-record/scripts/tile-frames.sh" 'set -euo pipefail' 'set -uo pipefail'
+expect_audit "$d" "2 行目を set -euo pipefail にする" "-e の無いスキルのスクリプト"
+
+d=$(copy inline-python)
+printf "python3 -I -c 'print(1)'\n" >>"$d/skills/ui-record/scripts/tile-frames.sh"
+expect_audit "$d" "bash の中に Python を書かない" "bash の中の Python"
+
+d=$(copy worktrees)
+printf 'echo "$HOME/.claude/worktrees"\n' >>"$d/skills/ui-record/scripts/tile-frames.sh"
+expect_audit "$d" "ワークツリーの置き場所は lib の" "ワークツリーの置き場所の直書き"
+
+d=$(copy assert)
+printf '\n\ndef broken():\n    assert True\n' >>"$d/lib/dates.py"
+expect_audit "$d" "assert は python -O で消え" "assert"
+
+d=$(copy matcher)
+replace "$d/settings/settings.json" '"Edit|Write|MultiEdit"' '"Edit|Write"'
+expect_audit "$d" "編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ" "編集の道具が欠けた matcher"
+
 d=$(copy readme)
 echo 'print(1)' >"$d/hooks/post-tool-extra.py"
 expect_audit "$d" "README の表に載っていない: hooks/post-tool-extra.py" "README に無いフック"

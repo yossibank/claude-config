@@ -2,18 +2,17 @@ import json
 import os
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import read_payload, tool_input  # noqa: E402
-from hook_state import remove_stale, safe_name  # noqa: E402
+from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
 STEP = 200_000
 TAIL = 4_000_000
-STATE = os.path.join(tempfile.gettempdir(), "claude-suggest-clear")
+STATE = state_folder("suggest-clear")
 STALE = 7 * 24 * 60 * 60
 KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
 PR_URL = re.compile(r"https://github\.com/[^/\s]+/[^/\s]+/pull/\d+")
@@ -45,8 +44,7 @@ def notified_level(session):
 
 
 def save_level(session, level):
-    os.makedirs(STATE, exist_ok=True)
-    remove_stale(STATE, STALE)
+    prepare_state(STATE, STALE)
     Path(STATE, safe_name(session)).write_text(str(level))
 
 

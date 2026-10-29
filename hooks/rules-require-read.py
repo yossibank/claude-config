@@ -1,7 +1,7 @@
+import functools
 import os
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
@@ -10,12 +10,12 @@ from dates import to_jst  # noqa: E402
 from git import git_root  # noqa: E402
 from hook_io import EDIT_TOOLS, read_payload, tool_input  # noqa: E402
 from hook_messages import RULES_UNREAD  # noqa: E402
-from hook_state import remove_stale, safe_name  # noqa: E402
+from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
 RULES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
-STATE = os.path.join(tempfile.gettempdir(), "claude-rules-read")
+STATE = state_folder("rules-read")
 STALE = 7 * 24 * 60 * 60
 TAIL_LIMIT = 32_000_000
 
@@ -40,19 +40,20 @@ def to_regex(pattern):
     return re.compile(out + "$")
 
 
+@functools.cache
 def rule_paths(path):
     fields = front_matter(Path(path).read_text(encoding="utf-8").split("\n")) or {}
     paths = fields.get("paths")
     return [to_regex(pattern) for pattern in paths] if isinstance(paths, list) else []
 
 
-def relative(path):
-    root = git_root(path)
+def relative(path, root=None):
+    root = root or git_root(path)
     return os.path.relpath(path, root) if root else None
 
 
-def matching_rules(path):
-    target = relative(path)
+def matching_rules(path, root=None):
+    target = relative(path, root)
     found = []
     if target is None:
         return found
@@ -105,7 +106,7 @@ def scan(transcript):
 def record_read(data, path):
     if not is_rule(path):
         return
-    remove_stale(STATE, STALE)
+    prepare_state(STATE, STALE)
     os.makedirs(state_dir(data), exist_ok=True)
     Path(state_dir(data), os.path.basename(path)).touch()
 

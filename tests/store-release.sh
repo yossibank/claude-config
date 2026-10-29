@@ -11,12 +11,17 @@ CC_STORE_EXPORT=x expect "NG CC_STORE_EXPORT は upload か export" "archive-app
 log="$work/archive.log"
 printf 'x\na.swift:1: error: 型が無い\na.swift:1: error: 型が無い\nb.swift:2: warning: 使っていない\n' >"$log"
 fail_with_log=$(awk '/^fail_with_log\(\) \{/,/^\}/' "$archive")
-out=$(log=$log bash -c "${fail_with_log}"$'\nfail_with_log アーカイブ')
+out=$(log=$log bash -c "source $root/lib/log.sh"$'\n'"${fail_with_log}"$'\nfail_with_log アーカイブ')
 status=$?
 check "archive-app: 失敗したら終了コード 1 で終える" test "$status" -eq 1
 check "archive-app: ログの error の行を 1 回ずつ出す" test "$(grep -c 'error: 型が無い' <<<"$out")" -eq 1
 check "archive-app: warning の行は出さない" test -z "$(grep warning <<<"$out")"
 check "archive-app: 何が失敗したかとログの場所を NG で出す" grep -qxF "NG アーカイブ（全ログ: ${log}）" <<<"$out"
+source "$root/lib/log.sh"
+{ for n in $(seq 1 25); do echo "c.swift:$n: error: $n 番目"; done; echo '** TEST FAILED **'; echo 'ErrorView.swift をコンパイル'; } >"$work/many.log"
+check "show_errors: first は最初のエラーから出す" grep -q 'c.swift:1: error' <<<"$(show_errors "$work/many.log" first)"
+check "show_errors: 既定は最後の行まで出し、大文字の FAILED も拾う" grep -qF '** TEST FAILED **' <<<"$(show_errors "$work/many.log")"
+check "show_errors: ファイル名の Error には当たらない" test -z "$(show_errors "$work/many.log" | grep ErrorView)"
 folder="$work/ja"
 mkdir -p "$folder"
 printf 'カケイボ\n' >"$folder/name.txt"

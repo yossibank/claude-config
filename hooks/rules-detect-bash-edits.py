@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
@@ -9,19 +8,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from git import git, git_root  # noqa: E402
 from hook_io import command_words, hook_off, read_payload, split_commands, tool_input  # noqa: E402
 from hook_messages import BASH_EDITED  # noqa: E402
-from hook_state import remove_stale, safe_name  # noqa: E402
+from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from loader import load_hook  # noqa: E402
 
-STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
+STATE = state_folder("bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
 TOOLS = {"git", "make", "mint", "swiftformat", "pre-commit", "gh", "brew", "xcodebuild", "swift", "cd"}
 STALE = 24 * 60 * 60
 
 
 def changed_files(cwd):
-    result = git(cwd, "status", "--porcelain", "-z", "--untracked-files=all")
     root = git_root(cwd)
-    if not result or result.returncode or not root:
+    if not root:
+        return None, {}
+    result = git(root, "status", "--porcelain", "-z", "--untracked-files=all")
+    if result is None:
+        print("rules-detect-bash-edits: git status が時間切れになったので、Bash での書き換えを確かめなかった", file=sys.stderr)
+    if not result or result.returncode:
         return None, {}
     files = {}
     entries = iter(result.stdout.split("\0"))
@@ -44,11 +47,12 @@ def only_tools(command):
 
 
 def before(data):
+    if only_tools(tool_input(data).get("command", "")):
+        return
     root, files = changed_files(data.get("cwd") or os.getcwd())
     if root is None:
         return
-    os.makedirs(STATE, exist_ok=True)
-    remove_stale(STATE, STALE)
+    prepare_state(STATE, STALE)
     Path(state_file(data)).write_text(json.dumps({"root": root, "files": files}))
 
 
@@ -75,7 +79,7 @@ def after(data):
     ]
     if not hook_off("rules-require-read"):
         guard = load_hook("rules-require-read")
-        rules = sorted({name for path in edited for name in guard.matching_rules(path)})
+        rules = sorted({name for path in edited for name in guard.matching_rules(path, earlier["root"])})
         if rules:
             lines.append("当たる決まり（まだ読んでいなければ Read で読む）: " + "、".join(rules))
     checks = {".md": "docs-check", ".sh": "shell-check"}
