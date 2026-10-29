@@ -7,7 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import read_payload, safe_name, tool_input  # noqa: E402
+from hook_io import read_payload, tool_input  # noqa: E402
+from hook_state import safe_name  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
 STEP = 200_000
