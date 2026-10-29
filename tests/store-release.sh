@@ -64,5 +64,7 @@ write_manifest "$work/priv" "$(declare_api NSPrivacyAccessedAPICategorySystemBoo
 match "check-privacy: コードに無い申告は知らせる" "$(python3 -I "$privacy" "$work/priv")" "*-- NSPrivacyAccessedAPICategorySystemBootTime は申告しているが*"
 echo 'garbage' >"$work/priv/PrivacyInfo.xcprivacy"
 match "check-privacy: 壊れた申告のファイルは stdout に NG" "$(python3 -I "$privacy" "$work/priv" 2>/dev/null)" "NG*"
+printf '<?xml version="1.0"?>\n<plist version="1.0"><dict>\n' >"$work/priv/PrivacyInfo.xcprivacy"
+match "check-privacy: 途中で切れた XML の申告のファイルも stdout に NG" "$(python3 -I "$privacy" "$work/priv" 2>/dev/null)" "NG*"
 
 finish

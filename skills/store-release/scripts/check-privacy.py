@@ -3,6 +3,7 @@ import plistlib
 import re
 import sys
 from pathlib import Path
+from xml.parsers.expat import ExpatError
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
@@ -73,7 +74,7 @@ def main():
     for manifest in manifests:
         try:
             declared[manifest] = declared_in(manifest)
-        except (plistlib.InvalidFileException, ValueError, OSError) as error:
+        except (plistlib.InvalidFileException, ExpatError, ValueError, OSError) as error:
             fail(f"{os.path.relpath(manifest, root)} を読めない: {error}")
     for category, paths in sorted(used.items()):
         missing = [p for p in paths if not any(category in declared[m] for m in manifest_for(p, root, manifests))]

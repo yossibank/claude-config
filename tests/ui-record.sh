@@ -27,13 +27,13 @@ fake_command xcrun '#!/usr/bin/env python3
 import signal, sys, time
 signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
 open(sys.argv[-1], "w").write("v")
-time.sleep(30)'
+time.sleep(3)'
 match "record-video: 出力先のフォルダを作って録る" "$(bash "$record" udid 1 "$work/rec/b.mp4")" "OK $work/rec/b.mp4"
 check "record-video: mp4 ができる" test -s "$work/rec/b.mp4"
 fake_command xcrun '#!/usr/bin/env python3
 import signal, sys, time
 signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
-time.sleep(30)'
+time.sleep(3)'
 expect "NG 録画できなかった: $work/rec/c.mp4" "record-video: ファイルが空なら NG" bash "$record" udid 1 "$work/rec/c.mp4"
 
 finish
