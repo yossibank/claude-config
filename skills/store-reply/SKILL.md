@@ -106,6 +106,5 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/send-replies.py <返信案の JSON>
 
 ## 制約
 
-- 人が頼んだ時だけ使う。
 - `send-replies.py` は外に出す操作なので、`--dry-run` を付けない時は、走らせる前に人の承認を得る。
 - 人が承認していない案の `approved` を `true` にしない。

@@ -51,5 +51,4 @@ ${CLAUDE_SKILL_DIR}/scripts/tile-frames.sh <出力先>/before.mp4 <開始秒> <�
 
 ## 制約
 
-- 一時の仕掛けのファイルと書き換えは、終わったら必ず戻す。
 - ほかの変更を消さないよう、`git checkout` で戻す前に `git diff` で中身を確かめる。

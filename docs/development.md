@@ -55,6 +55,17 @@
 | `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
 | `send` | 外に送る |
 
+### そろえる語
+
+同じものを指す語は、次の表の左の語にそろえる。右の語は config-audit が `NG` にする。
+
+| 使う語 | 使わない語 |
+| --- | --- |
+| ワークツリー | ワークツリー |
+| commit | コミット |
+| スキル | skill |
+| 差分の重さ | 確認の重さ |
+
 ## 📏 スクリプトの書き方
 
 スクリプトは、読み込まれた時に何も実行せず、結果を同じ形で返す。`make verify` の config-audit が、外れた書き方を `NG` にする。
@@ -86,7 +97,7 @@
 | [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
-| [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、作業場所のパスからリポジトリの名前を出す `repo_of` |
+| [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
 
 ## 🧪 テスト
 
@@ -105,7 +116,7 @@
 | `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
 | `tests/docs-polish.sh` | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
-| `tests/pr-create.sh` | 作業場所・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
+| `tests/pr-create.sh` | ワークツリー・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
 | `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |

@@ -38,7 +38,7 @@ update_record() {
 
 if [[ $label == --status ]]; then
     [[ -s $record ]] || { echo "NG run-check.sh で通した確認が無い"; exit 1; }
-    state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG 作業場所の状態を読めない"; exit 1; }
+    state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG ワークツリーの状態を読めない"; exit 1; }
     awk -F '\t' -v state="$state" '
         NF < 3 { next }
         $1 != "OK" { print "NG 通っていない確認: " $2; bad = 1; next }
@@ -65,7 +65,7 @@ mkdir -p "$logs"
 status=0
 (cd "$repo" && "$@") >| "$log" 2>&1 || status=$?
 [[ $status == 0 ]] && result=OK || result=NG
-state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG 作業場所の状態を読めない"; exit 1; }
+state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG ワークツリーの状態を読めない"; exit 1; }
 
 update_record "$label" "$(printf '%s\t%s\t%s' "$result" "$label" "$state")"
 

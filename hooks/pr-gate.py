@@ -59,7 +59,7 @@ def main():
     found = problems(repo)
     if found:
         print(
-            f"{PR_UNCHECKED}、pr-create の手順の確認を通す（run-check.sh で通し直すか、要らない記録は run-check.sh <作業場所> --drop <名前> で外す）。\n"
+            f"{PR_UNCHECKED}、pr-create の手順の確認を通す（run-check.sh で通し直すか、要らない記録は run-check.sh <ワークツリー> --drop <名前> で外す）。\n"
             + "\n".join(found),
             file=sys.stderr,
         )

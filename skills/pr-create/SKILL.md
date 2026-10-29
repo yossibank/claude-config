@@ -24,9 +24,9 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 
 以下の `<S>` は `${CLAUDE_SKILL_DIR}/scripts` を指す。
 
-1. 作業場所を作る。作り方は、場面で次のとおり変える。
+1. ワークツリーを作る。作り方は、場面で次のとおり変える。
 
-   | 場面 | 作業場所の作り方 |
+   | 場面 | ワークツリーの作り方 |
    | --- | --- |
    | 今のセッションのリポジトリ | `EnterWorktree` の後に、`git branch -m <type>/<summary>` で名前を変える |
    | ほかのリポジトリ | `create-worktree.sh` を使い、出たパスで作業する |
@@ -48,10 +48,10 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 
 ```sh
 <S>/create-worktree.sh <リポジトリ> <type>/<summary>
-<S>/classify-diff.sh <作業場所> origin/<base>
-<S>/run-check.sh <作業場所> <名前> <コマンド…>
-<S>/write-body.sh <作業場所> origin/<base> [未検証…]
-<S>/route-pr.sh <作業場所> <base> <タイトル> <本文のファイル>
+<S>/classify-diff.sh <ワークツリー> origin/<base>
+<S>/run-check.sh <ワークツリー> <名前> <コマンド…>
+<S>/write-body.sh <ワークツリー> origin/<base> [未検証…]
+<S>/route-pr.sh <ワークツリー> <base> <タイトル> <本文のファイル>
 ```
 
 ## classify-diff.sh がすること
@@ -64,7 +64,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 | `small` | 200 行まで | Makefile に `verify` があれば `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` に `model: sonnet` を付けて頼む |
 | `large` | 200 行を超える。または移行・スキーマ・fixtures・プロジェクトの設定・フック・settings に触れる | `small` と同じ | `reviewer`（opus）に頼む |
 
-reviewer には、作業場所のパスと base のブランチ名だけを渡す。
+reviewer には、ワークツリーのパスと base のブランチ名だけを渡す。
 
 ## run-check.sh がすること
 
@@ -73,9 +73,9 @@ reviewer には、作業場所のパスと base のブランチ名だけを渡�
 | 場面 | すること |
 | --- | --- |
 | 確認を通す | 結果を、git のフォルダの `pr-checks` に、ファイルの中身の指紋と一緒に残す |
-| 記録を見る | `run-check.sh <作業場所> --status` が、NG の確認と、確認の後の変更を `NG` の行で出す |
+| 記録を見る | `run-check.sh <ワークツリー> --status` が、NG の確認と、確認の後の変更を `NG` の行で出す |
 | 本文を作る | `write-body.sh` が `--status` で確かめ、通った確認を本文の表に入れる |
-| 記録を外す | 要らなくなった確認は、`run-check.sh <作業場所> --drop <名前>` で外す |
+| 記録を外す | 要らなくなった確認は、`run-check.sh <ワークツリー> --drop <名前>` で外す |
 | push と PR | `hooks/pr-gate.py` が `--status` を見て、満たさなければ止める |
 
 ## write-body.sh の出力
@@ -117,4 +117,3 @@ PR の URL か、`compare` の URL を返す。あわせて、通した確認と
 - マージはしない。
 - pre-commit で commit が止まったら、差分を確かめてステージし直す。`--no-verify` は使わない。
 - クラウドのセッションでは `gh pr` が使えないので、組み込みの GitHub の道具を使う。
-- CI を直して push し直す時は、承認を得ない。

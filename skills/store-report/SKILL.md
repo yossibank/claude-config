@@ -11,7 +11,9 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 ## 手順
 
-表は、次のコマンドで作る。
+1. `write-report.py` で表を作る。
+2. 星 2 以下のレビューが増えたアプリは、`app-plan` のスキルの `fetch-reviews.py` で中身を読み、不満を 3 つまでにまとめる。
+3. 表と、前の月から大きく変わった所と、2 の不満を報告する。
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
@@ -59,9 +61,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 
 ## 報告
 
-人には、表と、前の月から大きく変わった所だけを返す。
-
-星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには、`app-plan` のスキルの `fetch-reviews.py` を使う。
+人には、表と、前の月から大きく変わった所と、星 2 以下のレビューから集めた不満を返す。
 
 > [!WARNING]
 > 売上のレポートの取得は、キーが無いので確かめていない。署名は、テスト用の鍵で `openssl` の検証に通ることだけを確かめた。
