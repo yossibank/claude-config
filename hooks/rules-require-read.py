@@ -100,8 +100,10 @@ def scan(transcript):
             entry = parse_entry(line)
             if entry is None:
                 continue
-            files = entry.get("attachment", {}).get("files") or []
-            loaded |= {os.path.basename(str(item.get("path", ""))) for item in files if is_rule(str(item.get("path", "")))}
+            attachment = entry.get("attachment")
+            files = attachment.get("files") if isinstance(attachment, dict) else None
+            paths = [str(item.get("path", "")) for item in files if isinstance(item, dict)] if isinstance(files, list) else []
+            loaded |= {os.path.basename(path) for path in paths if is_rule(path)}
     return compacted, loaded
 
 

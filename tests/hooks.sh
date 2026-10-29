@@ -70,6 +70,9 @@ for name in docs-writing.md docs-app.md; do read_rule s2 a1 "$name"; done
 run rules-require-read 0 "rules: サブエージェントが自分で読めば通る" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
 CLAUDE_HOOKS_OFF="pr-gate rules-require-read" run rules-require-read 0 "rules: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(edit s9 main "$fresh" "$swift")"
 run rules-require-read 0 "rules: 壊れた入力では止めない" "not json"
+odd="$work/odd.jsonl"
+printf '%s\n' '{"type":"x","note":"instructions","attachment":"/rules/"}' '{"type":"attachment","attachment":{"type":"instructions","files":["/rules/x.md"]}}' >"$odd"
+run rules-require-read 2 "rules: 記録の attachment が辞書でなくても落ちずに止める" "$(edit s8 main "$odd" "$swift")"
 
 printf '#!/bin/bash\necho "x $name%s"\n' '。' >"$work/wide.sh"
 printf '#!/bin/bash\necho "x ${name}。"\n' >"$work/ok.sh"
@@ -209,6 +212,17 @@ run pr-gate 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git 
 run pr-gate 2 "pr: cd した先のリポジトリを見る" "$(push "$work" "cd $app && git push")"
 CLAUDE_HOOKS_OFF="rules-require-read pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(push "$app" 'git push')"
 CLAUDE_HOOKS_OFF="pr-gate-x" run pr-gate 2 "pr: CLAUDE_HOOKS_OFF の名前は全体で比べる" "$(push "$app" 'git push')"
+printf '#!/bin/bash\necho "壊れた" >&2\nexit 3\n' >"$work/broken-check.sh"
+out=$(python3 -I - "$root" "$work/broken-check.sh" "$app" <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from modules import load_hook
+gate = load_hook("pr-gate")
+gate.CHECK_SH = sys.argv[2]
+print(gate.problems(sys.argv[3]))
+EOF
+)
+check "pr: run-check.sh が何も出さずに落ちたら、理由に stderr の末尾を出す" grep -q "run-check.sh が失敗した（終了コード 3）: 壊れた" <<<"$out"
 CLAUDE_HOOKS_OFF="rules-require-read,pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はカンマで区切ってもよい" "$(push "$app" 'git push')"
 CLAUDE_HOOKS_OFF=$'rules-require-read\tpr-gate' run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はタブで区切ってもよい" "$(push "$app" 'git push')"
 out=$(push "$app" 'git status' | CLAUDE_HOOKS_OFF="pr-gate.py" bash "$hooks" pr-gate 2>&1)

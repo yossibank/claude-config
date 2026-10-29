@@ -45,7 +45,11 @@ def problems(repo):
         return []
     if result.returncode == 0:
         return []
-    return [line[3:] for line in result.stdout.splitlines() if line.startswith("NG ")] or [result.stdout.strip()]
+    found = [line[3:] for line in result.stdout.splitlines() if line.startswith("NG ")]
+    if found or result.stdout.strip():
+        return found or [result.stdout.strip()]
+    reason = result.stderr.strip().splitlines()[-1:]
+    return [f"run-check.sh が失敗した（終了コード {result.returncode}）" + "".join(f": {line}" for line in reason)]
 
 
 def main():
