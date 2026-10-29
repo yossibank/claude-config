@@ -45,6 +45,29 @@ run pr-gate 2 "pr: 改行で並べたコマンドも区切って止める" "$(pu
 run pr-gate 0 "pr: 引用符の中の gh pr create は止めない" "$(push "$app" 'echo \"gh pr create\"')"
 CC_HOOKS_OFF="rules-require-read pr-gate" run pr-gate 0 "pr: CC_HOOKS_OFF に名前があれば止めない" "$(push "$app" 'git push')"
 CC_HOOKS_OFF="pr-gate-x" run pr-gate 2 "pr: CC_HOOKS_OFF の名前は全体で比べる" "$(push "$app" 'git push')"
+run pr-gate 2 "pr: gh pr create の別名の gh pr new も止める" "$(push "$app" 'gh pr new --title x')"
+run pr-gate 2 "pr: timeout の秒数を読み飛ばして止める" "$(push "$app" 'timeout -s KILL 60 git push')"
+run pr-gate 2 "pr: sudo -u の値を読み飛ばして止める" "$(push "$app" 'sudo -u me git push')"
+run pr-gate 2 "pr: bash -c の中の push も止める" "$(push "$app" 'bash -c \"git status && git push\"')"
+run pr-gate 0 "pr: bash -c の中に push が無ければ止めない" "$(push "$app" 'bash -c \"git status\"')"
+out=$(python3 -I - "$root" 2>&1 <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from hook_io import run_gate
+
+
+def broken():
+    raise KeyError("x")
+
+
+try:
+    run_gate("pr-gate", broken)
+except SystemExit as error:
+    print(f"exit {error.code}")
+EOF
+)
+check "pr: 想定外の例外で落ちたら、通さずに終了コード 2 で止める" grep -q "^exit 2$" <<<"$out"
+check "pr: 止めた時に CC_HOOKS_OFF での外し方を出す" grep -qF "CC_HOOKS_OFF=pr-gate で外せる" <<<"$out"
 printf '#!/bin/bash\necho "壊れた" >&2\nexit 3\n' >"$work/broken-check.sh"
 out=$(python3 -I - "$root" "$work/broken-check.sh" "$app" <<'EOF'
 import sys

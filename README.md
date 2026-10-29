@@ -138,6 +138,8 @@ flowchart LR
 | [shell-check](hooks/shell-check.py) | 💬 知らせる | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
 | [swift-format](hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 
+pr-gate と rules-require-read は、想定外の失敗で確かめられない時も止める。
+
 フックを止める時は、[環境変数](#-環境変数)の `CC_HOOKS_OFF` に名前を並べる。
 
 ```sh

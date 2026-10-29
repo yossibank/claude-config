@@ -5,11 +5,12 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git_root  # noqa: E402
-from hook_io import command_words, git_subcommand, read_payload, split_commands, tool_input  # noqa: E402
+from hook_io import command_words, git_subcommand, read_payload, run_gate, split_commands, tool_input  # noqa: E402
 from hook_messages import PR_UNCHECKED  # noqa: E402
 
 CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "run-check.sh")
 PUSH_SKIPPED = {"--tags", "--delete", "-d"}
+SHELLS = {"bash", "sh", "zsh"}
 
 
 def gated_repo(command, cwd):
@@ -18,7 +19,12 @@ def gated_repo(command, cwd):
         if words[:1] == ["cd"] and len(words) > 1:
             cwd = os.path.join(cwd, os.path.expanduser(words[1]))
             continue
-        if words[:3] == ["gh", "pr", "create"]:
+        if words[:1] and words[0] in SHELLS and "-c" in words[1:-1]:
+            inner = gated_repo(words[words.index("-c") + 1], cwd)
+            if inner is not None:
+                return inner
+            continue
+        if words[:2] == ["gh", "pr"] and words[2:3] in (["create"], ["new"]):
             return cwd
         if words[:1] != ["git"]:
             continue
@@ -67,4 +73,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_gate("pr-gate", main)

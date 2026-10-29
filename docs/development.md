@@ -93,7 +93,7 @@
 | [lib/dates.py](../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
 | [lib/git.py](../lib/git.py) | タイムアウト付きの git と、リポジトリの根。根は、まだ無いフォルダからも在る親をたどって探す |
 | [lib/git.sh](../lib/git.sh) | リポジトリの根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。既定のブランチと、GitHub での書き込みの権限 |
-| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし、止める時の出し方。止めたフックの判定と、編集する道具の名前 |
+| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし、止める時の出し方。止めたフックの判定、編集する道具の名前、例外でも止める門番の入口 `run_gate` |
 | [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
 | [lib/hook_state.py](../lib/hook_state.py) | 状態フォルダの場所と名前、作る時の古い状態ファイルの掃除 |
 | [lib/loader.py](../lib/loader.py) | ファイルの場所から .py を読み込む |
