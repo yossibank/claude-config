@@ -5,8 +5,8 @@ import urllib.parse
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from app_store import ReviewPageError, clean, fetch_json, review_pages  # noqa: E402
-from dates import MONTH, to_jst  # noqa: E402
-from script_io import Failure, fail  # noqa: E402
+from dates import month_of  # noqa: E402
+from script_io import Failure, fail, require_month  # noqa: E402
 
 
 LOOKUP = "https://itunes.apple.com/lookup"
@@ -31,7 +31,7 @@ def ratings(app, month):
         for entries in review_pages(app):
             older = False
             for entry in entries:
-                updated = to_jst(entry["updated"]["label"]).strftime("%Y-%m")
+                updated = month_of(entry["updated"]["label"])
                 if updated < month:
                     older = True
                     continue
@@ -56,12 +56,11 @@ def ratings(app, month):
 
 
 def main():
+    usage = "使い方: fetch-ratings.py <アプリの ID> <YYYY-MM>"
     if len(sys.argv) < 3:
-        fail("使い方: fetch-ratings.py <アプリの ID> <YYYY-MM>")
+        fail(usage)
 
-    app, month = sys.argv[1], sys.argv[2]
-    if not MONTH.fullmatch(month):
-        fail(f"月は YYYY-MM で書く: {month}")
+    app, month = sys.argv[1], require_month(sys.argv[2], usage)
 
     try:
         fields, notice = ratings(app, month)

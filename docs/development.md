@@ -98,7 +98,7 @@
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか |
 | `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
-| `tests/store-report.sh` | 通信せずに、引数の NG と、取れなかった数字を WARNING に書くかを確かめる |
+| `tests/store-report.sh` | 通信せずに、引数の NG、売上の表の集計、取れなかった数字を WARNING に書くかを確かめる |
 | `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
 
 テストが共通で使う処理は、`tests/lib/` に置く。

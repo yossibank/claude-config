@@ -1,20 +1,18 @@
-import calendar
 import os
 import re
 import sys
 import tempfile
-import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import git_root, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
-from hook_io import RULES_UNREAD  # noqa: E402
-from md_blocks import front_matter_end  # noqa: E402
+from dates import to_jst  # noqa: E402
+from hook_io import EDIT_TOOLS, RULES_UNREAD, git_root, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
+from md_blocks import front_matter  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
 RULES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
 STATE = os.path.join(tempfile.gettempdir(), "claude-rules-read")
-EDIT_TOOLS = ("Edit", "Write", "MultiEdit")
 STALE = 7 * 24 * 60 * 60
 TAIL_LIMIT = 32_000_000
 
@@ -40,15 +38,9 @@ def to_regex(pattern):
 
 
 def rule_paths(path):
-    lines = open(path, encoding="utf-8").read().split("\n")
-    if lines[:1] != ["---"]:
-        return []
-    patterns = []
-    for line in lines[1 : front_matter_end(lines)]:
-        match = re.match(r'^\s*-\s*"?([^"]+)"?\s*$', line)
-        if match:
-            patterns.append(to_regex(match.group(1)))
-    return patterns
+    fields = front_matter(Path(path).read_text(encoding="utf-8").split("\n")) or {}
+    paths = fields.get("paths")
+    return [to_regex(pattern) for pattern in paths] if isinstance(paths, list) else []
 
 
 def relative(path):
@@ -92,8 +84,8 @@ def scan(transcript):
         if '"compact_boundary"' in line:
             stamp = (parse_entry(line) or {}).get("timestamp", "")
             try:
-                compacted = max(compacted, calendar.timegm(time.strptime(stamp[:19], "%Y-%m-%dT%H:%M:%S")))
-            except (ValueError, TypeError):
+                compacted = max(compacted, to_jst(stamp).timestamp())
+            except (ValueError, TypeError, AttributeError):
                 pass
             loaded = set()
         elif '"instructions"' in line and "/rules/" in line:
@@ -112,9 +104,7 @@ def record_read(data, path):
         return
     remove_stale(STATE, STALE)
     os.makedirs(state_dir(data), exist_ok=True)
-    marker = os.path.join(state_dir(data), os.path.basename(path))
-    with open(marker, "a"):
-        os.utime(marker)
+    Path(state_dir(data), os.path.basename(path)).touch()
 
 
 def check_edit(data, path):

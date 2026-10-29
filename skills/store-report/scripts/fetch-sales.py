@@ -91,7 +91,10 @@ def sales_by_app(month):
         raise Failure(f"レポートを読めなかった: {error.code}") from error
     except (urllib.error.URLError, OSError, subprocess.CalledProcessError) as error:
         raise Failure(f"レポートを読めなかった: {type(error).__name__}") from error
+    return summarize(text)
 
+
+def summarize(text):
     rows = list(csv.DictReader(io.StringIO(text), delimiter="\t"))
     apps_by_sku = {row["SKU"]: row["Apple Identifier"] for row in rows if not row.get("Parent Identifier", "").strip()}
 

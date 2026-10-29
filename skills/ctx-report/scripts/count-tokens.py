@@ -5,8 +5,8 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from dates import MONTH, month_start, to_jst  # noqa: E402
-from script_io import fail  # noqa: E402
+from dates import month_of, month_start, to_jst  # noqa: E402
+from script_io import fail, require_month  # noqa: E402
 from transcripts import entries, projects_dir, touched_since  # noqa: E402
 
 WEIGHTS = {"input": 1, "write_5m": 1.25, "write_1h": 2, "read": 0.1, "output": 5}
@@ -26,7 +26,7 @@ def usage_of(path, seen, month=None):
             ai = entry.get("aiTitle") or ai
         if entry.get("timestamp") and first is None:
             first = to_jst(entry["timestamp"])
-            if month and first.strftime("%Y-%m") != month:
+            if month and month_of(entry["timestamp"]) != month:
                 return None
         if entry.get("cwd") and not place:
             place = os.path.basename(entry["cwd"].split("/.claude/worktrees/")[0])
@@ -67,12 +67,10 @@ def man(value):
 
 
 def main():
-    if len(sys.argv) < 2 or not MONTH.fullmatch(sys.argv[1]):
-        fail("使い方: count-tokens.py <YYYY-MM> [件数]")
+    month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: count-tokens.py <YYYY-MM> [件数]")
     if len(sys.argv) > 2 and not sys.argv[2].isdigit():
         fail("件数は数字で書く")
 
-    month = sys.argv[1]
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else 10
     projects = projects_dir()
     start = month_start(month)
