@@ -106,7 +106,7 @@
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
 | `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |
 | `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
-| `tests/store-report.sh` | 通信せずに、引数の NG、売上の表の集計、取れなかった数字を WARNING に書くかを確かめる |
+| `tests/store-report.sh` | 通信せずに、引数の NG と売上の表の集計を出せるか。取れなかった数字を WARNING に書くか |
 | `tests/swift-format.sh` | `.swiftformat` が無ければ何もしないか |
 | `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
 
