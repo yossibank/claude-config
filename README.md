@@ -263,4 +263,4 @@ flowchart LR
 
 ## 🧪 確かめ方
 
-claude-config を変えたら、`make verify` を通す。コマンドとスクリプトは [development.md](docs/development.md#-確かめ方) にある。スクリプトには [config-audit.py](scripts/config-audit.py) と [docs-section.sh](scripts/docs-section.sh) がある。
+claude-config を変えたら、`make verify` を通す。コマンドとスクリプトは [development.md](docs/development.md#-確かめ方) にある。スクリプトには [config-audit.py](scripts/config-audit.py)・[docs-section.sh](scripts/docs-section.sh)・[docs-section.py](scripts/docs-section.py) がある。

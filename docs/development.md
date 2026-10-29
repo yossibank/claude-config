@@ -172,6 +172,7 @@ claude-config を変えたら、`make verify` を通す。
 | [scripts/config-audit.py](../scripts/config-audit.py) | `make audit` の時 | README の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
 | [scripts/config-install.sh](../scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](../scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
+| [scripts/docs-section.py](../scripts/docs-section.py) | docs-section.sh から | docs-section.sh の中身。見出しを読み、節を切り出す |
 
 ## 🚀 足し方
 

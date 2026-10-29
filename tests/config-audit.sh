@@ -108,8 +108,8 @@ rm -f "$d/tests/swift-format.sh"
 expect_audit "$d" "hooks/swift-format.py:1 テストが無い: tests/swift-format.sh" "テストの無いフック"
 
 d=$(copy test-missing-script)
-rm -f "$d/tests/docs-section.sh"
-expect_audit "$d" "scripts/docs-section.sh:1 テストが無い: tests/docs-section.sh" "テストの無い scripts のファイル"
+rm -f "$d/tests/config-install.sh"
+expect_audit "$d" "scripts/config-install.sh:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
 
 d=$(copy test-missing-skill)
 rm -f "$d/tests/ui-record.sh"
