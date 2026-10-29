@@ -2,13 +2,16 @@ import functools
 import os
 import re
 import sys
+from dataclasses import dataclass
 from itertools import takewhile
+from pathlib import Path
+from typing import NamedTuple
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "lib"))
 
 from hook_io import read_payload, tool_input  # noqa: E402
-from md_blocks import fence_marks, front_matter_end  # noqa: E402
+from md_blocks import fence_marks, front_matter_end, table_under  # noqa: E402
 
 RULES = [os.path.join(ROOT, "rules", name) for name in ("docs-writing.md", "docs-claude.md", "docs-human.md")]
 
@@ -48,6 +51,25 @@ MEMORY = re.compile(r"/\.claude/projects/[^/]+/memory/")
 FOR_CLAUDE = re.compile(r"(^|/)(CLAUDE|SKILL)\.md$|/(rules|agents)/[^/]+\.md$")
 
 
+class Row(NamedTuple):
+    number: int
+    text: str
+    spoken: str
+    what: str
+
+
+@dataclass(frozen=True)
+class Doc:
+    path: str
+    lines: list
+    rows: list
+    for_claude: bool
+    readme: bool
+    in_docs: bool
+    human: bool
+    html: bool
+
+
 def bare(emoji):
     return emoji.replace("\ufe0f", "")
 
@@ -57,20 +79,10 @@ def rule_table(heading, first_column):
     lines = []
     for path in RULES:
         try:
-            lines += open(path, encoding="utf-8").read().split("\n")
+            lines += Path(path).read_text(encoding="utf-8").split("\n")
         except OSError:
             continue
-    if heading not in lines:
-        return []
-    tables = [[]]
-    for line in lines[lines.index(heading) + 1 :]:
-        if line.startswith("#"):
-            break
-        if line.startswith("|"):
-            tables[-1].append([cell.strip().strip("`") for cell in line.strip().strip("|").split("|")])
-        elif tables[-1]:
-            tables.append([])
-    return next((table[2:] for table in tables if table and table[0][0] == first_column), [])
+    return table_under(lines, heading, first_column)
 
 
 def heading_emojis():
@@ -118,68 +130,84 @@ def rows_of(lines):
     rows = []
     for number, (raw, (mark, _)) in enumerate(zip(lines[start:], fence_marks(lines[start:])), start + 1):
         if mark in ("open", "close"):
-            rows.append((number, "", "", "code"))
+            rows.append(Row(number, "", "", "code"))
             continue
         if mark == "code":
             continue
         linked = without_links(raw)
         plain = CODE.sub("", linked)
         spoken = CODE.sub(r"\1", linked)
-        rows.append((number, plain, spoken, kind(plain.strip())))
+        rows.append(Row(number, plain, spoken, kind(plain.strip())))
     return rows
+
+
+def read_doc(path):
+    lines = Path(path).read_text(encoding="utf-8", errors="replace").split("\n")
+    readme = os.path.basename(path).lower() == "readme.md"
+    in_docs = "/docs/" in path
+    return Doc(
+        path=path,
+        lines=lines,
+        rows=rows_of(lines),
+        for_claude=bool(FOR_CLAUDE.search(path)),
+        readme=readme,
+        in_docs=in_docs,
+        human=readme or in_docs or "/spec/" in path,
+        html=readme or in_docs,
+    )
 
 
 def sentences_of(text):
     return [part for part in text.split("。") if HAS_JA.search(part)]
 
 
-def check_size(path):
-    size = os.path.getsize(path)
-    if "/docs/" in path and size > SIZE_LIMIT:
+def heading_level(text):
+    return len(text) - len(text.lstrip("#"))
+
+
+def check_size(doc):
+    size = os.path.getsize(doc.path)
+    if doc.in_docs and size > SIZE_LIMIT:
         return [(1, f"docs の 1 ファイルが {SIZE_LIMIT // 1000}KB を超えている（{size // 1000}KB）。節ごとに分ける")]
     return []
 
 
-def check_headings(rows, for_claude, readme, human):
+def check_headings(doc):
     found = []
     heading = None
     marked = {}
     allowed = heading_emojis()
-    for number, text, _, what in rows:
+    for number, text, _, what in doc.rows:
         if what == "heading":
-            level = len(text) - len(text.lstrip("#"))
+            level = heading_level(text)
             if heading and level > heading[0] and not heading[1]:
                 found.append((number, "見出しとすぐ下の小見出しの間に本文を置く"))
             heading = [level, False]
             title = text.lstrip("#").strip()
             emojis = EMOJI.findall(title)
-            if for_claude and emojis:
+            if doc.for_claude and emojis:
                 found.append((number, "Claude が読む文書の見出しに絵文字を付けない"))
             elif emojis and (len(emojis) > 1 or not title.startswith(emojis[0])):
                 found.append((number, "見出しの絵文字は頭に 1 つだけにする"))
             if level == 2:
                 marked[number] = bool(emojis)
-                if emojis and human and allowed and bare(emojis[0]) not in allowed:
+                if emojis and doc.human and allowed and bare(emojis[0]) not in allowed:
                     found.append((number, f"## の見出しの絵文字は rules/docs-human.md の表から選ぶ（{emojis[0]}）"))
         elif what in ("body", "quote") and heading:
             heading[1] = True
-    if readme and marked and not all(marked.values()):
+    if doc.readme and marked and not all(marked.values()):
         first = min(number for number, has in marked.items() if not has)
         found.append((first, "README の ## の見出しには、頭に絵文字を 1 つ付ける"))
-    elif human and len(set(marked.values())) > 1:
+    elif doc.human and len(set(marked.values())) > 1:
         first = min(number for number, has in marked.items() if has != marked[min(marked)])
         found.append((first, "## の見出しは、すべてに絵文字を付けるか、どれにも付けないかにそろえる"))
     return found
 
 
-def heading_level(text):
-    return len(text) - len(text.lstrip("#"))
-
-
-def check_heading_names(rows):
+def check_heading_names(doc):
     found = []
     stack = [(0, set())]
-    for number, text, _, what in rows:
+    for number, text, _, what in doc.rows:
         if what != "heading":
             continue
         level = heading_level(text)
@@ -195,12 +223,12 @@ def check_heading_names(rows):
     return found
 
 
-def check_readme_order(rows):
+def check_readme_order(doc):
     order = readme_order()
     emojis = [emoji for emoji, _ in order]
     found = []
     top = 0
-    for number, text, _, what in rows:
+    for number, text, _, what in doc.rows:
         if what != "heading" or heading_level(text) != 2:
             continue
         marks = EMOJI.findall(text)
@@ -216,25 +244,26 @@ def is_decoration(line):
     return not DECORATION.sub("", line).strip()
 
 
-def check_opening(rows, want, lines):
-    titles = [index for index, row in enumerate(rows) if row[3] == "heading"]
-    if not titles or heading_level(rows[titles[0]][1]) != 1:
+def check_opening(doc, want):
+    rows = doc.rows
+    titles = [index for index, row in enumerate(rows) if row.what == "heading"]
+    if not titles or heading_level(rows[titles[0]].text) != 1:
         return []
-    index = titles[0]
-    after = next((row for row in rows[index + 1 :] if row[3] != "blank"), None)
-    alert = ALERT.match(after[1].strip()) if after else None
+    title = rows[titles[0]]
+    after = next((row for row in rows[titles[0] + 1 :] if row.what != "blank"), None)
+    alert = ALERT.match(after.text.strip()) if after else None
     if want == "note" and not (alert and alert.group(1).upper() == "NOTE"):
-        return [(rows[index][0], "README 以外の人が読む文書は、タイトルの直後に [!NOTE] を置く")]
-    if want == "sentence" and not (after and after[3] == "body" and not is_decoration(lines[after[0] - 1])):
-        return [(rows[index][0], "タイトルの直後に、何があるかを 1 文で書く")]
+        return [(title.number, "README 以外の人が読む文書は、タイトルの直後に [!NOTE] を置く")]
+    if want == "sentence" and not (after and after.what == "body" and not is_decoration(doc.lines[after.number - 1])):
+        return [(title.number, "タイトルの直後に、何があるかを 1 文で書く")]
     return []
 
 
-def check_sections(rows):
+def check_sections(doc):
     found = []
     bolds = alerts = 0
     after_title = False
-    for number, text, _, what in rows:
+    for number, text, _, what in doc.rows:
         if what == "heading":
             bolds = alerts = 0
             after_title = heading_level(text) == 1
@@ -255,7 +284,8 @@ def check_sections(rows):
     return found
 
 
-def check_blocks(lines):
+def check_blocks(doc):
+    lines = doc.lines
     start = body_start(lines)
     found = []
     language = ""
@@ -280,20 +310,21 @@ def check_tree(block):
     return [(number, "フォルダの木には名前だけを書く。説明は表に分ける") for number, name in names if TREE_NOTE.search(name)]
 
 
-def check_toc(rows, lines):
+def check_toc(doc):
     found = []
     run = 0
-    for number, text, _, what in rows:
+    for number, text, _, what in doc.rows:
         if what == "heading" and heading_level(text) >= 2:
             break
-        run = run + 1 if what == "list" and TOC_ITEM.match(lines[number - 1].strip()) else 0
+        run = run + 1 if what == "list" and TOC_ITEM.match(doc.lines[number - 1].strip()) else 0
         if run == 2:
             found.append((number - 1, "目次は GitHub が作るので、手で書かない"))
     return found
 
 
-def check_badges(rows, lines):
-    badges = [(number, url) for number, _, _, what in rows if what != "code" for url in BADGE.findall(lines[number - 1])]
+def check_badges(doc):
+    lines = doc.lines
+    badges = [(number, url) for number, _, _, what in doc.rows if what != "code" for url in BADGE.findall(lines[number - 1])]
     found = []
     first_tech = last_state = None
     rank = 0
@@ -319,12 +350,12 @@ def check_badges(rows, lines):
     return found
 
 
-def check_inline_code(rows, lines):
+def check_inline_code(doc):
     found = []
-    for number, _, _, what in rows:
+    for number, _, _, what in doc.rows:
         if what in ("code", "blank", "heading"):
             continue
-        for span in CODE.findall(without_links(lines[number - 1])):
+        for span in CODE.findall(without_links(doc.lines[number - 1])):
             if len(span) > INLINE_CODE_LIMIT and re.search(r"\s", span) and COMMAND.match(span):
                 found.append((number, f"文の中に長いコマンドを書かない（{len(span)} 字）。コードブロックに出す"))
     return found
@@ -332,7 +363,7 @@ def check_inline_code(rows, lines):
 
 def check_preface(rows, index):
     number, text, _, what = rows[index]
-    after = [w for _, _, _, w in rows[index + 1 :] if w != "blank"]
+    after = [row.what for row in rows[index + 1 :] if row.what != "blank"]
     following = after[0] if after else None
     items = len(list(takewhile(lambda w: w == following, after)))
     if following == "table":
@@ -344,10 +375,10 @@ def check_preface(rows, index):
     return []
 
 
-def check_list_endings(rows):
+def check_list_endings(doc):
     found = []
     groups = {}
-    for number, _, spoken, what in rows:
+    for number, _, spoken, what in doc.rows:
         match = LIST_ITEM.match(spoken) if what == "list" else None
         if not match:
             groups = {}
@@ -365,10 +396,11 @@ def check_list_endings(rows):
     return found
 
 
-def check_marks(number, text, html, for_claude):
+def check_marks(doc, row):
+    number, text = row.number, row.text
     found = []
     for closing, name in TAG.findall(text):
-        if not (html and name.lower() in HTML_TAGS):
+        if not (doc.html and name.lower() in HTML_TAGS):
             found.append((number, f"使ってよい HTML ではない（<{closing}{name}>）"))
             break
     if ITALIC.search(BOLD.sub("", text)):
@@ -376,14 +408,15 @@ def check_marks(number, text, html, for_claude):
     if SPACE.search(text):
         found.append((number, "日本語と英数字の間に半角スペースを入れる"))
     emojis = {emoji.rstrip("️") for emoji in EMOJI.findall(text)}
-    if for_claude and emojis:
+    if doc.for_claude and emojis:
         found.append((number, "Claude が読む文書に絵文字を使わない"))
     elif emojis - BODY_EMOJI:
         found.append((number, "本文の絵文字は rules/docs-human.md の表にあるものだけを使う"))
     return found
 
 
-def check_length(number, spoken, what):
+def check_length(row):
+    number, spoken, what = row.number, row.spoken, row.what
     found = []
     body = re.sub(r"<[^>]*>", "", spoken.strip())
     if what == "table":
@@ -402,31 +435,45 @@ def check_length(number, spoken, what):
     return found
 
 
-def check(path):
-    for_claude = bool(FOR_CLAUDE.search(path))
-    html = os.path.basename(path).lower() == "readme.md" or "/docs/" in path
-    lines = open(path, encoding="utf-8", errors="replace").read().split("\n")
-    rows = rows_of(lines)
-    readme = os.path.basename(path).lower() == "readme.md"
-    human = readme or "/docs/" in path or "/spec/" in path
-    found = check_size(path) + check_headings(rows, for_claude, readme, human)
-    found += check_heading_names(rows) + check_sections(rows) + check_blocks(lines)
-    found += check_toc(rows, lines) + check_badges(rows, lines) + check_list_endings(rows)
-    if readme:
-        found += check_readme_order(rows)
-    if for_claude:
-        found += check_inline_code(rows, lines)
-    if for_claude or readme:
-        found += check_opening(rows, "sentence", lines)
-    elif human:
-        found += check_opening(rows, "note", lines)
-    for index, (number, text, spoken, what) in enumerate(rows):
-        if what in ("code", "blank", "heading"):
+def check_rows(doc):
+    found = []
+    for index, row in enumerate(doc.rows):
+        if row.what in ("code", "blank", "heading"):
             continue
-        found += check_preface(rows, index)
-        found += check_marks(number, text, html, for_claude)
-        found += check_length(number, spoken, what)
-    return sorted(found)
+        found += check_preface(doc.rows, index)
+        found += check_marks(doc, row)
+        found += check_length(row)
+    return found
+
+
+def always(doc):
+    return True
+
+
+def opens_with_sentence(doc):
+    return doc.for_claude or doc.readme
+
+
+CHECKS = [
+    (always, check_size),
+    (always, check_headings),
+    (always, check_heading_names),
+    (always, check_sections),
+    (always, check_blocks),
+    (always, check_toc),
+    (always, check_badges),
+    (always, check_list_endings),
+    (lambda doc: doc.readme, check_readme_order),
+    (lambda doc: doc.for_claude, check_inline_code),
+    (opens_with_sentence, functools.partial(check_opening, want="sentence")),
+    (lambda doc: doc.human and not opens_with_sentence(doc), functools.partial(check_opening, want="note")),
+    (always, check_rows),
+]
+
+
+def check(path):
+    doc = read_doc(path)
+    return sorted(found for applies, run in CHECKS if applies(doc) for found in run(doc))
 
 
 def main():
