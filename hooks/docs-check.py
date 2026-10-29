@@ -411,9 +411,10 @@ def check_marks(doc, row):
     if SPACE.search(text):
         found.append((number, "日本語と英数字の間に半角スペースを入れる"))
     emojis = {bare(emoji) for emoji in EMOJI.findall(text)}
+    allowed = body_emojis()
     if doc.for_claude and emojis:
         found.append((number, "Claude が読む文書に絵文字を使わない"))
-    elif emojis - body_emojis():
+    elif allowed and emojis - allowed:
         found.append((number, "本文の絵文字は rules/docs-human.md の表にあるものだけを使う"))
     return found
 
