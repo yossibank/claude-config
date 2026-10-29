@@ -6,7 +6,7 @@ import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import git, git_root, read_payload, remove_stale, safe_name, split_commands, tool_input  # noqa: E402
+from hook_io import git, git_root, hook_off, read_payload, remove_stale, safe_name, split_commands, tool_input  # noqa: E402
 from hook_stops import BASH_EDITED  # noqa: E402
 from modules import load_hook  # noqa: E402
 
@@ -73,15 +73,16 @@ def after(data):
         f"{BASH_EDITED}。ファイルの変更は Edit・Write で行う。書き換えたファイルに、Edit の後と同じ検査をかけた。",
         *edited,
     ]
-    guard = load_hook("rules-require-read")
-    rules = sorted({name for path in edited for name in guard.matching_rules(path)})
-    if rules:
-        lines.append("当たる決まり（まだ読んでいなければ Read で読む）: " + "、".join(rules))
-    docs = load_hook("docs-check")
-    shell = load_hook("shell-check")
+    if not hook_off("rules-require-read"):
+        guard = load_hook("rules-require-read")
+        rules = sorted({name for path in edited for name in guard.matching_rules(path)})
+        if rules:
+            lines.append("当たる決まり（まだ読んでいなければ Read で読む）: " + "、".join(rules))
+    checks = {".md": "docs-check", ".sh": "shell-check"}
     for path in edited:
-        found = docs.check(path) if path.endswith(".md") else shell.check(path) if path.endswith(".sh") else []
-        lines += [f"{path}:{n}: {m}" for n, m in found]
+        name = next((hook for suffix, hook in checks.items() if path.endswith(suffix)), None)
+        if name and not hook_off(name):
+            lines += [f"{path}:{n}: {m}" for n, m in load_hook(name).check(path)]
     print("\n".join(lines), file=sys.stderr)
     sys.exit(2)
 

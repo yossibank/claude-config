@@ -173,6 +173,15 @@ run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t6 'sed
 echo 'z' >>"$app/docs/日本語.md"
 run rules-detect-bash-edits 2 "bash: 日本語の名前のファイルの書き換えも知らせる" "$(bash_call t6 'sed -i')" post
 rm -f "$app/docs/日本語.md"
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t7 'sed -i')" pre
+printf '# t\n\n```\nx\n```\n' >"$app/docs/off.md"
+out=$(bash_call t7 'sed -i' | CLAUDE_HOOKS_OFF="docs-check,rules-require-read" bash "$hooks" rules-detect-bash-edits post 2>&1)
+if [[ $out == *off.md* && $out != *言語を付ける* && $out != *当たる決まり* ]]; then
+    ok "bash: CLAUDE_HOOKS_OFF で止めた検査は、Bash の書き換えにもかけない"
+else
+    ng "bash: CLAUDE_HOOKS_OFF で止めた検査は、Bash の書き換えにもかけない" "$out"
+fi
+rm -f "$app/docs/off.md"
 
 push() {
     echo "{\"cwd\":\"$1\",\"tool_input\":{\"command\":\"$2\"}}"
@@ -200,5 +209,11 @@ run pr-gate 0 "pr: 関係ないコマンドは止めない" "$(push "$app" 'git 
 run pr-gate 2 "pr: cd した先のリポジトリを見る" "$(push "$work" "cd $app && git push")"
 CLAUDE_HOOKS_OFF="rules-require-read pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(push "$app" 'git push')"
 CLAUDE_HOOKS_OFF="pr-gate-x" run pr-gate 2 "pr: CLAUDE_HOOKS_OFF の名前は全体で比べる" "$(push "$app" 'git push')"
+CLAUDE_HOOKS_OFF="rules-require-read,pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はカンマで区切ってもよい" "$(push "$app" 'git push')"
+CLAUDE_HOOKS_OFF=$'rules-require-read\tpr-gate' run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はタブで区切ってもよい" "$(push "$app" 'git push')"
+out=$(push "$app" 'git status' | CLAUDE_HOOKS_OFF="pr-gate.py" bash "$hooks" pr-gate 2>&1)
+check "pr: CLAUDE_HOOKS_OFF に hooks/ に無い名前があれば警告する" grep -q "hooks/ に無い名前がある: pr-gate.py" <<<"$out"
+out=$(push "$app" 'git status' | CLAUDE_HOOKS_OFF="" bash "$hooks" pr-gate 2>&1)
+check "pr: CLAUDE_HOOKS_OFF が空なら何も出さない" test -z "$out"
 
 finish

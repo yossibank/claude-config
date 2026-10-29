@@ -6,6 +6,7 @@ import sys
 import time
 
 SEGMENT = re.compile(r"&&|\|\||;|\|")
+OFF_SEPARATOR = re.compile(r"[\s,]+")
 
 
 def read_payload():
@@ -14,6 +15,10 @@ def read_payload():
     except ValueError:
         return None
     return data if isinstance(data, dict) else None
+
+
+def hook_off(name):
+    return name in OFF_SEPARATOR.split(os.environ.get("CLAUDE_HOOKS_OFF", ""))
 
 
 def tool_input(payload):

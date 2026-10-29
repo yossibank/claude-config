@@ -122,6 +122,10 @@ flowchart LR
 
 フックを止める時は、[環境変数](#-環境変数)の `CLAUDE_HOOKS_OFF` に名前を並べる。
 
+```sh
+CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
+```
+
 ## 🧰 スキル
 
 スキルは、Claude が要る時に自分で呼ぶ。人は `/<スキル>` で呼ぶ。
@@ -230,7 +234,7 @@ flowchart LR
 
 | 変数 | 使う所 | 中身 |
 | --- | --- | --- |
-| `CLAUDE_HOOKS_OFF` | hooks/run.sh | 空白で区切って並べた名前のフックを動かさない。例は `CLAUDE_HOOKS_OFF="pr-gate rules-require-read"` |
+| `CLAUDE_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr で知らせる |
 | `CLAUDE_PROJECTS` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `APPS_DIR` | app-init、store-report | アプリのリポジトリの置き場所 |
 | `DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
@@ -251,7 +255,7 @@ flowchart LR
 
 | ファイル | 使う所 | 中身 |
 | --- | --- | --- |
-| [lib/hook_io.py](lib/hook_io.py) | 各フック | 入力の JSON、コマンドの区切り、タイムアウト付きの git、状態ファイルの掃除 |
+| [lib/hook_io.py](lib/hook_io.py) | 各フック | 入力の JSON、コマンドの区切り、止めたフックの判定、タイムアウト付きの git、状態ファイルの掃除 |
 | [lib/hook_stops.py](lib/hook_stops.py) | 止めるフック、collect-corrections.py | フックが止める時の文の書き出し。config-learn も数えるのに使う |
 | [lib/md_blocks.py](lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py | Markdown の frontmatter とコードの囲みの見分け方 |
 | [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py、count-tokens.py、フック | 会話の記録の読み方 |
