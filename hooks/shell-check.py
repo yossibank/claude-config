@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
@@ -19,7 +20,7 @@ def check(path):
     if result and result.returncode:
         reason = result.stderr.strip().splitlines()
         found.append((1, "bash -n が通らない" + (f": {reason[-1]}" if reason else "")))
-    for number, line in enumerate(open(path, encoding="utf-8", errors="ignore").read().split("\n"), 1):
+    for number, line in enumerate(Path(path).read_text(encoding="utf-8", errors="ignore").split("\n"), 1):
         if VAR_BEFORE_WIDE.search(line):
             found.append((number, "変数の直後に全角の文字がある。bash は変数名の一部とみなすので ${名前} で囲む"))
     return found
