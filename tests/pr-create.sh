@@ -3,6 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
+source "$root/lib/git.sh"
 
 export HOME="$work/home"
 mkdir -p "$HOME"
@@ -30,18 +31,20 @@ rm -f "$repo/hooks.py" "$repo/日本語.md"
 
 expect "確認が無い" "body: 確認が無ければ本文を作らない" bash "$scripts/write-body.sh" "$repo" origin/main
 echo b >"$repo/a|b.md"
+echo b >"$repo/日本語.md"
 bash "$scripts/run-check.sh" "$repo" true true >/dev/null
 expect OK "body: 確認が通れば本文を作る" bash "$scripts/write-body.sh" "$repo" origin/main "画面"
-pr_body="$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-body.txt)"
+pr_body=$(git_file "$repo" pr-body.txt)
 check "body: 通った確認に ✅ を付ける" grep -qF '| true | ✅ 通った |' "$pr_body"
 check "body: 未検証の項目に ⬜ を付ける" grep -qF '| 画面 | ⬜ 未検証 |' "$pr_body"
 check "body: 変えたファイルを表の行にし、| を逃がす" grep -qF '| `a\|b.md` | |' "$pr_body"
+check "body: 日本語の名前のファイルを、引用符と 8 進の表記にせずに出す" grep -qF '| `日本語.md` | |' "$pr_body"
 echo c >>"$repo/a.md"
 expect "確認の後に変更がある" "body: 確認の後に変えたら止まる" bash "$scripts/write-body.sh" "$repo" origin/main
 git -C "$repo" checkout -q -- a.md
-rm -f "$repo/a|b.md"
+rm -f "$repo/a|b.md" "$repo/日本語.md"
 
-lock="$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks).lock"
+lock="$(git_file "$repo" pr-checks).lock"
 mkdir "$lock"
 touch -t 202001010000 "$lock"
 expect OK "run-check: 古いロックは外して進む" bash "$scripts/run-check.sh" "$repo" stale true

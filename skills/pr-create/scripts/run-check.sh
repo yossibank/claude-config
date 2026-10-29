@@ -8,7 +8,7 @@ source "$(dirname "$0")/../../../lib/git.sh"
 use_repo "$1"
 label=$2
 shift 2
-record=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks)
+record=$(git_file "$repo" pr-checks)
 lock="$record.lock"
 
 update_record() {
@@ -58,7 +58,7 @@ fi
 
 [[ $# -gt 0 ]] || { echo "NG 確認のコマンドを渡す"; exit 1; }
 
-logs=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-check-logs)
+logs=$(git_file "$repo" pr-check-logs)
 log="$logs/${label//[^A-Za-z0-9._-]/_}.log"
 mkdir -p "$logs"
 

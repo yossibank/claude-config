@@ -9,8 +9,8 @@ use_repo "$1"
 base=$(git -C "$repo" merge-base "$2" HEAD)
 shift 2
 
-record=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-checks)
-body=$(git -C "$repo" rev-parse --path-format=absolute --git-path pr-body.txt)
+record=$(git_file "$repo" pr-checks)
+body=$(git_file "$repo" pr-body.txt)
 
 status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$status"; exit 1; }
 
@@ -23,8 +23,8 @@ status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$
     echo
     echo "| ファイル | 変えたこと |"
     echo "| --- | --- |"
-    { git -C "$repo" diff --name-only "$base"; git -C "$repo" ls-files --others --exclude-standard; } \
-        | sort -u | sed 's/|/\\|/g; s/.*/| `&` | |/'
+    { git -C "$repo" diff --name-only -z "$base"; git -C "$repo" ls-files -z --others --exclude-standard; } \
+        | tr '\0' '\n' | sort -u | sed 's/|/\\|/g; s/.*/| `&` | |/'
     echo
     echo "## 🧪 確認"
     echo

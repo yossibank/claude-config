@@ -5,6 +5,10 @@ resolve_repo() {
     }
 }
 
+git_file() {
+    git -C "$1" rev-parse --path-format=absolute --git-path "$2"
+}
+
 default_branch() {
     git -C "$1" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main
 }
