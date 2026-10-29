@@ -140,21 +140,21 @@ expect_audit "$d" "最後の ## は「返す形」" "agents の最後の節が�
 
 d=$(copy prefix-unknown)
 git -C "$d" mv -q hooks/swift-format.py hooks/format-swift.py 2>/dev/null || mv "$d/hooks/swift-format.py" "$d/hooks/format-swift.py"
-expect_audit "$d" "名前の接頭語が README の表に無い: format-swift.py" "表に無い接頭語のフック"
+expect_audit "$d" "名前の接頭語が接頭語の表に無い: format-swift.py" "表に無い接頭語のフック"
 
 d=$(copy prefix-place)
 mv "$d/scripts/docs-section.sh" "$d/scripts/pr-section.sh"
 expect_audit "$d" "接頭語 pr- は scripts に使わない" "使う所の違う接頭語"
 
 d=$(copy verb-ok)
-replace "$d/README.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
+replace "$d/docs/development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
 mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/glue-frames.sh"
 replace "$d/skills/ui-record/SKILL.md" 'tile-frames.sh' 'glue-frames.sh'
-expect_audit "$d" OK "README の動詞の表にある動詞で始まるスクリプト"
+expect_audit "$d" OK "動詞の表にある動詞で始まるスクリプト"
 
 d=$(copy verb-ng)
 mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/frames-tile.sh"
-expect_audit "$d" "頭の動詞が README の表に無い: frames" "動詞で始まらないスクリプト"
+expect_audit "$d" "頭の動詞が動詞の表に無い: frames" "動詞で始まらないスクリプト"
 
 d=$(copy path-ok)
 printf '\n`hooks/<名前>.py` と `scripts/verify.sh` を読む。\n' >>"$d/docs/architecture-ios.md"

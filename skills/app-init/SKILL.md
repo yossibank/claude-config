@@ -33,14 +33,14 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 
 `create-app.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `APPS_DIR` で変えられる。
 
-- フォルダに `docs/` のほかの中身があれば、`NG` を出して止まる
-- 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる
-- 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる
-- ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える
-- `docs/overview.md`・`docs/roadmap.md` が無ければ、`app-plan` のひな形を置く
-- app-plan のひな形は、app-plan の `templates/` から直に写す。app-plan が同じ claude-config に要る
-- overview の最初の 1 文を、README の説明の文に写す
-- `git init` し、最初の commit を作る
+- フォルダに `docs/` のほかの中身があれば、`NG` を出して止まる。
+- 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる。
+- 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる。
+- ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える。
+- `docs/overview.md`・`docs/roadmap.md` が無ければ、`app-plan` のひな形を置く。
+- app-plan のひな形は、app-plan の `templates/` から直に写す。app-plan が同じ claude-config に要る。
+- overview の最初の 1 文を、README の説明の文に写す。
+- `git init` し、最初の commit を作る。
 
 置き換えた後の名前は、次の形になる。
 
@@ -70,5 +70,5 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 
 - 作ったリポジトリのパス
 - `make verify` の結果
-- GitHub に作ったか。作った時は URL
-- 公開の前に要ること。アプリアイコンは空なので、`AppIcon` を入れる
+- GitHub に作ったか（作った時は URL）
+- 公開の前に要ること（空の `AppIcon` に入れるアプリアイコンなど）

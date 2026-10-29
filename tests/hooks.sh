@@ -64,9 +64,9 @@ wait
 run rules-require-read 0 "rules: 同時に Read しても取りこぼさない" "$(edit s3 main "$work/empty.jsonl" "$swift")"
 fresh="$work/t2.jsonl"
 : >"$fresh"
-for name in docs-writing.md docs-app.md; do read_rule s2 main "$name"; done
+for name in docs-writing.md docs-app.md docs-human.md; do read_rule s2 main "$name"; done
 run rules-require-read 2 "rules: サブエージェントは親の記録を使わない" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
-for name in docs-writing.md docs-app.md; do read_rule s2 a1 "$name"; done
+for name in docs-writing.md docs-app.md docs-human.md; do read_rule s2 a1 "$name"; done
 run rules-require-read 0 "rules: サブエージェントが自分で読めば通る" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
 CLAUDE_HOOKS_OFF="pr-gate rules-require-read" run rules-require-read 0 "rules: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(edit s9 main "$fresh" "$swift")"
 run rules-require-read 0 "rules: 壊れた入力では止めない" "not json"
@@ -148,6 +148,11 @@ doc_case 0 "Claude が読む文書の短いコードは通る" rules/x.md $'# t\
 doc_case 2 "Claude が読む文書の文の中に長いコマンドを書かない" rules/x.md $'# t\n\nあ。\n\n- `git log --oneline --graph a..b -- x y z w` を走らせる。' "長いコマンドを書かない"
 doc_case 2 "Claude が読む文書のタイトルの直後に 1 文を書く" rules/x.md $'# t\n\n- 項目である。' "タイトルの直後に、何があるかを 1 文"
 doc_case 0 "コマンドではない長いコード片は止めない" rules/x.md $'# t\n\nあ。\n\n- 向きは `App → Feature → Service → FeatureView → CoreUI` である。\n- `#expect(actual == expected, "ずれている時の説明")` で比べる。'
+doc_case 0 "語句だけの一覧は句点を付けなくてよい" README.md $'# t\n\nあ。\n\n- りんご\n- みかん'
+doc_case 0 "「」の中の句点は文の中の句点に数えない" README.md $'# t\n\nあ。\n\n- 「。」の使い方'
+doc_case 2 "中に句点がある項目は末尾も句点で終える" README.md $'# t\n\nあ。\n\n- 一つ目。二つ目' "末尾も「。」"
+doc_case 2 "1 つの一覧の中で文末をそろえる" README.md $'# t\n\nあ。\n\n- 文である。\n- 語句' "文末をそろえる"
+doc_case 0 "入れ子の一覧は親と別に文末をそろえる" README.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n2. 次の手順である。'
 doc_case 2 "パスで始まる長いコマンドは止める" rules/x.md $'# t\n\nあ。\n\n- `~/Applications/AI/claude-config/scripts/docs-section.sh <file>` を使う。' "長いコマンドを書かない"
 doc_case 0 "README と docs の外は ## の絵文字を表から選ばせない" .github/pull_request_template.md $'## 👀 見どころ\n\nあ。\n\n## 🔗 関連\n\nい。'
 doc_case 2 "タイトルの直後がバッジだけなら 1 文と数えない" README.md $'# t\n\n'"$state_badge"$'\n\nあ。' "タイトルの直後に、何があるかを 1 文"

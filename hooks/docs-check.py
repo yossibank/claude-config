@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(ROOT, "lib"))
 from hook_io import read_payload, tool_input  # noqa: E402
 from md_blocks import fence_marks, front_matter_end  # noqa: E402
 
-RULES = os.path.join(ROOT, "rules", "docs-writing.md")
+RULES = [os.path.join(ROOT, "rules", name) for name in ("docs-writing.md", "docs-claude.md", "docs-human.md")]
 
 JA = r"々぀-ヺー-ヿ一-鿿"
 HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
@@ -27,6 +27,7 @@ TOC_TITLES = {"目次", "contents", "table of contents"}
 COUNT = re.compile(r"([0-9０-９]+)\s*(つ|段|個|点|項目|種類|件)")
 NEXT = re.compile(r"次の\s*[0-9０-９]+\s*(つ|段|個|点|項目|種類|件)")
 LIST = re.compile(r"^([-*]|\d+\.)\s")
+LIST_ITEM = re.compile(r"^(\s*)(?:[-*]|\d+\.)\s+(.*)$")
 TAG = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9]*)")
 BOLD = re.compile(r"\*\*[^*\n]+?\*\*")
 ITALIC = re.compile(r"(?<![A-Za-z0-9*])\*(?=\S)[^*\n]+?(?<=\S)\*(?![A-Za-z0-9*])|(?<![A-Za-z0-9_])_(?=\S)[^_\n]+?(?<=\S)_(?![A-Za-z0-9_])")
@@ -53,10 +54,12 @@ def bare(emoji):
 
 @functools.cache
 def rule_table(heading, first_column):
-    try:
-        lines = open(RULES, encoding="utf-8").read().split("\n")
-    except OSError:
-        return []
+    lines = []
+    for path in RULES:
+        try:
+            lines += open(path, encoding="utf-8").read().split("\n")
+        except OSError:
+            continue
     if heading not in lines:
         return []
     tables = [[]]
@@ -71,7 +74,7 @@ def rule_table(heading, first_column):
 
 
 def heading_emojis():
-    return {bare(row[1]): row[0] for row in rule_table("### 見出しの絵文字", "節")}
+    return {bare(row[1]): row[0] for row in rule_table("### 見出しの絵文字の表", "節")}
 
 
 def readme_order():
@@ -157,7 +160,7 @@ def check_headings(rows, for_claude, readme, human):
             if level == 2:
                 marked[number] = bool(emojis)
                 if emojis and human and allowed and bare(emojis[0]) not in allowed:
-                    found.append((number, f"## の見出しの絵文字は rules/docs-writing.md の表から選ぶ（{emojis[0]}）"))
+                    found.append((number, f"## の見出しの絵文字は rules/docs-human.md の表から選ぶ（{emojis[0]}）"))
         elif what in ("body", "quote") and heading:
             heading[1] = True
     if readme and marked and not all(marked.values()):
@@ -341,6 +344,27 @@ def check_preface(rows, index):
     return []
 
 
+def check_list_endings(rows):
+    found = []
+    groups = {}
+    for number, _, spoken, what in rows:
+        match = LIST_ITEM.match(spoken) if what == "list" else None
+        if not match:
+            groups = {}
+            continue
+        indent, text = len(match.group(1)), match.group(2).strip()
+        if text.startswith(("[ ]", "[x]")):
+            continue
+        groups = {key: value for key, value in groups.items() if key <= indent}
+        ends = text.endswith("。")
+        if "。" in re.sub(r"「[^」]*」", "", text) and not ends:
+            found.append((number, "中に「。」がある項目は、末尾も「。」で終える"))
+        first, first_ends = groups.setdefault(indent, (number, ends))
+        if first_ends != ends:
+            found.append((number, f"{first} 行目からの一覧と文末をそろえる。どれも「。」で終えるか、どれにも付けない"))
+    return found
+
+
 def check_marks(number, text, html, for_claude):
     found = []
     for closing, name in TAG.findall(text):
@@ -355,7 +379,7 @@ def check_marks(number, text, html, for_claude):
     if for_claude and emojis:
         found.append((number, "Claude が読む文書に絵文字を使わない"))
     elif emojis - BODY_EMOJI:
-        found.append((number, "本文の絵文字は rules/docs-writing.md の表にあるものだけを使う"))
+        found.append((number, "本文の絵文字は rules/docs-human.md の表にあるものだけを使う"))
     return found
 
 
@@ -387,7 +411,7 @@ def check(path):
     human = readme or "/docs/" in path or "/spec/" in path
     found = check_size(path) + check_headings(rows, for_claude, readme, human)
     found += check_heading_names(rows) + check_sections(rows) + check_blocks(lines)
-    found += check_toc(rows, lines) + check_badges(rows, lines)
+    found += check_toc(rows, lines) + check_badges(rows, lines) + check_list_endings(rows)
     if readme:
         found += check_readme_order(rows)
     if for_claude:
@@ -418,7 +442,7 @@ def main():
         if path.endswith(".md") and os.path.isfile(path) and not MEMORY.search(path):
             report += [f"{path}:{n}: {m}" for n, m in check(path)]
     if report:
-        print("文書の決まり（rules/docs-writing.md）に合わない箇所がある。直す。", file=sys.stderr)
+        print("文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。", file=sys.stderr)
         print("\n".join(report), file=sys.stderr)
         sys.exit(2)
 
