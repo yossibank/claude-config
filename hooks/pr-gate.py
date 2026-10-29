@@ -13,16 +13,26 @@ PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 SHELLS = {"bash", "sh", "zsh"}
 
 
+def shell_command(words):
+    if words[0] not in SHELLS:
+        return None
+    for index, word in enumerate(words[1:-1], 1):
+        if word.startswith("-") and not word.startswith("--") and "c" in word:
+            return words[index + 1]
+    return None
+
+
 def gated_repo(command, cwd):
     for parts in split_commands(command):
         words = command_words(parts)
         if words[:1] == ["cd"] and len(words) > 1:
             cwd = os.path.join(cwd, os.path.expanduser(words[1]))
             continue
-        if words[:1] and words[0] in SHELLS and "-c" in words[1:-1]:
-            inner = gated_repo(words[words.index("-c") + 1], cwd)
-            if inner is not None:
-                return inner
+        inner = shell_command(words) if words else None
+        if inner is not None:
+            repo = gated_repo(inner, cwd)
+            if repo is not None:
+                return repo
             continue
         if words[:2] == ["gh", "pr"] and words[2:3] in (["create"], ["new"]):
             return cwd

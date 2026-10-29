@@ -49,6 +49,8 @@ run pr-gate 2 "pr: gh pr create の別名の gh pr new も止める" "$(push "$a
 run pr-gate 2 "pr: timeout の秒数を読み飛ばして止める" "$(push "$app" 'timeout -s KILL 60 git push')"
 run pr-gate 2 "pr: sudo -u の値を読み飛ばして止める" "$(push "$app" 'sudo -u me git push')"
 run pr-gate 2 "pr: bash -c の中の push も止める" "$(push "$app" 'bash -c \"git status && git push\"')"
+run pr-gate 2 "pr: bash -lc のようにまとめた旗の中の push も止める" "$(push "$app" 'bash -lc \"git push\"')"
+run pr-gate 2 "pr: sh -ec の中の gh pr create も止める" "$(push "$app" 'sh -ec \"gh pr create --title x\"')"
 run pr-gate 0 "pr: bash -c の中に push が無ければ止めない" "$(push "$app" 'bash -c \"git status\"')"
 out=$(python3 -I - "$root" 2>&1 <<'EOF'
 import sys
