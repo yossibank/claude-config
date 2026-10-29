@@ -8,7 +8,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "lib"))
 
 from hook_io import read_payload, tool_input  # noqa: E402
-from md_blocks import QUOTE, front_matter_end, is_fence  # noqa: E402
+from md_blocks import fence_marks, front_matter_end  # noqa: E402
 
 RULES = os.path.join(ROOT, "rules", "docs-writing.md")
 
@@ -35,7 +35,6 @@ HAS_JA = re.compile(rf"[{JA}]")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⬀-⯿]️?")
 CODE = re.compile(r"`([^`]*)`")
 ALERT = re.compile(r"^>\s*\[!([A-Za-z]+)\]")
-FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 TREE = re.compile(r"[├└]──")
 BADGE = re.compile(r"!\[[^\]]*\]\((https://img\.shields\.io/[^)\s]+)\)")
 TOC_ITEM = re.compile(r"^([-*]|\d+\.)\s+\[[^\]]+\]\(#[^)]*\)\s*$")
@@ -101,17 +100,19 @@ def kind(text):
     return "body"
 
 
-def rows_of(lines):
+def body_start(lines):
     end = front_matter_end(lines)
-    start = 0 if end is None else end + 1
+    return 0 if end is None else end + 1
+
+
+def rows_of(lines):
+    start = body_start(lines)
     rows = []
-    fence = False
-    for number, raw in enumerate(lines[start:], start + 1):
-        if is_fence(raw):
-            fence = not fence
+    for number, (raw, (mark, _)) in enumerate(zip(lines[start:], fence_marks(lines[start:])), start + 1):
+        if mark in ("open", "close"):
             rows.append((number, "", "", "code"))
             continue
-        if fence:
+        if mark == "code":
             continue
         linked = without_links(raw)
         plain = CODE.sub("", linked)
@@ -243,28 +244,20 @@ def check_sections(rows):
 
 
 def check_blocks(lines):
-    end = front_matter_end(lines)
-    start = 0 if end is None else end + 1
+    start = body_start(lines)
     found = []
-    opener = None
+    language = ""
     block = []
-    for number, raw in enumerate(lines[start:], start + 1):
-        line = QUOTE.sub("", raw).lstrip()
-        match = FENCE.match(line)
-        if opener is None:
-            if match:
-                opener = (match.group(1), match.group(2).strip())
-                block = []
-                if not opener[1]:
-                    found.append((number, "コードブロックに言語を付ける。文字だけなら text にする"))
-            continue
-        closing = match and match.group(1)[0] == opener[0][0] and len(match.group(1)) >= len(opener[0])
-        if closing and not match.group(2).strip():
-            if opener[1] == "text":
-                found += check_tree(block)
-            opener = None
-            continue
-        block.append((number, raw))
+    for number, (raw, (mark, info)) in enumerate(zip(lines[start:], fence_marks(lines[start:])), start + 1):
+        if mark == "open":
+            language = info
+            block = []
+            if not info:
+                found.append((number, "コードブロックに言語を付ける。文字だけなら text にする"))
+        elif mark == "close" and language == "text":
+            found += check_tree(block)
+        elif mark == "code":
+            block.append((number, raw))
     return found
 
 

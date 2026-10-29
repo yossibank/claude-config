@@ -132,6 +132,9 @@ doc_case 0 "GitHub のアラートは通る" docs/x.md "$note"$'\n## 🚀 入れ
 doc_case 2 "GitHub に無いアラートを使わない" docs/x.md "$note"$'\n## 🚀 入れ方\n\n> [!DANGER]\n> 危ない。' "だけを使う（DANGER）"
 doc_case 0 "言語の付いたコードブロックは通る" README.md $'# t\n\nあ。\n\n```sh\nls\n```'
 doc_case 2 "コードブロックに言語を付ける" README.md $'# t\n\nあ。\n\n```\nls\n```' "言語を付ける"
+long='これは一文が長すぎる文になっていて、六十字を超えているはずなので、本来なら止まるべきである文であるかを確かめる長い文である。'
+doc_case 2 "チルダの囲みの中のバッククォートで囲みを数え違えない" docs/x.md "$note"$'\n~~~text\n```swift\n~~~\n\n'"$long" "一文が 60 字を超えている"
+doc_case 0 "4 つのバッククォートの囲みの中の 3 つは囲みを閉じない" docs/x.md "$note"$'\n````markdown\n```swift\n'"$long"$'\n```\n````'
 doc_case 0 "名前だけのフォルダの木は通る" README.md $'# t\n\nあ。\n\n```text\na/\n├── b/\n└── c.md\n```'
 doc_case 2 "フォルダの木に説明を書かない" README.md $'# t\n\nあ。\n\n```text\na/\n├── b/  # 部品\n└── c.md\n```' "名前だけを書く"
 doc_case 0 "本文の中のページ内リンクは目次にしない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)'

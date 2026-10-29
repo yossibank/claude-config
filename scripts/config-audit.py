@@ -10,7 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "lib"))
 
-from md_blocks import front_matter_end, is_fence  # noqa: E402
+from md_blocks import fence_marks, front_matter_end  # noqa: E402
 from modules import load_hook  # noqa: E402
 
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
@@ -67,15 +67,13 @@ def front_matter(path):
     return fields
 
 
+def outside_code(path):
+    lines = read(path).split("\n")
+    return [(number, line) for number, (line, (mark, _)) in enumerate(zip(lines, fence_marks(lines)), 1) if mark is None]
+
+
 def headings(path):
-    found = []
-    fence = False
-    for number, line in enumerate(read(path).split("\n"), 1):
-        if is_fence(line):
-            fence = not fence
-        elif not fence and line.startswith("## "):
-            found.append((number, line[3:].strip()))
-    return found
+    return [(number, line[3:].strip()) for number, line in outside_code(path) if line.startswith("## ")]
 
 
 def check_skill_sections(skill):
@@ -294,12 +292,7 @@ def path_bases(path):
 
 def check_paths():
     for path in tracked("*.md"):
-        fence = False
-        for number, line in enumerate(read(path).split("\n"), 1):
-            if is_fence(line):
-                fence = not fence
-            if fence or is_fence(line):
-                continue
+        for number, line in outside_code(path):
             for reference, after in PATH_REF.findall(line):
                 reference = reference.rstrip(".")
                 if after in ("<", "*") or any(os.path.exists(os.path.join(base, reference)) for base in path_bases(path)):

@@ -121,6 +121,10 @@ d=$(copy skill-order)
 printf '\n## 入力\n\nx\n' >>"$d/skills/ctx-handoff/SKILL.md"
 expect_audit "$d" "## 入力 は" "SKILL.md の節の順が違う"
 
+d=$(copy skill-order-fence)
+printf '\n~~~text\n```swift\n~~~\n\n## 入力\n\nx\n' >>"$d/skills/ctx-handoff/SKILL.md"
+expect_audit "$d" "## 入力 は" "チルダの囲みの中のバッククォートで、囲みの外の見出しを見落とさない"
+
 d=$(copy agent-last)
 printf '\n## 補足\n\nx\n' >>"$d/agents/explorer.md"
 expect_audit "$d" "最後の ## は「返す形」" "agents の最後の節が返す形ではない"
