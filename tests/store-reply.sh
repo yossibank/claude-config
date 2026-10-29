@@ -53,6 +53,24 @@ EOF
 check "collect-reviews: 返信済みと星 3 以上を除き、次のページも読む" grep -q "^a:1:2026-10-02:書きかけ:False c:2:2026-10-02::False$" <<<"$collected"
 check "collect-reviews: 集め直しても書きかけの案を残す" grep -q "a:1:2026-10-02:書きかけ" <<<"$collected"
 check "collect-reviews: 一時ファイルを残さない" test -z "$(find "$apps/replies" -name '*.tmp')"
+kept=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/collect-reviews.py" 2>/dev/null <<'EOF'
+import glob
+import json
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+
+module = load_module(sys.argv[2])
+module.asc_json = lambda url, body=None: {"data": [], "links": {}}
+path = glob.glob(module.apps_dir() + "/replies/*.json")[0]
+drafts = [{"app": "bar", "id": "z", "reply": "案", "approved": True}, {"app": "foo", "id": "y", "reply": "古い", "approved": False}]
+json.dump(drafts, open(path, "w", encoding="utf-8"), ensure_ascii=False)
+sys.argv = ["collect-reviews.py"]
+module.main()
+print(" ".join(f"{e['id']}:{e['reply']}" for e in json.load(open(path, encoding="utf-8"))))
+EOF
+)
+check "collect-reviews: 集められなかったアプリの案は残し、集めたアプリの古い案は外す" test "${kept##*$'\n'}" == "z:案"
 
 today="$apps/replies/$(TZ=Asia/Tokyo date +%F).json"
 echo '[{"id": "a",' >"$today"

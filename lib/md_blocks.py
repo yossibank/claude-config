@@ -3,7 +3,7 @@ import re
 QUOTE = re.compile(r"^\s*(>\s?)*")
 FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 FIELD = re.compile(r"^([a-z-]+):\s*(.*)$")
-NESTED_FIELD = re.compile(r"^\s+([a-z-]+):\s*(.*)$")
+NESTED_FIELD = re.compile(r"^\s+([A-Za-z_-]+):\s*(.*)$")
 ITEM = re.compile(r'^\s*-\s*"?([^"]+)"?\s*$')
 
 

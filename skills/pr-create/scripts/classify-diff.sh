@@ -6,7 +6,7 @@ source "$(dirname "$0")/../../../lib/git.sh"
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <base のブランチ>"; exit 1; }
 
 use_repo "$1"
-base=$(git -C "$repo" merge-base "$2" HEAD)
+base=$(git -C "$repo" merge-base "$2" HEAD 2>/dev/null) || { echo "NG $2 との分かれ目が見つからない"; exit 1; }
 limit=200
 risky='(^|/)(Migration|migrations?/)|[Ss]chema|\.sql$|fixtures/|\.pbxproj$|Package\.(swift|resolved)$|(^|/)hooks/|settings[^/]*\.json$'
 
@@ -18,16 +18,18 @@ changes() {
 }
 
 lines=0
+files=0
 docs_only=1
 touched=()
 while IFS=$'\t' read -r added deleted path; do
     [[ $added == - ]] && added=0 deleted=0
+    files=$((files + 1))
     lines=$((lines + added + deleted))
     [[ $path == *.md || $path == docs/* ]] || docs_only=0
     [[ $path =~ $risky ]] && touched+=("$path")
 done < <(changes)
 
-[[ $lines -gt 0 ]] || { echo "NG $2 との差分が無い"; exit 1; }
+[[ $files -gt 0 ]] || { echo "NG $2 との差分が無い"; exit 1; }
 
 if [[ $docs_only == 1 ]]; then
     size=docs review="自分で見る"
