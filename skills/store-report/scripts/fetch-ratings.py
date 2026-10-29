@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
@@ -8,9 +9,14 @@ from months import MONTH, to_jst  # noqa: E402
 from script_io import Failure, fail  # noqa: E402
 
 
+LOOKUP = "https://itunes.apple.com/lookup"
+
+
 def ratings(app, month):
+    if not app.isdigit():
+        raise Failure(f"アプリの ID は数字で書く: {app}")
     try:
-        results = fetch_json(f"https://itunes.apple.com/lookup?id={app}&country=jp")["results"]
+        results = fetch_json(f"{LOOKUP}?{urllib.parse.urlencode({'id': app, 'country': 'jp'})}")["results"]
     except Exception as error:
         raise Failure(f"評価を読めなかった: {type(error).__name__}") from error
     if not results:
@@ -50,7 +56,7 @@ def ratings(app, month):
 
 
 def main():
-    if len(sys.argv) < 3 or not sys.argv[1].isdigit():
+    if len(sys.argv) < 3:
         fail("使い方: fetch-ratings.py <アプリの ID> <YYYY-MM>")
 
     app, month = sys.argv[1], sys.argv[2]

@@ -301,6 +301,7 @@ flowchart LR
 | `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか |
 | `tests/app-init.sh` | ひな形の印を置き換えられるか |
 | `tests/store-release.sh` | 掲載情報の字数と形を確かめられるか |
+| `tests/store-report.sh` | 通信せずに、引数の NG と、取れなかった数字を WARNING に書くかを確かめる |
 | `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せるか |
 
 テストが共通で使う処理は、`tests/lib/` に置く。

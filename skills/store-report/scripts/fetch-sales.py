@@ -76,6 +76,8 @@ def check_keys():
 
 def sales_by_app(month):
     check_keys()
+    if not MONTH.fullmatch(month):
+        raise Failure(f"月は YYYY-MM で書く: {month}")
     try:
         try:
             text = report(month, "1_1")
@@ -119,9 +121,6 @@ def main():
 
     month = sys.argv[1]
     try:
-        check_keys()
-        if not MONTH.fullmatch(month):
-            raise Failure(f"月は YYYY-MM で書く: {month}")
         sales = sales_by_app(month)
     except Failure as error:
         fail(str(error))
