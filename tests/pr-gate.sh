@@ -36,8 +36,8 @@ run pr-gate 2 "pr: 語の中の # をコメントと見なさずに止める" "$
 run pr-gate 2 "pr: 閉じていない引用符でも、区切りの後の push を止める" "$(push "$app" "echo it's&&git push")"
 run pr-gate 2 "pr: 改行で並べたコマンドも区切って止める" "$(push "$work" "cd $app\\ngit push")"
 run pr-gate 0 "pr: 引用符の中の gh pr create は止めない" "$(push "$app" 'echo \"gh pr create\"')"
-CLAUDE_HOOKS_OFF="rules-require-read pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF に名前があれば止めない" "$(push "$app" 'git push')"
-CLAUDE_HOOKS_OFF="pr-gate-x" run pr-gate 2 "pr: CLAUDE_HOOKS_OFF の名前は全体で比べる" "$(push "$app" 'git push')"
+CC_HOOKS_OFF="rules-require-read pr-gate" run pr-gate 0 "pr: CC_HOOKS_OFF に名前があれば止めない" "$(push "$app" 'git push')"
+CC_HOOKS_OFF="pr-gate-x" run pr-gate 2 "pr: CC_HOOKS_OFF の名前は全体で比べる" "$(push "$app" 'git push')"
 printf '#!/bin/bash\necho "壊れた" >&2\nexit 3\n' >"$work/broken-check.sh"
 out=$(python3 -I - "$root" "$work/broken-check.sh" "$app" <<'EOF'
 import sys
@@ -66,11 +66,11 @@ print(gate.problems(sys.argv[2]))
 EOF
 )
 check "pr: run-check.sh が時間切れなら、stderr に知らせて通す" grep -q "確かめずに通す（TimeoutExpired）" <<<"$out"
-CLAUDE_HOOKS_OFF="rules-require-read,pr-gate" run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はカンマで区切ってもよい" "$(push "$app" 'git push')"
-CLAUDE_HOOKS_OFF=$'rules-require-read\tpr-gate' run pr-gate 0 "pr: CLAUDE_HOOKS_OFF はタブで区切ってもよい" "$(push "$app" 'git push')"
-out=$(push "$app" 'git status' | CLAUDE_HOOKS_OFF="pr-gate.py" bash "$hooks" pr-gate 2>&1)
-check "pr: CLAUDE_HOOKS_OFF に hooks/ に無い名前があれば警告する" grep -q "hooks/ に無い名前がある: pr-gate.py" <<<"$out"
-out=$(push "$app" 'git status' | CLAUDE_HOOKS_OFF="" bash "$hooks" pr-gate 2>&1)
-check "pr: CLAUDE_HOOKS_OFF が空なら何も出さない" test -z "$out"
+CC_HOOKS_OFF="rules-require-read,pr-gate" run pr-gate 0 "pr: CC_HOOKS_OFF はカンマで区切ってもよい" "$(push "$app" 'git push')"
+CC_HOOKS_OFF=$'rules-require-read\tpr-gate' run pr-gate 0 "pr: CC_HOOKS_OFF はタブで区切ってもよい" "$(push "$app" 'git push')"
+out=$(push "$app" 'git status' | CC_HOOKS_OFF="pr-gate.py" bash "$hooks" pr-gate 2>&1)
+check "pr: CC_HOOKS_OFF に hooks/ に無い名前があれば警告する" grep -q "hooks/ に無い名前がある: pr-gate.py" <<<"$out"
+out=$(push "$app" 'git status' | CC_HOOKS_OFF="" bash "$hooks" pr-gate 2>&1)
+check "pr: CC_HOOKS_OFF が空なら何も出さない" test -z "$out"
 
 finish

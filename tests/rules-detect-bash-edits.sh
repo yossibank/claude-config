@@ -30,11 +30,11 @@ echo 'w' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 0 "bash: 引用符の中の ; に引きずられず、git だけと数える" "$(bash_call t8 'git commit -m \"a; sed -i\"')" post
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t7 'sed -i')" pre
 printf '# t\n\n```\nx\n```\n' >"$app/docs/off.md"
-out=$(bash_call t7 'sed -i' | CLAUDE_HOOKS_OFF="docs-check,rules-require-read" bash "$hooks" rules-detect-bash-edits post 2>&1)
+out=$(bash_call t7 'sed -i' | CC_HOOKS_OFF="docs-check,rules-require-read" bash "$hooks" rules-detect-bash-edits post 2>&1)
 if [[ $out == *off.md* && $out != *言語を付ける* && $out != *当たる決まり* ]]; then
-    ok "bash: CLAUDE_HOOKS_OFF で止めた検査は、Bash の書き換えにもかけない"
+    ok "bash: CC_HOOKS_OFF で止めた検査は、Bash の書き換えにもかけない"
 else
-    ng "bash: CLAUDE_HOOKS_OFF で止めた検査は、Bash の書き換えにもかけない" "$out"
+    ng "bash: CC_HOOKS_OFF で止めた検査は、Bash の書き換えにもかけない" "$out"
 fi
 rm -f "$app/docs/off.md"
 
