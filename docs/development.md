@@ -49,7 +49,9 @@
 | 動詞 | すること |
 | --- | --- |
 | `add`・`create` | 足す、作る |
-| `collect`・`fetch`・`list`・`search` | 集める、取ってくる、並べる、探す |
+| `collect` | 手元の記録（会話の記録など）から集める |
+| `fetch` | 外（App Store などの API）から取ってくる |
+| `find`・`list`・`search` | 手元から合うものを 1 つ出す、並べる、検索する |
 | `check`・`classify`・`count`・`hash` | 確かめる、分ける、数える、指紋を取る |
 | `record`・`render`・`take`・`tile`・`write` | 録る、描く、撮る、並べる、書く |
 | `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
@@ -101,7 +103,6 @@
 | [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
-| [lib/simulator.sh](../lib/simulator.sh) | 使うシミュレーターの UDID を出す `pick_iphone`。`CC_UI_DEVICE` が無ければ、先頭の iPhone を選ぶ |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
 
 app-init の `create-app.sh` は、app-plan の `templates/` を直接読む。
