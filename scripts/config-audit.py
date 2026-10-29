@@ -224,7 +224,7 @@ def check_readme_flow():
         yield readme, 1, "## 🧰 スキルの節に、スキルを使う順の Mermaid の図が無い"
         return
     for name in skill_names():
-        if not re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", flow):
+        if not re.search(rf"(?<![A-Za-z0-9_-]){re.escape(name)}(?![A-Za-z0-9_-])", flow):
             yield readme, 1, f"スキルを使う順の図に載っていない: {name}"
 
 

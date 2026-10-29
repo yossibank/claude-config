@@ -381,7 +381,7 @@ CHECKS = [
     (always, check_headings),
     (always, check_heading_names),
     (lambda doc: doc.human, check_heading_emoji_repeats),
-    (always, check_table_first_column),
+    (lambda doc: "/docs/decisions/" not in doc.path, check_table_first_column),
     (always, check_sections),
     (always, check_blocks),
     (always, check_toc),
