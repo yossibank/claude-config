@@ -22,11 +22,16 @@
           {
             "type": "command",
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-limit-read"
+          },
+          {
+            "type": "command",
+            "if": "Read(//**/rules/*.md)",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-require-read"
           }
         ]
       },
       {
-        "matcher": "Read|Edit|Write|MultiEdit",
+        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
@@ -54,14 +59,32 @@
         "hooks": [
           {
             "type": "command",
+            "if": "Edit(//**/*.md)",
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" docs-check"
           },
           {
             "type": "command",
+            "if": "Write(//**/*.md)",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" docs-check"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.swift)",
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-format"
           },
           {
             "type": "command",
+            "if": "Write(//**/*.swift)",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-format"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.sh)",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" shell-check"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.sh)",
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" shell-check"
           }
         ]
