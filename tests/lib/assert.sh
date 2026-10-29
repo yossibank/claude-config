@@ -35,6 +35,15 @@ expect() {
     fi
 }
 
+match() {
+    local label=$1 out=$2 pattern=$3
+    if [[ $out == $pattern ]]; then
+        ok "$label"
+    else
+        ng "$label" "$out"
+    fi
+}
+
 finish() {
     exit $((fails > 0))
 }

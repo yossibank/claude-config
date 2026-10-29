@@ -10,5 +10,5 @@ test:
 	for test in tests/*.sh; do echo "bash $$test"; bash "$$test" || failed=$$((failed + 1)); done; \
 	[ $$failed -eq 0 ] || { echo "NG 落ちたテスト: $$failed 本"; exit 1; }
 
-test-%:
+test-%: tests/%.sh
 	bash tests/$*.sh
