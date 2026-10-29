@@ -136,8 +136,10 @@ paths:
 - 本文に「書き換えない」とある agents の `tools`
 - ひな形の CLAUDE.md の節の順
 - ひな形の Makefile と `.sh` が呼ぶ claude-config のファイルがあるか
-- skills・agents・rules・hooks・scripts が README の表にあるか、スキルが README の使う順の図にあるか
+- skills・agents・rules・hooks・scripts が README の表にあるか
+- スキルが README の使う順の図にあるか
 - リンク先とパスの参照先があるか
 - 名前の接頭語とスキルのスクリプトの頭の動詞が、`docs/development.md` の表にあるか
-- `docs/development.md` のスクリプトの書き方（`.sh` の頭の `set`、`.sh` の中の Python、`assert`、ワークツリーの置き場所、編集の matcher）
+- `.sh` の頭の `set`、`.sh` の中の Python、`assert`、ワークツリーの置き場所の直書き
+- 編集を受けるフックの matcher
 - 追跡している全 `.md` に、`docs-check.py` と同じ検査をかける
