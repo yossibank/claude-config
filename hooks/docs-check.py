@@ -21,7 +21,6 @@ LIMIT = 60
 SENTENCES = 3
 CELL_SENTENCES = 2
 SIZE_LIMIT = 15_000
-BODY_EMOJI = {"✅", "🚧", "⬜", "🍎", "🤖", "🧩", "🔴", "🟠", "🟡", "⚪"}
 ALERTS = ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"]
 STATE_BADGES = ["workflow", "release", "license"]
 INLINE_CODE_LIMIT = 40
@@ -87,6 +86,10 @@ def rule_table(heading, first_column):
 
 def heading_emojis():
     return {bare(row[1]): row[0] for row in rule_table("### 見出しの絵文字の表", "節")}
+
+
+def body_emojis():
+    return {bare(emoji) for row in rule_table("## 本文の絵文字", "分類") for emoji in EMOJI.findall(row[1])}
 
 
 def readme_order():
@@ -407,10 +410,11 @@ def check_marks(doc, row):
         found.append((number, "斜体を使わない"))
     if SPACE.search(text):
         found.append((number, "日本語と英数字の間に半角スペースを入れる"))
-    emojis = {emoji.rstrip("️") for emoji in EMOJI.findall(text)}
+    emojis = {bare(emoji) for emoji in EMOJI.findall(text)}
+    allowed = body_emojis()
     if doc.for_claude and emojis:
         found.append((number, "Claude が読む文書に絵文字を使わない"))
-    elif emojis - BODY_EMOJI:
+    elif allowed and emojis - allowed:
         found.append((number, "本文の絵文字は rules/docs-human.md の表にあるものだけを使う"))
     return found
 

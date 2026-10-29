@@ -397,8 +397,8 @@ def check_python(path, tree):
 
 def check_docs():
     docs = load_hook("docs-check")
-    if not docs.heading_emojis() or not docs.readme_order():
-        yield os.path.join(ROOT, "rules", "docs-human.md"), 1, "見出しの絵文字の表か、README の形の表が読めない"
+    if not docs.heading_emojis() or not docs.body_emojis() or not docs.readme_order():
+        yield os.path.join(ROOT, "rules", "docs-human.md"), 1, "見出しの絵文字・本文の絵文字・README の形のどれかの表が読めない"
     for path in tracked("*.md"):
         for number, message in docs.check(path):
             yield path, number, message

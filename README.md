@@ -69,6 +69,32 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 | 許可 | 足りないものだけを後ろに足す。前に入れて claude-config から消えた許可は外す |
 | フック | claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す |
 
+## 🚀 使い方
+
+スキルは、アプリの企画から公開の後まで、次の順に使う。手入れのスキルは、どの段でも使う。
+
+```mermaid
+flowchart LR
+    subgraph plan["企画と立ち上げ"]
+        appPlan["app-plan"] --> appInit["app-init"]
+    end
+    subgraph build["作って出す（PR ごとに繰り返す）"]
+        ui["ui-snapshot・ui-record"] -.->|見た目を確かめる| prCreate["pr-create"]
+        prCreate --> prFix["pr-fix"]
+        prFix --> prPrune["pr-prune"]
+    end
+    subgraph store["App Store"]
+        storeRelease["store-release"] --> storeReport["store-report"]
+    end
+    subgraph care["手入れ（いつでも）"]
+        ctx["ctx-handoff・ctx-report"]
+        configLearn["config-learn"]
+    end
+    appInit --> prCreate
+    prPrune --> storeRelease
+    storeReport -->|数字と不満を次の企画へ| appPlan
+```
+
 ## 📚 文書
 
 アプリを作る時と、claude-config を直す時に読む文書と、写して使うひな形である。
@@ -100,6 +126,8 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 
 フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。検査のフックは `if` で拡張子を絞り、当たらないファイルではプロセスを起動しない。どれも [hooks/run.sh](hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
 
+図の色は、フックの動きを表す。赤は道具を止め、青は止めずに知らせ、緑はファイルを整える。
+
 ```mermaid
 flowchart LR
     readBefore["Read の前"] --> limit["ctx-limit-read"]
@@ -113,18 +141,25 @@ flowchart LR
     bashAfter["Bash の後"] --> detect
     bashAfter --> clear["ctx-suggest-clear"]
     stop["応答の終わり"] --> clear
+
+    classDef block fill:#f8d7da,stroke:#c0392b,color:#000
+    classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
+    classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
+    class limit,require,gate block
+    class docs,shell,detect,clear inform
+    class swift tidy
 ```
 
-| フック | 動く時 | 止める・返す時 |
-| --- | --- | --- |
-| [ctx-limit-read](hooks/ctx-limit-read.py) | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
-| [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 応答の終わり、`gh pr create` の後 | 文脈が 20 万トークンを超える時と、PR を作った時 |
-| [docs-check](hooks/docs-check.py) | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `rules/docs-*.md` に合わない時 |
-| [pr-gate](hooks/pr-gate.py) | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時 |
-| [rules-detect-bash-edits](hooks/rules-detect-bash-edits.py) | Bash の前と後 | Bash でファイルを書き換えた時。git・make などは数えない |
-| [rules-require-read](hooks/rules-require-read.py) | rules の `.md` の Read と、Edit・Write・MultiEdit の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
-| [shell-check](hooks/shell-check.py) | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
-| [swift-format](hooks/swift-format.py) | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
+| フック | 動き | 動く時 | 当たる時 |
+| --- | --- | --- | --- |
+| [ctx-limit-read](hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
+| [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 💬 知らせる | 応答の終わり、`gh pr create` の後 | 文脈が 20 万トークンを超える時と、PR を作った時 |
+| [docs-check](hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `rules/docs-*.md` に合わない時 |
+| [pr-gate](hooks/pr-gate.py) | 🛑 止める | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時 |
+| [rules-detect-bash-edits](hooks/rules-detect-bash-edits.py) | 💬 知らせる | Bash の前と後 | Bash でファイルを書き換えた時。git・make などは数えない |
+| [rules-require-read](hooks/rules-require-read.py) | 🛑 止める | rules の `.md` の Read と、Edit・Write・MultiEdit の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
+| [shell-check](hooks/shell-check.py) | 💬 知らせる | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
+| [swift-format](hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 
 フックを止める時は、[環境変数](#-環境変数)の `CLAUDE_HOOKS_OFF` に名前を並べる。
 
@@ -134,25 +169,25 @@ CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 ## 🧰 スキル
 
-スキルは、Claude が要る時に自分で呼ぶ。人は `/<スキル>` で呼ぶ。名前の頭の分類は、[docs/development.md](docs/development.md) にある。
+スキルは、Claude が要る時に自分で呼ぶ。人は `/<スキル>` で呼ぶ。名前の頭が分類を表し、使う順は[使い方](#-使い方)の図にある。
 
 > [!IMPORTANT]
 > pr-create と store-release は外に出す操作を含む。人が言葉で頼んだ時だけ呼び、外に出す前に承認を得る。
 
-| 分類 | スキル | 呼ぶ人 | すること |
-| --- | --- | --- | --- |
-| 企画と立ち上げ | [app-init](skills/app-init/SKILL.md) | 人・Claude | ひな形から、ビルドとテストが通るアプリのリポジトリを作る |
-| 企画と立ち上げ | [app-plan](skills/app-plan/SKILL.md) | 人・Claude | 競合のレビューの不満を集め、overview と roadmap の下書きを作る |
-| 手入れ | [config-learn](skills/config-learn/SKILL.md) | 人・Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
-| 文脈とトークン | [ctx-handoff](skills/ctx-handoff/SKILL.md) | 人・Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
-| 文脈とトークン | [ctx-report](skills/ctx-report/SKILL.md) | 人・Claude | 月ごとに、トークンを多く使った作業を表にする |
-| PR | [pr-create](skills/pr-create/SKILL.md) | **人が頼んだ時だけ Claude** | 差分の大きさに合わせた確認とレビューを通して PR を作る |
-| PR | [pr-fix](skills/pr-fix/SKILL.md) | 人・Claude | 落ちた CI と未解決の指摘を直し、push し直す |
-| PR | [pr-prune](skills/pr-prune/SKILL.md) | 人・Claude | マージされた PR を main に反映し、ワークツリーを片付ける |
-| App Store | [store-release](skills/store-release/SKILL.md) | 人が頼んだ時だけ Claude | 申告・掲載情報・スクリーンショットを確かめ、アーカイブを送る |
-| App Store | [store-report](skills/store-report/SKILL.md) | 人・Claude | 全アプリの月ごとのダウンロード・収益・評価を表にする |
-| 見た目と動き | [ui-record](skills/ui-record/SKILL.md) | Claude | シミュレーターを録画し、確かめたい場面のコマを並べる |
-| 見た目と動き | [ui-snapshot](skills/ui-snapshot/SKILL.md) | Claude | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
+| スキル | 呼ぶ人 | すること |
+| --- | --- | --- |
+| [app-init](skills/app-init/SKILL.md) | 🤝 人と Claude | ひな形から、ビルドとテストが通るアプリのリポジトリを作る |
+| [app-plan](skills/app-plan/SKILL.md) | 🤝 人と Claude | 競合のレビューの不満を集め、overview と roadmap の下書きを作る |
+| [config-learn](skills/config-learn/SKILL.md) | 🤝 人と Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
+| [ctx-handoff](skills/ctx-handoff/SKILL.md) | 🤝 人と Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
+| [ctx-report](skills/ctx-report/SKILL.md) | 🤝 人と Claude | 月ごとに、トークンを多く使った作業を表にする |
+| [pr-create](skills/pr-create/SKILL.md) | 🙋 人が頼んだ時だけ | 差分の大きさに合わせた確認とレビューを通して PR を作る |
+| [pr-fix](skills/pr-fix/SKILL.md) | 🤝 人と Claude | 落ちた CI と未解決の指摘を直し、push し直す |
+| [pr-prune](skills/pr-prune/SKILL.md) | 🤝 人と Claude | マージされた PR を main に反映し、ワークツリーを片付ける |
+| [store-release](skills/store-release/SKILL.md) | 🙋 人が頼んだ時だけ | 申告・掲載情報・スクリーンショットを確かめ、アーカイブを送る |
+| [store-report](skills/store-report/SKILL.md) | 🤝 人と Claude | 全アプリの月ごとのダウンロード・収益・評価を表にする |
+| [ui-record](skills/ui-record/SKILL.md) | 🧠 Claude だけ | シミュレーターを録画し、確かめたい場面のコマを並べる |
+| [ui-snapshot](skills/ui-snapshot/SKILL.md) | 🧠 Claude だけ | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
 
 ## 👷 エージェント
 
@@ -193,12 +228,6 @@ claude-config を変えたら、`make verify` を通す。`make audit` と `make
 
 > [!IMPORTANT]
 > CI は置かない。PR は、Claude が pr-create の確認で `make verify` を通してから作る。
-
-```mermaid
-flowchart LR
-    verify["make verify"] --> audit["make audit<br/>config-audit.py"]
-    audit --> test["make test<br/>tests/*.sh"]
-```
 
 | コマンド | 確かめること |
 | --- | --- |
