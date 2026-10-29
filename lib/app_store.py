@@ -7,7 +7,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, TimeoutExpired
 
 from script_io import Failure
 
@@ -15,7 +15,7 @@ REVIEWS = "https://itunes.apple.com/jp/rss/customerreviews/page={page}/id={app}/
 PAGES = 10
 ASC_API = "https://api.appstoreconnect.apple.com"
 ASC_KEYS = ["ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_KEY_PATH"]
-ASC_ERRORS = (urllib.error.URLError, OSError, CalledProcessError, subprocess.TimeoutExpired, ValueError)
+ASC_ERRORS = (urllib.error.URLError, OSError, CalledProcessError, TimeoutExpired, ValueError)
 
 
 class ReviewPageError(Exception):
