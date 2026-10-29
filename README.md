@@ -191,6 +191,9 @@ CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 claude-config を変えたら、`make verify` を通す。`make audit` と `make test` を順に走らせる。
 
+> [!IMPORTANT]
+> CI は置かない。PR は、Claude が pr-create の確認で `make verify` を通してから作る。
+
 ```mermaid
 flowchart LR
     verify["make verify"] --> audit["make audit<br/>config-audit.py"]

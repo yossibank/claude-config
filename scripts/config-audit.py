@@ -38,9 +38,18 @@ ASK_EVERY_TIME = {"store-release/scripts/archive-app.sh"}
 
 
 @functools.cache
+def tracked_files():
+    out = subprocess.run(["git", "-C", ROOT, "ls-files", "-z"], capture_output=True, text=True, check=True).stdout
+    return tuple(path for path in out.split("\0") if path)
+
+
+@functools.cache
 def tracked(*patterns):
-    out = subprocess.run(["git", "-C", ROOT, "ls-files", *patterns], capture_output=True, text=True, check=True).stdout
-    return tuple(os.path.join(ROOT, path) for path in out.splitlines())
+    return tuple(
+        os.path.join(ROOT, path)
+        for path in tracked_files()
+        if any(fnmatch.fnmatchcase(path, pattern) for pattern in patterns)
+    )
 
 
 @functools.cache
