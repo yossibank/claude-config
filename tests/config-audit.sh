@@ -71,6 +71,14 @@ d=$(copy flow)
 replace "$d/README.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
 expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "README のスキルの図に無いスキル"
 
+d=$(copy terms)
+printf '\n作業場所で確かめる。\n' >>"$d/skills/ui-record/SKILL.md"
+expect_audit "$d" "「作業場所」ではなく「ワークツリー」と書く" "そろえる語の表の使わない語"
+
+d=$(copy steps)
+replace "$d/skills/ctx-report/SKILL.md" '1. `count-tokens.py` で表を出す。' '`count-tokens.py` で表を出す。'
+expect_audit "$d" "skills/ctx-report/SKILL.md:1 「手順」は番号付きの箇条書きで書く" "番号の無い手順"
+
 d=$(copy readme)
 echo 'print(1)' >"$d/hooks/post-tool-extra.py"
 expect_audit "$d" "README の表に載っていない: hooks/post-tool-extra.py" "README に無いフック"

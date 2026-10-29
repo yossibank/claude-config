@@ -11,7 +11,9 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 ## 手順
 
-表は、次のコマンドで出す。件数を省くと 10 件である。
+1. `count-tokens.py` で表を出す。件数を省くと 10 件である。
+2. 上位 3 件を、「出力の読み方」の表で見立てる。
+3. 表と見立てを報告する。
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/count-tokens.py <YYYY-MM> [件数]

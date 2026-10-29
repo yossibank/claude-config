@@ -71,7 +71,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/collect-corrections.py <YYYY-MM>
 | rules を読まずに編集 | `hooks/rules-require-read.py` が止めた回数 |
 | Bash での書き換え | `hooks/rules-detect-bash-edits.py` が、Bash でファイルを書き換えたと返した回数 |
 | 確認の前の push・PR | `hooks/pr-gate.py` が止めた回数 |
-| 動かなかったフック | 失敗したフックの多いもの 5 件。消えた作業場所で失敗したものは、フックのせいではないので数えない |
+| 動かなかったフック | 失敗したフックの多いもの 5 件。消えたワークツリーで失敗したものは、フックのせいではないので数えない |
 
 ## 報告
 

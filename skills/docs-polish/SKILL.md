@@ -49,17 +49,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-layout.py <ファイルかフォル
 
 ## 直し方の選び方
 
-文の中身に合わせて、次の形を選ぶ。
-
-| 中身 | 形 |
-| --- | --- |
-| 2 つ以上の属性を持つものの比べ合い | 表 |
-| 手順 | 番号付きの箇条書き |
-| 処理の流れ、依存の向き、状態の移り変わり | Mermaid の図 |
-| 数値の並び | Mermaid の `xychart` か `pie` |
-| 守らないと壊れること | `[!IMPORTANT]` か `[!CAUTION]` のアラート |
-| 状態・重さ・OS | `rules/docs-human.md` の本文の絵文字 |
-| 節の見出し | `rules/docs-human.md` の見出しの絵文字 |
+形は、`rules/docs-writing.md` の「表現」の表から、文の中身に合うものを選ぶ。絵文字は、`rules/docs-human.md` の見出しと本文の絵文字の表から選ぶ。
 
 ## 報告
 
