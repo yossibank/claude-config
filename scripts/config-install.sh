@@ -10,6 +10,7 @@ if [[ $root != "$expected" ]]; then
     exit 1
 fi
 settings="$claude/settings.json"
+installed="$claude/claude-config-allow.json"
 trap 'rm -f "$settings.tmp"' EXIT
 
 link() {
@@ -49,8 +50,13 @@ if [[ ! -f $settings ]]; then
     echo '{}' >|"$settings"
 fi
 
-jq -s -f "$root/settings/merge.jq" "$settings" "$root/settings/settings.json" >|"$settings.tmp"
+if [[ ! -f $installed ]]; then
+    echo '[]' >|"$installed"
+fi
+
+jq -s -f "$root/settings/merge.jq" "$settings" "$root/settings/settings.json" "$installed" >|"$settings.tmp"
 mv -f "$settings.tmp" "$settings.new"
+jq '.permissions.allow' "$root/settings/settings.json" >|"$installed"
 
 if diff -u "$settings" "$settings.new"; then
     rm "$settings.new"

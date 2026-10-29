@@ -54,7 +54,7 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 
 1. CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクする。同じ名前の実体があれば `NG` を出して止まる。
 2. 壊れたスキルのリンクを消す。
-3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。
+3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。入れた許可の一覧は `~/.claude/claude-config-allow.json` に残す。
 4. 表示された `mv` のコマンドで、差分を確かめてから置き換える。
 
 > [!WARNING]
@@ -66,7 +66,7 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 
 | 対象 | 混ぜ方 |
 | --- | --- |
-| 許可 | 足りないものだけを後ろに足す |
+| 許可 | 足りないものだけを後ろに足す。前に入れて claude-config から消えた許可は外す |
 | フック | claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す |
 
 ## 📚 文書
@@ -98,16 +98,16 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 
 ## 🪝 フック
 
-フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。どれも [hooks/run.sh](hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
+フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。検査のフックは `if` で拡張子を絞り、当たらないファイルではプロセスを起動しない。どれも [hooks/run.sh](hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
 
 ```mermaid
 flowchart LR
     readBefore["Read の前"] --> limit["ctx-limit-read"]
-    readBefore --> require["rules-require-read"]
+    readBefore -->|rules の .md だけ| require["rules-require-read"]
     editBefore["Edit・Write・MultiEdit の前"] --> require
-    editAfter["Edit・Write・MultiEdit の後"] --> docs["docs-check"]
-    editAfter --> swift["swift-format"]
-    editAfter --> shell["shell-check"]
+    editAfter["Edit・Write の後"] -->|.md だけ| docs["docs-check"]
+    editAfter -->|.swift だけ| swift["swift-format"]
+    editAfter -->|.sh だけ| shell["shell-check"]
     bashBefore["Bash の前"] --> detect["rules-detect-bash-edits"]
     bashBefore --> gate["pr-gate"]
     bashAfter["Bash の後"] --> detect
@@ -119,12 +119,12 @@ flowchart LR
 | --- | --- | --- |
 | [ctx-limit-read](hooks/ctx-limit-read.py) | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
 | [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 応答の終わり、`gh pr create` の後 | 文脈が 20 万トークンを超える時と、PR を作った時 |
-| [docs-check](hooks/docs-check.py) | Edit・Write・MultiEdit の後。メモリのファイルは見ない | `.md` が `rules/docs-*.md` に合わない時 |
+| [docs-check](hooks/docs-check.py) | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `rules/docs-*.md` に合わない時 |
 | [pr-gate](hooks/pr-gate.py) | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時 |
 | [rules-detect-bash-edits](hooks/rules-detect-bash-edits.py) | Bash の前と後 | Bash でファイルを書き換えた時。git・make などは数えない |
-| [rules-require-read](hooks/rules-require-read.py) | Read・Edit・Write・MultiEdit の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
-| [shell-check](hooks/shell-check.py) | Edit・Write・MultiEdit の後 | `.sh` の `bash -n` と、変数の直後の全角 |
-| [swift-format](hooks/swift-format.py) | Edit・Write・MultiEdit の後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
+| [rules-require-read](hooks/rules-require-read.py) | rules の `.md` の Read と、Edit・Write・MultiEdit の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
+| [shell-check](hooks/shell-check.py) | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
+| [swift-format](hooks/swift-format.py) | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 
 フックを止める時は、[環境変数](#-環境変数)の `CLAUDE_HOOKS_OFF` に名前を並べる。
 

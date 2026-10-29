@@ -13,7 +13,7 @@ mkdir -p "$config" "$claude/skills"
 
 cat >"$settings" <<'JSON'
 {
-  "permissions": {"allow": ["Bash(ls *)"]},
+  "permissions": {"allow": ["Bash(ls *)", "Bash(retired *)"]},
   "hooks": {
     "Stop": [{"hooks": [
       {"type": "command", "command": "python3 \"$HOME/Applications/AI/claude-config/hooks/old.py\""},
@@ -23,6 +23,7 @@ cat >"$settings" <<'JSON'
 }
 JSON
 ln -s "$work/nowhere" "$claude/skills/gone"
+echo '["Bash(retired *)"]' >"$claude/claude-config-allow.json"
 
 out=$(bash "$config/scripts/config-install.sh" 2>&1)
 check "install: CLAUDE.md をリンクする" test -L "$claude/CLAUDE.md"
@@ -34,6 +35,8 @@ check "merge: ほかのフックを残す" jq -e '[.hooks.Stop[].hooks[].command
 check "merge: 古い claude-config のフックを外す" jq -e '[.. | .command? // empty] | map(select(contains("old.py"))) | length == 0' "$settings.new"
 check "merge: 今のフックを run.sh で入れる" jq -e '[.. | .command? // empty] | map(select(contains("hooks/run.sh"))) | length > 0' "$settings.new"
 check "merge: 今の許可を前に残す" jq -e '.permissions.allow[0] == "Bash(ls *)"' "$settings.new"
+check "merge: claude-config から消えた許可を外す" jq -e '.permissions.allow | index("Bash(retired *)") | not' "$settings.new"
+check "install: 入れた許可の一覧を残す" jq -e 'index("Bash(make verify)")' "$claude/claude-config-allow.json"
 expect OK "install: 入れた先の run.sh でフックが動く" bash -c 'echo "{}" | bash "$1/hooks/run.sh" docs-check' _ "$config"
 repo="$work/repo"
 mkdir -p "$repo"
