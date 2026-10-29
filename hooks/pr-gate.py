@@ -1,5 +1,4 @@
 import os
-import shlex
 import subprocess
 import sys
 
@@ -12,11 +11,7 @@ PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 
 
 def gated_repo(command, cwd):
-    for part in split_commands(command):
-        try:
-            words = shlex.split(part, posix=True)
-        except ValueError:
-            continue
+    for words in split_commands(command):
         if words[:1] == ["cd"] and len(words) > 1:
             cwd = os.path.join(cwd, os.path.expanduser(words[1]))
             continue

@@ -1,11 +1,13 @@
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
 
-SEGMENT = re.compile(r"&&|\|\||;|\|")
+SEGMENT = re.compile(r"&&|\|\||;|\||\n")
+SEPARATOR_CHARS = set(";&|()\n")
 OFF_SEPARATOR = re.compile(r"[\s,]+")
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 RULES_UNREAD = "この編集に当たる決まりを、この会話でまだ読んでいない"
@@ -31,7 +33,21 @@ def tool_input(payload):
 
 
 def split_commands(command):
-    return SEGMENT.split(command)
+    lexer = shlex.shlex(command, posix=True, punctuation_chars="();<>|&\n")
+    lexer.whitespace = " \t\r"
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    try:
+        tokens = list(lexer)
+    except ValueError:
+        return [part.split() for part in SEGMENT.split(command) if part.split()]
+    parts = [[]]
+    for token in tokens:
+        if set(token) <= SEPARATOR_CHARS:
+            parts.append([])
+        else:
+            parts[-1].append(token)
+    return [words for words in parts if words]
 
 
 def git(cwd, *args, timeout=10):
