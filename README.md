@@ -72,6 +72,16 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 | フック | claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す |
 | 表示 | `outputStyle` は、無い時だけ入れる |
 
+### 積んだ PR のための設定
+
+squash でマージしても、積んだ PR がぶつからないように、使う環境で次を入れる。付け替えそのものは [pr-prune](skills/pr-prune/SKILL.md) が行う。
+
+| 対象 | 設定 | 効き目 |
+| --- | --- | --- |
+| GitHub（Settings → General） | 「Automatically delete head branches」を ON | マージしたブランチを消す。上の PR の base は、既定のブランチに付け替わる |
+| git | `git config --global rerere.enabled true` | 一度解いたコンフリクトの解き方を、次から使う |
+| git | `git config --global rebase.updateRefs true` | 手で rebase する時に、積んだブランチをまとめて動かす |
+
 ## 📚 文書
 
 アプリを作る時と、claude-config を直す時に読む文書と、写して使うひな形である。
