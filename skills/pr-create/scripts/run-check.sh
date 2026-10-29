@@ -2,7 +2,7 @@
 set -euo pipefail
 
 source "$(dirname "$0")/../../../lib/git.sh"
-source "$(dirname "$0")/../../../lib/log.sh"
+source "$(dirname "$0")/../../../lib/build_log.sh"
 
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <確認の名前 | --drop <名前> | --status> [コマンド…]"; exit 1; }
 

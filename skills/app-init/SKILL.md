@@ -37,8 +37,7 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 - 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる。
 - 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる。
 - ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える。
-- `docs/overview.md`・`docs/roadmap.md` が無ければ、`app-plan` のひな形を置く。
-- app-plan のひな形は、app-plan の `templates/` から直に写す。app-plan が同じ claude-config に要る。
+- `docs/overview.md`・`docs/roadmap.md` は、無い方だけをひな形から置く。`app-plan` の下書きは上書きしない。
 - overview の最初の 1 文を、README の説明の文に写す。
 - `git init` し、最初の commit を作る。
 
@@ -58,6 +57,7 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 | --- | --- |
 | 直下 | CLAUDE.md、README、Makefile、Brewfile、Mintfile |
 | 直下の設定 | `.swiftformat`、`.pre-commit-config.yaml` |
+| `docs/` | overview と roadmap。`app-plan` も、ここを写して下書きを書く |
 | `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す。全ログは `.build/verify/` に書く |
 | `scripts/find-simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す |
 | `ios/` | Xcode プロジェクト、ワークスペース、テストプラン、アプリのターゲット、空のプライバシーの申告 |

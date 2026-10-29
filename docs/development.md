@@ -16,10 +16,12 @@
 | rules | `<分類>-<範囲>.md` | `swift-core.md` |
 | scripts | `<分類>-<すること>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
+| lib | 中身の名詞を `snake_case` にする。Python の import で読める形に、`.sh` もそろえる | `hook_io.py`、`build_log.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
 | 環境変数 | `CC_[<分類>_]<中身>`。分類は接頭語の表の名前を大文字にする | `CC_UI_DEVICE`、`CC_APPS_DIR` |
 | ひな形の印 | スクリプトが置き換える所は `__<名前>__` にし、`replace-placeholders.py` の tokens に入れる。人が書く所は `<中身>` | `__App__`、`<名前>` |
+| 外の道具が読むファイル | 道具が決めた名前のままにし、この表の形にしない | `ios/license_plist.yml`、`store-release/templates/ja/*.txt` |
 
 ### 接頭語の表
 
@@ -49,7 +51,9 @@
 | 動詞 | すること |
 | --- | --- |
 | `add`・`create` | 足す、作る |
-| `collect`・`fetch`・`list`・`search` | 集める、取ってくる、並べる、探す |
+| `collect` | 手元の記録（会話の記録など）から集める |
+| `fetch` | 外（App Store などの API）から取ってくる |
+| `find`・`list`・`search` | 手元から合うものを 1 つ出す、並べる、検索する |
 | `check`・`classify`・`count`・`hash` | 確かめる、分ける、数える、指紋を取る |
 | `record`・`render`・`take`・`tile`・`write` | 録る、描く、撮る、並べる、書く |
 | `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
@@ -91,6 +95,7 @@
 | ファイル | 中身 |
 | --- | --- |
 | [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
+| [lib/build_log.sh](../lib/build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す `show_errors` |
 | [lib/dates.py](../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
 | [lib/git.py](../lib/git.py) | タイムアウト付きの git と、リポジトリの根。根は、まだ無いフォルダからも在る親をたどって探す |
 | [lib/git.sh](../lib/git.sh) | リポジトリの根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。既定のブランチと、GitHub での書き込みの権限 |
@@ -98,11 +103,9 @@
 | [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
 | [lib/hook_state.py](../lib/hook_state.py) | 状態フォルダの場所と名前、作る時の古い状態ファイルの掃除 |
 | [lib/loader.py](../lib/loader.py) | ファイルの場所から .py を読み込む |
-| [lib/log.sh](../lib/log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す `show_errors` |
 | [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
-| [lib/simulator.sh](../lib/simulator.sh) | 使うシミュレーターの UDID を出す `pick_iphone`。`CC_UI_DEVICE` が無ければ、先頭の iPhone を選ぶ |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
 
 ## 🧪 確かめ方
@@ -122,6 +125,8 @@ claude-config を変えたら、`make verify` を通す。
 ### テスト
 
 テストは `tests/<対象>.sh` に置く。1 本ずつが確かめることは、次のとおりである。
+
+対象は、フックの `.py`、`scripts/` のファイル、`scripts/` を持つスキルである。テストの名前は、対象の拡張子を除いた名前にする。config-audit が、テストと対象が 1 対 1 でないと `NG` にする。
 
 | テスト | 確かめること |
 | --- | --- |

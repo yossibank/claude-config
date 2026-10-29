@@ -142,6 +142,7 @@ paths:
 - ひな形の `__<名前>__` の印が、`replace-placeholders.py` の tokens にあるか
 - `replace-placeholders.py` が、`__<名前>__` のほかを置き換えていないか
 - skills・agents・rules・hooks・scripts が README の表にあるか
+- フック・scripts・スクリプトを持つスキルと `tests/` のテストが 1 対 1 か
 - スキルが README の使う順の図にあるか
 - リンク先とパスの参照先があるか
 - 名前の接頭語とスキルのスクリプトの頭の動詞が、`docs/development.md` の表にあるか

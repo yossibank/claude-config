@@ -21,7 +21,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 3. 不満を集める。選んだ競合ごとに、`fetch-rival-reviews.py` で星 2 以下のレビューを出す。同じ不満はまとめて数える。
 4. 不満の表を作る。多い順に並べ、「不満の重さ」の節に従って重さを付ける。作る人 1 人で応えられるものには、対応する機能を付ける。
 5. 最初のリリースの機能を決める。不満の上位に応える機能だけにし、ほかは「この先の段階」に回す。
-6. `${CLAUDE_SKILL_DIR}/templates/` の 2 つを写して埋め、下書きを書く。未決は、overview の「未決」に `- [ ]` の項目で 1 つずつ書く。roadmap の状態は、すべて未着手にする。
+6. 「書き出す先」の表のひな形を写して埋め、下書きを書く。未決は、overview の「未決」に `- [ ]` の項目で 1 つずつ書く。roadmap の状態は、すべて未着手にする。
 7. 下書きと、人が決めることを人に見せる。
 
 ```sh
@@ -42,8 +42,8 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-rival-reviews.py <アプリの ID> 
 
 | ファイル | ひな形 | 大きさ |
 | --- | --- | --- |
-| `docs/overview.md` | `${CLAUDE_SKILL_DIR}/templates/overview.md` | 5KB まで |
-| `docs/roadmap.md` | `${CLAUDE_SKILL_DIR}/templates/roadmap.md` | 3KB まで |
+| `docs/overview.md` | `${CLAUDE_SKILL_DIR}/../app-init/templates/ios-app/docs/overview.md` | 5KB まで |
+| `docs/roadmap.md` | `${CLAUDE_SKILL_DIR}/../app-init/templates/ios-app/docs/roadmap.md` | 3KB まで |
 
 ## 不満の重さ
 

@@ -4,7 +4,6 @@ set -euo pipefail
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <アプリの名前（英小文字）> <ストアの表示名>"; exit 1; }
 
 skill=$(cd "$(dirname "$0")/.." && pwd -P)
-config=$(cd "$skill/../.." && pwd)
 name="$1"
 display="$2"
 root="${CC_APPS_DIR:-$HOME/Applications/AppStore}/$name"
@@ -40,11 +39,11 @@ cleanup() {
 trap cleanup ERR
 
 mkdir -p "$root/docs"
-rsync -a --exclude .DS_Store "$skill/templates/ios-app/" "$root/"
+rsync -a --exclude .DS_Store --exclude /docs/ "$skill/templates/ios-app/" "$root/"
 
 for doc in overview roadmap; do
     if [[ ! -f $root/docs/$doc.md ]]; then
-        cp "$config/skills/app-plan/templates/$doc.md" "$root/docs/$doc.md"
+        cp "$skill/templates/ios-app/docs/$doc.md" "$root/docs/$doc.md"
         copied+=("$root/docs/$doc.md")
     fi
 done
