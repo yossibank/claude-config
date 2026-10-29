@@ -230,6 +230,25 @@ def check_readme():
             yield readme, 1, f"README の表に載っていない: {entry}"
 
 
+def test_targets():
+    targets = {}
+    for path in tracked("hooks/*.py", "scripts/*"):
+        targets.setdefault(os.path.splitext(os.path.basename(path))[0], path)
+    for path in tracked("skills/*/scripts/*"):
+        skill = os.path.relpath(path, ROOT).split(os.sep)[1]
+        targets.setdefault(skill, os.path.join(ROOT, "skills", skill, "SKILL.md"))
+    return targets
+
+
+def check_test_pairs():
+    targets = test_targets()
+    tests = {os.path.splitext(os.path.basename(path))[0]: path for path in tracked("tests/*.sh")}
+    for name in sorted(targets.keys() - tests.keys()):
+        yield targets[name], 1, f"テストが無い: tests/{name}.sh"
+    for name in sorted(tests.keys() - targets.keys()):
+        yield tests[name], 1, "テストの対象が無い。hooks/<名前>.py・scripts/<名前>・scripts/ を持つスキルの名前にする"
+
+
 def check_readme_flow():
     readme = os.path.join(ROOT, "README.md")
     section = re.search(r"^## 🧰 .*?(?=^## |\Z)", read(readme), re.M | re.S)
@@ -523,6 +542,7 @@ CHECKS = [
     check_rules,
     check_readme,
     check_readme_flow,
+    check_test_pairs,
     check_skill_steps,
     check_terms,
     check_prefixes,

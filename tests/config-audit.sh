@@ -103,6 +103,26 @@ d=$(copy readme)
 echo 'print(1)' >"$d/hooks/post-tool-extra.py"
 expect_audit "$d" "README の表に載っていない: hooks/post-tool-extra.py" "README に無いフック"
 
+d=$(copy test-missing-hook)
+rm -f "$d/tests/swift-format.sh"
+expect_audit "$d" "hooks/swift-format.py:1 テストが無い: tests/swift-format.sh" "テストの無いフック"
+
+d=$(copy test-missing-script)
+rm -f "$d/tests/docs-section.sh"
+expect_audit "$d" "scripts/docs-section.sh:1 テストが無い: tests/docs-section.sh" "テストの無い scripts のファイル"
+
+d=$(copy test-missing-skill)
+rm -f "$d/tests/ui-record.sh"
+expect_audit "$d" "skills/ui-record/SKILL.md:1 テストが無い: tests/ui-record.sh" "テストの無い、スクリプトを持つスキル"
+
+d=$(copy test-orphan)
+printf '#!/bin/bash\n' >"$d/tests/nothing.sh"
+expect_audit "$d" "tests/nothing.sh:1 テストの対象が無い" "対象の無いテスト"
+
+d=$(copy test-orphan-run)
+printf '#!/bin/bash\n' >"$d/tests/run.sh"
+expect_audit "$d" "tests/run.sh:1 テストの対象が無い" "hooks/run.sh はテストの対象にしない"
+
 d=$(copy allowed)
 replace "$d/skills/pr-prune/SKILL.md" 'allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh *)' 'allowed-tools: Bash(git status *)'
 expect_audit "$d" "allowed-tools で許可していない: scripts/prune-merged.sh" "許可していないスクリプト"
