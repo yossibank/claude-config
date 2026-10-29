@@ -3,12 +3,17 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 
+base="$work/base"
+mkdir -p "$base"
+(cd "$root" && git ls-files -z | rsync -a --from0 --files-from=- ./ "$base/")
+git -C "$base" init -q
+git -C "$base" add -A
+git -C "$base" -c user.name=t -c user.email=t@t commit -q -m base
+
 copy() {
-    local dest="$work/$1"
-    mkdir -p "$dest"
-    (cd "$root" && git ls-files -z | rsync -a --from0 --files-from=- ./ "$dest/")
-    git -C "$dest" init -q
-    echo "$dest"
+    git -C "$base" reset -q --hard
+    git -C "$base" clean -fdxq
+    echo "$base"
 }
 
 replace() {
