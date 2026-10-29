@@ -18,7 +18,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 3. `record-video.sh` で録画する。
 4. `tile-frames.sh` で、はじめは低いコマ数で全体を並べ、動きの起きる時刻を見つける。
 5. その時刻の前後だけを、高いコマ数で切り出して並べ直す。
-6. 一時の仕掛けを戻す。`git diff` に残っていないことを確かめる。
+6. 一時の仕掛けのファイルと書き換えを戻す。`git status --short` に残っていないことを確かめる。
 
 ```sh
 ${CLAUDE_SKILL_DIR}/scripts/record-video.sh <UDID> <秒数> <出力先>/before.mp4

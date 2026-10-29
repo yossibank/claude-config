@@ -138,8 +138,8 @@ def check_table_toc(doc):
     titles = {EMOJI.sub("", text.lstrip("#")).strip() for _, text, _, what in doc.rows if what == "heading" and heading_level(text) == 2}
     found = []
     for body in tables(doc):
-        firsts = [cells[0] for _, cells in body]
-        if len(firsts) >= 2 and all(first in titles for first in firsts):
+        firsts = [cells[0] for _, cells in body if len(cells) == 2]
+        if len(firsts) == len(body) >= 2 and all(first in titles for first in firsts):
             found.append((body[0][0], "節の名前を並べた表は目次になる。表を消し、冒頭の文で決めることを書く"))
     return found
 
