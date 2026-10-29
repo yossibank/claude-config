@@ -7,7 +7,10 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from dates import to_jst  # noqa: E402
-from hook_io import EDIT_TOOLS, RULES_UNREAD, git_root, read_payload, remove_stale, safe_name, tool_input  # noqa: E402
+from git import git_root  # noqa: E402
+from hook_io import EDIT_TOOLS, read_payload, tool_input  # noqa: E402
+from hook_messages import RULES_UNREAD  # noqa: E402
+from hook_state import remove_stale, safe_name  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
