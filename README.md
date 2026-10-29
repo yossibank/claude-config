@@ -54,8 +54,8 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 
 1. CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクする。同じ名前の実体があれば `NG` を出して止まる。
 2. 壊れたスキルのリンクを消す。
-3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。入れた許可の一覧は `~/.claude/claude-config-allow.json` に残す。
-4. 表示された `mv` のコマンドで、差分を確かめてから置き換える。
+3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。入れる許可の一覧は `claude-config-allow.json.new` に書く。
+4. 表示された `mv` のコマンドで、差分を確かめてから 2 つを置き換える。変わらない時は、許可の一覧だけをその場で置き換える。
 
 > [!WARNING]
 > フックはこの場所のファイルを読む。ほかの場所から実行すると `NG` を出して止まる。
