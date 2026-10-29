@@ -1,0 +1,26 @@
+resolve_repo() {
+    (cd "$1" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || {
+        echo "NG Git のリポジトリではない: $1"
+        return 1
+    }
+}
+
+default_branch() {
+    git -C "$1" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main
+}
+
+repo_access() {
+    local info owner name permission
+
+    info=$(cd "$1" && gh repo view --json owner,name,viewerPermission \
+        -q '"\(.owner.login) \(.name) \(.viewerPermission)"') || {
+        echo "NG gh repo view が通らない"
+        return 1
+    }
+    read -r owner name permission <<< "$info"
+
+    case $permission in
+        ADMIN | MAINTAIN | WRITE) echo "$owner $name write" ;;
+        *) echo "$owner $name read" ;;
+    esac
+}

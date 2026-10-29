@@ -14,14 +14,14 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 表は、次のコマンドで出す。件数を省くと 10 件である。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/tokens.py <YYYY-MM> [件数]
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/count-tokens.py <YYYY-MM> [件数]
 ```
 
 会話は、始まった日（日本時間）の月に数える。記録の置き場所は `CLAUDE_PROJECTS` で変えられる。
 
-## 表の列
+## count-tokens.py の出力
 
-表の列は、次のとおりである。
+`count-tokens.py` が出す表の列は、次のとおりである。
 
 | 列 | 中身 |
 | --- | --- |
@@ -44,7 +44,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/tokens.py <YYYY-MM> [件数]
 | キャッシュの読み込み | 0.1 |
 | 出力 | 5 |
 
-## 読み方
+## 出力の読み方
 
 上位の作業ごとに、どこで重くなったかを次の表で見当を付ける。
 
@@ -57,4 +57,8 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/tokens.py <YYYY-MM> [件数]
 
 ## 報告
 
-人には、表と、上位 3 件の見立てを返す。決まりの直しは提案に留め、人が決めてから直す。
+人には、表と、上位 3 件の見立てを返す。
+
+## 制約
+
+- 決まりの直しは提案に留め、人が決めてから直す。

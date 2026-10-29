@@ -2,12 +2,12 @@
 name: app-init
 description: 新しい iOS アプリのリポジトリを、kakeibot の形のひな形から作る。app-plan で企画を書いた後や、人が新しいアプリを始める時に使う。
 argument-hint: "<アプリの名前（英小文字）> <ストアの表示名>"
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/init.sh *)
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/create-app.sh *)
 ---
 
 # アプリを立ち上げる
 
-`templates/ios-app/` を写して、ビルドとテストが通る新しいアプリのリポジトリを作る手順。構成は `docs/architecture-ios.md` の共通の形に従う。
+ビルドとテストが通る新しいアプリのリポジトリを、ひな形から作る手順。ひな形は `${CLAUDE_SKILL_DIR}/templates/ios-app/` にある。構成は `docs/architecture-ios.md` の共通の形に従う。
 
 ## 入力
 
@@ -21,23 +21,24 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/init.sh *)
 立ち上げは、次の順に進める。
 
 1. 名前と表示名を人に確かめる。`app-plan` の下書きがあれば、その名前を使う。
-2. `init.sh` を走らせる。
+2. `create-app.sh` を走らせる。
 3. 作ったリポジトリで `make setup` と `make verify` を通す。
 4. GitHub にリポジトリを作るかを人に聞く。作る時は、人の承認を得てから `gh repo create` する。
 
 ```sh
-${CLAUDE_SKILL_DIR}/scripts/init.sh <名前> <表示名>
+${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 ```
 
-## init.sh がすること
+## create-app.sh がすること
 
-`init.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `APPS_DIR` で変えられる。
+`create-app.sh` は、`~/Applications/AppStore/<名前>/` に次のことをする。置き場所は `APPS_DIR` で変えられる。
 
 - フォルダに `docs/` のほかの中身があれば、`NG` を出して止まる
 - 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる
 - 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる
 - ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える
 - `docs/overview.md`・`docs/roadmap.md` が無ければ、`app-plan` のひな形を置く
+- app-plan のひな形は、app-plan の `templates/` から直に写す。app-plan が同じ claude-config に要る
 - overview の最初の 1 文を、README の説明の文に写す
 - `git init` し、最初の commit を作る
 

@@ -1,6 +1,6 @@
 import ast
 import fnmatch
-import importlib.util
+import functools
 import json
 import os
 import re
@@ -8,6 +8,11 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "lib"))
+
+from md_blocks import fence_marks, front_matter_end  # noqa: E402
+from modules import load_hook  # noqa: E402
+
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
@@ -17,10 +22,17 @@ EXIT_FAIL = re.compile(r"\s*exit [1-9]")
 RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
 HOOK_NAME = re.compile(r"claude-config/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
+SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
+PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
+CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
+WRITE_TOOLS = re.compile(r"\b(Multi|Notebook)?Edit\b|\bWrite\b")
+VERB_ROW = re.compile(r"^\| ((?:`[a-z]+`・?)+) \|", re.M)
+APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
+APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
 SKILL_SECTIONS = ["起動条件", "入力", "手順", "報告", "制約"]
 DESCRIPTION_LIMIT = 120
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
-ASK_EVERY_TIME = {"store-release/scripts/archive.sh"}
+ASK_EVERY_TIME = {"store-release/scripts/archive-app.sh"}
 
 problems = []
 
@@ -34,15 +46,14 @@ def tracked(*patterns):
     return [os.path.join(ROOT, path) for path in out.splitlines()]
 
 
+@functools.cache
 def read(path):
     return open(path, encoding="utf-8").read()
 
 
 def front_matter(path):
     lines = read(path).split("\n")
-    if not lines or lines[0] != "---":
-        return None
-    end = next((i for i in range(1, len(lines)) if lines[i] == "---"), None)
+    end = front_matter_end(lines)
     if end is None:
         return None
     fields = {}
@@ -57,15 +68,13 @@ def front_matter(path):
     return fields
 
 
+def outside_code(path):
+    lines = read(path).split("\n")
+    return [(number, line) for number, (line, (mark, _)) in enumerate(zip(lines, fence_marks(lines)), 1) if mark is None]
+
+
 def headings(path):
-    found = []
-    fence = False
-    for number, line in enumerate(read(path).split("\n"), 1):
-        if line.lstrip().startswith(("```", "~~~")):
-            fence = not fence
-        elif not fence and line.startswith("## "):
-            found.append((number, line[3:].strip()))
-    return found
+    return [(number, line[3:].strip()) for number, line in outside_code(path) if line.startswith("## ")]
 
 
 def check_skill_sections(skill):
@@ -120,10 +129,12 @@ def check_skills():
         for number, line in enumerate(expand_aliases(read(skill)).split("\n"), 1):
             if line.startswith("allowed-tools:"):
                 continue
-            for prefix, reference in SKILL_PATH.findall(line):
-                target = os.path.normpath(os.path.join(base, reference))
-                if not os.path.exists(target):
+            for reference, after in SKILL_REF.findall(line):
+                reference = reference.rstrip("./")
+                if reference and after not in ("<", "*") and not os.path.exists(os.path.join(base, reference)):
                     ng(skill, number, f"参照先が無い: {reference}")
+            for prefix, reference in SKILL_PATH.findall(line):
+                if not os.path.exists(os.path.normpath(os.path.join(base, reference))):
                     continue
                 if "scripts/" not in reference:
                     continue
@@ -162,6 +173,24 @@ def check_agents():
         found = headings(path)
         if not found or found[-1][1] != "返す形":
             ng(path, found[-1][0] if found else 1, "agents の最後の ## は「返す形」にする")
+        body = read(path).split("\n---\n", 1)[-1]
+        tools = fields.get("tools")
+        if "書き換えない" in body and (tools is None or WRITE_TOOLS.search(tools)):
+            ng(path, 1, "書き換えないエージェントは tools を書き、Edit・Write・MultiEdit・NotebookEdit を入れない")
+
+
+def check_claude_templates():
+    order = [row[1] for row in load_hook("docs-check").rule_table("## CLAUDE.md の形", "順")][1:-1]
+    if not order:
+        ng(os.path.join(ROOT, "rules", "docs-writing.md"), 1, "CLAUDE.md の形の表が読めない")
+        return
+    for path in tracked("skills/*/templates/*/CLAUDE.md"):
+        top = 0
+        for number, name in headings(path):
+            rank = order.index(name) if name in order else len(order)
+            if rank < top:
+                ng(path, number, f"CLAUDE.md の ## は {'・'.join(order)}・ほかの節の順に並べる")
+            top = max(top, rank)
 
 
 def check_rules():
@@ -207,16 +236,78 @@ def check_prefixes():
                 ng(path, 1, f"接頭語 {prefix} は {place} に使わない（README の表の使う所）")
 
 
+def verbs():
+    text = read(os.path.join(ROOT, "README.md"))
+    return {verb for cell in VERB_ROW.findall(text) for verb in re.findall(r"`([a-z]+)`", cell)}
+
+
+def check_script_verbs():
+    allowed = verbs()
+    readme = os.path.join(ROOT, "README.md")
+    if not allowed:
+        ng(readme, 1, "名前の付け方の動詞の表が読めない")
+        return
+    for path in tracked("skills/*/scripts/*"):
+        if len(os.path.relpath(path, ROOT).split(os.sep)) != 4:
+            continue
+        verb = os.path.basename(path).split(".")[0].split("-")[0]
+        if verb not in allowed:
+            ng(path, 1, f"スキルのスクリプトの頭の動詞が README の表に無い: {verb}")
+
+
+def in_app(path):
+    if path.startswith(APP_DOCS_TEMPLATE + os.sep):
+        return os.path.join(APP_TEMPLATE, "docs", os.path.relpath(path, APP_DOCS_TEMPLATE))
+    return path
+
+
+def exists_in_app(path):
+    docs = os.path.join(APP_TEMPLATE, "docs") + os.sep
+    if path.startswith(docs):
+        return os.path.exists(os.path.join(APP_DOCS_TEMPLATE, path[len(docs) :]))
+    return os.path.exists(path)
+
+
 def check_links():
     for path in tracked("*.md"):
-        if "/templates/" in path:
-            continue
+        template = "/templates/" in path
+        place = in_app(path) if template else path
         for number, line in enumerate(read(path).split("\n"), 1):
             for target in LINK.findall(line):
                 if re.match(r"[a-z]+:", target) or target.startswith("<"):
                     continue
-                if not os.path.exists(os.path.normpath(os.path.join(os.path.dirname(path), target))):
+                if template and ("<" in target or "__" in target):
+                    continue
+                resolved = os.path.normpath(os.path.join(os.path.dirname(place), target))
+                if not (exists_in_app(resolved) if template else os.path.exists(resolved)):
                     ng(path, number, f"リンク先が無い: {target}")
+
+
+def path_bases(path):
+    bases = [ROOT, os.path.dirname(path), APP_TEMPLATE]
+    parts = os.path.relpath(path, ROOT).split(os.sep)
+    if parts[0] == "skills" and len(parts) > 2:
+        bases.append(os.path.join(ROOT, "skills", parts[1]))
+    return bases
+
+
+def check_paths():
+    for path in tracked("*.md"):
+        for number, line in outside_code(path):
+            for reference, after in PATH_REF.findall(line):
+                reference = reference.rstrip(".")
+                if after in ("<", "*") or any(os.path.exists(os.path.join(base, reference)) for base in path_bases(path)):
+                    continue
+                ng(path, number, f"参照先が無い: {reference}")
+
+
+def check_template_scripts():
+    files = [path for path in tracked("skills/*/templates/*") if path.endswith((".sh", "/Makefile"))]
+    for path in files:
+        for number, line in enumerate(read(path).split("\n"), 1):
+            for reference in CONFIG_REF.findall(line):
+                if not os.path.exists(os.path.join(ROOT, reference)):
+                    ng(path, number, f"claude-config の参照先が無い: {reference}")
 
 
 def check_settings():
@@ -231,13 +322,6 @@ def check_settings():
                 for name in names:
                     if not os.path.isfile(os.path.join(ROOT, "hooks", f"{name}.py")):
                         ng(path, 1, f"フックのファイルが無い: hooks/{name}.py")
-
-
-def load_hook(name):
-    spec = importlib.util.spec_from_file_location(name.replace("-", "_"), os.path.join(ROOT, "hooks", f"{name}.py"))
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def check_scripts():
@@ -313,6 +397,8 @@ def check_python(path, tree):
 
 def check_docs():
     docs = load_hook("docs-check")
+    if not docs.heading_emojis() or not docs.readme_order():
+        ng(docs.RULES, 1, "見出しの絵文字の表か、README の形の表が読めない")
     for path in tracked("*.md"):
         for number, message in docs.check(path):
             ng(path, number, message)
@@ -321,10 +407,14 @@ def check_docs():
 def main():
     check_skills()
     check_agents()
+    check_claude_templates()
     check_rules()
     check_readme()
     check_prefixes()
+    check_script_verbs()
     check_links()
+    check_paths()
+    check_template_scripts()
     check_settings()
     check_scripts()
     check_docs()

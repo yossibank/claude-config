@@ -1,6 +1,10 @@
 import os
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
+
+from script_io import fail  # noqa: E402
+
 LIMITS = {
     "name.txt": 30,
     "subtitle.txt": 30,
@@ -12,11 +16,6 @@ LIMITS = {
     "privacy_url.txt": 255,
 }
 OPTIONAL = {"promotional_text.txt", "release_notes.txt"}
-
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
 
 
 def main():

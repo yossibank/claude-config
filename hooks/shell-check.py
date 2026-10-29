@@ -3,7 +3,7 @@ import re
 import subprocess
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import read_payload, tool_input  # noqa: E402
 
@@ -12,9 +12,13 @@ VAR_BEFORE_WIDE = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]")
 
 def check(path):
     found = []
-    result = subprocess.run(["bash", "-n", path], capture_output=True, text=True, timeout=10)
-    if result.returncode:
-        found.append((1, "bash -n が通らない: " + result.stderr.strip().splitlines()[-1]))
+    try:
+        result = subprocess.run(["bash", "-n", path], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        result = None
+    if result and result.returncode:
+        reason = result.stderr.strip().splitlines()
+        found.append((1, "bash -n が通らない" + (f": {reason[-1]}" if reason else "")))
     for number, line in enumerate(open(path, encoding="utf-8", errors="ignore").read().split("\n"), 1):
         if VAR_BEFORE_WIDE.search(line):
             found.append((number, "変数の直後に全角の文字がある。bash は変数名の一部とみなすので ${名前} で囲む"))
