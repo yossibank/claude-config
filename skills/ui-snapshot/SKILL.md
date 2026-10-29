@@ -25,7 +25,7 @@ ${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ>
 
 `render-snapshots.sh` は、次を行い、終わると必ずパッケージを元に戻す。
 
-1. パッケージを一時のフォルダに退避し、そのパスを `退避:` の行に出す。
+1. パッケージを `.git` を除いて一時のフォルダに退避し、そのパスを `退避:` の行に出す。
 2. その場の Package.swift に、一時のテストのターゲット `UISnapshotTests` を足す。
 3. セットに `patch.py` があれば、パッケージのフォルダを渡して走らせる。
 4. 出力先の古い PNG を消し、セットの `SnapshotTests.swift` を入れる。

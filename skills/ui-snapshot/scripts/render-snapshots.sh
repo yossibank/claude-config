@@ -33,11 +33,11 @@ scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | jq -r '.workspace
 
 backup=$(mktemp -d)
 echo "退避: $backup"
-rsync -a --exclude .build --exclude .swiftpm "$package/" "$backup/"
+rsync -a --exclude .git --exclude .build --exclude .swiftpm "$package/" "$backup/"
 
 restore() {
     rm -rf "$tests"
-    rsync -a --delete --exclude .build --exclude .swiftpm "$backup/" "$package/" && rm -rf "$backup"
+    rsync -a --delete --exclude .git --exclude .build --exclude .swiftpm "$backup/" "$package/" && rm -rf "$backup"
 }
 
 trap restore EXIT
