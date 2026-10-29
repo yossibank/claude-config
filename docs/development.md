@@ -82,6 +82,7 @@
 | [lib/hook_state.py](../lib/hook_state.py) | フック | 状態ファイルの名前と、古い状態ファイルの掃除 |
 | [lib/loader.py](../lib/loader.py) | config-audit.py、write-report.py ほか | ファイルの場所から .py を読み込む |
 | [lib/md_blocks.py](../lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py、collect-corrections.py | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
+| [lib/md_doc.py](../lib/md_doc.py) | docs-check、config-audit.py | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | スキルの .py | `NG` を出して止める `fail` と、月の引数を確かめる `require_month` |
 | [lib/transcripts.py](../lib/transcripts.py) | collect-corrections.py、count-tokens.py、フック | 会話の記録の読み方 |
 

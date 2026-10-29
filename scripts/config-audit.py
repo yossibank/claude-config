@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(ROOT, "lib"))
 from hook_io import EDIT_TOOLS  # noqa: E402
 from loader import load_hook  # noqa: E402
 from md_blocks import fence_marks, front_matter, table_under  # noqa: E402
+from md_doc import body_emojis, heading_emojis, readme_order, rule_table  # noqa: E402
 
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
@@ -111,10 +112,9 @@ def expanded_skills():
     return tuple(expand_aliases(read(path)) for path in tracked("skills/*/SKILL.md"))
 
 
-def check_skills():
+def check_skill_fields():
     for skill_dir in skill_names():
-        base = os.path.join(ROOT, "skills", skill_dir)
-        skill = os.path.join(base, "SKILL.md")
+        skill = os.path.join(ROOT, "skills", skill_dir, "SKILL.md")
         fields = fields_of(skill)
         if fields.get("name") != skill_dir:
             yield skill, 2, f"name がフォルダ名 {skill_dir} と違う: {fields.get('name')}"
@@ -123,7 +123,13 @@ def check_skills():
         if len(fields.get("description", "")) > DESCRIPTION_LIMIT:
             yield skill, 3, f"description が {DESCRIPTION_LIMIT} 字を超えている。毎回読み込まれるので短くする"
         yield from check_skill_sections(skill)
-        patterns = allowed_patterns(fields)
+
+
+def check_skill_references():
+    for skill_dir in skill_names():
+        base = os.path.join(ROOT, "skills", skill_dir)
+        skill = os.path.join(base, "SKILL.md")
+        patterns = allowed_patterns(fields_of(skill))
         for number, line in enumerate(expand_aliases(read(skill)).split("\n"), 1):
             if line.startswith("allowed-tools:"):
                 continue
@@ -142,10 +148,14 @@ def check_skills():
                         yield skill, number, f"外に出す操作が allowed-tools で自動で許可されている: {reference}"
                 elif not allowed:
                     yield skill, number, f"allowed-tools で許可していない: {prefix}{reference}"
-        yield from check_unused(skill_dir)
 
 
-def check_unused(skill_dir):
+def check_skill_unused():
+    for skill_dir in skill_names():
+        yield from unused_scripts(skill_dir)
+
+
+def unused_scripts(skill_dir):
     scripts = tracked(f"skills/{skill_dir}/scripts/*")
     own_skill = expand_aliases(read(os.path.join(ROOT, "skills", skill_dir, "SKILL.md")))
     for path in scripts:
@@ -177,7 +187,7 @@ def check_agents():
 
 
 def check_claude_templates():
-    order = [row[1] for row in load_hook("docs-check").rule_table("## CLAUDE.md の形", "順")][1:-1]
+    order = [row[1] for row in rule_table("## CLAUDE.md の形", "順")][1:-1]
     if not order:
         yield os.path.join(ROOT, "rules", "docs-claude.md"), 1, "CLAUDE.md の形の表が読めない"
         return
@@ -397,7 +407,7 @@ def check_python(path, tree):
 
 def check_docs():
     docs = load_hook("docs-check")
-    if not docs.heading_emojis() or not docs.body_emojis() or not docs.readme_order():
+    if not heading_emojis() or not body_emojis() or not readme_order():
         yield os.path.join(ROOT, "rules", "docs-human.md"), 1, "見出しの絵文字・本文の絵文字・README の形のどれかの表が読めない"
     for path in tracked("*.md"):
         for number, message in docs.check(path):
@@ -405,7 +415,9 @@ def check_docs():
 
 
 CHECKS = [
-    check_skills,
+    check_skill_fields,
+    check_skill_references,
+    check_skill_unused,
     check_agents,
     check_claude_templates,
     check_rules,
