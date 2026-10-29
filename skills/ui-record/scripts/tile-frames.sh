@@ -5,8 +5,11 @@ set -euo pipefail
 
 video="$1"
 start="$2"
+[[ $start =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "NG 開始の秒は 0 以上の数にする: $start"; exit 1; }
 duration="$3"
+[[ $duration =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "NG 長さの秒は 0 以上の数にする: $duration"; exit 1; }
 fps="$4"
+[[ $fps =~ ^[0-9]+([.][0-9]+)?$ && ! $fps =~ ^0+([.]0+)?$ ]] || { echo "NG 1 秒あたりのコマ数は 0 より大きい数にする: $fps"; exit 1; }
 crop="$5"
 columns="$6"
 [[ $columns =~ ^[1-9][0-9]*$ ]] || { echo "NG 列数は 1 以上の整数にする: $columns"; exit 1; }

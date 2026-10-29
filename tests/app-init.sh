@@ -41,7 +41,7 @@ expect OK "create-app: ひな形から新しいアプリを作る" bash "$create
 check "create-app: 名前の印を置き換えたワークスペースがある" test -d "$CC_APPS_DIR/demo/ios/Demo.xcworkspace"
 check "create-app: overview と roadmap を写す" test -f "$CC_APPS_DIR/demo/docs/roadmap.md"
 check "create-app: 最初のコミットを作る" grep -q "chore: start demo" <<<"$(git -C "$CC_APPS_DIR/demo" log --oneline)"
-check "create-app: 中身に印を残さない" test -z "$(git -C "$CC_APPS_DIR/demo" grep -l __App__)"
+check "create-app: 中身に印を残さない" test -z "$(git -C "$CC_APPS_DIR/demo" grep -lE '__[A-Za-z]+__')"
 expect "NG docs/ のほかに中身がある" "create-app: 中身のある場所には作らない" bash "$create" demo "デモ"
 
 finish

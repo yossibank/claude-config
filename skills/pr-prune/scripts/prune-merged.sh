@@ -3,13 +3,6 @@ set -euo pipefail
 
 source "$(dirname "$0")/../../../lib/git.sh"
 
-[[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <ブランチ名> <PR 番号>"; exit 1; }
-
-use_repo "$1"
-branch=$2
-pr=$3
-name=$(basename "$repo")
-
 fail() {
     echo "NG $name: $1"
     exit 1
@@ -36,16 +29,8 @@ clean_derived_data() {
     echo "$count"
 }
 
-info=$(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName \
-    -q '"\(.state) \(.headRefOid) \(.headRefName)"') || fail "PR #$pr を gh pr view で読めない"
-read -r state head ref <<< "$info"
-[[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（${state}）"
-[[ $ref == "$branch" ]] || head=""
-if [[ -n $head ]] && ! git -C "$repo" cat-file -e "$head^{commit}" 2>/dev/null; then
-    git -C "$repo" fetch -q origin "pull/$pr/head" 2>/dev/null || true
-fi
-
 merged() {
+    local branch=$1 head=$2 main=$3
     local tip base
     tip=$(git -C "$repo" rev-parse "refs/heads/$branch")
     [[ $tip == "$head" ]] && return 0
@@ -57,6 +42,22 @@ merged() {
     git -C "$repo" diff "$base" "$branch" | git -C "$repo" apply -R --check 2>/dev/null
 }
 
+[[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <ブランチ名> <PR 番号>"; exit 1; }
+
+use_repo "$1"
+branch=$2
+pr=$3
+name=$(basename "$repo")
+
+info=$(cd "$repo" && gh pr view "$pr" --json state,headRefOid,headRefName \
+    -q '"\(.state) \(.headRefOid) \(.headRefName)"') || fail "PR #$pr を gh pr view で読めない"
+read -r state head ref <<< "$info"
+[[ $state == MERGED ]] || fail "PR #$pr が MERGED ではない（${state}）"
+[[ $ref == "$branch" ]] || head=""
+if [[ -n $head ]] && ! git -C "$repo" cat-file -e "$head^{commit}" 2>/dev/null; then
+    git -C "$repo" fetch -q origin "pull/$pr/head" 2>/dev/null || true
+fi
+
 main=$(default_branch "$repo")
 main=${main#origin/}
 [[ $(git -C "$repo" branch --show-current) == "$main" ]] || fail "手元が $main ではない"
@@ -66,7 +67,7 @@ git -C "$repo" pull -q --ff-only origin "$main" || fail "pull --ff-only が通�
     || fail "手元の $main に、origin に無い commit がある"
 
 if git -C "$repo" rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
-    merged || fail "$branch の中身が $main に入っていない。ワークツリーとブランチは残した"
+    merged "$branch" "$head" "$main" || fail "$branch の中身が $main に入っていない。ワークツリーとブランチは残した"
     worktree=$(git -C "$repo" worktree list --porcelain \
         | awk -v want="branch refs/heads/$branch" '/^worktree /{path=substr($0, 10)} $0 == want {print path}')
     [[ -z $worktree ]] || git -C "$repo" worktree remove "$worktree" 2>/dev/null \

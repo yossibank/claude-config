@@ -205,6 +205,22 @@ d=$(copy template-script-ng)
 replace "$d/skills/app-init/templates/ios-app/Makefile" 'scripts/render-snapshots.sh' 'scripts/render.sh'
 expect_audit "$d" "claude-config の参照先が無い: skills/ui-snapshot/scripts/render.sh" "ひな形の Makefile が無いスクリプトを呼ぶ"
 
+d=$(copy template-token-ng)
+printf '\n__Nothing__\n' >>"$d/skills/app-plan/templates/roadmap.md"
+expect_audit "$d" "tokens に無い印: __Nothing__" "ひな形に置き換えない印がある"
+
+d=$(copy template-token-deep-ng)
+printf '\n# __Bundle__\n' >>"$d/skills/app-init/templates/ios-app/Makefile"
+expect_audit "$d" "tokens に無い印: __Bundle__" "ios-app の深い階層の印も見る"
+
+d=$(copy template-token-name-ng)
+replace "$d/skills/app-init/scripts/replace-placeholders.py" '("__Summary__",' '("<Summary>",'
+expect_audit "$d" "tokens に __<名前>__ でない文字列がある: <Summary>" "tokens に印の形でない文字列がある"
+
+d=$(copy template-token-direct-ng)
+printf '\n\ndef extra(text):\n    return text.replace("<x>", "y")\n' >>"$d/skills/app-init/scripts/replace-placeholders.py"
+expect_audit "$d" "tokens を通さずに文字列を置き換えている: <x>" "tokens を通さずに置き換える"
+
 d=$(copy skill-dir-ok)
 printf '\n`${CLAUDE_SKILL_DIR}/templates/<セット>/` を写す。\n' >>"$d/skills/ui-snapshot/SKILL.md"
 expect_audit "$d" OK "印の入った CLAUDE_SKILL_DIR の参照"

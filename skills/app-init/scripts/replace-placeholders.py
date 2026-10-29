@@ -6,6 +6,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 
 from script_io import fail  # noqa: E402
 
+UNWRITTEN_SUMMARY = "<何のアプリかを 1 文で>"
+
 
 def replace(text, tokens):
     for token, value in tokens:
@@ -27,7 +29,9 @@ def main():
     if len(sys.argv) < 5:
         fail("使い方: replace-placeholders.py <ルート> <パスカル> <小文字> <表示名>")
     root, pascal, lower, display = sys.argv[1:5]
-    tokens = [("__DisplayName__", display), ("__App__", pascal), ("__app__", lower)]
+    names = [("__DisplayName__", display), ("__App__", pascal), ("__app__", lower)]
+    summary = replace(summary_of(os.path.join(root, "docs", "overview.md")), names)
+    tokens = [("__Summary__", summary or UNWRITTEN_SUMMARY), *names]
 
     for directory, folders, files in os.walk(root, topdown=False):
         for file in files:
@@ -43,12 +47,6 @@ def main():
             renamed = replace(item, tokens)
             if renamed != item:
                 os.rename(os.path.join(directory, item), os.path.join(directory, renamed))
-
-    readme = os.path.join(root, "README.md")
-    summary = summary_of(os.path.join(root, "docs", "overview.md"))
-    if summary:
-        text = Path(readme).read_text(encoding="utf-8")
-        Path(readme).write_text(text.replace("<何のアプリかを 1 文で>", summary), encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -11,8 +11,7 @@ import urllib.request
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from app_store import ASC_API, ASC_KEYS, require_keys, token  # noqa: E402
-from dates import MONTH  # noqa: E402
-from script_io import Failure, fail  # noqa: E402
+from script_io import Failure, fail, require_month  # noqa: E402
 
 DOWNLOADS = {"1", "1F", "1T", "F1"}
 KEYS = [*ASC_KEYS, "ASC_VENDOR_NUMBER"]
@@ -35,14 +34,8 @@ def report(month, version):
         return gzip.decompress(response.read()).decode("utf-8")
 
 
-def check_keys():
-    require_keys(KEYS)
-
-
 def sales_by_app(month):
-    check_keys()
-    if not MONTH.fullmatch(month):
-        raise Failure(f"月は YYYY-MM で書く: {month}")
+    require_keys(KEYS)
     try:
         try:
             text = report(month, "1_1")
@@ -84,10 +77,15 @@ def summarize(text):
 
 
 def main():
+    usage = "使い方: fetch-sales.py <YYYY-MM>"
     if len(sys.argv) < 2:
-        fail("使い方: fetch-sales.py <YYYY-MM>")
+        fail(usage)
+    try:
+        require_keys(KEYS)
+    except Failure as error:
+        fail(str(error))
+    month = require_month(sys.argv[1], usage)
 
-    month = sys.argv[1]
     try:
         sales = sales_by_app(month)
     except Failure as error:

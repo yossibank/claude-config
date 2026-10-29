@@ -18,7 +18,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
    - 自分でも使うか
    - 守ること（データを送らない先など）
 2. 競合を探す。`search-apps.py` で題材の語を 2〜3 通り検索する。評価の数の多い順に 3〜5 本を選ぶ。
-3. 不満を集める。選んだ競合ごとに、`fetch-reviews.py` で星 2 以下のレビューを出す。同じ不満はまとめて数える。
+3. 不満を集める。選んだ競合ごとに、`fetch-rival-reviews.py` で星 2 以下のレビューを出す。同じ不満はまとめて数える。
 4. 不満の表を作る。多い順に並べ、「不満の重さ」の節に従って重さを付ける。作る人 1 人で応えられるものには、対応する機能を付ける。
 5. 最初のリリースの機能を決める。不満の上位に応える機能だけにし、ほかは「この先の段階」に回す。
 6. `${CLAUDE_SKILL_DIR}/templates/` の 2 つを写して埋め、下書きを書く。未決は、overview の「未決」に `- [ ]` の項目で 1 つずつ書く。roadmap の状態は、すべて未着手にする。
@@ -26,7 +26,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/search-apps.py <語> [件数]
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-reviews.py <アプリの ID> [星の上限]
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-rival-reviews.py <アプリの ID> [星の上限]
 ```
 
 どちらのスクリプトも日本の App Store を見て、次のものを出す。
@@ -34,7 +34,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-reviews.py <アプリの ID> [星�
 | スクリプト | 出力 |
 | --- | --- |
 | `search-apps.py` | ID・評価・評価の数・値段・名前を、タブ区切りで 1 行に 1 本 |
-| `fetch-reviews.py` | 新しい順に最大 500 件のうち、星の上限以下のレビューを 1 行 200 字で |
+| `fetch-rival-reviews.py` | 新しい順に最大 500 件のうち、星の上限以下のレビューを 1 行 200 字で |
 
 ## 書き出す先
 

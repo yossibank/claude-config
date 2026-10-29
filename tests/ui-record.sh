@@ -10,6 +10,10 @@ record="$root/skills/ui-record/scripts/record-video.sh"
 expect "NG 使い方" "tile-frames: 引数が足りなければ NG" bash "$tile" video.mp4 0 3 2 full 2
 expect "NG 列数は 1 以上の整数にする" "tile-frames: 列数が整数でなければ NG" bash "$tile" video.mp4 0 3 2 full x "$work/out.png"
 expect "NG 列数は 1 以上の整数にする" "tile-frames: 列数が 0 なら NG" bash "$tile" video.mp4 0 3 2 full 0 "$work/out.png"
+expect "NG 開始の秒は 0 以上の数にする" "tile-frames: 開始の秒が数でなければ NG" bash "$tile" video.mp4 x 3 2 full 2 "$work/out.png"
+expect "NG 長さの秒は 0 以上の数にする" "tile-frames: 長さの秒が数でなければ NG" bash "$tile" video.mp4 0 -1 2 full 2 "$work/out.png"
+expect "NG 1 秒あたりのコマ数は 0 より大きい数にする" "tile-frames: コマ数が数でなければ NG" bash "$tile" video.mp4 0 3 x full 2 "$work/out.png"
+expect "NG 1 秒あたりのコマ数は 0 より大きい数にする" "tile-frames: コマ数が 0 なら NG" bash "$tile" video.mp4 0 3 0 full 2 "$work/out.png"
 
 fake_command ffmpeg "echo \"\$@\" >\"$work/ffmpeg.args\""
 match "tile-frames: コマ数と列数を知らせる" "$(bash "$tile" video.mp4 1 2.5 2 full 3 "$work/out.png")" "OK $work/out.png (5 コマ、3 列)"

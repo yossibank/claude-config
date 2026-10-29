@@ -19,7 +19,7 @@
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
 | 環境変数 | `CC_[<分類>_]<中身>`。分類は接頭語の表の名前を大文字にする | `CC_UI_DEVICE`、`CC_APPS_DIR` |
-| ひな形の印 | スクリプトが置き換える所は `__<名前>__`、人が書く所は `<中身>` | `__App__`、`<名前>` |
+| ひな形の印 | スクリプトが置き換える所は `__<名前>__` にし、`replace-placeholders.py` の tokens に入れる。人が書く所は `<中身>` | `__App__`、`<名前>` |
 
 ### 接頭語の表
 
@@ -103,6 +103,8 @@
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
 | [lib/simulator.sh](../lib/simulator.sh) | 使うシミュレーターの UDID を出す `pick_iphone`。`CC_UI_DEVICE` が無ければ、先頭の iPhone を選ぶ |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
+
+app-init の `create-app.sh` は、app-plan の `templates/` を直接読む。
 
 ## 🧪 テスト
 

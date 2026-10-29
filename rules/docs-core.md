@@ -136,6 +136,8 @@ paths:
 - 本文に「書き換えない」とある agents の `tools`
 - ひな形の CLAUDE.md の節の順
 - ひな形の Makefile と `.sh` が呼ぶ claude-config のファイルがあるか
+- ひな形の `__<名前>__` の印が、`replace-placeholders.py` の tokens にあるか
+- `replace-placeholders.py` が、`__<名前>__` のほかを置き換えていないか
 - skills・agents・rules・hooks・scripts が README の表にあるか
 - スキルが README の使う順の図にあるか
 - リンク先とパスの参照先があるか
