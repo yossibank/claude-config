@@ -53,6 +53,7 @@
 | `check`・`classify`・`count`・`hash` | 確かめる、分ける、数える、指紋を取る |
 | `record`・`render`・`take`・`tile`・`write` | 録る、描く、撮る、並べる、書く |
 | `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
+| `send` | 外に送る |
 
 ## 📏 スクリプトの書き方
 
@@ -74,7 +75,7 @@
 
 | ファイル | 使う所 | 中身 |
 | --- | --- | --- |
-| [lib/app_store.py](../lib/app_store.py) | fetch-reviews.py、search-apps.py、fetch-ratings.py | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文 |
+| [lib/app_store.py](../lib/app_store.py) | app-plan・store-report・store-reply のスクリプト | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
 | [lib/dates.py](../lib/dates.py) | 月や日時を扱うスクリプト、rules-require-read | 日本時間、月の形、記録の日時の月 |
 | [lib/git.py](../lib/git.py) | フック | タイムアウト付きの git と、リポジトリの根 |
 | [lib/git.sh](../lib/git.sh) | スキルの .sh、テスト | リポジトリの根（`use_repo` は無ければ NG で止まる）と、git のフォルダの中のパス（`git_file`）。既定のブランチと、GitHub での書き込みの権限 |
@@ -84,7 +85,7 @@
 | [lib/loader.py](../lib/loader.py) | config-audit.py、write-report.py ほか | ファイルの場所から .py を読み込む |
 | [lib/md_blocks.py](../lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py、collect-corrections.py | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
 | [lib/md_doc.py](../lib/md_doc.py) | docs-check、config-audit.py | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
-| [lib/script_io.py](../lib/script_io.py) | スキルの .py | `NG` を出して止める `fail` と、月の引数を確かめる `require_month` |
+| [lib/script_io.py](../lib/script_io.py) | スキルの .py | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
 | [lib/transcripts.py](../lib/transcripts.py) | collect-corrections.py、count-tokens.py、フック | 会話の記録の読み方 |
 
 ## 🧪 テスト
@@ -112,6 +113,7 @@
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
 | `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |
 | `tests/store-release.sh` | 掲載情報の字数と形、プライバシーの申告の足りなさを確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
+| `tests/store-reply.sh` | 通信せずに、引数の NG、返信済みのレビューを除くか、`--dry-run` で送らないか、送る JSON の形が正しいか |
 | `tests/store-report.sh` | 通信せずに、引数の NG と売上の表の集計を出せるか。取れなかった数字を WARNING に書くか |
 | `tests/swift-format.sh` | `.swiftformat` が無ければ何もしないか |
 | `tests/ui-record.sh` | 偽の ffmpeg と偽の xcrun で、コマ数と出力先を決められ、引数の NG を出すか |

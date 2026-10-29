@@ -48,7 +48,14 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 | `ASC_KEY_PATH` | `.p8` のファイルのパス |
 | `ASC_VENDOR_NUMBER` | 「支払いと財務レポート」にあるベンダー番号 |
 
-キーは、App Store Connect の「ユーザとアクセス」で、「財務」以上の役割で作る。
+キーは、App Store Connect の「ユーザとアクセス」で作る。役割に上下は無いので、使うスキルの役割をすべて付ける。
+
+| スキル | 要る役割 |
+| --- | --- |
+| store-report | 財務 |
+| store-reply | カスタマーサポート |
+
+両方を使う時は、両方の役割を付けるか、Admin にする。
 
 ## 報告
 

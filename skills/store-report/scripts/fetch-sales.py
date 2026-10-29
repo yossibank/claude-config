@@ -1,54 +1,21 @@
-import base64
 import csv
 import gzip
 import io
-import json
 import os
 import subprocess
 import sys
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
+from app_store import ASC_API, ASC_KEYS, require_keys, token  # noqa: E402
 from dates import MONTH  # noqa: E402
 from script_io import Failure, fail  # noqa: E402
 
 DOWNLOADS = {"1", "1F", "1T", "F1"}
-KEYS = ["ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_KEY_PATH", "ASC_VENDOR_NUMBER"]
-
-
-def b64(data):
-    return base64.urlsafe_b64encode(data).rstrip(b"=")
-
-
-def raw_signature(der):
-    def integer(data, at):
-        assert data[at] == 0x02
-        length = data[at + 1]
-        value = data[at + 2 : at + 2 + length]
-        return value.lstrip(b"\0").rjust(32, b"\0"), at + 2 + length
-
-    at = 2 if der[1] < 0x80 else 3
-    r, at = integer(der, at)
-    s, _ = integer(der, at)
-    return r + s
-
-
-def token():
-    now = int(time.time())
-    header = {"alg": "ES256", "kid": os.environ["ASC_KEY_ID"], "typ": "JWT"}
-    payload = {"iss": os.environ["ASC_ISSUER_ID"], "iat": now, "exp": now + 1200, "aud": "appstoreconnect-v1"}
-    signing = b64(json.dumps(header).encode()) + b"." + b64(json.dumps(payload).encode())
-    der = subprocess.run(
-        ["openssl", "dgst", "-sha256", "-sign", os.environ["ASC_KEY_PATH"]],
-        input=signing,
-        capture_output=True,
-        check=True,
-    ).stdout
-    return (signing + b"." + b64(raw_signature(der))).decode()
+KEYS = [*ASC_KEYS, "ASC_VENDOR_NUMBER"]
 
 
 def report(month, version):
@@ -61,7 +28,7 @@ def report(month, version):
         "filter[version]": version,
     })
     request = urllib.request.Request(
-        f"https://api.appstoreconnect.apple.com/v1/salesReports?{query}",
+        f"{ASC_API}/v1/salesReports?{query}",
         headers={"Authorization": f"Bearer {token()}", "Accept": "application/a-gzip"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
@@ -69,9 +36,7 @@ def report(month, version):
 
 
 def check_keys():
-    missing = [key for key in KEYS if not os.environ.get(key)]
-    if missing:
-        raise Failure(f"環境変数が無い: {', '.join(missing)}")
+    require_keys(KEYS)
 
 
 def sales_by_app(month):
