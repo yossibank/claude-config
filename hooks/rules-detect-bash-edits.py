@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import sys
 import tempfile
 from pathlib import Path
@@ -12,7 +11,7 @@ from loader import load_hook  # noqa: E402
 
 STATE = os.path.join(tempfile.gettempdir(), "claude-bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
-TOOLS = re.compile(r"^\s*(git|make|mint|swiftformat|pre-commit|gh|brew|xcodebuild|swift|cd)\b")
+TOOLS = {"git", "make", "mint", "swiftformat", "pre-commit", "gh", "brew", "xcodebuild", "swift", "cd"}
 STALE = 24 * 60 * 60
 
 
@@ -37,8 +36,8 @@ def state_file(data):
 
 
 def only_tools(command):
-    parts = [part for part in split_commands(command) if part.strip()]
-    return bool(parts) and all(TOOLS.match(part) for part in parts)
+    parts = split_commands(command)
+    return bool(parts) and all(words[0] in TOOLS for words in parts)
 
 
 def before(data):
