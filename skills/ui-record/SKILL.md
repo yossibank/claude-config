@@ -51,4 +51,4 @@ ${CLAUDE_SKILL_DIR}/scripts/tile-frames.sh <出力先>/before.mp4 <開始秒> <�
 
 ## 制約
 
-- ほかの変更を消さないよう、`git checkout` で戻す前に `git diff` で中身を確かめる。
+ほかの変更を消さないよう、`git checkout` で戻す前に `git diff` で中身を確かめる。

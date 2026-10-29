@@ -110,4 +110,4 @@ ${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム
 
 ## 制約
 
-- `archive-app.sh` は外に出す操作なので、走らせる前に人の承認を得る。
+`archive-app.sh` は外に出す操作なので、走らせる前に人の承認を得る。
