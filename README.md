@@ -178,6 +178,7 @@ CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
 | --- | --- | --- |
 | [app-init](skills/app-init/SKILL.md) | 🤝 人と Claude | ひな形から、ビルドとテストが通るアプリのリポジトリを作る |
 | [app-plan](skills/app-plan/SKILL.md) | 🤝 人と Claude | 競合のレビューの不満を集め、overview と roadmap の下書きを作る |
+| [code-debug](skills/code-debug/SKILL.md) | 🤝 人と Claude | 再現・3 つの仮説・検証で原因を確かめ、承認された直し方と再現テストを入れる |
 | [config-learn](skills/config-learn/SKILL.md) | 🤝 人と Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
 | [ctx-handoff](skills/ctx-handoff/SKILL.md) | 🤝 人と Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
 | [ctx-report](skills/ctx-report/SKILL.md) | 🤝 人と Claude | 月ごとに、トークンを多く使った作業を表にする |
@@ -195,9 +196,11 @@ CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 | エージェント | モデル | 任せること |
 | --- | --- | --- |
+| [debugger](agents/debugger.md) | Opus | 仮説ごとに裏付けと反証を集めて返す。書き換えない |
 | [explorer](agents/explorer.md) | Haiku | 場所と事実を探して短く返す。書き換えない |
 | [implementer](agents/implementer.md) | Sonnet | 方針の決まった実装、削除、名前の変更、文書の書き換え |
 | [reviewer](agents/reviewer.md) | Opus | 差分を読み、マージすると困る所を 5 件まで返す |
+| [tester](agents/tester.md) | Sonnet | 正常・異常・境界のテストを書いて通す。本体は直さない |
 
 ## 🔧 環境変数
 
