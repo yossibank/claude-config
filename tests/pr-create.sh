@@ -36,6 +36,7 @@ bash "$scripts/run-check.sh" "$repo" true true >/dev/null
 expect OK "body: 確認が通れば本文を作る" bash "$scripts/write-body.sh" "$repo" origin/main "画面"
 pr_body=$(git_file "$repo" pr-body.txt)
 check "body: 通った確認に ✅ を付ける" grep -qF '| true | ✅ 通った |' "$pr_body"
+check "body: 差分の重さを、色と行数とレビューで出す" grep -qF '| 差分の重さ | ⚪ docs・2 行。レビュー: 自分で見る |' "$pr_body"
 check "body: 未検証の項目に ⬜ を付ける" grep -qF '| 画面 | ⬜ 未検証 |' "$pr_body"
 check "body: 変えたファイルを表の行にし、| を逃がす" grep -qF '| `a\|b.md` | |' "$pr_body"
 check "body: 日本語の名前のファイルを、引用符と 8 進の表記にせずに出す" grep -qF '| `日本語.md` | |' "$pr_body"

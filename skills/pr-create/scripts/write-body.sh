@@ -7,10 +7,28 @@ source "$(dirname "$0")/../../../lib/git.sh"
 
 use_repo "$1"
 base=$(git -C "$repo" merge-base "$2" HEAD)
+size=$("$(dirname "$0")/classify-diff.sh" "$repo" "$2" | head -n 1) || size=""
 shift 2
 
 record=$(git_file "$repo" pr-checks)
 body=$(git_file "$repo" pr-body.txt)
+
+size_row() {
+    local weight lines review mark
+
+    [[ -n $1 ]] || return 0
+    IFS='|' read -r weight lines _ review <<< "$1"
+    weight=${weight// /}
+    lines=${lines# }
+    lines=${lines% }
+    review=${review# }
+    case $weight in
+        large) mark=🔴 ;;
+        small) mark=🟡 ;;
+        *) mark=⚪ ;;
+    esac
+    echo "| 差分の重さ | ${mark} ${weight}・${lines}。${review} |"
+}
 
 status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$status"; exit 1; }
 
@@ -30,6 +48,7 @@ status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$
     echo
     echo "| 確認 | 結果 |"
     echo "| --- | --- |"
+    size_row "$size"
     cut -f2 "$record" | sed 's/|/\\|/g; s/.*/| & | ✅ 通った |/'
     for item in "$@"; do
         echo "| ${item//|/\\|} | ⬜ 未検証 |"
