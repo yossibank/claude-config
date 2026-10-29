@@ -216,6 +216,18 @@ def check_readme():
             yield readme, 1, f"README の表に載っていない: {entry}"
 
 
+def check_readme_flow():
+    readme = os.path.join(ROOT, "README.md")
+    section = re.search(r"^## 🧰 .*?(?=^## |\Z)", read(readme), re.M | re.S)
+    flow = "".join(re.findall(r"```mermaid\n(.*?)```", section.group(0), re.S)) if section else ""
+    if not flow:
+        yield readme, 1, "## 🧰 スキルの節に、スキルを使う順の Mermaid の図が無い"
+        return
+    for name in skill_names():
+        if not re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", flow):
+            yield readme, 1, f"スキルを使う順の図に載っていない: {name}"
+
+
 def naming_table(heading, first_column):
     return table_under(read(NAMING).split("\n"), heading, first_column)
 
@@ -422,6 +434,7 @@ CHECKS = [
     check_claude_templates,
     check_rules,
     check_readme,
+    check_readme_flow,
     check_prefixes,
     check_script_verbs,
     check_links,
