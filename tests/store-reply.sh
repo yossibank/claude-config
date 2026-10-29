@@ -12,16 +12,16 @@ mkdir -p "$apps/foo/store" "$apps/bar/store" "$work/none"
 echo 123 >"$apps/foo/store/app-id.txt"
 echo abc >"$apps/bar/store/app-id.txt"
 
-expect "使い方" "collect-reviews: 余計な引数は NG" python3 -I "$scripts/collect-reviews.py" 123
-CC_APPS_DIR="$apps" expect "環境変数が無い: ASC_ISSUER_ID, ASC_KEY_ID, ASC_KEY_PATH" "collect-reviews: キーが無ければ NG" python3 -I "$scripts/collect-reviews.py"
+expect "使い方" "fetch-unreplied-reviews: 余計な引数は NG" python3 -I "$scripts/fetch-unreplied-reviews.py" 123
+CC_APPS_DIR="$apps" expect "環境変数が無い: ASC_ISSUER_ID, ASC_KEY_ID, ASC_KEY_PATH" "fetch-unreplied-reviews: キーが無ければ NG" python3 -I "$scripts/fetch-unreplied-reviews.py"
 export ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH="$work/none.p8"
-CC_APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "collect-reviews: アプリが無ければ NG" python3 -I "$scripts/collect-reviews.py"
-out=$(CC_APPS_DIR="$apps" python3 -I "$scripts/collect-reviews.py" 2>&1)
-check "collect-reviews: どのアプリも読めなければ NG" grep -q "^NG どのアプリのレビューも集められなかった" <<<"$out"
-check "collect-reviews: 数字でないアプリの ID は通信せずに知らせる" grep -q "bar のレビューは集められなかった（NG アプリの ID は数字で書く: abc）" <<<"$out"
-check "collect-reviews: 通信できないアプリを知らせる" grep -q "foo のレビューは集められなかった（NG レビューを読めなかった" <<<"$out"
+CC_APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "fetch-unreplied-reviews: アプリが無ければ NG" python3 -I "$scripts/fetch-unreplied-reviews.py"
+out=$(CC_APPS_DIR="$apps" python3 -I "$scripts/fetch-unreplied-reviews.py" 2>&1)
+check "fetch-unreplied-reviews: どのアプリも読めなければ NG" grep -q "^NG どのアプリのレビューも集められなかった" <<<"$out"
+check "fetch-unreplied-reviews: 数字でないアプリの ID は通信せずに知らせる" grep -q "bar のレビューは集められなかった（NG アプリの ID は数字で書く: abc）" <<<"$out"
+check "fetch-unreplied-reviews: 通信できないアプリを知らせる" grep -q "foo のレビューは集められなかった（NG レビューを読めなかった" <<<"$out"
 
-collected=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/collect-reviews.py" 2>/dev/null <<'EOF'
+collected=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
 import glob
 import json
 import sys
@@ -39,7 +39,7 @@ pages = {
     "https://next": {"data": [review("c", 2, False), review("d", 4, False)], "links": {}},
 }
 module.asc_json = lambda url, body=None: pages[url]
-sys.argv = ["collect-reviews.py"]
+sys.argv = ["fetch-unreplied-reviews.py"]
 module.main()
 path = glob.glob(module.apps_dir() + "/replies/*.json")[0]
 entries = json.load(open(path, encoding="utf-8"))
@@ -50,10 +50,10 @@ entries = json.load(open(path, encoding="utf-8"))
 print(" ".join(f"{e['id']}:{e['rating']}:{e['date']}:{e['reply']}:{e['approved']}" for e in entries))
 EOF
 )
-check "collect-reviews: 返信済みと星 3 以上を除き、次のページも読む" grep -q "^a:1:2026-10-02:書きかけ:False c:2:2026-10-02::False$" <<<"$collected"
-check "collect-reviews: 集め直しても書きかけの案を残す" grep -q "a:1:2026-10-02:書きかけ" <<<"$collected"
-check "collect-reviews: 一時ファイルを残さない" test -z "$(find "$apps/replies" -name '*.tmp')"
-kept=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/collect-reviews.py" 2>/dev/null <<'EOF'
+check "fetch-unreplied-reviews: 返信済みと星 3 以上を除き、次のページも読む" grep -q "^a:1:2026-10-02:書きかけ:False c:2:2026-10-02::False$" <<<"$collected"
+check "fetch-unreplied-reviews: 集め直しても書きかけの案を残す" grep -q "a:1:2026-10-02:書きかけ" <<<"$collected"
+check "fetch-unreplied-reviews: 一時ファイルを残さない" test -z "$(find "$apps/replies" -name '*.tmp')"
+kept=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
 import glob
 import json
 import sys
@@ -65,20 +65,20 @@ module.asc_json = lambda url, body=None: {"data": [], "links": {}}
 path = glob.glob(module.apps_dir() + "/replies/*.json")[0]
 drafts = [{"app": "bar", "id": "z", "reply": "案", "approved": True}, {"app": "foo", "id": "y", "reply": "古い", "approved": False}]
 json.dump(drafts, open(path, "w", encoding="utf-8"), ensure_ascii=False)
-sys.argv = ["collect-reviews.py"]
+sys.argv = ["fetch-unreplied-reviews.py"]
 module.main()
 print(" ".join(f"{e['id']}:{e['reply']}" for e in json.load(open(path, encoding="utf-8"))))
 EOF
 )
-check "collect-reviews: 集められなかったアプリの案は残し、集めたアプリの古い案は外す" test "${kept##*$'\n'}" == "z:案"
+check "fetch-unreplied-reviews: 集められなかったアプリの案は残し、集めたアプリの古い案は外す" test "${kept##*$'\n'}" == "z:案"
 
 today="$apps/replies/$(TZ=Asia/Tokyo date +%F).json"
 echo '[{"id": "a",' >"$today"
-CC_APPS_DIR="$apps" expect "返信案のファイルが JSON として読めない" "collect-reviews: 壊れた案のファイルは集める前に NG" python3 -I "$scripts/collect-reviews.py"
+CC_APPS_DIR="$apps" expect "返信案のファイルが JSON として読めない" "fetch-unreplied-reviews: 壊れた案のファイルは集める前に NG" python3 -I "$scripts/fetch-unreplied-reviews.py"
 echo '[{"reply": "id が無い"}]' >"$today"
-CC_APPS_DIR="$apps" expect "返信案の 1 件目にレビューの id が無い" "collect-reviews: id の無い項目は NG" python3 -I "$scripts/collect-reviews.py"
+CC_APPS_DIR="$apps" expect "返信案の 1 件目にレビューの id が無い" "fetch-unreplied-reviews: id の無い項目は NG" python3 -I "$scripts/fetch-unreplied-reviews.py"
 echo '{"id": "a"}' >"$today"
-CC_APPS_DIR="$apps" expect "返信案のファイルはレビューの配列にする" "collect-reviews: 配列でない案のファイルは NG" python3 -I "$scripts/collect-reviews.py"
+CC_APPS_DIR="$apps" expect "返信案のファイルはレビューの配列にする" "fetch-unreplied-reviews: 配列でない案のファイルは NG" python3 -I "$scripts/fetch-unreplied-reviews.py"
 
 drafts="$work/drafts.json"
 cat >"$drafts" <<'EOF'

@@ -1,7 +1,7 @@
 ---
 name: store-reply
 description: 全アプリの、まだ返信していない星 2 以下のレビューに返信案を書き、人が承認した案だけを App Store に送る。人がレビューへの返信を頼んだ時だけ使う。
-allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/collect-reviews.py*)
+allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-unreplied-reviews.py*)
 ---
 
 # レビューに返信する
@@ -37,7 +37,7 @@ App Store の低い評価のレビューに、返信案を書いて送る手順�
 レビューは、次のコマンドで集める。
 
 ```sh
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/collect-reviews.py
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-unreplied-reviews.py
 ```
 
 送る中身は、次のコマンドで出す。
@@ -52,9 +52,9 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/send-replies.py <返信案の JSON> --dry
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/send-replies.py <返信案の JSON>
 ```
 
-## collect-reviews.py がすること
+## fetch-unreplied-reviews.py がすること
 
-`collect-reviews.py` は、アプリごとに星 2 以下のレビューを新しい順にすべて読む。返信のあるレビューを除き、返信案のファイルに書く。
+`fetch-unreplied-reviews.py` は、アプリごとに星 2 以下のレビューを新しい順にすべて読む。返信のあるレビューを除き、返信案のファイルに書く。
 
 - 同じ日のファイルがあれば、書きかけの案と承認を残す。壊れていれば、集める前に `NG` で止まる。
 - 読めなかったアプリは stderr に知らせ、ほかのアプリを続ける。
@@ -64,10 +64,10 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/send-replies.py <返信案の JSON>
 
 | 項目 | 中身 | 書く人 |
 | --- | --- | --- |
-| `app` | アプリのリポジトリの名前 | collect-reviews.py |
-| `id` | レビューの ID | collect-reviews.py |
-| `rating`・`date`・`territory` | 星、書かれた日（日本時間）、国（`JPN` など） | collect-reviews.py |
-| `title`・`body` | レビューの題と本文 | collect-reviews.py |
+| `app` | アプリのリポジトリの名前 | fetch-unreplied-reviews.py |
+| `id` | レビューの ID | fetch-unreplied-reviews.py |
+| `rating`・`date`・`territory` | 星、書かれた日（日本時間）、国（`JPN` など） | fetch-unreplied-reviews.py |
+| `title`・`body` | レビューの題と本文 | fetch-unreplied-reviews.py |
 | `reply` | 返信案 | Claude |
 | `approved` | 人が承認したら `true` | Claude |
 | `sent` | 送った返信の ID | send-replies.py |
