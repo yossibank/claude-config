@@ -27,9 +27,9 @@ wait
 run rules-require-read 0 "rules: 同時に Read しても取りこぼさない" "$(edit s3 main "$work/empty.jsonl" "$swift")"
 fresh="$work/t2.jsonl"
 : >"$fresh"
-for name in docs-writing.md docs-app.md docs-human.md; do read_rule s2 main "$name"; done
+for name in docs-core.md docs-app.md docs-human.md; do read_rule s2 main "$name"; done
 run rules-require-read 2 "rules: サブエージェントは親の記録を使わない" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
-for name in docs-writing.md docs-app.md docs-human.md; do read_rule s2 a1 "$name"; done
+for name in docs-core.md docs-app.md docs-human.md; do read_rule s2 a1 "$name"; done
 run rules-require-read 0 "rules: サブエージェントが自分で読めば通る" "$(edit s2 a1 "$fresh" "$app/docs/overview.md")"
 CC_HOOKS_OFF="pr-gate rules-require-read" run rules-require-read 0 "rules: CC_HOOKS_OFF に名前があれば止めない" "$(edit s9 main "$fresh" "$swift")"
 run rules-require-read 0 "rules: 壊れた入力では止めない" "not json"

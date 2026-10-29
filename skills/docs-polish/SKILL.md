@@ -7,7 +7,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 # 人が読む文書を見やすくする
 
-人が読む文書を読み、文字だけが続く所を表・図・箇条書きに組み直す手順。形の決まりは `rules/docs-writing.md` と `rules/docs-human.md` に従う。
+人が読む文書を読み、文字だけが続く所を表・図・箇条書きに組み直す手順。形の決まりは `rules/docs-core.md` と `rules/docs-human.md` に従う。
 
 ## 起動条件
 
@@ -49,7 +49,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-layout.py <ファイルかフォル
 
 ## 直し方の選び方
 
-形は、`rules/docs-writing.md` の「表現」の表から、文の中身に合うものを選ぶ。絵文字は、`rules/docs-human.md` の見出しと本文の絵文字の表から選ぶ。
+形は、`rules/docs-core.md` の「表現」の表から、文の中身に合うものを選ぶ。絵文字は、`rules/docs-human.md` の見出しと本文の絵文字の表から選ぶ。
 
 ## 報告
 

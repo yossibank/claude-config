@@ -41,14 +41,19 @@ def manifest_for(path, root, manifests):
     return [m for m in manifests if f"{os.sep}Packages{os.sep}" not in m]
 
 
-def main():
-    if len(sys.argv) < 2:
-        fail("使い方: check-privacy.py <アプリのリポジトリ>")
+def categories_in(text):
+    for category, pattern in REASONS.items():
+        calls = [
+            name for name in C_CALLS.get(category, [])
+            if re.search(rf"\b{name}\s*\(", text) and not re.search(rf"\bfunc\s+{name}\b", text)
+        ]
+        if re.search(pattern, text) or calls:
+            yield category
 
-    root = sys.argv[1]
+
+def scan(root):
     used = {}
     manifests = []
-
     for directory, folders, files in os.walk(root):
         folders[:] = [f for f in folders if f not in SKIP and not f.endswith("Tests")]
         for file in files:
@@ -58,24 +63,23 @@ def main():
             if not file.endswith(".swift"):
                 continue
             text = Path(path).read_text(encoding="utf-8", errors="ignore")
-            for category, pattern in REASONS.items():
-                calls = [
-                    name for name in C_CALLS.get(category, [])
-                    if re.search(rf"\b{name}\s*\(", text) and not re.search(rf"\bfunc\s+{name}\b", text)
-                ]
-                if re.search(pattern, text) or calls:
-                    used.setdefault(category, []).append(os.path.relpath(path, root))
+            for category in categories_in(text):
+                used.setdefault(category, []).append(os.path.relpath(path, root))
+    return used, manifests
 
-    ok = True
-    if not manifests:
-        print("NG PrivacyInfo.xcprivacy が無い")
-        ok = False
+
+def read_declarations(manifests, root):
     declared = {}
     for manifest in manifests:
         try:
             declared[manifest] = declared_in(manifest)
         except (plistlib.InvalidFileException, ExpatError, ValueError, OSError) as error:
             fail(f"{os.path.relpath(manifest, root)} を読めない: {error}")
+    return declared
+
+
+def report(used, declared, manifests, root):
+    ok = True
     for category, paths in sorted(used.items()):
         missing = [p for p in paths if not any(category in declared[m] for m in manifest_for(p, root, manifests))]
         mark = "NG" if missing else "OK"
@@ -83,7 +87,19 @@ def main():
         print(f"{mark} {category}（{len(paths)} ファイル。例: {(missing or paths)[0]}）")
     for category in sorted(set().union(*declared.values()) - used.keys()):
         print(f"-- {category} は申告しているが、コードに見つからない")
+    return ok
 
+
+def main():
+    if len(sys.argv) < 2:
+        fail("使い方: check-privacy.py <アプリのリポジトリ>")
+
+    root = sys.argv[1]
+    used, manifests = scan(root)
+    if not manifests:
+        print("NG PrivacyInfo.xcprivacy が無い")
+    declared = read_declarations(manifests, root)
+    ok = report(used, declared, manifests, root) and bool(manifests)
     sys.exit(0 if ok else 1)
 
 

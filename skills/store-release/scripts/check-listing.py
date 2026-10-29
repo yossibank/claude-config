@@ -19,48 +19,54 @@ LIMITS = {
 OPTIONAL = {"promotional_text.txt", "release_notes.txt"}
 
 
+def check_file(folder, name, limit):
+    path = os.path.join(folder, name)
+    if not os.path.exists(path):
+        return None if name in OPTIONAL else f"NG {name} が無い"
+    text = Path(path).read_text(encoding="utf-8").strip()
+    count = len(text)
+    if not text and name not in OPTIONAL:
+        return f"NG {name} が空"
+    if count > limit:
+        return f"NG {name} が {count} 字（上限 {limit}）"
+    if name.endswith("_url.txt") and not text.startswith("https://"):
+        return f"NG {name} が https:// で始まらない"
+    return f"OK {name} {count}/{limit}"
+
+
+def check_keywords(text):
+    words = text.strip().split(",")
+    if any(w != w.strip() for w in words):
+        yield "NG keywords.txt のカンマの前後に空白がある。字数の無駄になる"
+    if "、" in text or "，" in text:
+        yield "NG keywords.txt は半角のカンマで区切る"
+    if text.strip() and any(not w.strip() for w in words):
+        yield "NG keywords.txt に空の語がある"
+
+
+def check_folder(folder):
+    for name, limit in LIMITS.items():
+        line = check_file(folder, name, limit)
+        if line:
+            yield line
+    keywords = os.path.join(folder, "keywords.txt")
+    if os.path.exists(keywords):
+        yield from check_keywords(Path(keywords).read_text(encoding="utf-8"))
+
+
+def report(lines):
+    ok = True
+    for line in lines:
+        print(line)
+        ok = ok and not line.startswith("NG")
+    return ok
+
+
 def main():
     if len(sys.argv) < 2:
         fail("使い方: check-listing.py <掲載情報のフォルダ>")
 
-    folder = sys.argv[1]
-    ok = True
-
-    for name, limit in LIMITS.items():
-        path = os.path.join(folder, name)
-        if not os.path.exists(path):
-            if name not in OPTIONAL:
-                print(f"NG {name} が無い")
-                ok = False
-            continue
-        text = Path(path).read_text(encoding="utf-8").strip()
-        count = len(text)
-        if not text and name not in OPTIONAL:
-            print(f"NG {name} が空")
-            ok = False
-        elif count > limit:
-            print(f"NG {name} が {count} 字（上限 {limit}）")
-            ok = False
-        elif name.endswith("_url.txt") and not text.startswith("https://"):
-            print(f"NG {name} が https:// で始まらない")
-            ok = False
-        else:
-            print(f"OK {name} {count}/{limit}")
-
-    keywords = os.path.join(folder, "keywords.txt")
-    if os.path.exists(keywords):
-        text = Path(keywords).read_text(encoding="utf-8")
-        words = text.strip().split(",")
-        if any(w != w.strip() for w in words):
-            print("NG keywords.txt のカンマの前後に空白がある。字数の無駄になる")
-            ok = False
-        if "、" in text or "，" in text:
-            print("NG keywords.txt は半角のカンマで区切る")
-            ok = False
-        if text.strip() and any(not w.strip() for w in words):
-            print("NG keywords.txt に空の語がある")
-            ok = False
-
+    ok = report(check_folder(sys.argv[1]))
     sys.exit(0 if ok else 1)
 
 

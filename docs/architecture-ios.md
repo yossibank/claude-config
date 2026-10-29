@@ -76,7 +76,7 @@ flowchart TB
 ├── docs/
 ├── ios/
 ├── scripts/
-│   ├── simulator.sh
+│   ├── find-simulator.sh
 │   └── verify.sh
 ├── spec/
 ├── .claude/
@@ -91,7 +91,7 @@ flowchart TB
 
 | フォルダ・ファイル | 中身 |
 | --- | --- |
-| `scripts/simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す |
+| `scripts/find-simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す |
 | `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す |
 | `spec/` | 両 OS で同じ結果が要る計算の fixtures と、書き出しの形 |
 | `.claude/rules/` | このアプリだけの決まり |
