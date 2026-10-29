@@ -108,20 +108,39 @@ def table_cells(line):
     return [cell.strip() for cell in line.replace("\\|", "\0").strip().strip("|").split("|")]
 
 
-def check_table_first_column(doc):
-    found = []
-    seen = {}
+def tables(doc):
+    current = []
     for index, row in enumerate(doc.rows):
         if row.what != "table":
-            seen = {}
+            if current:
+                yield current
+            current = []
             continue
         if index == 0 or doc.rows[index - 1].what != "table" or set(row.text.strip()) <= set("|-: "):
             continue
-        cells = table_cells(doc.lines[row.number - 1])
-        first = cells[0]
-        if len(cells) == 2 and first and first in seen:
-            found.append((row.number, f"表の 1 列目に同じ値を繰り返さない（{first}）。値ごとに見出しか箇条書きに分ける"))
-        seen[first] = row.number
+        current.append((row.number, table_cells(doc.lines[row.number - 1])))
+    if current:
+        yield current
+
+
+def check_table_first_column(doc):
+    found = []
+    for body in tables(doc):
+        seen = set()
+        for number, cells in body:
+            if len(cells) == 2 and cells[0] and cells[0] in seen:
+                found.append((number, f"表の 1 列目に同じ値を繰り返さない（{cells[0]}）。値ごとに見出しか箇条書きに分ける"))
+            seen.add(cells[0])
+    return found
+
+
+def check_table_toc(doc):
+    titles = {EMOJI.sub("", text.lstrip("#")).strip() for _, text, _, what in doc.rows if what == "heading" and heading_level(text) == 2}
+    found = []
+    for body in tables(doc):
+        firsts = [cells[0] for _, cells in body if len(cells) == 2]
+        if len(firsts) == len(body) >= 2 and all(first in titles for first in firsts):
+            found.append((body[0][0], "節の名前を並べた表は目次になる。表を消し、冒頭の文で決めることを書く"))
     return found
 
 
@@ -382,6 +401,7 @@ CHECKS = [
     (always, check_heading_names),
     (lambda doc: doc.human, check_heading_emoji_repeats),
     (lambda doc: "/docs/decisions/" not in doc.path, check_table_first_column),
+    (always, check_table_toc),
     (always, check_sections),
     (always, check_blocks),
     (always, check_toc),

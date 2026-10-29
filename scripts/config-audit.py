@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(ROOT, "lib"))
 from hook_io import EDIT_TOOLS  # noqa: E402
 from loader import load_hook  # noqa: E402
 from md_blocks import fence_marks, front_matter, table_under  # noqa: E402
-from md_doc import body_emojis, heading_emojis, readme_order, rule_table  # noqa: E402
+from md_doc import body_emojis, heading_emojis, read_doc, readme_order, rule_table  # noqa: E402
 
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
@@ -232,6 +232,34 @@ def naming_table(heading, first_column):
     return table_under(read(NAMING).split("\n"), heading, first_column)
 
 
+def term_pattern(word):
+    edge = r"[A-Za-z0-9_./-]"
+    return re.compile(rf"(?<!{edge}){re.escape(word)}(?!{edge})" if word.isascii() else re.escape(word))
+
+
+def check_terms():
+    table = naming_table("### そろえる語", "使う語")
+    if not table:
+        yield NAMING, 1, "名前の付け方のそろえる語の表が読めない"
+        return
+    patterns = [(use, avoid, term_pattern(avoid)) for use, avoid in table]
+    for path in tracked("*.md"):
+        for row in read_doc(path).rows:
+            for use, avoid, pattern in patterns:
+                if path == NAMING and row.text.strip().startswith(f"| {use} |"):
+                    continue
+                if pattern.search(row.text):
+                    yield path, row.number, f"「{avoid}」ではなく「{use}」と書く（そろえる語の表）"
+
+
+def check_skill_steps():
+    for name in skill_names():
+        skill = os.path.join(ROOT, "skills", name, "SKILL.md")
+        steps = re.search(r"^## 手順\n(.*?)(?=^## |\Z)", read(skill), re.M | re.S)
+        if steps and not re.search(r"^1\. ", steps.group(1), re.M):
+            yield skill, 1, "「手順」は番号付きの箇条書きで書く"
+
+
 def prefixes():
     rows = naming_table("### 接頭語の表", "接頭語")
     return {row[0]: {place.strip() for place in row[-1].split("、")} for row in rows}
@@ -435,6 +463,8 @@ CHECKS = [
     check_rules,
     check_readme,
     check_readme_flow,
+    check_skill_steps,
+    check_terms,
     check_prefixes,
     check_script_verbs,
     check_links,
