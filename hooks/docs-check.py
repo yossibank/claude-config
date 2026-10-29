@@ -42,7 +42,9 @@ COMMAND = re.compile(
     r"^(\./|~/|/|\$\{|(make|git|gh|python3?|bash|sh|zsh|npx|npm|xcodebuild|xcrun|swift|jq|curl|rsync|mint|brew|pre-commit|claude)\s)"
 )
 MEMORY = re.compile(r"/\.claude/projects/[^/]+/memory/")
-POLITE = re.compile(r"(です|(?<![済冷覚澄])ます|ました|ません)(?=[。！？!?]|\s*$)")
+HANDOFF = re.compile(r"/\.claude/handoff\.md$")
+POLITE = re.compile(r"(です|(?<![済冷覚澄励醒騙だすさ])(?<!はげ)ます|ました|ません)(?=[。！？!?]|\s*$)")
+LINK = re.compile(r"!?\[[^\]]*\]\([^)]*\)|<https?://[^>]*>|https?://\S+")
 QUOTED = re.compile(r"「[^」]*」")
 
 
@@ -184,6 +186,11 @@ def check_readme_order(doc):
     return found
 
 
+def is_link_only(line):
+    rest = LINK.sub("", re.sub(r"^\s*>\s?", "", line))
+    return LINK.search(line) is not None and not re.sub(r"[\s、・,/|。]", "", rest)
+
+
 def is_decoration(line):
     return not DECORATION.sub("", line).strip()
 
@@ -200,7 +207,8 @@ def check_opening(doc, want):
         return [(title.number, "README 以外の人が読む文書は、タイトルの直後に [!NOTE] を置く")]
     if want == "note":
         start = rows.index(after) + 1
-        lines = list(takewhile(lambda row: row.what == "quote" and not ALERT.match(row.text.strip()), rows[start:]))
+        quoted = takewhile(lambda row: row.what == "quote" and not ALERT.match(row.text.strip()), rows[start:])
+        lines = [row for row in quoted if not is_link_only(doc.lines[row.number - 1])]
         if len(lines) > NOTE_LINES:
             return [(after.number, f"冒頭の [!NOTE] は {NOTE_LINES} 行までにする（{len(lines)} 行）。分かることだけを書く")]
     if want == "sentence" and not (after and after.what == "body" and not is_decoration(doc.lines[after.number - 1])):
@@ -355,14 +363,17 @@ def check_short_lists(doc):
             if plain and count <= SHORT_LIST:
                 found.append((first, f"箇条書きを {count} 項目に使わない。文で書く"))
 
+    def continues(row):
+        return row.what in ("body", "code", "quote", "table") and doc.lines[row.number - 1].startswith((" ", "\t"))
+
     for index, row in enumerate(doc.rows):
         match = LIST_ITEM.match(row.spoken) if row.what == "list" else None
         if row.what == "blank":
             following = next((later for later in doc.rows[index + 1 :] if later.what != "blank"), None)
-            if following and following.what == "list":
+            if following and (following.what == "list" or continues(following)):
                 continue
         if not match:
-            if row.what not in ("body", "code") or not doc.lines[row.number - 1].startswith((" ", "\t")):
+            if not continues(row):
                 close(-1)
             continue
         indent, text = len(match.group(1)), match.group(2).strip()
@@ -471,7 +482,7 @@ def check(path):
 
 
 def main():
-    paths = [path for path in target_paths(".md") if not MEMORY.search(path)]
+    paths = [path for path in target_paths(".md") if not MEMORY.search(path) and not HANDOFF.search(path)]
     block_on_findings("文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。", paths, check)
 
 

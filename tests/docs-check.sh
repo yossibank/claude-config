@@ -94,4 +94,11 @@ doc_case 2 "表のセルの敬体も止める" README.md $'# t\n\nあ。\n\n| a 
 doc_case 0 "コードの囲み・引用・インラインコードの敬体は止めない" rules/x.md $'# t\n\n`返します。` を出す。\n\n> 送ります。\n\n```text\nありがとうございます。\n```'
 doc_case 0 "「でした」で終わる常体は止めない" rules/x.md $'# t\n\n広い探索を自分でした。'
 
+doc_case 0 "項目の下の字下げした段落とコードの囲みで一覧を切らない" README.md $'# t\n\nあ。\n\n- 一つ目\n\n  補足。\n\n  ```sh\n  ls\n  ```\n\n- 二つ目\n- 三つ目'
+doc_case 0 "冒頭の [!NOTE] のリンクだけの行は数えない" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> [README](../README.md)・[開発](development.md)'
+doc_case 2 "冒頭の [!NOTE] のリンクを含む文は数える" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> 詳しくは [README](../README.md) にある。' "冒頭の [!NOTE] は 3 行まで"
+doc_case 0 "引き継ぎのメモは見ない" .claude/handoff.md $'# t\n\n- 目的：直す'
+doc_case 0 "「ます」で終わる常体の動詞は止めない" rules/x.md $'# t\n\n人を励ます。眠気を醒ます。人をだます。\n\n子をはげます。'
+doc_case 2 "「上げます」は敬体として止める" rules/x.md $'# t\n\n値を上げます。' "敬体"
+
 finish
