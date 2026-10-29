@@ -36,7 +36,8 @@ check "merge: 古い claude-config のフックを外す" jq -e '[.. | .command?
 check "merge: 今のフックを run.sh で入れる" jq -e '[.. | .command? // empty] | map(select(contains("hooks/run.sh"))) | length > 0' "$settings.new"
 check "merge: 今の許可を前に残す" jq -e '.permissions.allow[0] == "Bash(ls *)"' "$settings.new"
 check "merge: claude-config から消えた許可を外す" jq -e '.permissions.allow | index("Bash(retired *)") | not' "$settings.new"
-check "install: 入れた許可の一覧を残す" jq -e 'index("Bash(make verify)")' "$claude/claude-config-allow.json"
+check "install: 入れた許可の一覧は、置き換えるまで前のものを残す" jq -e 'index("Bash(retired *)")' "$claude/claude-config-allow.json"
+check "install: 入れた許可の一覧の案を出す" jq -e 'index("Bash(make verify)")' "$claude/claude-config-allow.json.new"
 expect OK "install: 入れた先の run.sh でフックが動く" bash -c 'echo "{}" | bash "$1/hooks/run.sh" docs-check' _ "$config"
 repo="$work/repo"
 mkdir -p "$repo"
@@ -46,9 +47,14 @@ git -C "$repo" add -A
 git -C "$repo" -c user.name=t -c user.email=t@t commit -q -m init
 expect OK "install: リンクを通したスキルのスクリプトが lib を読める" bash "$claude/skills/pr-create/scripts/hash-state.sh" "$repo"
 
+out=$(bash "$config/scripts/config-install.sh" 2>&1)
+check "install: 置き換えずに走らせ直しても、消えた許可を外す" jq -e '.permissions.allow | index("Bash(retired *)") | not' "$settings.new"
+check "install: 置き換えのコマンドで、許可の一覧も一緒に置き換える" grep -q 'claude-config-allow.json.new' <<<"$out"
 mv -f "$settings.new" "$settings"
+mv -f "$claude/claude-config-allow.json.new" "$claude/claude-config-allow.json"
 out=$(bash "$config/scripts/config-install.sh" 2>&1)
 check "install: 2 回目は変わらない" grep -q 'OK settings.json は変わらない' <<<"$out"
+check "install: 変わらない時は、許可の一覧の案を残さない" test ! -e "$claude/claude-config-allow.json.new"
 
 rm -f "$claude/CLAUDE.md"
 echo '# mine' >"$claude/CLAUDE.md"

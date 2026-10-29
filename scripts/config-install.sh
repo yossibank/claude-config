@@ -56,11 +56,12 @@ fi
 
 jq -s -f "$root/settings/merge.jq" "$settings" "$root/settings/settings.json" "$installed" >|"$settings.tmp"
 mv -f "$settings.tmp" "$settings.new"
-jq '.permissions.allow' "$root/settings/settings.json" >|"$installed"
+jq '.permissions.allow' "$root/settings/settings.json" >|"$installed.new"
 
 if diff -u "$settings" "$settings.new"; then
     rm "$settings.new"
+    mv -f "$installed.new" "$installed"
     echo "OK settings.json は変わらない"
 else
-    echo "確かめてから置き換える: mv \"$settings.new\" \"$settings\""
+    echo "確かめてから置き換える: mv \"$settings.new\" \"$settings\" && mv \"$installed.new\" \"$installed\""
 fi
