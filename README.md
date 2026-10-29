@@ -16,8 +16,8 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | `CLAUDE.md`・`rules/` | いつも、または当たるファイルを触る時に読み込まれる決まり | Claude |
 | `docs/` | アプリの共通の構成と、claude-config を直す時の決まり | 人・Claude |
 | `hooks/` | 決まりを守らせるフック | 仕組み |
-| `output-styles/` | 報告の形 | Claude |
 | `lib/` | フックとスクリプトが共通で使う処理 | 仕組み |
+| `output-styles/` | 報告の形 | Claude |
 | `scripts/` | 入れる、検査する、文書を読むスクリプト | 人・仕組み |
 | `settings/` | フックと許可の登録 | 仕組み |
 | `skills/` | 手順と、手順が走らせるスクリプト | Claude |
@@ -71,32 +71,6 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 | 許可 | 足りないものだけを後ろに足す。前に入れて claude-config から消えた許可は外す |
 | フック | claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す |
 | 表示 | `outputStyle` は、無い時だけ入れる |
-
-## 🚀 使い方
-
-スキルは、アプリの企画から公開の後まで、次の順に使う。手入れのスキルは、どの段でも使う。
-
-```mermaid
-flowchart LR
-    subgraph plan["企画と立ち上げ"]
-        appPlan["app-plan"] --> appInit["app-init"]
-    end
-    subgraph build["作って出す（PR ごとに繰り返す）"]
-        ui["ui-snapshot・ui-record"] -.->|見た目を確かめる| prCreate["pr-create"]
-        prCreate --> prFix["pr-fix"]
-        prFix --> prPrune["pr-prune"]
-    end
-    subgraph store["App Store"]
-        storeRelease["store-release"] --> storeReport["store-report"]
-    end
-    subgraph care["手入れ（いつでも）"]
-        ctx["ctx-handoff・ctx-report"]
-        configLearn["config-learn"]
-    end
-    appInit --> prCreate
-    prPrune --> storeRelease
-    storeReport -->|数字と不満を次の企画へ| appPlan
-```
 
 ## 📚 文書
 
@@ -172,7 +146,40 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 ## 🧰 スキル
 
-スキルは、Claude が要る時に自分で呼ぶ。人は `/<スキル>` で呼ぶ。名前の頭が分類を表し、使う順は[使い方](#-使い方)の図にある。
+スキルは、Claude が要る時に自分で呼ぶ。人は `/<スキル>` で呼ぶ。名前の頭が分類を表す。
+
+### 使う順
+
+アプリの企画から公開の後まで、次の順に使う。手入れのスキルは、どの段でも使う。
+
+```mermaid
+flowchart LR
+    subgraph plan["企画と立ち上げ"]
+        appPlan["app-plan"] --> appInit["app-init"]
+    end
+    subgraph build["作って出す（PR ごとに繰り返す）"]
+        ui["ui-snapshot・ui-record"] -.->|見た目を確かめる| prCreate["pr-create"]
+        codeDebug["code-debug"] -.->|不具合を直す| prCreate
+        prCreate --> prFix["pr-fix"]
+        prFix --> prPrune["pr-prune"]
+    end
+    subgraph store["App Store"]
+        storeRelease["store-release"] --> storeReport["store-report"]
+        storeReport -->|低い評価| storeReply["store-reply"]
+    end
+    subgraph care["手入れ（いつでも）"]
+        ctx["ctx-handoff・ctx-report"]
+        configLearn["config-learn"]
+        docsPolish["docs-polish"]
+    end
+    appInit --> prCreate
+    prPrune --> storeRelease
+    storeReport -->|数字と不満を次の企画へ| appPlan
+```
+
+### 一覧
+
+呼ぶ人は、絵文字で分ける。
 
 > [!IMPORTANT]
 > pr-create・store-release・store-reply は外に出す操作を含む。人が言葉で頼んだ時だけ呼び、外に出す前に承認を得る。
@@ -231,21 +238,24 @@ Claude の報告の形をそろえる。config-install.sh が settings.json に�
 
 ## 📜 スクリプト
 
-入れる時と文書を読む時に、次のスクリプトを使う。`make verify` で走る config-audit は、[確かめ方](#-確かめ方)にある。
+入れる時、確かめる時、文書を読む時に、次のスクリプトを使う。
 
 | スクリプト | 呼ぶ時 | すること |
 | --- | --- | --- |
+| [scripts/config-audit.py](scripts/config-audit.py) | `make audit` の時 | README の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
 
 ## 🧪 確かめ方
 
-claude-config を変えたら、`make verify` を通す。`make audit` と `make test` を順に走らせる。
+claude-config を変えたら、`make verify` を通す。
 
 > [!IMPORTANT]
 > CI は置かない。PR は、Claude が pr-create の確認で `make verify` を通してから作る。
 
 | コマンド | 確かめること |
 | --- | --- |
-| [scripts/config-audit.py](scripts/config-audit.py) | README の表・参照先・名前と中身の食い違いと、文書とスクリプトの書き方の違反 |
-| `tests/*.sh` | フックとスクリプトの振る舞い。1 本ずつの中身は [テスト](docs/development.md#-テスト) にある |
+| `make verify` | `make audit` と `make test` を順に走らせる |
+| `make audit` | config-audit.py で、文書と名前と書き方の決まり |
+| `make test` | `tests/*.sh` の全部で、フックとスクリプトの振る舞い。1 本ずつの中身は [テスト](docs/development.md#-テスト) にある |
+| `make test-<対象>` | `tests/<対象>.sh` の 1 本だけ |

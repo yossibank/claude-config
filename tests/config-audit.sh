@@ -67,6 +67,10 @@ d=$(copy link)
 printf '\n[x](nowhere.md)\n' >>"$d/skills/ui-record/SKILL.md"
 expect_audit "$d" "リンク先が無い: nowhere.md" "壊れたリンク"
 
+d=$(copy flow)
+replace "$d/README.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
+expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "README のスキルの図に無いスキル"
+
 d=$(copy readme)
 echo 'print(1)' >"$d/hooks/post-tool-extra.py"
 expect_audit "$d" "README の表に載っていない: hooks/post-tool-extra.py" "README に無いフック"
