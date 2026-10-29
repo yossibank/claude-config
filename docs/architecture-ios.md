@@ -14,7 +14,7 @@
 
 ## 🗺️ 全体像
 
-依存は、上から下へだけ向ける。`AppWidget --> Notifications` は、ウィジェットから書いた後に通知を予約し直す時だけ置く。
+依存は、上から下へだけ向ける。
 
 ```mermaid
 flowchart TB
@@ -40,7 +40,7 @@ flowchart TB
     Widget --> AppWidget
     AppFeature --> Features
     AppFeature --> Notifications
-    AppWidget --> Notifications
+    AppWidget -.->|ウィジェットから書いた後に通知を予約し直す時だけ| Notifications
     AppWidget --> Store
     AppWidget --> DesignSystem
     Features --> Store
@@ -333,12 +333,12 @@ CI は**置かない**。PR ごとに手元で回す。
 
 フォルダとファイルの名前は、次の決まりで付ける。Swift のファイル全般の決まりは `rules/swift-core.md` にある。
 
-| 対象 | 名前の決まり | 例 |
-| --- | --- | --- |
-| DesignSystem の部品のフォルダ | 名前の順に並べた時、中が 1 つの種類の部品だけになるように分ける | |
-| `Screens` の下 | 画面の名前。一覧の画面は複数形 | |
-| `Shared` の下 | 部品の役割の名前 | |
-| フォルダ | ファイルが 1 つだけのフォルダは作らず、近いフォルダに入れる。ターゲットの直下は例外 | |
-| ファイル | 中の型の名前。拡張は `<型>+<役割>` | `<型>+<役割>.swift` |
-| モディファイア | DesignSystem の、画面をまたいで使うものだけ `View+<役割>` にする。画面ごとのものは画面の名前で始める | `View+<役割>.swift` |
-| fixtures | 頭に、試す型の名前を kebab-case で付ける | `<型>-<場合>.json` |
+| 対象 | 名前の決まり |
+| --- | --- |
+| DesignSystem の部品のフォルダ | 名前の順に並べた時、中が 1 つの種類の部品だけになるように分ける |
+| `Screens` の下 | 画面の名前。一覧の画面は複数形 |
+| `Shared` の下 | 部品の役割の名前 |
+| フォルダ | ファイルが 1 つだけのフォルダは作らず、近いフォルダに入れる。ターゲットの直下は例外 |
+| ファイル | 中の型の名前。拡張は `<型>+<役割>.swift` |
+| モディファイア | DesignSystem の、画面をまたいで使うものだけ `View+<役割>.swift` にする。画面ごとのものは画面の名前で始める |
+| fixtures | 頭に、試す型の名前を kebab-case で付ける。形は `<型>-<場合>.json` |
