@@ -22,6 +22,22 @@ def read_payload():
     return data if isinstance(data, dict) else None
 
 
+def target_paths(suffix):
+    if len(sys.argv) > 1:
+        paths = sys.argv[1:]
+    else:
+        data = read_payload()
+        paths = [tool_input(data).get("file_path", "")] if data else []
+    return [path for path in map(os.path.abspath, filter(None, paths)) if path.endswith(suffix) and os.path.isfile(path)]
+
+
+def block_on_findings(header, paths, check):
+    report = [f"{path}:{n}: {m}" for path in paths for n, m in check(path)]
+    if report:
+        print(header + "\n" + "\n".join(report), file=sys.stderr)
+        sys.exit(2)
+
+
 def hook_off(name):
     return name in OFF_SEPARATOR.split(os.environ.get("CC_HOOKS_OFF", ""))
 

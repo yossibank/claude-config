@@ -11,7 +11,7 @@ CC_STORE_EXPORT=x expect "NG CC_STORE_EXPORT は upload か export" "archive-app
 log="$work/archive.log"
 printf 'x\na.swift:1: error: 型が無い\na.swift:1: error: 型が無い\nb.swift:2: warning: 使っていない\n' >"$log"
 fail_with_log=$(awk '/^fail_with_log\(\) \{/,/^\}/' "$archive")
-out=$(log=$log bash -c "${fail_with_log}"$'\nfail_with_log アーカイブ')
+out=$(log=$log bash -c "source $root/lib/log.sh"$'\n'"${fail_with_log}"$'\nfail_with_log アーカイブ')
 status=$?
 check "archive-app: 失敗したら終了コード 1 で終える" test "$status" -eq 1
 check "archive-app: ログの error の行を 1 回ずつ出す" test "$(grep -c 'error: 型が無い' <<<"$out")" -eq 1

@@ -15,7 +15,7 @@ fi
 
 git -C "$repo" fetch -q origin
 base=$(default_branch "$repo")
-dest="$HOME/.claude/worktrees/$(basename "$repo")/${branch//\//-}"
+dest="$(worktree_root "$(basename "$repo")")/${branch//\//-}"
 
 git -C "$repo" worktree add -q "$dest" -b "$branch" "$base"
 echo "$dest"

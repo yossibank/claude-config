@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$(dirname "$0")/../../../lib/simulator.sh"
+
 [[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>"; exit 1; }
 
 [[ -d $1 ]] || { echo "NG パッケージのフォルダが無い: $1"; exit 1; }
@@ -24,14 +26,9 @@ if [[ ! -f $marker && -n $(ls -A "$out") ]]; then
 fi
 [[ -e $tests ]] && { echo "NG 前の回の後片付けが済んでいない: ${tests}。退避のフォルダから戻すか、git で戻してから走らせる"; exit 1; }
 
-device="${CC_UI_DEVICE:-$(xcrun simctl list devices available -j | python3 -I -c 'import json, sys; ids = [d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")]; print(ids[0] if ids else "")')}"
+device=$(pick_iphone)
 [[ -n $device ]] || { echo "NG iPhone のシミュレーターが無い。CC_UI_DEVICE に UDID を渡す"; exit 1; }
-scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | python3 -I -c '
-import json, sys
-schemes = json.load(sys.stdin)["workspace"]["schemes"]
-package = [s for s in schemes if s.endswith("-Package")]
-print((package or schemes or [""])[0])
-')
+scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | jq -r '.workspace.schemes as $all | ([$all[] | select(endswith("-Package"))] + $all)[0] // empty')
 [[ -n $scheme ]] || { echo "NG パッケージのスキームが見つからない: $package"; exit 1; }
 
 backup=$(mktemp -d)
@@ -48,8 +45,8 @@ trap restore EXIT
 python3 -I "$skill/scripts/add-target.py" "$package/Package.swift" "$set_dir/targets.txt"
 [[ -f $set_dir/patch.py ]] && python3 -I "$set_dir/patch.py" "$package"
 mkdir -p "$tests"
-python3 -I -c 'import sys; open(sys.argv[3], "w", encoding="utf-8").write(open(sys.argv[1], encoding="utf-8").read().replace("__OUT__", sys.argv[2]))' \
-    "$set_dir/SnapshotTests.swift" "$out" "$tests/SnapshotTests.swift"
+source_text=$(<"$set_dir/SnapshotTests.swift")
+printf '%s\n' "${source_text//__OUT__/$out}" >|"$tests/SnapshotTests.swift"
 rm -f "$out"/*.png
 touch "$marker"
 

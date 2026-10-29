@@ -7,7 +7,7 @@ from itertools import takewhile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "lib"))
 
-from hook_io import read_payload, tool_input  # noqa: E402
+from hook_io import block_on_findings, target_paths  # noqa: E402
 from md_blocks import fence_marks  # noqa: E402
 from md_doc import CODE, EMOJI, bare, body_emojis, body_start, heading_emojis, read_doc, readme_order, without_links  # noqa: E402
 
@@ -421,21 +421,8 @@ def check(path):
 
 
 def main():
-    if len(sys.argv) > 1:
-        paths = sys.argv[1:]
-    else:
-        data = read_payload()
-        if data is None:
-            return
-        paths = [tool_input(data).get("file_path", "")]
-    report = []
-    for path in map(os.path.abspath, filter(None, paths)):
-        if path.endswith(".md") and os.path.isfile(path) and not MEMORY.search(path):
-            report += [f"{path}:{n}: {m}" for n, m in check(path)]
-    if report:
-        print("文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。", file=sys.stderr)
-        print("\n".join(report), file=sys.stderr)
-        sys.exit(2)
+    paths = [path for path in target_paths(".md") if not MEMORY.search(path)]
+    block_on_findings("文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。", paths, check)
 
 
 if __name__ == "__main__":

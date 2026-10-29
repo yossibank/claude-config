@@ -23,7 +23,7 @@ clean_derived_data() {
         path=$(plutil -extract WorkspacePath raw "$plist" 2>/dev/null) || continue
 
         case $path in
-            "$repo"/* | "$HOME/.claude/worktrees/$name"/*) ;;
+            "$repo"/* | "$(worktree_root "$name")"/*) ;;
             *) continue ;;
         esac
 
