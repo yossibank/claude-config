@@ -57,15 +57,21 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/collect-corrections.py <YYYY-MM>
 
 `collect-corrections.py` は、次の材料を出す。
 
-- `~/.claude/projects/*/memory/` の、種類が `feedback` のメモリ
-- その月の会話で人が送った、400 字以下の文。手直しの言葉（「ではなく」「外して」「戻して」「毎回」など）を含むものだけを出す。1 件は、その言葉の前後 120 字に切る
-- 決まりの効き目。その月の会話とサブエージェントの会話から、リポジトリごとに次の回数を数える
-  - リポジトリは、Edit・Write したファイルと、Bash の `git -C` の先で決める。無ければ会話の場所にする
-  - Edit・Write の回数
-  - `hooks/rules-require-read.py` が、当たる rules を読まずに編集しようとして止めた回数
-  - `hooks/rules-detect-bash-edits.py` が、Bash でファイルを書き換えたと返した回数
-  - `hooks/pr-gate.py` が、確認を通す前の push と PR の作成を止めた回数
-  - 失敗して動かなかったフックの、多いもの 5 件。消えた作業場所で失敗したものは、フックのせいではないので数えない
+| 材料 | 中身 |
+| --- | --- |
+| feedback のメモリ | `~/.claude/projects/*/memory/` の、種類が `feedback` のもの |
+| 手直しの文 | その月に人が送った 400 字以下の文で、手直しの言葉（「ではなく」「外して」「毎回」など）を含むもの。言葉の前後 120 字に切る |
+| 決まりの効き目 | 下の表の回数。その月の会話とサブエージェントの会話から、リポジトリごとに数える |
+
+効き目の回数は、次のものを数える。リポジトリは、Edit・Write したファイルと、Bash の `git -C` の先で決める。無ければ会話の場所にする。
+
+| 回数 | 数えるもの |
+| --- | --- |
+| 編集 | Edit・Write の回数 |
+| rules を読まずに編集 | `hooks/rules-require-read.py` が止めた回数 |
+| Bash での書き換え | `hooks/rules-detect-bash-edits.py` が、Bash でファイルを書き換えたと返した回数 |
+| 確認の前の push・PR | `hooks/pr-gate.py` が止めた回数 |
+| 動かなかったフック | 失敗したフックの多いもの 5 件。消えた作業場所で失敗したものは、フックのせいではないので数えない |
 
 ## 報告
 
