@@ -50,8 +50,8 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 
 スクリプトは、次の順に進む。
 
-1. CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクする。
-2. 壊れたスキルのリンクを消す。同じ名前の実体があれば `NG` を出して止まる。
+1. CLAUDE.md・rules・agents・各スキルを `~/.claude` からリンクする。同じ名前の実体があれば `NG` を出して止まる。
+2. 壊れたスキルのリンクを消す。
 3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。
 4. 表示された `mv` のコマンドで、差分を確かめてから置き換える。
 
@@ -98,8 +98,8 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 flowchart LR
     readBefore["Read の前"] --> limit["ctx-limit-read"]
     readBefore --> require["rules-require-read"]
-    editBefore["Edit・Write の前"] --> require
-    editAfter["Edit・Write の後"] --> docs["docs-check"]
+    editBefore["Edit・Write・MultiEdit の前"] --> require
+    editAfter["Edit・Write・MultiEdit の後"] --> docs["docs-check"]
     editAfter --> swift["swift-format"]
     editAfter --> shell["shell-check"]
     bashBefore["Bash の前"] --> detect["rules-detect-bash-edits"]
@@ -113,12 +113,12 @@ flowchart LR
 | --- | --- | --- |
 | [ctx-limit-read](hooks/ctx-limit-read.py) | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
 | [ctx-suggest-clear](hooks/ctx-suggest-clear.py) | 応答の終わり、`gh pr create` の後 | 文脈が 20 万トークンを超える時と、PR を作った時 |
-| [docs-check](hooks/docs-check.py) | Edit の後。メモリのファイルは見ない | `.md` が `rules/docs-writing.md` に合わない時 |
+| [docs-check](hooks/docs-check.py) | Edit・Write・MultiEdit の後。メモリのファイルは見ない | `.md` が `rules/docs-writing.md` に合わない時 |
 | [pr-gate](hooks/pr-gate.py) | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時 |
 | [rules-detect-bash-edits](hooks/rules-detect-bash-edits.py) | Bash の前と後 | Bash でファイルを書き換えた時。git・make などは数えない |
-| [rules-require-read](hooks/rules-require-read.py) | Read・Edit の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
-| [shell-check](hooks/shell-check.py) | Edit の後 | `.sh` の `bash -n` と、変数の直後の全角 |
-| [swift-format](hooks/swift-format.py) | Edit の後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
+| [rules-require-read](hooks/rules-require-read.py) | Read・Edit・Write・MultiEdit の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
+| [shell-check](hooks/shell-check.py) | Edit・Write・MultiEdit の後 | `.sh` の `bash -n` と、変数の直後の全角 |
+| [swift-format](hooks/swift-format.py) | Edit・Write・MultiEdit の後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 
 フックを止める時は、[環境変数](#-環境変数)の `CLAUDE_HOOKS_OFF` に名前を並べる。
 
@@ -251,33 +251,6 @@ CLAUDE_HOOKS_OFF="pr-gate,rules-require-read" claude
 | [scripts/config-install.sh](scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
 
-フックとスクリプトが共通で使う処理は、`lib/` に置く。
-
-| ファイル | 使う所 | 中身 |
-| --- | --- | --- |
-| [lib/hook_io.py](lib/hook_io.py) | 各フック | 入力の JSON、コマンドの区切り、止めたフックの判定、タイムアウト付きの git、状態ファイルの掃除 |
-| [lib/hook_stops.py](lib/hook_stops.py) | 止めるフック、collect-corrections.py | フックが止める時の文の書き出し。config-learn も数えるのに使う |
-| [lib/md_blocks.py](lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py | Markdown の frontmatter とコードの囲みの見分け方 |
-| [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py、count-tokens.py、フック | 会話の記録の読み方 |
-| [lib/months.py](lib/months.py) | 月を扱うスクリプト | 日本時間、月の形 |
-| [lib/modules.py](lib/modules.py) | config-audit.py、write-report.py ほか | ファイルの場所から .py を読み込む |
-| [lib/script_io.py](lib/script_io.py) | スキルの .py | `NG` を出して止める `fail` |
-| [lib/app_store.py](lib/app_store.py) | fetch-reviews.py、search-apps.py、fetch-ratings.py | App Store の検索とレビューの読み方 |
-| [lib/git.sh](lib/git.sh) | スキルの .sh | リポジトリの根、既定のブランチ、GitHub での書き込みの権限 |
-
-### スクリプトの書き方
-
-スクリプトは、読み込まれた時に何も実行せず、結果を同じ形で返す。`make verify` の config-audit が、外れた書き方を `NG` にする。
-
-| 対象 | 決まり |
-| --- | --- |
-| Python | 処理は `main()` に入れ、末尾を `if __name__ == "__main__":` にする |
-| 結果 | stdout に `OK`・`NG` で始まる行で出す。失敗したら終了コード 1 で終える |
-| 引数 | 足りない時は `[[ $# -ge N ]]` で確かめ、`NG` を出す。`${N:?}` は使わない |
-| 知らせ | 失敗ではない知らせは stderr に出す |
-| フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
-| 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` で読む |
-
 ## 🧪 確かめ方
 
 claude-config を変えたら、`make verify` を通す。`make audit` と `make test` を順に走らせる。
@@ -310,3 +283,34 @@ flowchart LR
 | --- | --- |
 | [tests/lib/assert.sh](tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、結果の数え方 |
 | [tests/lib/fixtures.sh](tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh |
+
+## 📏 スクリプトの書き方
+
+claude-config のフックとスクリプトを足す・直す時の決まりである。
+
+スクリプトは、読み込まれた時に何も実行せず、結果を同じ形で返す。`make verify` の config-audit が、外れた書き方を `NG` にする。
+
+| 対象 | 決まり |
+| --- | --- |
+| Python | 処理は `main()` に入れ、末尾を `if __name__ == "__main__":` にする |
+| 結果 | stdout に `OK`・`NG` で始まる行で出す。失敗したら終了コード 1 で終える |
+| 引数 | 足りない時は `[[ $# -ge N ]]` で確かめ、`NG` を出す。`${N:?}` は使わない |
+| 知らせ | 失敗ではない知らせは stderr に出す |
+| フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
+| 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` で読む |
+
+### 共通の処理
+
+フックとスクリプトが共通で使う処理は、`lib/` に置く。
+
+| ファイル | 使う所 | 中身 |
+| --- | --- | --- |
+| [lib/hook_io.py](lib/hook_io.py) | 各フック | 入力の JSON、コマンドの区切り、止めたフックの判定、タイムアウト付きの git、状態ファイルの掃除 |
+| [lib/hook_stops.py](lib/hook_stops.py) | 止めるフック、collect-corrections.py | フックが止める時の文の書き出し。config-learn も数えるのに使う |
+| [lib/md_blocks.py](lib/md_blocks.py) | docs-check、rules-require-read、config-audit.py | Markdown の frontmatter とコードの囲みの見分け方 |
+| [lib/transcripts.py](lib/transcripts.py) | collect-corrections.py、count-tokens.py、フック | 会話の記録の読み方 |
+| [lib/months.py](lib/months.py) | 月を扱うスクリプト | 日本時間、月の形 |
+| [lib/modules.py](lib/modules.py) | config-audit.py、write-report.py ほか | ファイルの場所から .py を読み込む |
+| [lib/script_io.py](lib/script_io.py) | スキルの .py | `NG` を出して止める `fail` |
+| [lib/app_store.py](lib/app_store.py) | fetch-reviews.py、search-apps.py、fetch-ratings.py | App Store の検索とレビューの読み方 |
+| [lib/git.sh](lib/git.sh) | スキルの .sh | リポジトリの根、既定のブランチ、GitHub での書き込みの権限 |
