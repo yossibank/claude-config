@@ -404,7 +404,7 @@ def check_template_tokens():
             yield REPLACER, number, f"tokens に __<名前>__ でない文字列がある: {token}"
     for number, text in literal_replaces(tree):
         yield REPLACER, number, f"tokens を通さずに文字列を置き換えている: {text}"
-    for path in tracked("skills/app-init/templates/*", "skills/app-plan/templates/*"):
+    for path in tracked("skills/app-init/templates/**", "skills/app-plan/templates/**"):
         for number, line in template_tokens(path):
             for token in sorted(set(TEMPLATE_TOKEN.findall(line)) - tokens):
                 yield path, number, f"replace-placeholders.py の tokens に無い印: {token}"

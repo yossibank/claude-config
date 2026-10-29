@@ -209,6 +209,10 @@ d=$(copy template-token-ng)
 printf '\n__Nothing__\n' >>"$d/skills/app-plan/templates/roadmap.md"
 expect_audit "$d" "tokens に無い印: __Nothing__" "ひな形に置き換えない印がある"
 
+d=$(copy template-token-deep-ng)
+printf '\n# __Bundle__\n' >>"$d/skills/app-init/templates/ios-app/Makefile"
+expect_audit "$d" "tokens に無い印: __Bundle__" "ios-app の深い階層の印も見る"
+
 d=$(copy template-token-name-ng)
 replace "$d/skills/app-init/scripts/replace-placeholders.py" '("__Summary__",' '("<Summary>",'
 expect_audit "$d" "tokens に __<名前>__ でない文字列がある: <Summary>" "tokens に印の形でない文字列がある"
