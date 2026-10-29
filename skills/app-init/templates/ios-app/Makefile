@@ -36,7 +36,7 @@ test:
 
 snapshot:
 	@test -n "$(SNAPSHOT)" || { echo "NG SNAPSHOT に .claude/snapshots/ の下のセットの名前を渡す"; exit 1; }
-	$(CLAUDE_CONFIG)/skills/ui-snapshot/scripts/render.sh ios/Packages/__App__App .claude/snapshots/$(SNAPSHOT) .build/snapshots/$(SNAPSHOT)
+	$(CLAUDE_CONFIG)/skills/ui-snapshot/scripts/render-snapshots.sh ios/Packages/__App__App .claude/snapshots/$(SNAPSHOT) .build/snapshots/$(SNAPSHOT)
 
 verify:
 	scripts/verify.sh kit-test swift test --package-path ios/Packages/__App__Kit

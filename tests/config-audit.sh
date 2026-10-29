@@ -151,6 +151,10 @@ d=$(copy path-ng)
 printf '\n`hooks/nothing.py` を読む。\n' >>"$d/docs/architecture-ios.md"
 expect_audit "$d" "参照先が無い: hooks/nothing.py" "無いファイルへのパス"
 
+d=$(copy template-script-ng)
+replace "$d/skills/app-init/templates/ios-app/Makefile" 'scripts/render-snapshots.sh' 'scripts/render.sh'
+expect_audit "$d" "claude-config の参照先が無い: skills/ui-snapshot/scripts/render.sh" "ひな形の Makefile が無いスクリプトを呼ぶ"
+
 d=$(copy skill-dir-ok)
 printf '\n`${CLAUDE_SKILL_DIR}/templates/<セット>/` を写す。\n' >>"$d/skills/ui-snapshot/SKILL.md"
 expect_audit "$d" OK "印の入った CLAUDE_SKILL_DIR の参照"

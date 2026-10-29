@@ -24,6 +24,7 @@ HOOK_NAME = re.compile(r"claude-config/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
 SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
 PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
+CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
 VERB_ROW = re.compile(r"^\| ((?:`[a-z]+`・?)+) \|", re.M)
 APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
 APP_DOCS_TEMPLATE = os.path.join(ROOT, "skills", "app-plan", "templates")
@@ -306,6 +307,15 @@ def check_paths():
                 ng(path, number, f"参照先が無い: {reference}")
 
 
+def check_template_scripts():
+    files = [path for path in tracked("skills/*/templates/*") if path.endswith((".sh", "/Makefile"))]
+    for path in files:
+        for number, line in enumerate(read(path).split("\n"), 1):
+            for reference in CONFIG_REF.findall(line):
+                if not os.path.exists(os.path.join(ROOT, reference)):
+                    ng(path, number, f"claude-config の参照先が無い: {reference}")
+
+
 def check_settings():
     path = os.path.join(ROOT, "settings", "settings.json")
     for group in json.load(open(path, encoding="utf-8")).get("hooks", {}).values():
@@ -410,6 +420,7 @@ def main():
     check_script_verbs()
     check_links()
     check_paths()
+    check_template_scripts()
     check_settings()
     check_scripts()
     check_docs()

@@ -277,6 +277,7 @@ README は、次の順に書く。無い節は作らない。
 | `scripts/config-audit.py` | SKILL.md の description の文末と字数 |
 | `scripts/config-audit.py` | agents の `name`・`model`・`tools` と最後の「返す形」、rules の `paths` |
 | `scripts/config-audit.py` | ひな形の CLAUDE.md の節の順 |
+| `scripts/config-audit.py` | ひな形の Makefile と `.sh` が呼ぶ claude-config のファイルがあるか |
 | `scripts/config-audit.py` | skills・agents・rules・hooks・scripts が README の表にあるか。リンク先とパスの参照先があるか |
 | `scripts/config-audit.py` | スキルのスクリプトの頭の動詞が、README の動詞の表にあるか |
 | `scripts/config-audit.py` | 追跡している全 `.md` に、`docs-check.py` と同じ検査をかける |
