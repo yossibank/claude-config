@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 from app_store import ASC_ERRORS, ASC_KEYS, asc_json, asc_reason, read_drafts, require_keys  # noqa: E402
 from script_io import Failure, fail, run_main, write_json  # noqa: E402
 
-LIMIT = 5970
+REPLY_LIMIT = 5970
 USAGE = "使い方: send-replies.py <返信案の JSON> [--dry-run]"
 
 
@@ -22,8 +22,8 @@ def approved(entries):
         reply = entry.get("reply")
         if not isinstance(reply, str) or not reply.strip():
             raise Failure(f"返信が空: {review}")
-        if len(reply) > LIMIT:
-            raise Failure(f"返信が {LIMIT} 字を超えている（{len(reply)} 字）: {review}")
+        if len(reply) > REPLY_LIMIT:
+            raise Failure(f"返信が {REPLY_LIMIT} 字を超えている（{len(reply)} 字）: {review}")
     return targets
 
 

@@ -6,7 +6,7 @@ source "$(dirname "$0")/../../../lib/git.sh"
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <base のブランチ>"; exit 1; }
 
 use_repo "$1"
-base=$(git -C "$repo" merge-base "$2" HEAD 2>/dev/null) || { echo "NG $2 との分かれ目が見つからない"; exit 1; }
+base=$(merge_base_of "$repo" "$2") || { echo "$base"; exit 1; }
 size=$("$(dirname "$0")/classify-diff.sh" "$repo" "$2") || size=""
 size=${size%%$'\n'*}
 shift 2
@@ -42,8 +42,7 @@ status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$
     echo
     echo "| ファイル | 変えたこと |"
     echo "| --- | --- |"
-    { git -C "$repo" diff --name-only -z "$base"; git -C "$repo" ls-files -z --others --exclude-standard; } \
-        | tr '\0' '\n' | sort -u | sed 's/|/\\|/g; s/.*/| `&` | |/'
+    changed_paths "$repo" "$base" | tr '\0' '\n' | sort -u | sed 's/|/\\|/g; s/.*/| `&` | |/'
     echo
     echo "## 🧪 確認"
     echo

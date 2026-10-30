@@ -96,16 +96,16 @@
 | [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
 | [lib/build_log.sh](../lib/build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す `show_errors` |
 | [lib/dates.py](../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
-| [lib/git.py](../lib/git.py) | タイムアウト付きの git と、リポジトリの根。根は、まだ無いフォルダからも在る親をたどって探す |
-| [lib/git.sh](../lib/git.sh) | リポジトリの根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。既定のブランチと、GitHub での書き込みの権限 |
+| [lib/git.py](../lib/git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所（`WORKTREES` など）。根は、まだ無いフォルダからも在る親をたどって探す |
+| [lib/git.sh](../lib/git.sh) | 根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。分かれ目・変えたファイル・既定のブランチ・書き込みの権限 |
 | [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし、止める時の出し方。止めたフックの判定、編集する道具の名前、例外でも止める門番の入口 `run_gate` |
 | [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
 | [lib/hook_state.py](../lib/hook_state.py) | 状態フォルダの場所と名前、作る時の古い状態ファイルの掃除 |
-| [lib/loader.py](../lib/loader.py) | ファイルの場所から .py を読み込む |
+| [lib/loader.py](../lib/loader.py) | claude-config の根（`ROOT`）と、場所を指して .py を読む処理 |
 | [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
-| [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
+| [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方とリポジトリの名前（`repo_of`）。ある日時より後の記録の一覧（`sessions_since` など） |
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま使う。スキルからは `${CLAUDE_SKILL_DIR}/../<スキル>/scripts/` で呼ぶ。フックからは、リポジトリの根からの `skills/<スキル>/scripts/` で呼ぶ。
 
@@ -152,7 +152,7 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/store-release.sh` | 掲載情報の字数と形、プライバシーの申告の足りなさを確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
 | `tests/store-reply.sh` | 通信せずに試す。引数の NG・返信済みのレビューの除外・`--dry-run` で送らないこと・送る JSON の形を確かめる |
 | `tests/store-report.sh` | 通信せずに、引数の NG と売上の表の集計を出せるか。取れなかった数字を WARNING に書くか |
-| `tests/swift-format.sh` | `.swiftformat` が無ければ何もしないか |
+| `tests/swift-format.sh` | Mintfile に swiftformat がある時だけ走らせるか。時間切れと失敗で止めずに知らせるか |
 | `tests/ui-record.sh` | 偽の ffmpeg と偽の xcrun で、コマ数と出力先を決められ、引数の NG を出すか |
 | `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せ、引数や出力先が違う時は走らせる前に NG にするか |
 

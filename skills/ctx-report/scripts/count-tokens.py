@@ -1,5 +1,4 @@
 import collections
-import glob
 import os
 import sys
 
@@ -7,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 
 from dates import month_of, month_start, to_jst  # noqa: E402
 from script_io import fail, require_month  # noqa: E402
-from transcripts import entries, projects_dir, repo_of, touched_since  # noqa: E402
+from transcripts import entries, projects_dir, repo_of, sessions_since, subagents_of  # noqa: E402
 
 WEIGHTS = {"input": 1, "write_5m": 1.25, "write_1h": 2, "read": 0.1, "output": 5}
 
@@ -77,12 +76,12 @@ def main():
     seen = set()
 
     rows = []
-    for path in touched_since(os.path.join(projects, "*", "*.jsonl"), start):
+    for path in sessions_since(projects, start):
         session = usage_of(path, seen, month)
         if not session or not session["requests"]:
             continue
         sub = 0
-        for agent in glob.glob(os.path.join(path[: -len(".jsonl")], "subagents", "*.jsonl")):
+        for agent in subagents_of(path):
             sub += weighted(usage_of(agent, seen)["total"])
         main_weight = weighted(session["total"])
         rows.append((main_weight + sub, sub, session))
