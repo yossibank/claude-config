@@ -9,7 +9,7 @@ paths:
 
 # SwiftUI の書き方
 
-SwiftUI の画面と部品を読み書きするときに読み込まれる決まり。`swift-core.md` に足して、`View` の分け方と文字の縮め方を決める。
+SwiftUI の画面と部品を読み書きする時に読み込まれる決まり。`swift-core.md` に足して、`View` の分け方と文字の縮め方を決める。
 
 ## 画面
 
@@ -40,7 +40,7 @@ HStack {
 - `.lineLimit(1)` を付けた文字には、縮める倍率の下限を付ける。下限は下の表で決め、使う人が決める名前は次の項目に従う。
 - 一覧の行・格子の札・同じ行の札に並ぶ、使う人が決める名前は、別々に縮めない。DesignSystem の倍率をそろえる修飾子を、名前と並びの両方に付ける。
 - `ViewThatFits` の候補に、`ForEach` を含むビューを入れない。
-- 収まらないときだけスクロールさせるときは、`ViewThatFits` で中身とその `ScrollView` 版を並べない。`ScrollView` 1 つに入れ、`.scrollBounceBehavior(.basedOnSize)` を付ける。
+- 収まらない時だけスクロールさせる時は、`ViewThatFits` で中身とその `ScrollView` 版を並べない。`ScrollView` 1 つに入れ、`.scrollBounceBehavior(.basedOnSize)` を付ける。
 
 | 文字の種類 | 縮める倍率の下限 |
 | --- | --- |

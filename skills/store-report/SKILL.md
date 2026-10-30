@@ -9,6 +9,15 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 公開している全アプリの数字を、月ごとの表にまとめる手順。月の初めに、前の月の分を作る。
 
+## 入力
+
+引数は、まとめる月の `<YYYY-MM>` である。集めるアプリと表の置き場所は、次のとおりである。置き場所は `CC_APPS_DIR` で変えられる。
+
+| 読むもの・書くもの | 場所 |
+| --- | --- |
+| 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
+| 表 | `~/Applications/AppStore/reports/<YYYY-MM>.md` |
+
 ## 手順
 
 1. `write-report.py` で表を作る。
@@ -18,13 +27,6 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 ```
-
-`write-report.py` は、アプリを集めて表を書く。置き場所は `CC_APPS_DIR` で変えられる。
-
-| 読むもの・書くもの | 場所 |
-| --- | --- |
-| 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
-| 表 | `~/Applications/AppStore/reports/<YYYY-MM>.md` |
 
 ## write-report.py の出力
 
