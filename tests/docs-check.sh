@@ -98,6 +98,14 @@ doc_case 0 "項目の下の字下げした段落とコードの囲みで一覧�
 doc_case 0 "冒頭の [!NOTE] のリンクだけの行は数えない" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> [README](../README.md)・[開発](development.md)'
 doc_case 2 "冒頭の [!NOTE] のリンクを含む文は数える" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> 詳しくは [README](../README.md) にある。' "冒頭の [!NOTE] は 3 行まで"
 doc_case 0 "引き継ぎのメモは見ない" .claude/handoff.md $'# t\n\n- 目的：直す'
+out=$(python3 -I - "$root" "$work/docs-case/.claude/handoff.md" 2>&1 <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_hook
+print(load_hook("docs-check").check(sys.argv[2]))
+EOF
+)
+check "docs-check: Bash で書いた引き継ぎのメモも check で見ない" test "$out" = "[]"
 doc_case 0 "「ます」で終わる常体の動詞は止めない" rules/x.md $'# t\n\n人を励ます。眠気を醒ます。人をだます。\n\n子をはげます。'
 doc_case 2 "「上げます」は敬体として止める" rules/x.md $'# t\n\n値を上げます。' "敬体"
 

@@ -96,7 +96,7 @@ printf '\n\ndef broken():\n    assert True\n' >>"$d/lib/dates.py"
 expect_audit "$d" "assert は python -O で消え" "assert"
 
 d=$(copy matcher)
-replace "$d/settings/settings.json" '"Edit|Write|MultiEdit"' '"Edit|Write"'
+replace "$d/settings/settings.json" '"Edit|Write"' '"Edit"'
 expect_audit "$d" "編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ" "編集の道具が欠けた matcher"
 
 d=$(copy readme)
@@ -261,9 +261,9 @@ replace "$d/agents/explorer.md" 'tools: Read, Grep, Glob, Bash
 ' ''
 expect_audit "$d" "書き換えないエージェントは tools を書き" "書き換えないエージェントが全部の道具を持つ"
 
-d=$(copy agent-tools-multi-edit)
-replace "$d/agents/explorer.md" 'tools: Read, Grep, Glob, Bash' 'tools: Read, Grep, Glob, Bash, MultiEdit'
-expect_audit "$d" "書き換えないエージェントは tools を書き" "書き換えないエージェントが MultiEdit を持つ"
+d=$(copy agent-tools-write)
+replace "$d/agents/explorer.md" 'tools: Read, Grep, Glob, Bash' 'tools: Read, Grep, Glob, Bash, Write'
+expect_audit "$d" "書き換えないエージェントは tools を書き" "書き換えないエージェントが Write を持つ"
 
 d=$(copy agent-tools-notebook-edit)
 replace "$d/agents/reviewer.md" 'tools: Read, Grep, Glob, Bash' 'tools: Read, Grep, Glob, Bash, NotebookEdit'

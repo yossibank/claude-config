@@ -2,9 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(make verify)",
+      "Bash(make audit)",
       "Bash(make build)",
       "Bash(make test)",
       "Bash(make test *)",
+      "Bash(make test-*)",
       "Bash(swift test *)",
       "Bash(git status *)",
       "Bash(git diff *)",
@@ -31,7 +33,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit",
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
@@ -59,7 +61,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit",
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",

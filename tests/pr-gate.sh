@@ -97,7 +97,7 @@ gate.subprocess.run = slow
 print(gate.problems(sys.argv[2]))
 EOF
 )
-check "pr: run-check.sh が時間切れなら、stderr に知らせて通す" grep -q "確かめずに通す（TimeoutExpired）" <<<"$out"
+check "pr: run-check.sh が時間切れなら、systemMessage で知らせて通す" grep -q '"systemMessage": "pr-gate: .*確かめずに通す（TimeoutExpired）"' <<<"$out"
 CC_HOOKS_OFF="rules-require-read,pr-gate" run pr-gate 0 "pr: CC_HOOKS_OFF はカンマで区切ってもよい" "$(push "$app" 'git push')"
 CC_HOOKS_OFF=$'rules-require-read\tpr-gate' run pr-gate 0 "pr: CC_HOOKS_OFF はタブで区切ってもよい" "$(push "$app" 'git push')"
 out=$(push "$app" 'git status' | CC_HOOKS_OFF="pr-gate.py" bash "$hooks" pr-gate 2>&1)

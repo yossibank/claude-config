@@ -36,20 +36,20 @@ query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
   }
 }' -q '
 .data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)
-| "THREAD \(.id) \(.path):\(.line // "-") @\(.comments.nodes[0].author.login): \(.comments.nodes[0].body | split("\n")[0])"
+| "THREAD \(.id) \(.path):\(.line // "-") @\(.comments.nodes[0].author.login // "-"): \((.comments.nodes[0].body // "") | split("\n")[0] // "")"
 '
 
 gh api graphql -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
 query($owner: String!, $name: String!, $pr: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
-      reviews(last: 20) { nodes { author { login } state body url } }
-      comments(last: 20) { nodes { author { login } body url } }
+      reviews(last: 100) { nodes { author { login } state body url } }
+      comments(last: 100) { nodes { author { login } body url } }
     }
   }
 }' -q '
 .data.repository.pullRequest
-| (.reviews.nodes[] | select(.body != "")
+| (.reviews.nodes[] | select((.body // "") != "")
     | "REVIEW \(.state) @\(.author.login): \(.body | split("\n")[0]) \(.url)"),
-  (.comments.nodes[] | "COMMENT @\(.author.login): \(.body | split("\n")[0]) \(.url)")
+  (.comments.nodes[] | "COMMENT @\(.author.login): \((.body // "") | split("\n")[0]) \(.url)")
 '

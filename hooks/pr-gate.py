@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git_root  # noqa: E402
-from hook_io import command_words, git_subcommand, read_payload, run_gate, split_commands, tool_input  # noqa: E402
+from hook_io import command_words, git_subcommand, notify, read_payload, run_gate, split_commands, tool_input  # noqa: E402
 from hook_messages import PR_UNCHECKED  # noqa: E402
 from loader import ROOT  # noqa: E402
 
@@ -55,7 +55,7 @@ def problems(repo):
     try:
         result = subprocess.run(["bash", CHECK_SH, top, "--status"], capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.TimeoutExpired) as error:
-        print(f"pr-gate: run-check.sh を走らせられなかったので、確かめずに通す（{type(error).__name__}）", file=sys.stderr)
+        notify(f"pr-gate: run-check.sh を走らせられなかったので、確かめずに通す（{type(error).__name__}）")
         return []
     if result.returncode == 0:
         return []

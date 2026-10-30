@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from hook_io import read_payload, tool_input  # noqa: E402
 
 LIMIT = 30_000
-TEXT = (".md", ".swift", ".kt", ".json", ".txt", ".log", ".yml", ".yaml", ".csv")
+TEXT = (".md", ".swift", ".kt", ".py", ".sh", ".js", ".ts", ".html", ".json", ".jsonl", ".txt", ".log", ".yml", ".yaml", ".csv")
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
         return
     tool = tool_input(data)
     path = tool.get("file_path", "")
-    if not path.endswith(TEXT) or not os.path.isfile(path) or tool.get("limit"):
+    if not path.lower().endswith(TEXT) or not os.path.isfile(path) or tool.get("limit"):
         return
     size = os.path.getsize(path)
     if size <= LIMIT:

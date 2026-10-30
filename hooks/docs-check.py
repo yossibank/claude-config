@@ -491,13 +491,14 @@ CHECKS = [
 
 
 def check(path):
+    if MEMORY.search(path) or HANDOFF.search(path):
+        return []
     doc = read_doc(path)
     return sorted(found for applies, run in CHECKS if applies(doc) for found in run(doc))
 
 
 def main():
-    paths = [path for path in target_paths(".md") if not MEMORY.search(path) and not HANDOFF.search(path)]
-    block_on_findings("文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。", paths, check)
+    block_on_findings("文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。", target_paths(".md"), check)
 
 
 if __name__ == "__main__":

@@ -75,6 +75,7 @@ def tail_lines(path, limit, marker=None, chunk=4_000_000):
             file.seek(position)
             data = file.read(step) + data
             index = data.rfind(marker) if marker else -1
-            if index >= 0:
-                return data[data.rfind(b"\n", 0, index) + 1 :].decode("utf-8", "ignore").splitlines()
+            start = data.rfind(b"\n", 0, index) + 1 if index >= 0 else -1
+            if start > 0 or (start == 0 and position == 0):
+                return data[start:].decode("utf-8", "ignore").splitlines()
     return data.decode("utf-8", "ignore").splitlines()
