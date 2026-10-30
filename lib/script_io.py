@@ -15,6 +15,13 @@ def fail(message):
     sys.exit(1)
 
 
+def run_main(main):
+    try:
+        main()
+    except Failure as error:
+        fail(str(error))
+
+
 def require_month(arg, usage):
     if arg is None:
         fail(usage)

@@ -24,22 +24,32 @@ case $status in
     *) [[ $checks == *"no checks reported"* ]] || { echo "NG gh pr checks が通らない: $checks"; exit 1; } ;;
 esac
 
+gh api graphql --paginate -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
+query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $pr) {
+      reviewThreads(first: 100, after: $endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { id isResolved path line comments(first: 1) { nodes { author { login } body } } }
+      }
+    }
+  }
+}' -q '
+.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)
+| "THREAD \(.id) \(.path):\(.line // "-") @\(.comments.nodes[0].author.login): \(.comments.nodes[0].body | split("\n")[0])"
+'
+
 gh api graphql -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
 query($owner: String!, $name: String!, $pr: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
-      reviewThreads(first: 100) {
-        nodes { id isResolved path line comments(first: 1) { nodes { author { login } body } } }
-      }
       reviews(last: 20) { nodes { author { login } state body url } }
       comments(last: 20) { nodes { author { login } body url } }
     }
   }
 }' -q '
 .data.repository.pullRequest
-| (.reviewThreads.nodes[] | select(.isResolved | not)
-    | "THREAD \(.id) \(.path):\(.line // "-") @\(.comments.nodes[0].author.login): \(.comments.nodes[0].body | split("\n")[0])"),
-  (.reviews.nodes[] | select(.body != "")
+| (.reviews.nodes[] | select(.body != "")
     | "REVIEW \(.state) @\(.author.login): \(.body | split("\n")[0]) \(.url)"),
   (.comments.nodes[] | "COMMENT @\(.author.login): \(.body | split("\n")[0]) \(.url)")
 '

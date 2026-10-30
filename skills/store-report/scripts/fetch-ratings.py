@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 
 from app_store import ReviewPageError, clean, fetch_json, reason, review_pages  # noqa: E402
 from dates import month_of  # noqa: E402
-from script_io import Failure, fail, require_month  # noqa: E402
+from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
 
 LOOKUP = "https://itunes.apple.com/lookup"
@@ -62,14 +62,11 @@ def main():
 
     app, month = sys.argv[1], require_month(sys.argv[2], usage)
 
-    try:
-        fields, notice = ratings(app, month)
-    except Failure as error:
-        fail(str(error))
+    fields, notice = ratings(app, month)
     if notice:
         print(notice, file=sys.stderr)
     print("\t".join(fields))
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

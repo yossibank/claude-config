@@ -25,6 +25,8 @@ match "tile-frames: 切り抜きの指定を filter に入れる" "$(cat "$work/
 match "tile-frames: 長さが 0 でも 1 コマは出す" "$(bash "$tile" video.mp4 0 0 2 full 4 "$work/out.png")" "OK $work/out.png (1 コマ、4 列)"
 
 expect "NG 使い方" "record-video: 引数が足りなければ NG" bash "$record" udid 1
+expect "NG 録画する秒数は 0 より大きい数にする" "record-video: 秒数が数でなければ NG" bash "$record" udid x "$work/rec/a.mp4"
+expect "NG 録画する秒数は 0 より大きい数にする" "record-video: 秒数が 0 なら NG" bash "$record" udid 0 "$work/rec/a.mp4"
 fake_command xcrun 'exit 1'
 expect "NG 録画が始まらなかった: udid" "record-video: simctl がすぐ終われば NG" bash "$record" udid 1 "$work/rec/a.mp4"
 fake_command xcrun '#!/usr/bin/env python3
