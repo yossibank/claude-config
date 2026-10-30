@@ -20,6 +20,9 @@ doc_case() {
 doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
 doc_case 2 "コードも一文の字数に数える" README.md $'# t\n\n`/very/long/path/that/goes/on/and/on/and/on/and/on/x.sh` を走らせて結果を確かめる。'
 doc_case 2 "段落は 3 文まで" README.md $'# t\n\n一つ目。二つ目。三つ目。四つ目。'
+doc_case 0 "一文の読点は 3 つまで通る" README.md $'# t\n\nあ、い、う、えを使う。'
+doc_case 2 "一文の読点が 4 つあれば止める" README.md $'# t\n\nあ、い、う、え、おを使う。' "読点は 3 つまで"
+doc_case 0 "句点の無い語の並びは、読点を数えない" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | あ、い、う、え、お |'
 doc_case 2 "表のセルは 2 文まで" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | 一つ。二つ。三つ。 |'
 doc_case 2 "Claude が読む文書に絵文字を使わない" rules/x.md $'# t\n\n✅ 済んだ。'
 doc_case 0 "人が読む文書は表の絵文字を使える" README.md $'# t\n\n✅ 済んだ。'
@@ -72,6 +75,8 @@ doc_case 2 "text 以外の囲みのフォルダの木も見る" docs/x.md "$note
 doc_case 2 "状態の段に固定のバッジを置かない" docs/x.md "$note"$'\n'"$state_badge"' ![License](https://img.shields.io/badge/License-MIT-blue)' "状態の段は動的なバッジにする"
 doc_case 0 "節の中のページ内リンクの一覧は目次にしない" docs/x.md "$note"$'\n## 📚 文書\n\n関係する節を次に置く。\n\n- [入れ方](#入れ方)\n- [使い方](#使い方)\n- [直し方](#直し方)'
 doc_case 0 "小文字のアラートも種類を見分ける" docs/x.md $'# t\n\n> [!note]\n> 分かる。'
+doc_case 2 "節の名前を並べた文は目次として止める" rules/x.md $'# t\n\n画面・文字・色・ほかの決まりがある。\n\n## 画面\n\nう。\n\n## 文字\n\nえ。\n\n## 色\n\nお。' "節の名前を並べた文は目次になる"
+doc_case 0 "節の名前を 2 つ含む文は目次にしない" rules/x.md $'# t\n\n画面と文字を決める。\n\n## 画面\n\nう。\n\n## 文字\n\nえ。\n\n## 色\n\nお。'
 doc_case 2 "節の名前を並べた表は目次として止める" rules/x.md $'# t\n\n決まり。\n\n| 節 | 決めること |\n| --- | --- |\n| 画面 | あ |\n| 文字 | い |\n\n## 画面\n\nう。\n\n## 文字\n\nえ。' "節の名前を並べた表は目次になる"
 doc_case 0 "節の名前と一部だけ重なる表は止めない" rules/x.md $'# t\n\n決まり。\n\n| 節 | 決めること |\n| --- | --- |\n| 画面 | あ |\n| 色 | い |\n\n## 画面\n\nう。'
 doc_case 0 "節の名前で属性を比べる 3 列の表は止めない" rules/x.md $'# t\n\n比べる。\n\n| 画面 | タブ | 会員 |\n| --- | --- | --- |\n| ホーム | 1 | 全員 |\n| 設定 | 4 | 全員 |\n\n## ホーム\n\nう。\n\n## 設定\n\nえ。'
