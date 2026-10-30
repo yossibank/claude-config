@@ -2,7 +2,6 @@
 
 > [!NOTE]
 > claude-config のフック・スクリプト・スキルを足したり直したりする時の決まりが分かる。
-> 名前の付け方・スクリプトの書き方・共通の処理・確かめ方・スクリプト・足し方がある。
 > 使い方と入れ方は [README](../README.md) にある。
 
 ## 🏷️ 名前の付け方
@@ -82,7 +81,7 @@
 | 結果 | stdout に `OK`・`NG` で始まる行で出す。失敗したら終了コード 1 で終える |
 | 引数 | 足りない時は `[[ $# -ge N ]]` で確かめ、`NG` を出す。`${N:?}` は使わない |
 | 知らせ | 失敗ではない知らせは stderr に出す |
-| フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す |
+| フック | 終了コード 2 で返す文は stderr に、JSON で返すものは stdout に出す。止めない知らせは、終了コード 0 の stderr が見えないので `notify` で出す |
 | 共通の処理 | フックとスクリプトの共通の処理は `lib/` に置き、`sys.path.insert` か `source` で読む。ワークツリーの置き場所は lib にだけ書く |
 | フックの登録 | 検査のフックは `if` で拡張子を絞り、当たらないファイルでは起動しない。`Edit(//**/*.md)` は Write に当たらないので、`Write(//**/*.md)` も並べる |
 | 編集の matcher | 編集を受けるフックの matcher は、`hook_io` の `FILE_EDIT_TOOLS` と同じ道具を並べる |
@@ -98,7 +97,7 @@
 | [lib/dates.py](../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
 | [lib/git.py](../lib/git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所（`WORKTREES` など）。根は、まだ無いフォルダからも在る親をたどって探す |
 | [lib/git.sh](../lib/git.sh) | 根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。分かれ目・変えたファイル・既定のブランチ・書き込みの権限 |
-| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし、止める時の出し方。止めたフックの判定、編集する道具の名前、例外でも止める門番の入口 `run_gate` |
+| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし、止める時と止めない知らせ（`notify`）の出し方。止めたフックの判定、編集する道具の名前、例外でも止める門番の入口 `run_gate` |
 | [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
 | [lib/hook_state.py](../lib/hook_state.py) | 状態フォルダの場所と名前、作る時の古い状態ファイルの掃除 |
 | [lib/loader.py](../lib/loader.py) | claude-config の根（`ROOT`）と、場所を指して .py を読む処理 |

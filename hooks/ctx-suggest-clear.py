@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import sys
@@ -6,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import read_payload, tool_input  # noqa: E402
+from hook_io import notify, read_payload, tool_input  # noqa: E402
 from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
@@ -81,7 +80,7 @@ def main():
     else:
         message = long_context(payload)
     if message:
-        print(json.dumps({"systemMessage": message}, ensure_ascii=False))
+        notify(message)
 
 
 if __name__ == "__main__":

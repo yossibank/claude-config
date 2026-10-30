@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git, git_root  # noqa: E402
-from hook_io import command_words, hook_off, read_payload, split_commands, tool_input  # noqa: E402
+from hook_io import command_words, hook_off, notify, read_payload, split_commands, tool_input  # noqa: E402
 from hook_messages import BASH_EDITED  # noqa: E402
 from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from loader import load_hook  # noqa: E402
@@ -16,6 +16,7 @@ STATE = state_folder("bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
 TOOLS = {"git", "make", "mint", "swiftformat", "pre-commit", "gh", "brew", "xcodebuild", "swift", "cd"}
 STALE = 24 * 60 * 60
+REDIRECT_CHARS = set("<>|&")
 
 
 def changed_files(cwd):
@@ -24,7 +25,7 @@ def changed_files(cwd):
         return None, {}
     result = git(root, "status", "--porcelain", "-z", "--untracked-files=all")
     if result is None:
-        print("rules-detect-bash-edits: git status が時間切れになったので、Bash での書き換えを確かめなかった", file=sys.stderr)
+        notify("rules-detect-bash-edits: git status が時間切れになったので、Bash での書き換えを確かめなかった")
     if not result or result.returncode:
         return None, {}
     files = {}
@@ -53,9 +54,23 @@ def edited_since(path, started):
         return False
 
 
+def writes_file(words):
+    for index, word in enumerate(words):
+        if ">" not in word or not set(word) <= REDIRECT_CHARS:
+            continue
+        target = words[index + 1] if index + 1 < len(words) else ""
+        if word.endswith("&") and (target.isdigit() or target == "-"):
+            continue
+        if target != "/dev/null":
+            return True
+    return False
+
+
 def only_tools(command):
-    parts = [command_words(words) for words in split_commands(command)]
-    return bool(parts) and all(words[:1] and words[0] in TOOLS for words in parts)
+    parts = split_commands(command)
+    return bool(parts) and all(
+        (head := command_words(words)[:1]) and head[0] in TOOLS and not writes_file(words) for words in parts
+    )
 
 
 def before(data):

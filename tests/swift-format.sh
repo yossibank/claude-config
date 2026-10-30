@@ -34,7 +34,7 @@ match "swift: mint で swiftformat をリポジトリの根で走らせる" "$(c
 
 fake_command swiftformat 'echo "壊れた設定" >&2; exit 1'
 out=$(format)
-match "swift: swiftformat が失敗したら、終了コード 0 のまま stderr に理由を出す" "$out" "swiftformat が失敗した：壊れた設定"$'\n'"status 0"
+match "swift: swiftformat が失敗したら、終了コード 0 のまま systemMessage で理由を知らせる" "$out" '{"systemMessage": "swiftformat が失敗した：壊れた設定"}'$'\n'"status 0"
 
 fake_command swiftformat 'exec sleep 5'
 out=$(python3 -I - "$root" "$swift" 2>&1 <<'EOF'
@@ -48,6 +48,6 @@ hook.main()
 print("exit 0")
 EOF
 )
-match "swift: 時間切れなら、止めずに stderr に知らせる" "$out" "swiftformat が 1 秒で終わらなかった"$'\n'"exit 0"
+match "swift: 時間切れなら、止めずに systemMessage で知らせる" "$out" '{"systemMessage": "swiftformat が 1 秒で終わらなかった"}'$'\n'"exit 0"
 
 finish
