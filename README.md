@@ -98,6 +98,7 @@ PR を積んで出す時だけ入れる。squash でマージしても積んだ 
 | 文書 | 読む時 | 中身 |
 | --- | --- | --- |
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
+| [docs/improvements.md](docs/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
 | [docs/development.md](docs/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・確かめ方・スクリプト・足し方 |
 | [skills/app-init/templates/ios-app/](skills/app-init/templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形 |
 | [skills/app-init/templates/ios-app/docs/](skills/app-init/templates/ios-app/docs/) | `app-plan` の時 | overview と roadmap のひな形 |
@@ -205,6 +206,7 @@ flowchart LR
     subgraph care["手入れ（いつでも）"]
         ctx["ctx-handoff・ctx-report"]
         configLearn["config-learn"]
+        configReview["config-review"]
         docsPolish["docs-polish"]
     end
     appInit --> prCreate
@@ -235,6 +237,7 @@ flowchart LR
 | 手入れ | [ctx-handoff](skills/ctx-handoff/SKILL.md) | 🤝 人と Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
 | 手入れ | [ctx-report](skills/ctx-report/SKILL.md) | 🤝 人と Claude | 月ごとに、トークンを多く使った作業を表にする |
 | 手入れ | [config-learn](skills/config-learn/SKILL.md) | 🤝 人と Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
+| 手入れ | [config-review](skills/config-review/SKILL.md) | 🤝 人と Claude | claude-config を観点ごとに調べ、台帳に無い改善だけを出す |
 | 手入れ | [docs-polish](skills/docs-polish/SKILL.md) | 🤝 人と Claude | 文字だけが続く節を見つけ、表・図・絵文字で見やすくする案を見本付きで出す |
 
 ## 👷 エージェント
