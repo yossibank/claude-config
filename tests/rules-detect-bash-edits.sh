@@ -37,5 +37,12 @@ else
     ng "bash: CC_HOOKS_OFF で止めた検査は、Bash の書き換えにもかけない" "$out"
 fi
 rm -f "$app/docs/off.md"
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t9 'sed -i')" pre
+echo 'v' >>"$app/docs/overview.md"
+run rules-detect-bash-edits 0 "bash: Edit の印を残す" "$(edit s a "" "$app/docs/overview.md")" edit
+run rules-detect-bash-edits 0 "bash: Bash の間に Edit で変えたファイルは数えない" "$(bash_call t9 'sed -i')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t10 'sed -i')" pre
+echo 'u' >>"$app/docs/overview.md"
+run rules-detect-bash-edits 2 "bash: Bash の前の Edit の印では、Bash の書き換えを見逃さない" "$(bash_call t10 'sed -i')" post
 
 finish
