@@ -34,9 +34,9 @@ expect_audit() {
     git -C "$dir" add -A
     out=$(python3 -I "$dir/scripts/config-audit.py")
     if audit_matches "$want" "$out"; then
-        ok "$label"
+        ok "config-audit: $label"
     else
-        ng "${label}: 期待は「${want}」" "$out"
+        ng "config-audit: ${label}: 期待は「${want}」" "$out"
     fi
 }
 
@@ -109,7 +109,7 @@ expect_audit "$d" "hooks/swift-format.py:1 テストが無い: tests/swift-forma
 
 d=$(copy test-missing-script)
 rm -f "$d/tests/config-install.sh"
-expect_audit "$d" "scripts/config-install.sh:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
+expect_audit "$d" "scripts/config-install\.[a-z]*:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
 
 d=$(copy test-missing-skill)
 rm -f "$d/tests/ui-record.sh"
@@ -286,5 +286,21 @@ expect_audit "$d" OK "ひな形の中で、写した後に辿れるリンク"
 d=$(copy template-link-ng)
 printf '\n[x](docs/nothing.md)\n' >>"$d/skills/app-init/templates/ios-app/README.md"
 expect_audit "$d" "リンク先が無い: docs/nothing.md" "ひな形の中の壊れたリンク"
+
+d=$(copy lib-name)
+printf 'value = 1\n' >"$d/lib/hookIO.py"
+expect_audit "$d" "lib/hookIO.py:1 lib の名前は" "snake_case でない lib"
+
+d=$(copy test-lib-name)
+printf 'helper() { :; }\n' >"$d/tests/lib/test-helpers.sh"
+expect_audit "$d" "tests/lib/test-helpers.sh:1 tests/lib の名前は" "snake_case でない tests/lib"
+
+d=$(copy agent-name)
+cp "$d/agents/explorer.md" "$d/agents/search.md"
+expect_audit "$d" "agents/search.md:1 エージェントの名前は" "-er で終わらないエージェント"
+
+d=$(copy hook-extra)
+printf 'x\n' >"$d/hooks/notes.txt"
+expect_audit "$d" "hooks/notes.txt:1 hooks/ に置く .py 以外のファイルは run.sh だけ" "hooks/ の run.sh 以外の .py でないファイル"
 
 finish

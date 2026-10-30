@@ -58,7 +58,7 @@ if [[ ! -f $installed ]]; then
     echo '[]' >|"$installed"
 fi
 
-jq -s -f "$root/settings/merge.jq" "$settings" "$root/settings/settings.json" "$installed" >|"$settings.tmp"
+jq -s -f "$root/scripts/config-install.jq" "$settings" "$root/settings/settings.json" "$installed" >|"$settings.tmp"
 mv -f "$settings.tmp" "$settings.new"
 jq '.permissions.allow' "$root/settings/settings.json" >|"$installed.new"
 

@@ -7,16 +7,17 @@
 
 ## 🏷️ 名前の付け方
 
-名前は `<分類>-<すること>` にそろえる。フォルダの中を名前の順に並べると、分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
+名前は、頭に `<分類>-` を付けてそろえる。フォルダの中を名前の順に並べると、分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
 | スキル | `<分類>-<すること>` | `pr-create`、`ctx-handoff` |
-| フック | `<分類>-<すること>.py`。イベントは settings.json に書く | `docs-check.py`、`pr-gate.py` |
+| フック | `<分類>-<すること、または名詞>.py`。イベントは settings.json に書く。`.py` 以外は `run.sh` だけを置く | `docs-check.py`、`pr-gate.py` |
 | rules | `<分類>-<範囲>.md` | `swift-core.md` |
-| scripts | `<分類>-<すること>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
+| scripts | `<分類>-<すること、または名詞>.sh`・`.py`・`.jq` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
 | lib | 中身の名詞を `snake_case` にする。Python の import で読める形に、`.sh` もそろえる | `hook_io.py`、`build_log.sh` |
+| tests/lib | 中身の名詞を `snake_case` の `.sh` にする | `assert.sh`、`fixtures.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
 | 環境変数 | `CC_[<分類>_]<中身>`。分類は接頭語の表の名前を大文字にする | `CC_UI_DEVICE`、`CC_APPS_DIR` |
@@ -105,6 +106,8 @@
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
 | [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方と、ワークツリーのパスからリポジトリの名前を出す `repo_of` |
+
+ほかのスキルのスクリプトは、持ち主のスキルに置いたまま使う。スキルからは `${CLAUDE_SKILL_DIR}/../<スキル>/scripts/` で呼ぶ。フックからは、リポジトリの根からの `skills/<スキル>/scripts/` で呼ぶ。
 
 ## 🧪 確かめ方
 

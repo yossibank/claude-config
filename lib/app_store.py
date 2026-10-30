@@ -37,7 +37,7 @@ def clean(text):
     return " ".join(str(text).split())
 
 
-def fetch_json(url, timeout=10):
+def itunes_json(url, timeout=10):
     with urllib.request.urlopen(url, timeout=timeout) as response:
         return json.load(response)
 
@@ -45,7 +45,7 @@ def fetch_json(url, timeout=10):
 def review_pages(app):
     for page in range(1, PAGES + 1):
         try:
-            entries = fetch_json(REVIEWS.format(page=page, app=app))["feed"].get("entry", [])
+            entries = itunes_json(REVIEWS.format(page=page, app=app))["feed"].get("entry", [])
         except Exception as error:
             raise ReviewPageError(page, error) from error
         if isinstance(entries, dict):

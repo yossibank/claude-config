@@ -4,7 +4,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ReviewPageError, clean, fetch_json, reason, review_pages  # noqa: E402
+from app_store import ReviewPageError, clean, itunes_json, reason, review_pages  # noqa: E402
 from dates import month_of  # noqa: E402
 from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
@@ -16,7 +16,7 @@ def ratings(app, month):
     if not app.isdigit():
         raise Failure(f"アプリの ID は数字で書く: {app}")
     try:
-        results = fetch_json(f"{LOOKUP}?{urllib.parse.urlencode({'id': app, 'country': 'jp'})}")["results"]
+        results = itunes_json(f"{LOOKUP}?{urllib.parse.urlencode({'id': app, 'country': 'jp'})}")["results"]
     except Exception as error:
         raise Failure(f"評価を読めなかった: {reason(error)}") from error
     if not results:

@@ -10,15 +10,15 @@ push() {
 }
 
 run pr-gate 2 "pr: 確認の記録が無いと push を止める" "$(push "$app" 'git push -u origin feat/x')"
-"$check" "$app" "true" true >/dev/null
+"$run_check" "$app" "true" true >/dev/null
 run pr-gate 0 "pr: 確認を通せば push を通す" "$(push "$app" 'git push -u origin feat/x')"
 run pr-gate 0 "pr: 確認を通せば gh pr create を通す" "$(push "$app" 'gh pr create --title x')"
 echo 'struct B {}' >>"$swift"
 run pr-gate 2 "pr: 確認の後に変えると止める" "$(push "$app" 'git push')"
-"$check" "$app" "true" true >/dev/null
-"$check" "$app" "false" false >/dev/null
+"$run_check" "$app" "true" true >/dev/null
+"$run_check" "$app" "false" false >/dev/null
 run pr-gate 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')"
-"$check" "$app" --drop "false" >/dev/null
+"$run_check" "$app" --drop "false" >/dev/null
 run pr-gate 0 "pr: --drop で外せば通す" "$(push "$app" 'git push')"
 echo 'struct C {}' >>"$swift"
 run pr-gate 0 "pr: タグの push は止めない" "$(push "$app" 'git push --tags')"

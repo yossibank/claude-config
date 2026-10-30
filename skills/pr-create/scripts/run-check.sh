@@ -79,7 +79,7 @@ elif [[ $status == 0 ]]; then
     echo "NG ${label}: 確認の間にワークツリーが変わった。変更を終えてから通し直す"
     exit 1
 else
-    echo "NG ${label}（終了コード ${status}）。ログ: $log"
+    echo "NG ${label}（終了コード ${status}、ログ: ${log}）"
     show_errors "$log"
     exit 1
 fi
