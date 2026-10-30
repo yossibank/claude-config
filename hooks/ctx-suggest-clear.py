@@ -11,7 +11,7 @@ from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
 STEP = 200_000
-TAIL = 4_000_000
+TAIL_LIMIT = 4_000_000
 STATE = state_folder("suggest-clear")
 STALE = 7 * 24 * 60 * 60
 KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
@@ -21,7 +21,7 @@ PR_MESSAGE = "PR を作りました。この依頼が済んだら、/ctx-handoff
 
 
 def context_tokens(path):
-    for line in reversed(tail_lines(path, TAIL)):
+    for line in reversed(tail_lines(path, TAIL_LIMIT)):
         if '"usage"' not in line:
             continue
         entry = parse_entry(line)

@@ -36,5 +36,16 @@ run rules-require-read 0 "rules: 壊れた入力では止めない" "not json"
 odd="$work/odd.jsonl"
 printf '%s\n' '{"type":"x","note":"instructions","attachment":"/rules/"}' '{"type":"attachment","attachment":{"type":"instructions","files":["/rules/x.md"]}}' >"$odd"
 run rules-require-read 2 "rules: 記録の attachment が辞書でなくても落ちずに止める" "$(edit s8 main "$odd" "$swift")"
+off=$' x1,x2\tx3\nx4 ,, x5,'
+out=$(echo '{}' | CC_HOOKS_OFF="$off" bash "$hooks" rules-require-read 2>&1)
+match "rules: run.sh は CC_HOOKS_OFF を空白・カンマ・タブ・改行で名前に分ける" "$out" "*hooks/ に無い名前がある: x1 x2 x3 x4 x5"
+out=$(CC_HOOKS_OFF="$off" python3 -I - "$root" 2>&1 <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from hook_io import hook_off
+print(" ".join(name for name in ["x", "x1", "x2", "x3", "x4", "x5", "x1,x2", "x4 "] if hook_off(name)))
+EOF
+)
+match "rules: hook_io の hook_off は run.sh と同じ名前の並びに分ける" "$out" "x1 x2 x3 x4 x5"
 
 finish

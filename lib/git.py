@@ -1,6 +1,9 @@
 import os
 import subprocess
 
+WORKTREES = os.path.expanduser("~/.claude/worktrees/")
+INNER_WORKTREES = "/.claude/worktrees/"
+
 
 def git(cwd, *args, timeout=10):
     try:

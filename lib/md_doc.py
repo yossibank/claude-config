@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
 
+from loader import ROOT
 from md_blocks import fence_marks, front_matter_end, table_under
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULES = [os.path.join(ROOT, "rules", name) for name in ("docs-core.md", "docs-claude.md", "docs-human.md")]
 
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⬀-⯿]️?")

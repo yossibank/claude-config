@@ -7,8 +7,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from git import git_root  # noqa: E402
 from hook_io import command_words, git_subcommand, read_payload, run_gate, split_commands, tool_input  # noqa: E402
 from hook_messages import PR_UNCHECKED  # noqa: E402
+from loader import ROOT  # noqa: E402
 
-CHECK_SH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "pr-create", "scripts", "run-check.sh")
+CHECK_SH = os.path.join(ROOT, "skills", "pr-create", "scripts", "run-check.sh")
 PUSH_SKIPPED = {"--tags", "--delete", "-d"}
 SHELLS = {"bash", "sh", "zsh"}
 

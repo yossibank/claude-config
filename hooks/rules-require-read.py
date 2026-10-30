@@ -11,10 +11,11 @@ from git import git_root  # noqa: E402
 from hook_io import EDIT_TOOLS, read_payload, run_gate, tool_input  # noqa: E402
 from hook_messages import RULES_UNREAD  # noqa: E402
 from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
+from loader import ROOT  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
 from transcripts import parse_entry, tail_lines  # noqa: E402
 
-RULES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
+RULES = os.path.join(ROOT, "rules")
 STATE = state_folder("rules-read")
 STALE = 7 * 24 * 60 * 60
 TAIL_LIMIT = 32_000_000

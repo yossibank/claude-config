@@ -6,9 +6,7 @@ import os
 from pathlib import Path
 
 from dates import JST
-
-WORKTREES = os.path.expanduser("~/.claude/worktrees/")
-INNER_WORKTREES = "/.claude/worktrees/"
+from git import INNER_WORKTREES, WORKTREES
 
 
 def projects_dir():
@@ -19,6 +17,18 @@ def touched_since(pattern, start):
     return sorted(
         path for path in glob.glob(pattern) if datetime.datetime.fromtimestamp(os.path.getmtime(path), JST) >= start
     )
+
+
+def sessions_since(projects, start):
+    return touched_since(os.path.join(projects, "*", "*.jsonl"), start)
+
+
+def subagents_since(projects, start):
+    return touched_since(os.path.join(projects, "*", "*", "subagents", "*.jsonl"), start)
+
+
+def subagents_of(session):
+    return glob.glob(os.path.join(session.removesuffix(".jsonl"), "subagents", "*.jsonl"))
 
 
 def parse_entry(line):
