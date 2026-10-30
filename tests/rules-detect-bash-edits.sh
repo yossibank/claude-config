@@ -50,5 +50,8 @@ run rules-detect-bash-edits 2 "bash: git・gh でも、出力をファイルに�
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t12 'git status 2>/dev/null >&2')" pre
 echo 's' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 0 "bash: /dev/null と fd への向け替えは書き込みと数えない" "$(bash_call t12 'git status 2>/dev/null >&2')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t13 'git checkout x > /tmp/claude-config-test.log')" pre
+echo 'r' >>"$app/docs/overview.md"
+run rules-detect-bash-edits 0 "bash: 道具の出力を別の所に向けても、道具が変えたファイルは数えない" "$(bash_call t13 'git checkout x > /tmp/claude-config-test.log')" post
 
 finish

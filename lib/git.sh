@@ -32,7 +32,7 @@ worktree_root() {
 default_branch() {
     local head
     git -C "$1" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null && return 0
-    head=$(git -C "$1" ls-remote --symref origin HEAD 2>/dev/null | awk '$1 == "ref:" {sub("refs/heads/", "", $2); print $2; exit}') || head=""
+    head=$(git -C "$1" ls-remote --symref origin HEAD 2>/dev/null | awk '$1 == "ref:" && !found {sub("refs/heads/", "", $2); print $2; found = 1}') || true
     echo "origin/${head:-main}"
 }
 

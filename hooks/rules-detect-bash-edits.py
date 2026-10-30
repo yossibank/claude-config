@@ -54,29 +54,33 @@ def edited_since(path, started):
         return False
 
 
-def writes_file(words):
-    for index, word in enumerate(words):
-        if ">" not in word or not set(word) <= REDIRECT_CHARS:
-            continue
-        target = words[index + 1] if index + 1 < len(words) else ""
-        if word.endswith("&") and (target.isdigit() or target == "-"):
-            continue
-        if target != "/dev/null":
-            return True
-    return False
+def redirect_targets(command, cwd):
+    targets = set()
+    for words in split_commands(command):
+        for index, word in enumerate(words[:-1]):
+            target = words[index + 1]
+            if ">" not in word or not set(word) <= REDIRECT_CHARS or target.startswith("/dev/"):
+                continue
+            if word.endswith("&") and (target.isdigit() or target == "-"):
+                continue
+            targets.add(os.path.realpath(os.path.join(cwd, os.path.expanduser(target))))
+    return targets
 
 
 def only_tools(command):
-    parts = split_commands(command)
-    return bool(parts) and all(
-        (head := command_words(words)[:1]) and head[0] in TOOLS and not writes_file(words) for words in parts
-    )
+    parts = [command_words(words) for words in split_commands(command)]
+    return bool(parts) and all(words[:1] and words[0] in TOOLS for words in parts)
+
+
+def cwd_of(data):
+    return data.get("cwd") or os.getcwd()
 
 
 def before(data):
-    if only_tools(tool_input(data).get("command", "")):
+    command = tool_input(data).get("command", "")
+    if only_tools(command) and not redirect_targets(command, cwd_of(data)):
         return
-    root, files = changed_files(data.get("cwd") or os.getcwd())
+    root, files = changed_files(cwd_of(data))
     if root is None:
         return
     prepare_state(STATE, STALE)
@@ -91,7 +95,10 @@ def after(data):
     except (OSError, ValueError):
         return
     command = tool_input(data).get("command", "")
-    if only_tools(command) or not isinstance(earlier, dict) or "root" not in earlier:
+    if not isinstance(earlier, dict) or "root" not in earlier:
+        return
+    targets = redirect_targets(command, cwd_of(data)) if only_tools(command) else None
+    if targets is not None and not targets:
         return
     _, files = changed_files(earlier["root"])
     edited = sorted(
@@ -101,6 +108,7 @@ def after(data):
         and earlier["files"].get(path) != mtime
         and "/.git/" not in path
         and not edited_since(path, started)
+        and (targets is None or os.path.realpath(path) in targets)
     )
     if not edited:
         return
