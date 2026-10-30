@@ -264,6 +264,7 @@ flowchart LR
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
+| `CC_UI_WORK_DIR` | ui-snapshot | 描く時の写しを置くフォルダ。既定は `~/Library/Caches/ui-snapshot` |
 
 ## 🧪 確かめ方
 
