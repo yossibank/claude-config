@@ -44,17 +44,12 @@ expect "NG セットに SnapshotTests.swift が無い" "render-snapshots: セッ
 touch "$set_dir/SnapshotTests.swift"
 expect "NG セットに targets.txt が無い" "render-snapshots: セットに targets.txt が無ければ NG" bash "$render" "$package" "$set_dir" "$work/out"
 touch "$set_dir/targets.txt"
-expect "NG 出力先がパッケージの中にある" "render-snapshots: 出力先がパッケージの中なら NG" bash "$render" "$package" "$set_dir" "$package/out"
 mkdir -p "$work/busy"
 touch "$work/busy/keep.txt"
 expect "NG 出力先が空でなく" "render-snapshots: 出力先に別のファイルがあれば NG" bash "$render" "$package" "$set_dir" "$work/busy"
 expect "NG iPhone のシミュレーターが無い" "render-snapshots: iPhone が無ければ NG" bash "$render" "$package" "$set_dir" "$work/out"
 fake_command xcodebuild "echo '{\"workspace\":{\"schemes\":[]}}'"
 CC_UI_DEVICE=MINE expect "NG パッケージのスキームが見つからない" "render-snapshots: CC_UI_DEVICE があれば iPhone を探さない" bash "$render" "$package" "$set_dir" "$work/out"
-mkdir -p "$package/Tests/UISnapshotTests"
-expect "NG 前の回の後片付けが済んでいない" "render-snapshots: 前の回のテストが残っていれば NG" bash "$render" "$package" "$set_dir" "$work/out"
-
-rm -rf "$package/Tests"
 cp "$manifest" "$package/Package.swift"
 printf 'Core\n' >"$set_dir/targets.txt"
 printf 'let directory = "__OUT__"\n' >"$set_dir/SnapshotTests.swift"
@@ -65,7 +60,14 @@ if [[ \$1 == -list ]]; then
 fi
 cp Tests/UISnapshotTests/SnapshotTests.swift '$work/written.swift'
 exit 1"
-CC_UI_DEVICE=MINE /bin/bash "$render" "$package" "$set_dir" "$work/out" >/dev/null
+printf 'ignored/\n' >"$package/.gitignore"
+mkdir -p "$package/ignored"
+touch "$package/ignored/big"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" /bin/bash "$render" "$package" "$set_dir" "$work/out" >/dev/null
 check "render-snapshots: macOS の bash でも出力先のパスを引用符なしで入れる" grep -qxF "let directory = \"$work/out\"" "$work/written.swift"
+check "render-snapshots: 元のパッケージにテストを足さない" test ! -e "$package/Tests"
+check "render-snapshots: 元の Package.swift を書き換えない" cmp -s "$manifest" "$package/Package.swift"
+check "render-snapshots: 写しの Package.swift にテストを足す" grep -q 'name: "UISnapshotTests"' "$work"/copies/pkg-*/Package.swift
+check "render-snapshots: .gitignore で外すものを写さない" test -z "$(find "$work/copies" -name big)"
 
 finish

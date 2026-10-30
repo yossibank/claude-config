@@ -7,41 +7,35 @@ set -euo pipefail
 [[ -d $2 ]] || { echo "NG セットのフォルダが無い: $2"; exit 1; }
 
 skill=$(cd "$(dirname "$0")/.." && pwd)
-package=$(cd "$1" && pwd)
+package=$(cd "$1" && pwd -P)
 set_dir=$(cd "$2" && pwd)
 out=$(mkdir -p "$3" && cd "$3" && pwd)
-tests="$package/Tests/UISnapshotTests"
 
 [[ -f $set_dir/SnapshotTests.swift ]] || { echo "NG セットに SnapshotTests.swift が無い: $set_dir"; exit 1; }
 [[ -f $set_dir/targets.txt ]] || { echo "NG セットに targets.txt が無い: $set_dir"; exit 1; }
-case "$out/" in
-    "$package"/*) echo "NG 出力先がパッケージの中にある: ${out}。戻す時に消えるので、パッケージの外を渡す"; exit 1 ;;
-esac
 marker="$out/.ui-snapshot"
 if [[ ! -f $marker && -n $(ls -A "$out") ]]; then
     echo "NG 出力先が空でなく、ui-snapshot の出力先でもない: ${out}。空のフォルダを渡す"
     exit 1
 fi
-[[ -e $tests ]] && { echo "NG 前の回の後片付けが済んでいない: ${tests}。退避のフォルダから戻すか、git で戻してから走らせる"; exit 1; }
 
 device=${CC_UI_DEVICE:-$("$skill/scripts/find-simulator.sh" || true)}
 [[ -n $device ]] || { echo "NG iPhone のシミュレーターが無い。CC_UI_DEVICE に UDID を渡す"; exit 1; }
 scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | jq -r '.workspace.schemes as $all | ([$all[] | select(endswith("-Package"))] + $all)[0] // empty') || scheme=""
 [[ -n $scheme ]] || { echo "NG パッケージのスキームが見つからない: $package"; exit 1; }
 
-backup=$(mktemp -d)
-echo "退避: $backup"
-rsync -a --exclude .git --exclude .build --exclude .swiftpm "$package/" "$backup/"
+root=$(git -C "$package" rev-parse --show-toplevel 2>/dev/null || true)
+[[ -n $root && $package/ == "$root"/* ]] || root=$package
+key=$(printf '%s' "$root" | shasum | cut -c1-12)
+copy="${CC_UI_WORK_DIR:-$HOME/Library/Caches/ui-snapshot}/$(basename "$root")-$key"
+work="$copy${package#"$root"}"
+tests="$work/Tests/UISnapshotTests"
 
-restore() {
-    rm -rf "$tests"
-    rsync -a --delete --exclude .git --exclude .build --exclude .swiftpm "$backup/" "$package/" && rm -rf "$backup"
-}
+mkdir -p "$copy"
+rsync -a --delete --exclude .git --exclude .build --exclude DerivedData --filter=':- .gitignore' "$root/" "$copy/"
 
-trap restore EXIT
-
-python3 -I "$skill/scripts/add-target.py" "$package/Package.swift" "$set_dir/targets.txt"
-[[ -f $set_dir/patch.py ]] && python3 -I "$set_dir/patch.py" "$package"
+python3 -I "$skill/scripts/add-target.py" "$work/Package.swift" "$set_dir/targets.txt"
+[[ -f $set_dir/patch.py ]] && python3 -I "$set_dir/patch.py" "$work"
 mkdir -p "$tests"
 source_text=$(<"$set_dir/SnapshotTests.swift")
 shopt -u patsub_replacement 2>/dev/null || true
@@ -50,7 +44,7 @@ printf '%s\n' "$test_text" >|"$tests/SnapshotTests.swift"
 rm -f "$out"/*.png
 touch "$marker"
 
-cd "$package"
+cd "$work"
 
 set +e
 xcodebuild test \
