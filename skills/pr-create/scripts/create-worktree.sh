@@ -13,9 +13,10 @@ if ! [[ $branch =~ ^(feat|fix|docs|refactor|test|build|ci|chore)/[a-z0-9]+(-[a-z
     exit 1
 fi
 
-git -C "$repo" fetch -q origin
+git -C "$repo" fetch -q origin || { echo "NG origin から fetch できない"; exit 1; }
 base=$(default_branch "$repo")
 dest="$(worktree_root "$(basename "$repo")")/${branch//\//-}"
 
-git -C "$repo" worktree add -q "$dest" -b "$branch" "$base"
+[[ ! -e $dest ]] || { echo "NG ワークツリーの行き先が既にある: $dest"; exit 1; }
+git -C "$repo" worktree add -q "$dest" -b "$branch" "$base" || { echo "NG ワークツリーを作れない: ${branch}（${base} から）"; exit 1; }
 echo "$dest"

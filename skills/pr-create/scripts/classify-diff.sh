@@ -12,8 +12,11 @@ risky='(^|/)(Migration|migrations?/)|[Ss]chema|\.sql$|fixtures/|\.pbxproj$|Packa
 
 changes() {
     git -C "$repo" diff --numstat -z --no-renames "$base" | tr '\0' '\n'
+    local path count
     untracked_paths "$repo" | while IFS= read -r -d '' path; do
-        printf '%s\t0\t%s\n' "$(wc -l < "$repo/$path" | tr -d ' ')" "$path"
+        count=0
+        [[ -f $repo/$path && -r $repo/$path ]] && count=$(wc -l < "$repo/$path" | tr -d ' ')
+        printf '%s\t0\t%s\n' "$count" "$path"
     done
 }
 
