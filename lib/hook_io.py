@@ -9,7 +9,7 @@ from hook_messages import GATE_FAILED
 SEGMENT = re.compile(r"&&|\|\||;|\||\n")
 SEPARATOR_CHARS = set(";&|()\n")
 OFF_SEPARATOR = re.compile(r"[\s,]+")
-FILE_EDIT_TOOLS = ("Edit", "Write", "MultiEdit")
+FILE_EDIT_TOOLS = ("Edit", "Write")
 EDIT_TOOLS = (*FILE_EDIT_TOOLS, "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 PREFIX_VALUE_OPTIONS = {
@@ -49,6 +49,10 @@ def block_on_findings(header, paths, check):
     if report:
         print(header + "\n" + "\n".join(report), file=sys.stderr)
         sys.exit(2)
+
+
+def notify(message):
+    print(json.dumps({"systemMessage": message}, ensure_ascii=False))
 
 
 def run_gate(name, main):

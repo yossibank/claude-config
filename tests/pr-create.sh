@@ -89,5 +89,12 @@ expect "形ではない" "create-worktree: 形の違うブランチ名は NG" ba
 expect OK "create-worktree: ワークツリーを作る" bash "$create" "$repo" feat/new-thing
 check "create-worktree: ~/.claude/worktrees の下に置く" test -d "$HOME/.claude/worktrees/repo/feat-new-thing"
 check "create-worktree: origin の既定のブランチから切る" test "$(git -C "$HOME/.claude/worktrees/repo/feat-new-thing" rev-parse HEAD)" == "$(git -C "$repo" rev-parse origin/main)"
+git init -q --bare -b develop "$work/develop.git"
+git -C "$repo" push -q "$work/develop.git" HEAD:refs/heads/develop
+git init -q "$work/develop"
+git -C "$work/develop" remote add origin "$work/develop.git"
+git -C "$work/develop" fetch -q origin
+expect OK "create-worktree: origin/HEAD が無くても、origin の既定のブランチを読んで切る" bash "$create" "$work/develop" feat/from-develop
+check "create-worktree: 既定のブランチが develop なら develop から切る" test "$(git -C "$HOME/.claude/worktrees/develop/feat-from-develop" rev-parse HEAD)" == "$(git -C "$work/develop" rev-parse origin/develop)"
 
 finish

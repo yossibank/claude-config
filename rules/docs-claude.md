@@ -62,7 +62,7 @@ frontmatter には、次の項目を書く。
 | `name` | ファイル名と同じ名前 |
 | `description` | 使う時と使わない時 |
 | `model` | 使うモデル。省かない |
-| `tools` | 書き換えないエージェントは必ず書き、Edit・Write・MultiEdit・NotebookEdit を入れない。書き換えるエージェントは省いてよく、省くと全部の道具を使える |
+| `tools` | 書き換えないエージェントは必ず書き、Edit・Write・NotebookEdit を入れない。書き換えるエージェントは省いてよく、省くと全部の道具を使える |
 
 ## CLAUDE.md の形
 

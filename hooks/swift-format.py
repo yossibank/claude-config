@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git_root  # noqa: E402
-from hook_io import read_payload, tool_input  # noqa: E402
+from hook_io import notify, read_payload, tool_input  # noqa: E402
 
 TIMEOUT = 60
 
@@ -40,10 +40,10 @@ def main():
             timeout=TIMEOUT,
         )
     except subprocess.TimeoutExpired:
-        print(f"swiftformat が {TIMEOUT} 秒で終わらなかった", file=sys.stderr)
+        notify(f"swiftformat が {TIMEOUT} 秒で終わらなかった")
         return
     if result.returncode != 0:
-        print(f"swiftformat が失敗した：{result.stderr.strip()[-500:]}", file=sys.stderr)
+        notify(f"swiftformat が失敗した：{result.stderr.strip()[-500:]}")
 
 
 if __name__ == "__main__":

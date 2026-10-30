@@ -14,6 +14,7 @@ from hook_io import EDIT_TOOLS, FILE_EDIT_TOOLS  # noqa: E402
 from loader import ROOT, load_hook  # noqa: E402
 from md_blocks import fence_marks, front_matter, table_under  # noqa: E402
 from md_doc import body_emojis, heading_emojis, read_doc, readme_order, rule_table  # noqa: E402
+from script_io import fail  # noqa: E402
 
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
@@ -47,7 +48,10 @@ ASK_EVERY_TIME = {"store-release/scripts/archive-app.sh", "store-reply/scripts/s
 
 @functools.cache
 def tracked_files():
-    out = subprocess.run(["git", "-C", ROOT, "ls-files", "-z"], capture_output=True, text=True, check=True).stdout
+    try:
+        out = subprocess.run(["git", "-C", ROOT, "ls-files", "-z"], capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        fail(f"git ls-files が通らない。{ROOT} が Git のリポジトリかを確かめる")
     return tuple(path for path in out.split("\0") if path)
 
 

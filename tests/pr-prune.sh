@@ -51,6 +51,15 @@ echo r2 >"$repo/r.md"
 commit "$repo" "change r after merge"
 git -C "$repo" push -q origin main
 GH_PR="MERGED $rebased_head feat/rebased" expect OK "prune: 中身がマージした PR の先頭と同じなら、コミットが違っても消す" bash "$prune" "$repo" feat/rebased 5
+git -C "$repo" checkout -q -b feat/binary main
+printf '\x89PNG\x00\x01\x02' >"$repo/icon.png"
+commit "$repo" binary
+git -C "$repo" checkout -q main
+git -C "$repo" merge -q --squash feat/binary >/dev/null && commit "$repo" "squash binary"
+echo a2 >"$repo/a.md"
+commit "$repo" "change a after merge"
+git -C "$repo" push -q origin main
+GH_PR="MERGED x feat/binary" expect OK "prune: 画像を含む squash のブランチも、main が進んだ後に消せる" bash "$prune" "$repo" feat/binary 7
 echo dirty >"$repo/dirty.md"
 GH_PR="MERGED x feat/x" expect "未 commit" "prune: 手元に変更があれば止まる" bash "$prune" "$repo" feat/x 3
 rm -f "$repo/dirty.md"

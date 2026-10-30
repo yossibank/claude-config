@@ -39,7 +39,7 @@ merged() {
     [[ -n $head ]] && git -C "$repo" diff --quiet "$head" "$tip" 2>/dev/null && return 0
     git -C "$repo" diff --quiet "origin/$main" "$branch" && return 0
     base=$(git -C "$repo" merge-base "origin/$main" "$branch")
-    git -C "$repo" diff "$base" "$branch" | git -C "$repo" apply -R --check 2>/dev/null
+    git -C "$repo" diff --binary "$base" "$branch" | git -C "$repo" apply -R --check 2>/dev/null
 }
 
 worktree_of() {
@@ -145,9 +145,11 @@ restack() {
         best=$(best_parent "$tip" "$old" "${olds[@]}")
         olds+=("$old")
         reason="下のブランチを付け替えられなかった"
-        remote_tip=$(remote_tip_of "$child") || remote_tip=""
         ready=${news[$best]:+1}
-        if [[ -n $ready ]] && behind_origin "$remote_tip" "$old"; then
+        if ! remote_tip=$(remote_tip_of "$child"); then
+            reason="origin のブランチを確かめられない"
+            ready=""
+        elif [[ -n $ready ]] && behind_origin "$remote_tip" "$old"; then
             reason="origin が手元より先に進んでいる。pull してからやり直す"
             ready=""
         fi
@@ -202,10 +204,10 @@ if git -C "$repo" rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
     worktree=$(worktree_of "$branch")
     [[ -z $worktree ]] || git -C "$repo" worktree remove "$worktree" 2>/dev/null \
         || fail "ワークツリーを消せない。未 commit や未追跡のファイルを確かめる: $worktree"
-    git -C "$repo" branch -q -D "$branch"
+    git -C "$repo" branch -q -D "$branch" || fail "ブランチを消せない: $branch"
 fi
 
-git -C "$repo" fetch -q --prune origin
+git -C "$repo" fetch -q --prune origin || fail "fetch --prune が通らない"
 remote=$(git -C "$repo" ls-remote origin "refs/heads/$branch") && { [[ -z $remote ]] && left="なし" || left="残っている"; } || left="確かめられなかった"
 derived=$(clean_derived_data)
 echo "OK $name: $(git -C "$repo" rev-parse --short HEAD) | 手元の $main は origin と一致 | GitHub 上のブランチ: $left | 消した DerivedData: $derived"
