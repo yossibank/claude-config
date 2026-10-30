@@ -1,6 +1,6 @@
 # __App__
 
-個人開発の iOS アプリ「__DisplayName__」。人間向けの入口は [README.md](README.md)。
+個人開発の iOS アプリ「__DisplayName__」。人が読む入口は [README.md](README.md)。
 
 ## 作業の進め方
 

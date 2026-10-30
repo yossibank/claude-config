@@ -66,9 +66,9 @@ squash でマージすると、上に積んだブランチは元の commit を�
 | 載せ直す | `rebase --onto` で、そのブランチの commit だけを PR の base に載せ直す。孫は、付け替えた子の上に載せ直す |
 | 場所 | ブランチのワークツリーで rebase する。ワークツリーが無ければ一時のワークツリーを作る |
 | push | origin にあるものは、`--force-with-lease` で push する。条件は、付け替える前に `ls-remote` で取った origin の先頭である |
-| 止まる | 次の時は `NG` を出して元のまま残し、その上に積んだブランチも付け替えない。未 commit の変更、rebase や merge の途中、コンフリクト、origin が手元より先に進んでいる時 |
+| 止まる | 次の時は `NG` を出して元のまま残し、その上に積んだブランチも付け替えない。未 commit の変更・rebase や merge の途中・コンフリクト・origin が手元より先に進んでいる時 |
 
-PR の base は、GitHub が付け替える。マージしたブランチが消えた時に、既定のブランチへ移す。リポジトリの「Automatically delete head branches」が ON の時に限る。
+PR の base は、GitHub が付け替える。要る設定は、README の [積んだ PR のための設定](../../README.md#積んだ-pr-のための設定任意) にある。
 
 ## 報告
 
