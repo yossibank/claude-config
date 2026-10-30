@@ -12,6 +12,8 @@ from md_doc import CODE, EMOJI, bare, body_emojis, body_start, heading_emojis, r
 JA = r"々぀-ヺー-ヿ一-鿿"
 HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
 SENTENCE_LIMIT = 60
+COMMA_LIMIT = 3
+TOC_NAMES = 3
 SENTENCES = 3
 CELL_SENTENCES = 2
 SIZE_LIMIT = 15_000
@@ -44,6 +46,7 @@ HANDOFF = re.compile(r"/\.claude/handoff\.md$")
 POLITE = re.compile(r"(です|(?<![済冷覚澄励醒騙だすさ])(?<!はげ)ます|ました|ません)(?=[。！？!?]|\s*$)")
 LINK = re.compile(r"!?\[[^\]]*\]\([^)]*\)|<https?://[^>]*>|https?://\S+")
 QUOTED = re.compile(r"「[^」]*」")
+NAME_SEPARATOR = re.compile(r"[・、。]")
 
 
 def sentences_of(text):
@@ -84,9 +87,9 @@ def check_headings(doc):
                     found.append((number, f"## の見出しの絵文字は rules/docs-human.md の表から選ぶ（{emojis[0]}）"))
         elif what in ("body", "quote") and heading:
             heading[1] = True
-    if doc.readme and marked and not all(marked.values()):
+    if doc.human and "/docs/decisions/" not in doc.path and marked and not all(marked.values()):
         first = min(number for number, has in marked.items() if not has)
-        found.append((first, "README の ## の見出しには、頭に絵文字を 1 つ付ける"))
+        found.append((first, "人が読む文書の ## の見出しには、頭に絵文字を 1 つ付ける"))
     elif doc.human and len(set(marked.values())) > 1:
         first = min(number for number, has in marked.items() if has != marked[min(marked)])
         found.append((first, "## の見出しは、すべてに絵文字を付けるか、どれにも付けないかにそろえる"))
@@ -145,6 +148,18 @@ def check_table_toc(doc):
         firsts = [cells[0] for _, cells in body if len(cells) == 2]
         if len(firsts) == len(body) >= 2 and all(first in titles for first in firsts):
             found.append((body[0][0], "節の名前を並べた表は目次になる。表を消し、冒頭の文で決めることを書く"))
+    return found
+
+
+def check_prose_toc(doc):
+    titles = {EMOJI.sub("", text.lstrip("#")).strip() for _, text, _, what in doc.rows if what == "heading" and heading_level(text) == 2}
+    found = []
+    for number, text, _, what in doc.rows:
+        if what in ("code", "blank", "heading", "table"):
+            continue
+        names = {name.strip(" >") for name in NAME_SEPARATOR.split(text)} & titles
+        if len(names) >= TOC_NAMES:
+            found.append((number, "節の名前を並べた文は目次になる。消すか、文書で分かることを書く"))
     return found
 
 
@@ -442,6 +457,9 @@ def check_length(row):
         for sentence in parts:
             if len(sentence.strip()) + 1 > SENTENCE_LIMIT:
                 found.append((number, f"一文が {SENTENCE_LIMIT} 字を超えている（{len(sentence.strip()) + 1} 字）。句点で区切る"))
+        for sentence in piece.split("。")[:-1]:
+            if sentence.count("、") > COMMA_LIMIT:
+                found.append((number, f"一文の読点は {COMMA_LIMIT} つまでにする（{sentence.count('、')} つ）。句点で区切るか、並べる語は箇条書きか表にする"))
         limit = CELL_SENTENCES if what == "table" else SENTENCES
         if len(parts) > limit:
             where = "表のセル" if what == "table" else "1 つの段落や項目"
@@ -476,6 +494,7 @@ CHECKS = [
     (lambda doc: doc.human, check_heading_emoji_repeats),
     (lambda doc: "/docs/decisions/" not in doc.path, check_table_first_column),
     (always, check_table_toc),
+    (always, check_prose_toc),
     (always, check_sections),
     (always, check_blocks),
     (always, check_toc),

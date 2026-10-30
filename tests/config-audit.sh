@@ -67,6 +67,10 @@ d=$(copy link)
 printf '\n[x](nowhere.md)\n' >>"$d/skills/ui-record/SKILL.md"
 expect_audit "$d" "リンク先が無い: nowhere.md" "壊れたリンク"
 
+d=$(copy anchor)
+replace "$d/docs/development.md" '[接頭語の表](#接頭語の表)' '[接頭語の表](#無い表)'
+expect_audit "$d" "リンク先の見出しが無い: #無い表" "壊れた見出しへのリンク"
+
 d=$(copy flow)
 replace "$d/README.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
 expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "README のスキルの図に無いスキル"

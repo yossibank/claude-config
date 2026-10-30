@@ -20,6 +20,8 @@ SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
+ANCHOR_LINK = re.compile(r"\]\(([^)#\s]*)#([^)\s]+)\)")
+INLINE_CODE = re.compile(r"`[^`]*`")
 NG_TO_STDERR = re.compile(r"""(echo|printf)\s+["']?NG\b.*>&2""")
 EXIT_FAIL = re.compile(r"\s*exit [1-9]")
 RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
@@ -374,6 +376,36 @@ def check_links():
                     yield path, number, f"リンク先が無い: {target}"
 
 
+def slug(title):
+    text = re.sub(r"[^\w\- ]", "", title.replace("`", "").strip().lower())
+    return text.replace(" ", "-")
+
+
+@functools.cache
+def anchors_of(path):
+    anchors = set()
+    for _, line in outside_code(path):
+        if re.match(r"#{1,6} ", line):
+            base = slug(line.lstrip("#"))
+            anchor, count = base, 0
+            while anchor in anchors:
+                count += 1
+                anchor = f"{base}-{count}"
+            anchors.add(anchor)
+    return anchors
+
+
+def check_anchors():
+    for path in tracked("*.md"):
+        for number, line in outside_code(path):
+            for target, anchor in ANCHOR_LINK.findall(INLINE_CODE.sub("", line)):
+                if re.match(r"[a-z]+:", target):
+                    continue
+                resolved = os.path.normpath(os.path.join(os.path.dirname(path), target)) if target else path
+                if resolved.endswith(".md") and os.path.isfile(resolved) and anchor not in anchors_of(resolved):
+                    yield path, number, f"リンク先の見出しが無い: {target}#{anchor}"
+
+
 def path_bases(path):
     bases = [ROOT, os.path.dirname(path), APP_TEMPLATE]
     parts = os.path.relpath(path, ROOT).split(os.sep)
@@ -580,6 +612,7 @@ CHECKS = [
     check_readme_flow,
     check_terms,
     check_links,
+    check_anchors,
     check_paths,
     check_docs,
 ]
