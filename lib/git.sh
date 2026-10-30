@@ -9,6 +9,22 @@ git_file() {
     git -C "$1" rev-parse --path-format=absolute --git-path "$2"
 }
 
+merge_base_of() {
+    git -C "$1" merge-base "$2" HEAD 2>/dev/null || {
+        echo "NG $2 との分かれ目が見つからない"
+        return 1
+    }
+}
+
+untracked_paths() {
+    git -C "$1" ls-files -z --others --exclude-standard
+}
+
+changed_paths() {
+    git -C "$1" diff --name-only -z "$2"
+    untracked_paths "$1"
+}
+
 worktree_root() {
     echo "$HOME/.claude/worktrees/$1"
 }

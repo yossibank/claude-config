@@ -14,7 +14,7 @@ from hook_io import EDIT_TOOLS  # noqa: E402
 from hook_messages import BASH_EDITED, PR_UNCHECKED, RULES_UNREAD  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
 from script_io import require_month  # noqa: E402
-from transcripts import entries, projects_dir, repo_of, touched_since  # noqa: E402
+from transcripts import entries, projects_dir, repo_of, sessions_since, subagents_since  # noqa: E402
 
 CUE = re.compile(
     r"ではなく|じゃなく|違う|ちがう|やめ|しないで|外して|戻して|消して|不要|いらない|要らない|"
@@ -151,9 +151,7 @@ def feedback_memories(projects):
 def collect(projects, month):
     tally = Tally()
     start = month_start(month)
-    sessions = touched_since(os.path.join(projects, "*", "*.jsonl"), start)
-    subagents = touched_since(os.path.join(projects, "*", "*", "subagents", "*.jsonl"), start)
-    for path in sessions + subagents:
+    for path in sessions_since(projects, start) + subagents_since(projects, start):
         for entry, when in entries_of(path, month):
             parts = parts_of(entry)
             record_targets(entry, parts, tally)

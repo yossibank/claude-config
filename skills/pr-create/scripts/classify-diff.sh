@@ -6,13 +6,13 @@ source "$(dirname "$0")/../../../lib/git.sh"
 [[ $# -ge 2 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <base のブランチ>"; exit 1; }
 
 use_repo "$1"
-base=$(git -C "$repo" merge-base "$2" HEAD 2>/dev/null) || { echo "NG $2 との分かれ目が見つからない"; exit 1; }
+base=$(merge_base_of "$repo" "$2") || { echo "$base"; exit 1; }
 limit=200
 risky='(^|/)(Migration|migrations?/)|[Ss]chema|\.sql$|fixtures/|\.pbxproj$|Package\.(swift|resolved)$|(^|/)hooks/|settings[^/]*\.json$'
 
 changes() {
     git -C "$repo" diff --numstat -z --no-renames "$base" | tr '\0' '\n'
-    git -C "$repo" ls-files -z --others --exclude-standard | while IFS= read -r -d '' path; do
+    untracked_paths "$repo" | while IFS= read -r -d '' path; do
         printf '%s\t0\t%s\n' "$(wc -l < "$repo/$path" | tr -d ' ')" "$path"
     done
 }

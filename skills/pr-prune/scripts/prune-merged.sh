@@ -116,24 +116,33 @@ push_restacked() {
     echo "push した"
 }
 
+best_parent() {
+    local tip=$1 old=$2
+    local index=0 best=0 best_count=-1 parent count
+    shift 2
+
+    for parent in "$@"; do
+        if git -C "$repo" merge-base --is-ancestor "$parent" "$old"; then
+            count=$(git -C "$repo" rev-list --count "$tip..$parent")
+            if (( count > best_count )); then
+                best=$index
+                best_count=$count
+            fi
+        fi
+        index=$((index + 1))
+    done
+    echo "$best"
+}
+
 restack() {
     local tip=$1
     local olds=("$tip") news=("$(git -C "$repo" rev-parse "origin/$base_ref")")
-    local child old best best_count count i pushed remote_tip ready failed=0
+    local child old best pushed remote_tip ready failed=0
 
     while IFS= read -r child; do
         [[ -n $child ]] || continue
         old=$(git -C "$repo" rev-parse "refs/heads/$child")
-        best=0
-        best_count=-1
-        for i in "${!olds[@]}"; do
-            git -C "$repo" merge-base --is-ancestor "${olds[$i]}" "$old" || continue
-            count=$(git -C "$repo" rev-list --count "$tip..${olds[$i]}")
-            if (( count > best_count )); then
-                best=$i
-                best_count=$count
-            fi
-        done
+        best=$(best_parent "$tip" "$old" "${olds[@]}")
         olds+=("$old")
         reason="下のブランチを付け替えられなかった"
         remote_tip=$(remote_tip_of "$child") || remote_tip=""

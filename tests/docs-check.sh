@@ -12,9 +12,9 @@ doc_case() {
     out=$(echo "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}" | bash "$hooks" docs-check 2>&1)
     status=$?
     if [[ $status == "$expect" && $out == *"$want"* ]]; then
-        ok "docs: $label"
+        ok "docs-check: $label"
     else
-        ng "docs: ${label}（終了コード ${status}、期待は ${expect} と「${want}」）" "$out"
+        ng "docs-check: ${label}（終了コード ${status}、期待は ${expect} と「${want}」）" "$out"
     fi
 }
 doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
@@ -100,5 +100,17 @@ doc_case 2 "冒頭の [!NOTE] のリンクを含む文は数える" docs/x.md $'
 doc_case 0 "引き継ぎのメモは見ない" .claude/handoff.md $'# t\n\n- 目的：直す'
 doc_case 0 "「ます」で終わる常体の動詞は止めない" rules/x.md $'# t\n\n人を励ます。眠気を醒ます。人をだます。\n\n子をはげます。'
 doc_case 2 "「上げます」は敬体として止める" rules/x.md $'# t\n\n値を上げます。' "敬体"
+
+doc_case 2 "一覧の前置きに項目の数を書かない" README.md $'# t\n\n果物は 3 種類ある。\n\n- りんご\n- みかん\n- ぶどう' "一覧の前置きに項目の数を書かない"
+doc_case 0 "数を書かない一覧の前置きは通る" README.md $'# t\n\n果物は次のとおり。\n\n- りんご\n- みかん\n- ぶどう'
+doc_case 2 "使ってよい HTML ではないタグを使わない" README.md $'# t\n\nあ。\n\n<div>い。</div>' "使ってよい HTML ではない（<div>）"
+doc_case 0 "README は決まった HTML のタグを使える" README.md $'# t\n\nあ。\n\n<details>\n<summary>開く</summary>\n\nい。\n\n</details>'
+doc_case 2 "斜体を使わない" README.md $'# t\n\n*強調* した。' "斜体を使わない"
+doc_case 0 "太字は斜体に数えない" README.md $'# t\n\n**強調** した。'
+doc_case 2 "日本語と英数字の間に半角スペースを入れる" README.md $'# t\n\nGitを使う。' "半角スペースを入れる"
+doc_case 0 "日本語と英数字の間に半角スペースがあれば通る" README.md $'# t\n\nGit を使う。'
+big=$(printf '%016000d' 0)
+doc_case 2 "docs の 1 ファイルを 15KB より大きくしない" docs/x.md "$note"$'\n```text\n'"$big"$'\n```' "15KB を超えている"
+doc_case 0 "docs の外のファイルは 15KB を超えてもよい" README.md $'# t\n\nあ。\n\n```text\n'"$big"$'\n```'
 
 finish

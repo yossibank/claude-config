@@ -1,11 +1,9 @@
-import functools
 import os
 import re
 import sys
 from itertools import takewhile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import block_on_findings, target_paths  # noqa: E402
 from md_blocks import fence_marks  # noqa: E402
@@ -13,7 +11,7 @@ from md_doc import CODE, EMOJI, bare, body_emojis, body_start, heading_emojis, r
 
 JA = r"々぀-ヺー-ヿ一-鿿"
 HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
-LIMIT = 60
+SENTENCE_LIMIT = 60
 SENTENCES = 3
 CELL_SENTENCES = 2
 SIZE_LIMIT = 15_000
@@ -195,24 +193,34 @@ def is_decoration(line):
     return not DECORATION.sub("", line).strip()
 
 
-def check_opening(doc, want):
+def opening(doc):
     rows = doc.rows
     titles = [index for index, row in enumerate(rows) if row.what == "heading"]
     if not titles or heading_level(rows[titles[0]].text) != 1:
-        return []
-    title = rows[titles[0]]
+        return None, None
     after = next((row for row in rows[titles[0] + 1 :] if row.what != "blank"), None)
-    alert = ALERT.match(after.text.strip()) if after else None
-    if want == "note" and not (alert and alert.group(1).upper() == "NOTE"):
-        return [(title.number, "README 以外の人が読む文書は、タイトルの直後に [!NOTE] を置く")]
-    if want == "note":
-        start = rows.index(after) + 1
-        quoted = takewhile(lambda row: row.what == "quote" and not ALERT.match(row.text.strip()), rows[start:])
-        lines = [row for row in quoted if not is_link_only(doc.lines[row.number - 1])]
-        if len(lines) > NOTE_LINES:
-            return [(after.number, f"冒頭の [!NOTE] は {NOTE_LINES} 行までにする（{len(lines)} 行）。分かることだけを書く")]
-    if want == "sentence" and not (after and after.what == "body" and not is_decoration(doc.lines[after.number - 1])):
+    return rows[titles[0]], after
+
+
+def check_opening_sentence(doc):
+    title, after = opening(doc)
+    if title and not (after and after.what == "body" and not is_decoration(doc.lines[after.number - 1])):
         return [(title.number, "タイトルの直後に、何があるかを 1 文で書く")]
+    return []
+
+
+def check_opening_note(doc):
+    title, after = opening(doc)
+    if not title:
+        return []
+    alert = ALERT.match(after.text.strip()) if after else None
+    if not (alert and alert.group(1).upper() == "NOTE"):
+        return [(title.number, "README 以外の人が読む文書は、タイトルの直後に [!NOTE] を置く")]
+    start = doc.rows.index(after) + 1
+    quoted = takewhile(lambda row: row.what == "quote" and not ALERT.match(row.text.strip()), doc.rows[start:])
+    lines = [row for row in quoted if not is_link_only(doc.lines[row.number - 1])]
+    if len(lines) > NOTE_LINES:
+        return [(after.number, f"冒頭の [!NOTE] は {NOTE_LINES} 行までにする（{len(lines)} 行）。分かることだけを書く")]
     return []
 
 
@@ -279,9 +287,15 @@ def check_toc(doc):
     return found
 
 
+def badges_of(doc):
+    return [(number, url) for number, _, _, what in doc.rows if what != "code" for url in BADGE.findall(doc.lines[number - 1])]
+
+
 def check_badges(doc):
-    lines = doc.lines
-    badges = [(number, url) for number, _, _, what in doc.rows if what != "code" for url in BADGE.findall(lines[number - 1])]
+    return check_badge_order(doc.lines, badges_of(doc))
+
+
+def check_badge_order(lines, badges):
     found = []
     first_tech = last_state = None
     rank = 0
@@ -325,7 +339,7 @@ def check_preface(rows, index):
     items = len(list(takewhile(lambda w: w == following, after)))
     if following == "table":
         items -= 2
-    plain = re.sub(r"「[^」]*」", "", text)
+    plain = QUOTED.sub("", text)
     counts = {int(n) for n, _ in COUNT.findall(plain)}
     if NEXT.search(plain) or (what in ("body", "quote") and following in ("list", "table") and items >= 3 and items in counts):
         return [(number, "一覧の前置きに項目の数を書かない")]
@@ -345,7 +359,7 @@ def check_list_endings(doc):
             continue
         groups = {key: value for key, value in groups.items() if key <= indent}
         ends = text.endswith("。")
-        if "。" in re.sub(r"「[^」]*」", "", text) and not ends:
+        if "。" in QUOTED.sub("", text) and not ends:
             found.append((number, "中に「。」がある項目は、末尾も「。」で終える"))
         first, first_ends = groups.setdefault(indent, (number, ends))
         if first_ends != ends:
@@ -426,8 +440,8 @@ def check_length(row):
     for piece in pieces:
         parts = sentences_of(piece)
         for sentence in parts:
-            if len(sentence.strip()) + 1 > LIMIT:
-                found.append((number, f"一文が {LIMIT} 字を超えている（{len(sentence.strip()) + 1} 字）。句点で区切る"))
+            if len(sentence.strip()) + 1 > SENTENCE_LIMIT:
+                found.append((number, f"一文が {SENTENCE_LIMIT} 字を超えている（{len(sentence.strip()) + 1} 字）。句点で区切る"))
         limit = CELL_SENTENCES if what == "table" else SENTENCES
         if len(parts) > limit:
             where = "表のセル" if what == "table" else "1 つの段落や項目"
@@ -470,8 +484,8 @@ CHECKS = [
     (always, check_short_lists),
     (lambda doc: doc.readme, check_readme_order),
     (lambda doc: doc.for_claude, check_inline_code),
-    (opens_with_sentence, functools.partial(check_opening, want="sentence")),
-    (lambda doc: doc.human and not opens_with_sentence(doc), functools.partial(check_opening, want="note")),
+    (opens_with_sentence, check_opening_sentence),
+    (lambda doc: doc.human and not opens_with_sentence(doc), check_opening_note),
     (always, check_rows),
 ]
 
