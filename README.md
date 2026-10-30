@@ -13,7 +13,7 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 | 入れて使い始める | [入れ方](#-入れ方) | [決まり](#-決まり) |
 | アプリを作る | [スキル](#-スキル) | [docs/architecture-ios.md](docs/architecture-ios.md) |
 | 止められた理由を知る | [フック](#-フック) | [環境変数](#-環境変数) |
-| スキルやフックを足す | [全体像](#-全体像) | [docs/development.md](docs/development.md) |
+| スキルやフックを足す | [全体像](#-全体像) | [docs/development.md の足し方](docs/development.md#-足し方) |
 
 ## 🗺️ 全体像
 
@@ -81,9 +81,9 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 | フック | claude-config の `hooks/` を呼ぶものだけを入れ替え、ほかのフックは残す |
 | 表示 | `outputStyle` は、無い時だけ入れる |
 
-### 積んだ PR のための設定
+### 積んだ PR のための設定（任意）
 
-squash でマージしても、積んだ PR がぶつからないように、使う環境で次を入れる。付け替えそのものは [pr-prune](skills/pr-prune/SKILL.md) が行う。
+PR を積んで出す時だけ入れる。squash でマージしても積んだ PR がぶつからないように、使う環境で次を入れる。付け替えそのものは [pr-prune](skills/pr-prune/SKILL.md) が行う。
 
 | 対象 | 設定 | 効き目 |
 | --- | --- | --- |
@@ -93,12 +93,12 @@ squash でマージしても、積んだ PR がぶつからないように、使
 
 ## 📚 文書
 
-アプリを作る時と、claude-config を直す時に読む文書と、写して使うひな形である。
+アプリを作る時と claude-config を直す時に読む文書である。写して使うひな形も並べる。
 
 | 文書 | 読む時 | 中身 |
 | --- | --- | --- |
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
-| [docs/development.md](docs/development.md) | claude-config を直す時 | 名前の付け方、スクリプトの書き方、共通の処理、テスト |
+| [docs/development.md](docs/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・確かめ方・スクリプト・足し方 |
 | [skills/app-init/templates/ios-app/](skills/app-init/templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形 |
 | [skills/app-init/templates/ios-app/docs/](skills/app-init/templates/ios-app/docs/) | `app-plan` の時 | overview と roadmap のひな形 |
 
@@ -125,7 +125,7 @@ flowchart LR
 | [rules/docs-app.md](rules/docs-app.md) | `docs/`・`spec/`・README・CLAUDE.md | アプリの文書ごとの役割と、足す条件 |
 | [rules/docs-claude.md](rules/docs-claude.md) | CLAUDE.md・rules・SKILL.md・agents | 飾らない形と、節の並び |
 | [rules/docs-core.md](rules/docs-core.md) | `.md` | 運用、文、表現、守らせる仕組み |
-| [rules/docs-human.md](rules/docs-human.md) | README・`docs/`・`spec/` | 見出しの絵文字、バッジ、README の節の順 |
+| [rules/docs-human.md](rules/docs-human.md) | README・`docs/`・`spec/` | 冒頭、見出しの絵文字、バッジ、README の節の順 |
 | [rules/swift-core.md](rules/swift-core.md) | Swift | 宣言の置き方、改行、空行、ファイル |
 | [rules/swift-test.md](rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | テストの空行と型の置き方 |
 | [rules/swift-ui.md](rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | `View` の分け方、ビューの並べ方 |
@@ -134,7 +134,7 @@ flowchart LR
 
 フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。どれも [hooks/run.sh](hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
 
-図の色は、フックの動きを表す。赤は道具を止め、青は止めずに知らせ、緑はファイルを整える。
+図の色は、表の動きの印に合わせる。赤は 🛑 止める、青は 💬 知らせる、緑は 🧹 整える。
 
 ```mermaid
 flowchart LR
