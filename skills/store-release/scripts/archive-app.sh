@@ -24,7 +24,7 @@ fail_with_log() {
     exit 1
 }
 
-team=$(xcodebuild -workspace "$workspace" -scheme "$scheme" -showBuildSettings 2>/dev/null | awk '!team && $1 == "DEVELOPMENT_TEAM" { team = $3 } END { print team }')
+team=$(xcodebuild -workspace "$workspace" -scheme "$scheme" -showBuildSettings 2>/dev/null | awk '!team && $1 == "DEVELOPMENT_TEAM" { team = $3 } END { print team }') || team=""
 [[ -n $team ]] || { echo "NG DEVELOPMENT_TEAM が見つからない"; exit 1; }
 
 cat >|"$options" <<PLIST

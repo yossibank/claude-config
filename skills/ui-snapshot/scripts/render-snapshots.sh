@@ -24,9 +24,9 @@ if [[ ! -f $marker && -n $(ls -A "$out") ]]; then
 fi
 [[ -e $tests ]] && { echo "NG 前の回の後片付けが済んでいない: ${tests}。退避のフォルダから戻すか、git で戻してから走らせる"; exit 1; }
 
-device=${CC_UI_DEVICE:-$("$skill/scripts/find-simulator.sh")}
+device=${CC_UI_DEVICE:-$("$skill/scripts/find-simulator.sh" || true)}
 [[ -n $device ]] || { echo "NG iPhone のシミュレーターが無い。CC_UI_DEVICE に UDID を渡す"; exit 1; }
-scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | jq -r '.workspace.schemes as $all | ([$all[] | select(endswith("-Package"))] + $all)[0] // empty')
+scheme=$(cd "$package" && xcodebuild -list -json 2>/dev/null | jq -r '.workspace.schemes as $all | ([$all[] | select(endswith("-Package"))] + $all)[0] // empty') || scheme=""
 [[ -n $scheme ]] || { echo "NG パッケージのスキームが見つからない: $package"; exit 1; }
 
 backup=$(mktemp -d)
@@ -44,6 +44,7 @@ python3 -I "$skill/scripts/add-target.py" "$package/Package.swift" "$set_dir/tar
 [[ -f $set_dir/patch.py ]] && python3 -I "$set_dir/patch.py" "$package"
 mkdir -p "$tests"
 source_text=$(<"$set_dir/SnapshotTests.swift")
+shopt -u patsub_replacement 2>/dev/null || true
 test_text=${source_text//__OUT__/$out}
 printf '%s\n' "$test_text" >|"$tests/SnapshotTests.swift"
 rm -f "$out"/*.png

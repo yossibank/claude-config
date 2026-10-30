@@ -7,7 +7,7 @@ import urllib.parse
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from app_store import ASC_ERRORS, ASC_KEYS, asc_json, asc_reason, read_drafts, require_keys  # noqa: E402
-from script_io import Failure, fail, write_json  # noqa: E402
+from script_io import Failure, fail, run_main, write_json  # noqa: E402
 
 LIMIT = 5970
 USAGE = "使い方: send-replies.py <返信案の JSON> [--dry-run]"
@@ -55,13 +55,10 @@ def main():
         fail(USAGE)
     path = args[0]
 
-    try:
-        entries = read_drafts(path)
-        targets = approved(entries)
-        if not dry_run:
-            require_keys(ASC_KEYS)
-    except Failure as error:
-        fail(str(error))
+    entries = read_drafts(path)
+    targets = approved(entries)
+    if not dry_run:
+        require_keys(ASC_KEYS)
 
     if dry_run:
         for entry in targets:
@@ -85,4 +82,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

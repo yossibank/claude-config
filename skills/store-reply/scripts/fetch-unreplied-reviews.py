@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 
 from app_store import ASC_ERRORS, ASC_KEYS, apps_dir, asc_json, asc_reason, listed_apps, read_drafts, require_keys  # noqa: E402
 from dates import JST, to_jst  # noqa: E402
-from script_io import Failure, fail, write_json  # noqa: E402
+from script_io import Failure, fail, run_main, write_json  # noqa: E402
 
 LOW = 2
 
@@ -61,20 +61,14 @@ def drafts_so_far(path):
 def main():
     if len(sys.argv) > 1:
         fail("使い方: fetch-unreplied-reviews.py")
-    try:
-        require_keys(ASC_KEYS)
-    except Failure as error:
-        fail(str(error))
+    require_keys(ASC_KEYS)
 
     root = apps_dir()
     apps = listed_apps(root)
     if not apps:
         fail(f"store/app-id.txt を持つアプリが無い: {root}")
     path = os.path.join(root, "replies", f"{datetime.datetime.now(JST):%Y-%m-%d}.json")
-    try:
-        kept = drafts_so_far(path)
-    except Failure as error:
-        fail(str(error))
+    kept = drafts_so_far(path)
 
     found = []
     failed = set()
@@ -97,4 +91,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

@@ -2,22 +2,21 @@ import csv
 import gzip
 import io
 import os
-import subprocess
 import sys
 import urllib.error
 import urllib.parse
-import urllib.request
+import zlib
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ASC_API, ASC_KEYS, require_keys, token  # noqa: E402
-from script_io import Failure, fail, require_month  # noqa: E402
+from app_store import ASC_ERRORS, ASC_KEYS, asc_reason, asc_request, require_keys  # noqa: E402
+from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
 DOWNLOADS = {"1", "1F", "1T", "F1"}
 KEYS = [*ASC_KEYS, "ASC_VENDOR_NUMBER"]
 
 
-def report(month, version):
+def fetch_report(month, version):
     query = urllib.parse.urlencode({
         "filter[frequency]": "MONTHLY",
         "filter[reportType]": "SALES",
@@ -26,29 +25,24 @@ def report(month, version):
         "filter[reportDate]": month,
         "filter[version]": version,
     })
-    request = urllib.request.Request(
-        f"{ASC_API}/v1/salesReports?{query}",
-        headers={"Authorization": f"Bearer {token()}", "Accept": "application/a-gzip"},
-    )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return gzip.decompress(response.read()).decode("utf-8")
+    return gzip.decompress(asc_request(f"/v1/salesReports?{query}", "application/a-gzip")).decode("utf-8")
 
 
 def sales_by_app(month):
     require_keys(KEYS)
     try:
         try:
-            text = report(month, "1_1")
+            text = fetch_report(month, "1_1")
         except urllib.error.HTTPError as error:
             if error.code != 400:
                 raise
-            text = report(month, "1_0")
+            text = fetch_report(month, "1_0")
     except urllib.error.HTTPError as error:
         if error.code == 404:
             raise Failure(f"{month} のレポートがまだ無い") from error
         raise Failure(f"レポートを読めなかった: {error.code}") from error
-    except (urllib.error.URLError, OSError, subprocess.CalledProcessError) as error:
-        raise Failure(f"レポートを読めなかった: {type(error).__name__}") from error
+    except (*ASC_ERRORS, EOFError, zlib.error) as error:
+        raise Failure(f"レポートを読めなかった: {asc_reason(error)}") from error
     return summarize(text)
 
 
@@ -80,20 +74,12 @@ def main():
     usage = "使い方: fetch-sales.py <YYYY-MM>"
     if len(sys.argv) < 2:
         fail(usage)
-    try:
-        require_keys(KEYS)
-    except Failure as error:
-        fail(str(error))
+    require_keys(KEYS)
     month = require_month(sys.argv[1], usage)
 
-    try:
-        sales = sales_by_app(month)
-    except Failure as error:
-        fail(str(error))
-
-    for app, (downloads, proceeds) in sales.items():
+    for app, (downloads, proceeds) in sales_by_app(month).items():
         print(f"{app}\t{downloads}\t{proceeds}")
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

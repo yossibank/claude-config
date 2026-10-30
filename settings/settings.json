@@ -36,6 +36,10 @@
           {
             "type": "command",
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-require-read"
+          },
+          {
+            "type": "command",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits edit"
           }
         ]
       },
@@ -86,6 +90,10 @@
             "type": "command",
             "if": "Write(//**/*.sh)",
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" shell-check"
+          },
+          {
+            "type": "command",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits edit"
           }
         ]
       },

@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from dates import to_jst  # noqa: E402
 from git import git_root  # noqa: E402
-from hook_io import EDIT_TOOLS, read_payload, run_gate, tool_input  # noqa: E402
+from hook_io import FILE_EDIT_TOOLS, read_payload, run_gate, tool_input  # noqa: E402
 from hook_messages import RULES_UNREAD  # noqa: E402
 from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
@@ -136,7 +136,7 @@ def main():
         return
     if data.get("tool_name") == "Read":
         record_read(data, path)
-    elif data.get("tool_name") in EDIT_TOOLS:
+    elif data.get("tool_name") in FILE_EDIT_TOOLS:
         check_edit(data, path)
 
 

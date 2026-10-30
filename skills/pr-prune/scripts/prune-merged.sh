@@ -66,7 +66,7 @@ remove_temp_tree() {
 in_progress() {
     local state
     for state in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD; do
-        [[ ! -e $(git -C "$1" rev-parse --path-format=absolute --git-path "$state") ]] || return 0
+        [[ ! -e $(git_file "$1" "$state") ]] || return 0
     done
     return 1
 }
@@ -197,8 +197,7 @@ if git -C "$repo" rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
 fi
 
 git -C "$repo" fetch -q --prune origin
-remote=$(git -C "$repo" ls-remote --heads origin "$branch" | wc -l | tr -d ' ')
-[[ $remote == 0 ]] && left="なし" || left="残っている"
+remote=$(git -C "$repo" ls-remote origin "refs/heads/$branch") && { [[ -z $remote ]] && left="なし" || left="残っている"; } || left="確かめられなかった"
 derived=$(clean_derived_data)
 echo "OK $name: $(git -C "$repo" rev-parse --short HEAD) | 手元の $main は origin と一致 | GitHub 上のブランチ: $left | 消した DerivedData: $derived"
 base_ref=${base_ref:-$main}

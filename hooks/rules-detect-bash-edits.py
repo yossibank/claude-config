@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import sys
@@ -41,6 +42,17 @@ def state_file(data):
     return os.path.join(STATE, safe_name(f"{data.get('session_id', '')}-{data.get('tool_use_id', '')}"))
 
 
+def edit_mark(path):
+    return os.path.join(STATE, "edited-" + hashlib.sha256(os.path.realpath(path).encode()).hexdigest())
+
+
+def edited_since(path, started):
+    try:
+        return os.path.getmtime(edit_mark(path)) >= started
+    except OSError:
+        return False
+
+
 def only_tools(command):
     parts = [command_words(words) for words in split_commands(command)]
     return bool(parts) and all(words[:1] and words[0] in TOOLS for words in parts)
@@ -58,6 +70,7 @@ def before(data):
 
 def after(data):
     try:
+        started = os.path.getmtime(state_file(data))
         earlier = json.loads(Path(state_file(data)).read_text())
         os.remove(state_file(data))
     except (OSError, ValueError):
@@ -69,7 +82,10 @@ def after(data):
     edited = sorted(
         path
         for path, mtime in files.items()
-        if path.endswith(CHECKED) and earlier["files"].get(path) != mtime and "/.git/" not in path
+        if path.endswith(CHECKED)
+        and earlier["files"].get(path) != mtime
+        and "/.git/" not in path
+        and not edited_since(path, started)
     )
     if not edited:
         return
@@ -91,11 +107,19 @@ def after(data):
     sys.exit(2)
 
 
+def mark_edit(data):
+    path = tool_input(data).get("file_path", "")
+    if not path:
+        return
+    prepare_state(STATE, STALE)
+    Path(edit_mark(path)).touch()
+
+
 def main():
-    modes = {"pre": before, "post": after}
+    modes = {"pre": before, "post": after, "edit": mark_edit}
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
     if mode not in modes:
-        print(f"rules-detect-bash-edits: 知らないモード「{mode}」。pre か post を渡す", file=sys.stderr)
+        print(f"rules-detect-bash-edits: 知らないモード「{mode}」。pre・post・edit のどれかを渡す", file=sys.stderr)
         sys.exit(1)
     data = read_payload()
     if data is None:
