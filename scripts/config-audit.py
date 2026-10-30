@@ -8,11 +8,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import EDIT_TOOLS, FILE_EDIT_TOOLS  # noqa: E402
-from loader import load_hook  # noqa: E402
+from loader import ROOT, load_hook  # noqa: E402
 from md_blocks import fence_marks, front_matter, table_under  # noqa: E402
 from md_doc import body_emojis, heading_emojis, read_doc, readme_order, rule_table  # noqa: E402
 
@@ -32,6 +31,10 @@ SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
 PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
 TEMPLATE_TOKEN = re.compile(r"__[A-Za-z]+__")
+LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:py|sh)")
+TEST_LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.sh")
+AGENT_NAME = re.compile(r"[a-z]+er\.md")
+HOOK_RUNNER = "run.sh"
 WRITE_TOOLS = re.compile(rf"\b(?:{'|'.join(EDIT_TOOLS)})\b")
 NAMING = os.path.join(ROOT, "docs", "development.md")
 APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
@@ -85,7 +88,7 @@ def headings(path):
     return [(number, line[3:].strip()) for number, line in outside_code(path) if line.startswith("## ")]
 
 
-def check_skill_sections(skill):
+def skill_section_problems(skill):
     found = headings(skill)
     names = [name for _, name in found]
     for need in ("手順", "報告"):
@@ -136,7 +139,20 @@ def check_skill_fields():
             yield skill, 3, "description を「。」で終える"
         if len(fields.get("description", "")) > DESCRIPTION_LIMIT:
             yield skill, 3, f"description が {DESCRIPTION_LIMIT} 字を超えている。毎回読み込まれるので短くする"
-        yield from check_skill_sections(skill)
+        yield from skill_section_problems(skill)
+
+
+def script_permission_problems(skill_dir, line, patterns):
+    base = os.path.join(ROOT, "skills", skill_dir)
+    for prefix, reference in SKILL_PATH.findall(line):
+        if "scripts/" not in reference or not os.path.exists(os.path.normpath(os.path.join(base, reference))):
+            continue
+        allowed = covered(prefix, reference, patterns)
+        if f"{skill_dir}/{reference}" in ASK_EVERY_TIME:
+            if allowed:
+                yield f"外に出す操作が allowed-tools で自動で許可されている: {reference}"
+        elif not allowed:
+            yield f"allowed-tools で許可していない: {prefix}{reference}"
 
 
 def check_skill_references():
@@ -151,17 +167,8 @@ def check_skill_references():
                 reference = reference.rstrip("./")
                 if reference and after not in ("<", "*") and not os.path.exists(os.path.join(base, reference)):
                     yield skill, number, f"参照先が無い: {reference}"
-            for prefix, reference in SKILL_PATH.findall(line):
-                if not os.path.exists(os.path.normpath(os.path.join(base, reference))):
-                    continue
-                if "scripts/" not in reference:
-                    continue
-                allowed = covered(prefix, reference, patterns)
-                if f"{skill_dir}/{reference}" in ASK_EVERY_TIME:
-                    if allowed:
-                        yield skill, number, f"外に出す操作が allowed-tools で自動で許可されている: {reference}"
-                elif not allowed:
-                    yield skill, number, f"allowed-tools で許可していない: {prefix}{reference}"
+            for message in script_permission_problems(skill_dir, line, patterns):
+                yield skill, number, message
 
 
 def check_skill_unused():
@@ -328,9 +335,25 @@ def check_script_verbs():
         yield NAMING, 1, "名前の付け方の動詞の表が読めない"
         return
     for path in tracked("skills/*/scripts/*"):
-        verb =os.path.basename(path).split(".")[0].split("-")[0]
+        verb = os.path.basename(path).split(".")[0].split("-")[0]
         if verb not in allowed:
             yield path, 1, f"スキルのスクリプトの頭の動詞が動詞の表に無い: {verb}"
+
+
+def check_names():
+    for path in tracked("lib/*"):
+        if not LIB_NAME.fullmatch(os.path.basename(path)):
+            yield path, 1, "lib の名前は、中身の名詞を snake_case の .py か .sh にする"
+    for path in tracked("tests/lib/*"):
+        if not TEST_LIB_NAME.fullmatch(os.path.basename(path)):
+            yield path, 1, "tests/lib の名前は、中身の名詞を snake_case の .sh にする"
+    for path in tracked("agents/*"):
+        if not AGENT_NAME.fullmatch(os.path.basename(path)):
+            yield path, 1, "エージェントの名前は、役割の名詞（-er）の .md にする"
+    for path in tracked("hooks/*"):
+        name = os.path.basename(path)
+        if not name.endswith(".py") and name != HOOK_RUNNER:
+            yield path, 1, f"hooks/ に置く .py 以外のファイルは {HOOK_RUNNER} だけにする"
 
 
 def check_links():
@@ -431,14 +454,7 @@ def check_settings():
                 yield path, 1, f"編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ {'|'.join(FILE_EDIT_TOOLS)} にする: {entry.get('matcher')}"
 
 
-def check_script_rules():
-    for path in tracked("skills/*/scripts/*.sh", "scripts/*.sh"):
-        lines = read(path).split("\n")
-        if lines[1:2] != [SCRIPT_HEADER]:
-            yield path, 2, f"2 行目を {SCRIPT_HEADER} にする"
-        for number, line in enumerate(lines, 1):
-            if INLINE_PYTHON.search(line):
-                yield path, number, "bash の中に Python を書かない。.py に分けるか、jq と bash で書く"
+def check_worktree_literals():
     for path in tracked("hooks/*", "scripts/*", "skills/*/scripts/*"):
         if path == os.path.abspath(__file__):
             continue
@@ -449,13 +465,18 @@ def check_script_rules():
 
 def check_shell_scripts():
     shell = load_hook("shell-check")
+    strict = set(tracked("skills/*/scripts/*.sh", "scripts/*.sh"))
     for path in tracked("*.sh"):
         for number, message in shell.check(path):
             yield path, number, message
         if os.path.relpath(path, ROOT).startswith("hooks/"):
             continue
         lines = read(path).split("\n")
+        if path in strict and lines[1:2] != [SCRIPT_HEADER]:
+            yield path, 2, f"2 行目を {SCRIPT_HEADER} にする"
         for number, line in enumerate(lines, 1):
+            if path in strict and INLINE_PYTHON.search(line):
+                yield path, number, "bash の中に Python を書かない。.py に分けるか、jq と bash で書く"
             failing = number < len(lines) and EXIT_FAIL.match(lines[number])
             if NG_TO_STDERR.search(line) or (">&2" in line and failing) or ("NG" in line and "/dev/stderr" in line):
                 yield path, number, "失敗を stderr に出している。stdout に NG で始めて出す"
@@ -470,7 +491,7 @@ def check_python_scripts():
         except SyntaxError as error:
             yield path, error.lineno or 1, f"Python の構文が通らない: {error.msg}"
             continue
-        yield from check_python(path, tree)
+        yield from python_problems(path, tree)
 
 
 def is_main_guard(node):
@@ -508,7 +529,7 @@ def runs_on_import(node):
     return True
 
 
-def check_python(path, tree):
+def python_problems(path, tree):
     if "/lib/" not in path and not any(is_main_guard(node) for node in tree.body):
         yield path, 1, 'if __name__ == "__main__": が無い'
     for node in tree.body:
@@ -535,26 +556,27 @@ def check_docs():
 
 CHECKS = [
     check_skill_fields,
+    check_skill_steps,
     check_skill_references,
     check_skill_unused,
-    check_agents,
     check_claude_templates,
-    check_rules,
-    check_readme,
-    check_readme_flow,
-    check_test_pairs,
-    check_skill_steps,
-    check_terms,
-    check_prefixes,
-    check_script_verbs,
-    check_links,
-    check_paths,
     check_template_scripts,
     check_template_tokens,
+    check_agents,
+    check_rules,
     check_settings,
+    check_prefixes,
+    check_script_verbs,
+    check_names,
+    check_test_pairs,
     check_shell_scripts,
-    check_script_rules,
     check_python_scripts,
+    check_worktree_literals,
+    check_readme,
+    check_readme_flow,
+    check_terms,
+    check_links,
+    check_paths,
     check_docs,
 ]
 

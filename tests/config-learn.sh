@@ -8,7 +8,7 @@ source "$(dirname "$0")/lib/hooks.sh"
 collect="$root/skills/config-learn/scripts/collect-corrections.py"
 : >"$work/empty.jsonl"
 
-expect "NG 使い方" "collect: 月が無ければ NG" python3 -I "$collect"
+expect "NG 使い方" "collect-corrections: 月が無ければ NG" python3 -I "$collect"
 
 blocked_rules=$(echo "{\"session_id\":\"s9\",\"agent_id\":\"main\",\"tool_name\":\"Edit\",\"transcript_path\":\"$work/empty.jsonl\",\"tool_input\":{\"file_path\":\"$swift\"}}" | bash "$hooks" rules-require-read 2>&1)
 bash_call t9 'sed -i x' | bash "$hooks" rules-detect-bash-edits pre
@@ -46,9 +46,9 @@ EOF
 touch -t 202610150000 "$projects/demo/s.jsonl"
 report=$(CC_PROJECTS_DIR="$projects" python3 -I "$collect" 2026-10)
 if grep -q '^| app | 1 | 1 | 1 | 1 |$' <<<"$report"; then
-    ok "collect: 3 つのフックが止めた回数を数える"
+    ok "collect-corrections: 3 つのフックが止めた回数を数える"
 else
-    ng "collect: 3 つのフックが止めた回数を数える" "$(grep "^|" <<<"$report")"
+    ng "collect-corrections: 3 つのフックが止めた回数を数える" "$(grep "^|" <<<"$report")"
 fi
 
 memory_home="$work/memory-home"
@@ -59,8 +59,8 @@ printf -- '---\nname: a\ndescription: 本体の説明\nmetadata:\n  node_type: m
 printf -- '---\nname: b\ndescription: ワークツリーの説明\ntype: feedback\n---\n' >"$projects/${key}--claude-worktrees-x/memory/b.md"
 printf -- '---\nname: c\ndescription: 対象外\ntype: feedback\n---\n' >"$projects/-other/memory/c.md"
 report=$(HOME="$memory_home" CC_PROJECTS_DIR="$projects" python3 -I "$collect" 2026-10)
-check "collect: _ や . を含むフォルダのメモリを、元の名前で拾う" grep -qF -- "- My_App／a.md：本体の説明" <<<"$report"
-check "collect: ワークツリーのメモリも、元のリポジトリの名前で拾う" grep -qF -- "- My_App／b.md：ワークツリーの説明" <<<"$report"
-check "collect: Applications の外のメモリは拾わない" bash -c '! grep -q "対象外" <<<"$1"' _ "$report"
+check "collect-corrections: _ や . を含むフォルダのメモリを、元の名前で拾う" grep -qF -- "- My_App／a.md：本体の説明" <<<"$report"
+check "collect-corrections: ワークツリーのメモリも、元のリポジトリの名前で拾う" grep -qF -- "- My_App／b.md：ワークツリーの説明" <<<"$report"
+check "collect-corrections: Applications の外のメモリは拾わない" bash -c '! grep -q "対象外" <<<"$1"' _ "$report"
 
 finish

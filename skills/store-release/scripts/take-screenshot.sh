@@ -21,6 +21,6 @@ xcrun simctl io "$device" screenshot --type png "$out" >/dev/null 2>&1
 
 size=$(sips -g pixelWidth -g pixelHeight "$out" | awk '/pixel/ { print $2 }' | paste -sd x -)
 case "$size" in
-    1320x2868 | 1290x2796 | 1260x2736) echo "OK $out ($size)" ;;
-    *) echo "NG $out ($size)。6.9 インチの大きさではない"; exit 1 ;;
+    1320x2868 | 1290x2796 | 1260x2736) echo "OK ${out}（${size}）" ;;
+    *) echo "NG ${out}（${size}）。6.9 インチの大きさではない"; exit 1 ;;
 esac

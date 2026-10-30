@@ -1,7 +1,7 @@
 export TMPDIR="$work/state/"
 mkdir -p "$TMPDIR"
 hooks="$root/hooks/run.sh"
-check="$root/skills/pr-create/scripts/run-check.sh"
+run_check="$root/skills/pr-create/scripts/run-check.sh"
 rules="$root/rules"
 
 app="$work/app"
