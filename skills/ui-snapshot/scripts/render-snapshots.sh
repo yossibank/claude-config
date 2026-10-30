@@ -30,7 +30,11 @@ key=$(printf '%s' "$root" | shasum | cut -c1-12)
 copy="${CC_UI_WORK_DIR:-$HOME/Library/Caches/ui-snapshot}/$(basename "$root")-$key"
 work="$copy${package#"$root"}"
 tests="$work/Tests/UISnapshotTests"
+lock="$copy.lock"
 
+mkdir -p "$(dirname "$copy")"
+mkdir "$lock" 2>/dev/null || { echo "NG 同じリポジトリを描いている途中: ${lock}。終わるのを待つか、止まっていればフォルダを消す"; exit 1; }
+trap 'rmdir "$lock"' EXIT
 mkdir -p "$copy"
 rsync -a --delete --exclude .git --exclude .build --exclude DerivedData --filter=':- .gitignore' "$root/" "$copy/"
 

@@ -69,5 +69,9 @@ check "render-snapshots: 元のパッケージにテストを足さない" test 
 check "render-snapshots: 元の Package.swift を書き換えない" cmp -s "$manifest" "$package/Package.swift"
 check "render-snapshots: 写しの Package.swift にテストを足す" grep -q 'name: "UISnapshotTests"' "$work"/copies/pkg-*/Package.swift
 check "render-snapshots: .gitignore で外すものを写さない" test -z "$(find "$work/copies" -name big)"
+check "render-snapshots: 終わったら .lock を消す" test -z "$(find "$work/copies" -name '*.lock')"
+
+mkdir "$(echo "$work"/copies/pkg-*).lock"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG 同じリポジトリを描いている途中" "render-snapshots: 描いている途中なら NG" bash "$render" "$package" "$set_dir" "$work/out"
 
 finish
