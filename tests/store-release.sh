@@ -2,12 +2,21 @@
 set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/lib/fixtures.sh"
 
 listing="$root/skills/store-release/scripts/check-listing.py"
 archive="$root/skills/store-release/scripts/archive-app.sh"
 
 expect "NG 使い方" "archive-app: 引数が足りなければ NG" bash "$archive" a b
 CC_STORE_EXPORT=x expect "NG CC_STORE_EXPORT は upload か export" "archive-app: 送り先が違えば NG" bash "$archive" a b "$work/out"
+fake_command xcodebuild 'exit 65'
+expect "NG DEVELOPMENT_TEAM が見つからない" "archive-app: 設定を読めなければ黙って落ちずに NG" bash "$archive" a b "$work/out"
+screenshot="$root/skills/store-release/scripts/take-screenshot.sh"
+fake_command xcrun 'exit 1'
+expect "NG シミュレーターが起動しない: udid" "take-screenshot: 起動を待てなければ黙って落ちずに NG" bash "$screenshot" udid "$work/shot.png"
+fake_command xcrun 'exit 0'
+fake_command sips 'exit 1'
+expect "NG 画像の大きさを読めない" "take-screenshot: 大きさを読めなければ黙って落ちずに NG" bash "$screenshot" udid "$work/shot.png"
 log="$work/archive.log"
 printf 'x\na.swift:1: error: 型が無い\na.swift:1: error: 型が無い\nb.swift:2: warning: 使っていない\n' >"$log"
 fail_with_log=$(awk '/^fail_with_log\(\) \{/,/^\}/' "$archive")
