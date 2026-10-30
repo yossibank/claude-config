@@ -118,4 +118,7 @@ big=$(printf '%016000d' 0)
 doc_case 2 "docs の 1 ファイルを 15KB より大きくしない" docs/x.md "$note"$'\n```text\n'"$big"$'\n```' "15KB を超えている"
 doc_case 0 "docs の外のファイルは 15KB を超えてもよい" README.md $'# t\n\nあ。\n\n```text\n'"$big"$'\n```'
 
+doc_case 2 "docs の ## には絵文字を付ける" docs/x.md "$note"$'\n## 入れ方\n\nあ。' "頭に絵文字を 1 つ付ける"
+doc_case 0 "節の多い decisions は ## の絵文字を付けないでそろえてよい" docs/decisions/x.md "$note"$'\n## 入れ方\n\nあ。\n\n## 使い方\n\nい。'
+
 finish

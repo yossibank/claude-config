@@ -87,9 +87,9 @@ def check_headings(doc):
                     found.append((number, f"## の見出しの絵文字は rules/docs-human.md の表から選ぶ（{emojis[0]}）"))
         elif what in ("body", "quote") and heading:
             heading[1] = True
-    if doc.readme and marked and not all(marked.values()):
+    if doc.human and "/docs/decisions/" not in doc.path and marked and not all(marked.values()):
         first = min(number for number, has in marked.items() if not has)
-        found.append((first, "README の ## の見出しには、頭に絵文字を 1 つ付ける"))
+        found.append((first, "人が読む文書の ## の見出しには、頭に絵文字を 1 つ付ける"))
     elif doc.human and len(set(marked.values())) > 1:
         first = min(number for number, has in marked.items() if has != marked[min(marked)])
         found.append((first, "## の見出しは、すべてに絵文字を付けるか、どれにも付けないかにそろえる"))
