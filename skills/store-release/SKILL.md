@@ -88,12 +88,15 @@ ${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh <UDID> <アプリのリポジト�
 ${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム> <出力先のフォルダ>
 ```
 
-| 変数 | すること |
-| --- | --- |
-| `CC_STORE_ARCHIVE_ONLY=1` | アーカイブだけを作り、送らない |
-| `CC_STORE_EXPORT=export` | 送らずに、出力先に IPA を書き出す |
+行き先は、環境変数の `CC_STORE_DESTINATION` で決める。
 
-全ログは、出力先の `archive.log` にある。失敗した時は、`error:` の行だけを出す。
+| 値 | すること |
+| --- | --- |
+| `upload`（既定） | App Store Connect に送る |
+| `export` | 送らずに、出力先に IPA を書き出す |
+| `archive` | アーカイブだけを作り、送らない |
+
+ログは、出力先の `archive.log` にある。失敗した時は、`error:` の行だけを出す。
 
 ## 報告
 

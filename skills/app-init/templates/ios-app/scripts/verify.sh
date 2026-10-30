@@ -19,5 +19,5 @@ if [[ $status -eq 0 ]]; then
 fi
 
 grep -E "error:|failed|Test Case .* failed|✖" "$log" | sort -u | head -40
-echo "NG $label (full log: $log)"
+echo "NG ${label}（ログ: ${log}）"
 exit "$status"

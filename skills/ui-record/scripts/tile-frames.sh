@@ -26,4 +26,4 @@ fi
 ffmpeg -loglevel error -y -ss "$start" -t "$duration" -i "$video" \
     -vf "$filter,scale=320:-1,tile=${columns}x${rows}" -frames:v 1 "$out"
 
-echo "OK $out (${count} コマ、${columns} 列)"
+echo "OK ${out}（${count} コマ、${columns} 列）"

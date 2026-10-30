@@ -58,7 +58,7 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 | 直下 | CLAUDE.md、README、Makefile、Brewfile、Mintfile |
 | 直下の設定 | `.swiftformat`、`.pre-commit-config.yaml` |
 | `docs/` | overview と roadmap。`app-plan` も、ここを写して下書きを書く |
-| `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す。全ログは `.build/verify/` に書く |
+| `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す。ログは `.build/verify/` に書く |
 | `scripts/find-simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す |
 | `ios/` | Xcode プロジェクト、ワークスペース、テストプラン、アプリのターゲット、空のプライバシーの申告 |
 | `ios/Packages/<App>Kit` | Core（`Identifier`）、Store（`AppDatabase` と最初のマイグレーション） |

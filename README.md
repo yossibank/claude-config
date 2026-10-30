@@ -65,7 +65,7 @@ claude-config を `~/Applications/AI/claude-config` に置く。次に [config-i
 
 1. CLAUDE.md・rules・agents・スキル・output style を `~/.claude` からリンクする。同じ名前の実体があれば `NG` を出して止まる。
 2. 壊れたスキルと output style のリンクを消す。
-3. `settings/merge.jq` で `settings.json.new` を作り、差分を出す。入れる許可の一覧は `claude-config-allow.json.new` に書く。
+3. [config-install.jq](scripts/config-install.jq) で `settings.json.new` を作り、差分を出す。入れる許可の一覧は `claude-config-allow.json.new` に書く。
 4. 表示された `mv` のコマンドで、差分を確かめてから 2 つを置き換える。変わらない時は、許可の一覧だけをその場で置き換える。
 
 > [!WARNING]
@@ -259,8 +259,7 @@ flowchart LR
 | `CC_APPS_DIR` | app-init、store-reply、store-report | アプリのリポジトリの置き場所 |
 | `CC_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr で知らせる |
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
-| `CC_STORE_ARCHIVE_ONLY=1` | store-release | アーカイブだけを作り、送らない |
-| `CC_STORE_EXPORT=export` | store-release | 送らずに IPA を書き出す |
+| `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
 
 ## 🧪 確かめ方

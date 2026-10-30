@@ -8,7 +8,15 @@ listing="$root/skills/store-release/scripts/check-listing.py"
 archive="$root/skills/store-release/scripts/archive-app.sh"
 
 expect "NG 使い方" "archive-app: 引数が足りなければ NG" bash "$archive" a b
-CC_STORE_EXPORT=x expect "NG CC_STORE_EXPORT は upload か export" "archive-app: 送り先が違えば NG" bash "$archive" a b "$work/out"
+CC_STORE_EXPORT=export expect "NG CC_STORE_EXPORT と CC_STORE_ARCHIVE_ONLY は読まない" "archive-app: 前の変数が付いていれば、送らずに NG" bash "$archive" a b "$work/out"
+CC_STORE_DESTINATION=x expect "NG CC_STORE_DESTINATION は upload・export・archive" "archive-app: 行き先が違えば NG" bash "$archive" a b "$work/out"
+source "$root/tests/lib/fixtures.sh"
+fake_command xcodebuild 'echo "$*" >>"'"$work"'/xcodebuild.args"; [[ " $* " != *" -showBuildSettings "* ]] || echo "    DEVELOPMENT_TEAM = TEAM1"'
+check "archive-app: 送れたら行き先とログの場所を OK で出す" grep -qxF "OK upload（ログ: $work/out/archive.log）" <<<"$(bash "$archive" a b "$work/out")"
+check "archive-app: 署名のチームを書き出しの設定に入れる" grep -qF "<string>TEAM1</string>" "$work/out/ExportOptions.plist"
+: >|"$work/xcodebuild.args"
+check "archive-app: archive ならアーカイブだけを作る" grep -qxF "OK アーカイブ $work/out/b.xcarchive" <<<"$(CC_STORE_DESTINATION=archive bash "$archive" a b "$work/out")"
+check "archive-app: archive なら書き出さない" test -z "$(grep -e -exportArchive "$work/xcodebuild.args")"
 log="$work/archive.log"
 printf 'x\na.swift:1: error: 型が無い\na.swift:1: error: 型が無い\nb.swift:2: warning: 使っていない\n' >"$log"
 fail_with_log=$(awk '/^fail_with_log\(\) \{/,/^\}/' "$archive")
@@ -17,7 +25,7 @@ status=$?
 check "archive-app: 失敗したら終了コード 1 で終える" test "$status" -eq 1
 check "archive-app: ログの error の行を 1 回ずつ出す" test "$(grep -c 'error: 型が無い' <<<"$out")" -eq 1
 check "archive-app: warning の行は出さない" test -z "$(grep warning <<<"$out")"
-check "archive-app: 何が失敗したかとログの場所を NG で出す" grep -qxF "NG アーカイブ（全ログ: ${log}）" <<<"$out"
+check "archive-app: 何が失敗したかとログの場所を NG で出す" grep -qxF "NG アーカイブ（ログ: ${log}）" <<<"$out"
 source "$root/lib/build_log.sh"
 { for n in $(seq 1 25); do echo "c.swift:$n: error: $n 番目"; done; echo '** TEST FAILED **'; echo 'ErrorView.swift をコンパイル'; } >"$work/many.log"
 check "show_errors: first は最初のエラーから出す" grep -q 'c.swift:1: error' <<<"$(show_errors "$work/many.log" first)"
