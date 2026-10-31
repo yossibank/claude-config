@@ -54,6 +54,7 @@ set +e
 xcodebuild test \
     -scheme "$scheme" \
     -destination "id=$device" \
+    -collect-test-diagnostics never \
     -only-testing:UISnapshotTests 2>&1 | grep -E "error:|TEST (SUCCEEDED|FAILED)"
 status=${PIPESTATUS[0]}
 set -e
