@@ -58,6 +58,7 @@ if [[ \$1 == -list ]]; then
     echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
     exit 0
 fi
+echo \"\$*\" >'$work/arguments'
 cp Tests/UISnapshotTests/SnapshotTests.swift '$work/written.swift'
 exit 1"
 printf 'ignored/\n' >"$package/.gitignore"
@@ -65,6 +66,7 @@ mkdir -p "$package/ignored"
 touch "$package/ignored/big"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" /bin/bash "$render" "$package" "$set_dir" "$work/out" >/dev/null
 check "render-snapshots: macOS の bash でも出力先のパスを引用符なしで入れる" grep -qxF "let directory = \"$work/out\"" "$work/written.swift"
+check "render-snapshots: テストの後に診断を集めない" grep -qF -- "-collect-test-diagnostics never" "$work/arguments"
 check "render-snapshots: 元のパッケージにテストを足さない" test ! -e "$package/Tests"
 check "render-snapshots: 元の Package.swift を書き換えない" cmp -s "$manifest" "$package/Package.swift"
 check "render-snapshots: 写しの Package.swift にテストを足す" grep -q 'name: "UISnapshotTests"' "$work"/copies/pkg-*/Package.swift
