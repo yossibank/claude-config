@@ -105,8 +105,11 @@ ${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム
 1. App のプライバシー（集めるデータの申告）に答える。
 2. 年齢の区分・価格・配信する国を決める。
 3. 掲載情報とスクリーンショットを入れる。
-4. TestFlight で、送ったビルドを実機で確かめる。
-5. 審査に出す。
+4. CloudKit Console で、スキーマを Production に Deploy する。
+5. TestFlight で、送ったビルドを実機で確かめる。
+6. 審査に出す。
+
+4 の段は、CloudKit を使うアプリの時だけ渡す。`.entitlements` の `icloud-services` に `CloudKit` があれば使っている。
 
 > [!WARNING]
 > 書き出しと送信には、配布用の署名と App Store Connect のアカウントが要る。手元では確かめていない。
