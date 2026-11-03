@@ -143,7 +143,7 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
 | `tests/pr-create.sh` | ワークツリー・PR の重さ・要る確認・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
-| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。`--tags`・変数の作業場所・コマンド置換・`do` の後も見るか |
+| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。`--tags`、cd と `-C` の先の変数、コマンド置換、`do` の後も見るか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか。積んだブランチを main に載せ直し、ぶつかる時は残すか |
 | `tests/rules-detect-bash-edits.sh` | Bash と git checkout での書き換えを見つけるか。読むだけの git と、Bash の間に Edit・Write で変えたファイルを数えないか |
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか。`CC_HOOKS_OFF` を run.sh と hook_io で同じ名前に分けるか |
