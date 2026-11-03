@@ -64,6 +64,9 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 | `small` | 200 行まで | Makefile に `verify` があれば `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` に `model: sonnet` を付けて頼む |
 | `large` | 200 行を超える。または移行・スキーマ・fixtures・プロジェクトの設定・フック・settings に触れる | `small` と同じ | `reviewer`（opus）に頼む |
 
+確認が `make verify` か `make verify-docs` の時、コマンドを `pr-required` に書く。
+場所は git のフォルダの中である。それ以外の時は、`pr-required` を消す。
+
 reviewer には、ワークツリーのパスと base のブランチ名だけを渡す。
 
 ## run-check.sh がすること
@@ -72,8 +75,10 @@ reviewer には、ワークツリーのパスと base のブランチ名だけ�
 
 | 場面 | すること |
 | --- | --- |
-| 確認を通す | 結果を、git のフォルダの `pr-checks` に、ファイルの中身の指紋と一緒に残す。確認の間に中身が変わったら NG にする |
+| 確認を通す | 結果を、git のフォルダの `pr-checks` に、ファイルの中身の指紋と通したコマンド（4 列目）と一緒に残す。確認の間に中身が変わったら NG にする |
 | 記録を見る | `run-check.sh <ワークツリー> --status` が、NG の確認と、確認の後の変更を `NG` の行で出す |
+| 要る確認を見る | `pr-required` がある時、`--status` はそのコマンドを今の状態で通した行を探す。無ければ `NG 要る確認を通していない` を出す |
+| 古い記録 | 4 列目の無い古い行は読むが、要る確認を通した行とは数えない |
 | 本文を作る | `write-body.sh` が `--status` で確かめ、通った確認を本文の表に入れる |
 | 記録を外す | 要らなくなった確認は、`run-check.sh <ワークツリー> --drop <名前>` で外す |
 | push と PR | `hooks/pr-gate.py` が `--status` を見て、満たさなければ止める |

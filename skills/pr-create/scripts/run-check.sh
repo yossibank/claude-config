@@ -40,12 +40,18 @@ update_record() {
 if [[ $label == --status ]]; then
     [[ -s $record ]] || { echo "NG run-check.sh で通した確認が無い"; exit 1; }
     state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG ワークツリーの状態を読めない"; exit 1; }
-    awk -F '\t' -v state="$state" '
+    required=""
+    [[ ! -f $(git_file "$repo" pr-required) ]] || required=$(<"$(git_file "$repo" pr-required)")
+    awk -F '\t' -v state="$state" -v required="$required" '
         NF < 3 { next }
+        $1 == "OK" && $3 == state && required != "" && $4 == required { found = 1 }
         $1 != "OK" { print "NG 通っていない確認: " $2; bad = 1; next }
         $3 != state { print "NG 確認の後に変更がある: " $2; bad = 1; next }
         { print "OK " $2 }
-        END { exit bad }
+        END {
+            if (required != "" && !found) { print "NG 要る確認を通していない: " required; bad = 1 }
+            exit bad
+        }
     ' "$record"
     exit
 fi
@@ -70,7 +76,7 @@ status=0
 state=$("$(dirname "$0")/hash-state.sh" "$repo") || { echo "NG ワークツリーの状態を読めない"; exit 1; }
 [[ $state == "$before" ]] || result=NG
 
-update_record "$label" "$(printf '%s\t%s\t%s' "$result" "$label" "$state")"
+update_record "$label" "$(printf '%s\t%s\t%s\t%s' "$result" "$label" "$state" "$*")"
 
 if [[ $result == OK ]]; then
     rm -f "$log"

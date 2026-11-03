@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git, git_root  # noqa: E402
-from hook_io import command_words, hook_off, notify, read_payload, split_commands, tool_input  # noqa: E402
+from hook_io import command_words, git_subcommand, hook_off, notify, read_payload, split_commands, tool_input  # noqa: E402
 from hook_messages import BASH_EDITED  # noqa: E402
 from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from loader import load_hook  # noqa: E402
@@ -15,6 +15,7 @@ from loader import load_hook  # noqa: E402
 STATE = state_folder("bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
 TOOLS = {"git", "make", "mint", "swiftformat", "pre-commit", "gh", "brew", "xcodebuild", "swift", "cd"}
+GIT_WRITES = {"checkout", "restore", "switch", "apply", "am", "stash", "merge", "pull", "rebase", "reset", "cherry-pick", "revert", "mv", "rm"}
 STALE = 24 * 60 * 60
 REDIRECT_CHARS = set("<>|&")
 
@@ -67,9 +68,15 @@ def redirect_targets(command, cwd):
     return targets
 
 
+def is_tool(words):
+    if not words or words[0] not in TOOLS:
+        return False
+    return words[0] != "git" or (git_subcommand(words)[1] or [""])[0] not in GIT_WRITES
+
+
 def only_tools(command):
     parts = [command_words(words) for words in split_commands(command)]
-    return bool(parts) and all(words[:1] and words[0] in TOOLS for words in parts)
+    return bool(parts) and all(is_tool(words) for words in parts)
 
 
 def cwd_of(data):
