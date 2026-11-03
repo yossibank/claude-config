@@ -22,6 +22,8 @@ run pr-gate 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')
 run pr-gate 0 "pr: --drop で外せば通す" "$(push "$app" 'git push')"
 echo 'struct C {}' >>"$swift"
 run pr-gate 0 "pr: タグの push は止めない" "$(push "$app" 'git push --tags')"
+run pr-gate 0 "pr: remote だけを付けたタグの push は止めない" "$(push "$app" 'git push origin --tags')"
+run pr-gate 2 "pr: refspec が付いた --tags の push は止める" "$(push "$app" 'git push origin main --tags')"
 run pr-gate 0 "pr: ブランチの削除は止めない" "$(push "$app" 'git push origin --delete feat/x')"
 run pr-gate 0 "pr: : で始まる refspec の削除は止めない" "$(push "$app" 'git push origin :feat/x')"
 run pr-gate 2 "pr: draft の PR（gh pr create -d）も止める" "$(push "$app" 'gh pr create -d --title x')"

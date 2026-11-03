@@ -52,5 +52,11 @@ else
     check="CLAUDE.md の確認のコマンド"
 fi
 
+required=$(git_file "$repo" pr-required)
+case $check in
+    "make verify" | "make verify-docs") printf '%s\n' "$check" >| "$required" ;;
+    *) rm -f "$required" ;;
+esac
+
 echo "$size | $lines 行 | 確認: $check | レビュー: $review"
 [[ ${#touched[@]} -eq 0 ]] || printf '触れた所: %s\n' "${touched[@]}"

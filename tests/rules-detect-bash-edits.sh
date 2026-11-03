@@ -12,11 +12,19 @@ run rules-detect-bash-edits 2 "bash: Bash で .md を書き換えると知らせ
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t2 'git checkout')" pre
 git -C "$app" checkout -q -- docs/overview.md
 run rules-detect-bash-edits 0 "bash: git での変更は知らせない" "$(bash_call t2 'git checkout')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t2b 'git checkout other -- docs/overview.md')" pre
+echo 'q' >>"$app/docs/overview.md"
+run rules-detect-bash-edits 2 "bash: git checkout で .md が変わったら検査する" "$(bash_call t2b 'git checkout other -- docs/overview.md')" post
+git -C "$app" checkout -q -- docs/overview.md
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t2c 'git status')" pre
+echo 'q' >>"$app/docs/overview.md"
+run rules-detect-bash-edits 0 "bash: git status では検査しない" "$(bash_call t2c 'git status')" post
+git -C "$app" checkout -q -- docs/overview.md
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t3 'ls')" pre
 run rules-detect-bash-edits 0 "bash: 何も変えなければ知らせない" "$(bash_call t3 'ls')" post
-run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t4 'cd app && git checkout')" pre
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t4 'cd app && git status')" pre
 echo 'x' >>"$app/docs/overview.md"
-run rules-detect-bash-edits 0 "bash: cd と git だけのコマンドは知らせない" "$(bash_call t4 'cd app && git checkout')" post
+run rules-detect-bash-edits 0 "bash: cd と git だけのコマンドは知らせない" "$(bash_call t4 'cd app && git status')" post
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t5 'sed -i x && git add')" pre
 echo 'y' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 2 "bash: git が混ざっても書き換えは知らせる" "$(bash_call t5 'sed -i x && git add')" post
@@ -50,8 +58,8 @@ run rules-detect-bash-edits 2 "bash: git・gh でも、出力をファイルに�
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t12 'git status 2>/dev/null >&2')" pre
 echo 's' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 0 "bash: /dev/null と fd への向け替えは書き込みと数えない" "$(bash_call t12 'git status 2>/dev/null >&2')" post
-run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t13 'git checkout x > /tmp/claude-config-test.log')" pre
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" pre
 echo 'r' >>"$app/docs/overview.md"
-run rules-detect-bash-edits 0 "bash: 道具の出力を別の所に向けても、道具が変えたファイルは数えない" "$(bash_call t13 'git checkout x > /tmp/claude-config-test.log')" post
+run rules-detect-bash-edits 0 "bash: 道具の出力を別の所に向けても、道具が変えたファイルは数えない" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" post
 
 finish

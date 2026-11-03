@@ -10,7 +10,7 @@ from hook_messages import PR_UNCHECKED  # noqa: E402
 from loader import ROOT  # noqa: E402
 
 CHECK_SH = os.path.join(ROOT, "skills", "pr-create", "scripts", "run-check.sh")
-PUSH_SKIPPED = {"--tags", "--delete", "-d"}
+PUSH_SKIPPED = {"--delete", "-d"}
 SHELLS = {"bash", "sh", "zsh"}
 
 
@@ -21,6 +21,13 @@ def shell_command(words):
         if word.startswith("-") and not word.startswith("--") and "c" in word:
             return words[index + 1]
     return None
+
+
+def push_gated(args):
+    if any(word in PUSH_SKIPPED or word.startswith(":") for word in args):
+        return False
+    positional = [word for word in args if not word.startswith("-")]
+    return "--tags" not in args or len(positional) > 1
 
 
 def gated_repo(command, cwd):
@@ -43,7 +50,7 @@ def gated_repo(command, cwd):
         repo = cwd
         for directory in directories:
             repo = os.path.join(repo, os.path.expanduser(directory))
-        if rest[:1] == ["push"] and not any(word in PUSH_SKIPPED or word.startswith(":") for word in rest[1:]):
+        if rest[:1] == ["push"] and push_gated(rest[1:]):
             return repo
     return None
 
