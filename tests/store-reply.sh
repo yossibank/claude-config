@@ -40,12 +40,18 @@ pages = {
 }
 module.asc_json = lambda url, body=None: pages[url]
 sys.argv = ["fetch-unreplied-reviews.py"]
-module.main()
+try:
+    module.main()
+except SystemExit:
+    pass
 path = glob.glob(module.apps_dir() + "/replies/*.json")[0]
 entries = json.load(open(path, encoding="utf-8"))
 entries[0]["reply"] = "書きかけ"
 json.dump(entries, open(path, "w", encoding="utf-8"), ensure_ascii=False)
-module.main()
+try:
+    module.main()
+except SystemExit:
+    pass
 entries = json.load(open(path, encoding="utf-8"))
 print(" ".join(f"{e['id']}:{e['rating']}:{e['date']}:{e['reply']}:{e['approved']}" for e in entries))
 EOF
@@ -66,11 +72,44 @@ path = glob.glob(module.apps_dir() + "/replies/*.json")[0]
 drafts = [{"app": "bar", "id": "z", "reply": "案", "approved": True}, {"app": "foo", "id": "y", "reply": "古い", "approved": False}]
 json.dump(drafts, open(path, "w", encoding="utf-8"), ensure_ascii=False)
 sys.argv = ["fetch-unreplied-reviews.py"]
-module.main()
+try:
+    module.main()
+except SystemExit:
+    pass
 print(" ".join(f"{e['id']}:{e['reply']}" for e in json.load(open(path, encoding="utf-8"))))
 EOF
 )
 check "fetch-unreplied-reviews: 集められなかったアプリの案は残し、集めたアプリの古い案は外す" test "${kept##*$'\n'}" == "z:案"
+
+unexpected=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+
+module = load_module(sys.argv[2])
+module.asc_json = lambda url, body=None: {"data": [{"id": "a", "attributes": {"rating": 1}, "relationships": {}}], "links": {}}
+sys.argv = ["fetch-unreplied-reviews.py"]
+module.run_main(module.main)
+EOF
+)
+status=$?
+check "fetch-unreplied-reviews: 想定外の例外は stdout に NG を出して終了コード 1" test "$status" -eq 1 -a "$(grep -c '^NG .*想定外の失敗（KeyError' <<<"$unexpected")" -eq 1
+
+partial=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+
+module = load_module(sys.argv[2])
+module.asc_json = lambda url, body=None: {"data": [], "links": {}}
+sys.argv = ["fetch-unreplied-reviews.py"]
+module.run_main(module.main)
+EOF
+)
+status=$?
+check "fetch-unreplied-reviews: 一部のアプリが失敗したら stdout に NG を出して終了コード 1" test "$status" -eq 1 -a "$(grep -c '^NG .*bar（アプリの ID は数字で書く: abc）.*replies' <<<"$partial")" -eq 1
+check "fetch-unreplied-reviews: 一部が失敗しても集めた分は書く" test -f "$apps/replies/$(TZ=Asia/Tokyo date +%F).json"
+check "fetch-unreplied-reviews: 一部が失敗した時は OK の行を出さない" test -z "$(grep '^OK' <<<"$partial")"
 
 today="$apps/replies/$(TZ=Asia/Tokyo date +%F).json"
 echo '[{"id": "a",' >"$today"

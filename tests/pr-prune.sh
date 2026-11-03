@@ -60,6 +60,13 @@ echo a2 >"$repo/a.md"
 commit "$repo" "change a after merge"
 git -C "$repo" push -q origin main
 GH_PR="MERGED x feat/binary" expect OK "prune: 画像を含む squash のブランチも、main が進んだ後に消せる" bash "$prune" "$repo" feat/binary 7
+git -C "$repo" checkout -q --orphan feat/orphan
+git -C "$repo" rm -rfq . 2>/dev/null
+echo o >"$repo/o.md"
+commit "$repo" orphan
+git -C "$repo" checkout -q main
+GH_PR="MERGED x feat/orphan" expect "入っていない" "prune: main と共通の祖先が無いブランチは残す" bash "$prune" "$repo" feat/orphan 12
+check "prune: 共通の祖先が無いブランチを消さない" git -C "$repo" rev-parse -q --verify refs/heads/feat/orphan
 echo dirty >"$repo/dirty.md"
 GH_PR="MERGED x feat/x" expect "未 commit" "prune: 手元に変更があれば止まる" bash "$prune" "$repo" feat/x 3
 rm -f "$repo/dirty.md"
