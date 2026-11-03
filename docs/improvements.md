@@ -48,7 +48,6 @@
 | --- | --- | --- |
 | 🟠 中 | `README.md` の「フック」 | 冒頭の文が「止める」だけで、表の知らせるフックと整えるフックに合わない |
 | 🟠 中 | `README.md` の「入れ方」 | 前提の NOTE が手順の間にある。前提を先に置き、手順を番号付きにする |
-| 🟠 中 | `docs/development.md` | 上限の 15,000B に近い。「確かめ方」から下を `docs/testing.md` に分ける |
 | 🟠 中 | `docs/architecture-ios.md` | 「make のコマンド」がフォルダの木の間にある。「動かし方」の節に出す |
 | 🟠 中 | `skills/code-debug/SKILL.md` | 手順に「効かなかった変更を戻す」「直ったら 1 つずつ外す」が無い |
 | 🟠 中 | `skills/store-release/SKILL.md` | PrivacyInfo のひな形のパスが途中まで。実際は `ios-app/ios/__App__/` の下にある |
@@ -58,7 +57,7 @@
 | 🟡 低 | `README.md` の「入れ方」の手順 | 「実体」「2 つ」の指す先が読めない。settings.json が 1 文に 3 回出る |
 | 🟡 低 | `README.md` のフックの表 | 列の名前の「動く時」と「当たる時」の違いが分からない |
 | 🟡 低 | `docs/development.md` の表 | フックとひな形の印の行で、1 つのセルに別々の指示がある |
-| 🟡 低 | `docs/development.md` | 前置きだけの文が、テストとスクリプトの表の前などにある。見出しで分かるので消す |
+| 🟡 低 | `docs/development.md` | 前置きだけの文が、スクリプトの表と testing.md のテストの表の前などにある。見出しで分かるので消す |
 | 🟡 低 | `agents/debugger.md` | 「未確認」と「未確定」が混ざる |
 | 🟡 低 | `skills/store-report/SKILL.md` | 「上下は無い」と「Admin にする」が食い違う |
 | 🟡 低 | `skills/store-release/SKILL.md` | 字数の表に、更新の説明（4000 字）が無い |

@@ -99,7 +99,8 @@ PR を積んで出す時だけ入れる。squash でマージしても積んだ 
 | --- | --- | --- |
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
 | [docs/improvements.md](docs/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
-| [docs/development.md](docs/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・確かめ方・スクリプト・足し方 |
+| [docs/development.md](docs/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・スクリプト・足し方 |
+| [docs/testing.md](docs/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方・テストの共通の処理 |
 | [skills/app-init/templates/ios-app/](skills/app-init/templates/ios-app/) | `app-init` の時 | 新しい iOS アプリのひな形 |
 | [skills/app-init/templates/ios-app/docs/](skills/app-init/templates/ios-app/docs/) | `app-plan` の時 | overview と roadmap のひな形 |
 
@@ -268,4 +269,4 @@ flowchart LR
 
 ## 🧪 確かめ方
 
-claude-config を変えたら、`make verify` を通す。コマンドとスクリプトは [development.md](docs/development.md#-確かめ方) にある。スクリプトには [config-audit.py](scripts/config-audit.py)・[docs-section.sh](scripts/docs-section.sh)・[docs-section.py](scripts/docs-section.py) がある。
+claude-config を変えたら、`make verify` を通す。コマンドは [testing.md](docs/testing.md#-動かし方)、スクリプトは [development.md](docs/development.md#-スクリプト) にある。スクリプトには [config-audit.py](scripts/config-audit.py)・[docs-section.sh](scripts/docs-section.sh)・[docs-section.py](scripts/docs-section.py) がある。
