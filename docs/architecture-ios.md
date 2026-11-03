@@ -167,6 +167,8 @@ ios/
 <App>Kit/
 ├── Sources/
 │   ├── Core/
+│   │   ├── Concepts/
+│   │   └── Shared/
 │   └── Store/
 │       ├── Database/
 │       ├── Migrations/
@@ -180,7 +182,8 @@ ios/
 
 | フォルダ | 中身 |
 | --- | --- |
-| `Core/` | 概念ごとのフォルダに、型と計算を一緒に入れる |
+| `Core/Concepts/` | 概念ごとのフォルダに、型と計算を一緒に入れる |
+| `Core/Shared/` | 概念をまたいで使う型。型付きの ID など |
 | `Store/Database/` | App Group、DatabasePool、裏に回る前の対策 |
 | `Store/Migrations/` | 版ごとに 1 ファイル |
 | `Store/Queries/` | 読み出し |
@@ -214,7 +217,7 @@ ios/
 | フォルダ | 中身 |
 | --- | --- |
 | `AppFeature/` | AppModel、RootView、MainView（タブとシート）、起動の処理 |
-| `AppWidget/` | ウィジェットの見た目、タイムライン、AppIntent |
+| `AppWidget/` | `Widgets/` にウィジェットごと、`Intents/` に AppIntent を置く。`Shared/` はタイムラインなど |
 | `DesignSystem/Components/` | 部品の種類ごとのフォルダ |
 | `DesignSystem/Theme/` | 色・角の丸み・字体・文字の大きさ |
 | `Features/Screens/` | 画面ごとのフォルダ。タブの画面は `Tabs/` の下 |
@@ -332,7 +335,10 @@ CI は置かない。PR ごとに手元で回す。
 | DesignSystem の部品のフォルダ | 名前の順に並べた時、中が 1 つの種類の部品だけになるように分ける |
 | `Screens` の下 | 画面の名前。一覧の画面は複数形 |
 | `Shared` の下 | 部品の役割の名前 |
-| フォルダ | ファイルが 1 つだけのフォルダは作らず、近いフォルダに入れる。ターゲットの直下は例外 |
+| `Shared` の置き場所 | 機能のフォルダと同じ階層に置かない。1 段上で機能の束と並べる |
+| 機能の束 | `Core/Concepts`・`Features/Screens`・`AppWidget/Widgets` |
+| テストのフォルダ | 機能の束の下は、ソースと同じフォルダに分ける。`Shared` は分けない |
+| フォルダ | ファイルが 1 つだけのフォルダは作らず、近いフォルダに入れる。ターゲットの直下と `Shared`、ソースにそろえたテストは例外 |
 | ファイル | 中の型の名前。拡張は `<型>+<役割>.swift` |
 | モディファイア | DesignSystem の、画面をまたいで使うものだけ `View+<役割>.swift` にする。画面ごとのものは画面の名前で始める |
 | fixtures | 頭に、試す型の名前を kebab-case で付ける。形は `<型>-<場合>.json` |
