@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > claude-config のフック・スクリプト・スキルを足したり直したりする時の決まりが分かる。
-> 使い方と入れ方は [README](../README.md) にある。
+> 確かめ方とテストは [testing.md](testing.md)、使い方と入れ方は [README](../README.md) にある。
 
 ## 🏷️ 名前の付け方
 
@@ -108,61 +108,6 @@
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま使う。スキルからは `${CLAUDE_SKILL_DIR}/../<スキル>/scripts/` で呼ぶ。フックからは、リポジトリの根からの `skills/<スキル>/scripts/` で呼ぶ。
 
-## 🧪 確かめ方
-
-claude-config を変えたら、`make verify` を通す。
-
-> [!IMPORTANT]
-> CI は置かない。PR は、Claude が pr-create の確認で `make verify` を通してから作る。
-
-| コマンド | 確かめること |
-| --- | --- |
-| `make verify` | `make audit` と `make test` を順に走らせる |
-| `make audit` | config-audit.py で、文書と名前と書き方の決まり |
-| `make test` | `tests/*.sh` の全部で、フックとスクリプトの振る舞い |
-| `make test-<対象>` | `tests/<対象>.sh` の 1 本だけ |
-
-### テスト
-
-テストの対象は、フックの `.py`、`scripts/` のファイル、`scripts/` を持つスキルである。テストの名前は、対象の拡張子を除いた名前にする。config-audit が、テストと対象が 1 対 1 でないと `NG` にする。
-
-テストは `tests/<対象>.sh` に置く。1 本ずつが確かめることは、次のとおりである。
-
-| テスト | 確かめること |
-| --- | --- |
-| `tests/app-init.sh` | ひな形の印を置き換え、一時のフォルダに新しいアプリを作れるか |
-| `tests/app-plan.sh` | 通信せずに、引数の NG と通信できない時の NG を出すか |
-| `tests/config-audit.sh` | わざと壊した写しで、config-audit が違反を見逃さないか |
-| `tests/config-install.sh` | 一時の HOME で、入れ方がほかのフックと実体を残すか。入れた先からフックとスキルのスクリプトが動くか |
-| `tests/config-learn.sh` | フックが止めた回数を、config-learn が数えられるか |
-| `tests/ctx-limit-read.sh` | 大きいファイルを範囲なしで読む時だけ止めるか |
-| `tests/ctx-report.sh` | 作り物の会話の記録から、月ごとのトークンを数えられるか |
-| `tests/ctx-suggest-clear.sh` | 文脈が大きい時に、同じ段で 1 回だけ区切りを勧めるか |
-| `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
-| `tests/docs-polish.sh` | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
-| `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
-| `tests/pr-create.sh` | ワークツリー・PR の重さ・要る確認・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
-| `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
-| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。`--tags` や変数の cd も止めるか |
-| `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか。積んだブランチを main に載せ直し、ぶつかる時は残すか |
-| `tests/rules-detect-bash-edits.sh` | Bash と git checkout での書き換えを見つけるか。読むだけの git と、Bash の間に Edit・Write で変えたファイルを数えないか |
-| `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか。`CC_HOOKS_OFF` を run.sh と hook_io で同じ名前に分けるか |
-| `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |
-| `tests/store-release.sh` | 掲載情報の字数と形、プライバシーの申告の足りなさを確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
-| `tests/store-reply.sh` | 通信せずに試す。引数の NG・返信済みのレビューの除外・`--dry-run` で送らないこと・送る JSON の形を確かめる |
-| `tests/store-report.sh` | 通信せずに、引数の NG と売上の表の集計を出せるか。取れなかった数字を WARNING に書くか |
-| `tests/swift-format.sh` | Mintfile に swiftformat がある時だけ走らせるか。時間切れと失敗で止めずに知らせるか |
-| `tests/ui-record.sh` | 偽の ffmpeg と偽の xcrun で、コマ数と出力先を決められ、引数の NG を出すか |
-| `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せ、引数や出力先が違う時は走らせる前に NG にするか |
-
-テストが共通で使う処理は、`tests/lib/` に置く。
-
-| ファイル | 中身 |
-| --- | --- |
-| [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、出力が型に合うかを確かめる `match`、結果の数え方 |
-| [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh・偽のコマンド（`fake_command`） |
-| [tests/lib/hooks.sh](../tests/lib/hooks.sh) | フックのテストの作り物のアプリと、フックへの入力の作り方 |
-
 ## 📜 スクリプト
 
 入れる時、確かめる時、文書を読む時に、次のスクリプトを使う。
@@ -181,6 +126,6 @@ claude-config を変えたら、`make verify` を通す。
 1. 名前の頭を [接頭語の表](#接頭語の表) で確かめる。スキルのスクリプトは、頭の動詞を [動詞の表](#動詞の表) で確かめる。
 2. 本体を置く。スキルは `skills/<名前>/SKILL.md`、フックは `hooks/<名前>.py`、スクリプトは `scripts/` に置く。
 3. フックは、`settings/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。
-4. `tests/<名前>.sh` を足し、[テスト](#テスト) の表に行を足す。
+4. `tests/<名前>.sh` を足し、[testing.md のテスト](testing.md#-テスト) の表に行を足す。
 5. README の表に行を足す。スキルは、README の使う順の図にも足す。
-6. [確かめ方](#-確かめ方) の `make verify` を通す。
+6. [testing.md](testing.md#-動かし方) の `make verify` を通す。
