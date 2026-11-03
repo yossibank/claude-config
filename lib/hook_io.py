@@ -12,7 +12,7 @@ OFF_SEPARATOR = re.compile(r"[\s,]+")
 FILE_EDIT_TOOLS = ("Edit", "Write")
 EDIT_TOOLS = (*FILE_EDIT_TOOLS, "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
-SHELL_KEYWORDS = {"!", "{", "do", "elif", "else", "then"}
+SHELL_KEYWORDS = {"!", "{", "do", "elif", "else", "if", "then", "until", "while"}
 PREFIX_VALUE_OPTIONS = {
     "builtin": set(),
     "command": set(),

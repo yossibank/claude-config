@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 
@@ -13,7 +14,7 @@ CHECK_SH = os.path.join(ROOT, "skills", "pr-create", "scripts", "run-check.sh")
 PUSH_SKIPPED = {"--delete", "-d"}
 SHELLS = {"bash", "sh", "zsh"}
 UNRESOLVED = object()
-SUBSTITUTED = "$SUB"
+SUBSTITUTED = re.compile(r"\$SUB(\d+)")
 
 
 def shell_command(words):
@@ -51,7 +52,7 @@ def substitutions(command):
             end = closing(command, index)
             start = index + (2 if char == "$" else 1)
             inners.append(command[start:end])
-            outer.append(SUBSTITUTED)
+            outer.append(f"$SUB{len(inners) - 1}")
             index = end + 1
         else:
             outer.append(char)
@@ -64,13 +65,24 @@ def closing(command, start):
         end = command.find("`", start + 1)
         return len(command) if end < 0 else end
     depth = 0
-    for index in range(start + 1, len(command)):
-        if command[index] == "(":
+    quote = None
+    index = start + 1
+    while index < len(command):
+        char = command[index]
+        if char == "\\" and quote != "'":
+            index += 2
+            continue
+        if quote:
+            quote = None if char == quote else quote
+        elif char in "'\"":
+            quote = char
+        elif char == "(":
             depth += 1
-        elif command[index] == ")":
+        elif char == ")":
             depth -= 1
             if depth == 0:
                 return index
+        index += 1
     return len(command)
 
 
@@ -93,11 +105,12 @@ def push_gated(args):
 
 def gated_repo(command, cwd):
     command, inners = substitutions(command)
-    for inner in inners:
-        repo = gated_repo(inner, cwd)
-        if repo is not None:
-            return repo
     for parts in split_commands(command):
+        for word in parts:
+            for number in SUBSTITUTED.findall(word):
+                repo = gated_repo(inners[int(number)], cwd) if int(number) < len(inners) else None
+                if repo is not None:
+                    return repo
         words = command_words(parts)
         if words[:1] == ["cd"] and len(words) > 1:
             cwd = resolve(cwd, words[1])
