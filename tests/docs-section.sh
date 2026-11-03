@@ -29,5 +29,7 @@ printf '# t\n\n> ```sh\n> ## not\n> ```\n\n## a\n' >"$work/quoted.md"
 match "docs-section: 引用の中のコードの # も見出しにしない" "$(bash "$section" "$work/quoted.md" | wc -l | tr -d ' ')" 2
 
 expect "NG 読めない" "docs-section: 無いファイルは NG" bash "$section" "$work/nothing.md"
+printf '# \xff\xfe\n' >"$work/binary.md"
+expect "NG 読めない" "docs-section: UTF-8 でないファイルは NG" bash "$section" "$work/binary.md"
 
 finish

@@ -71,12 +71,12 @@ def main():
     kept = drafts_so_far(path)
 
     found = []
-    failed = set()
+    failed = {}
     for repo, app_id in apps:
         try:
             reviews = unanswered(repo, app_id)
         except Failure as error:
-            failed.add(repo)
+            failed[repo] = str(error)
             print(f"{repo} のレビューは集められなかった（NG {error}）", file=sys.stderr)
             continue
         found += reviews
@@ -87,6 +87,9 @@ def main():
     entries = [kept.get(entry["id"], entry) for entry in found]
     entries += [entry for entry in kept.values() if entry.get("app") in failed]
     write_json(path, entries)
+    if failed:
+        reasons = "、".join(f"{repo}（{reason}）" for repo, reason in failed.items())
+        fail(f"集められなかったアプリがある: {reasons}。集めた分は {path} に書いた")
     print(f"OK {path} {len(entries)} 件")
 
 

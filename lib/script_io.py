@@ -20,6 +20,8 @@ def run_main(main):
         main()
     except Failure as error:
         fail(str(error))
+    except Exception as error:
+        fail(f"{os.path.basename(sys.argv[0])}: 想定外の失敗（{type(error).__name__}: {error}）")
 
 
 def require_month(arg, usage):
