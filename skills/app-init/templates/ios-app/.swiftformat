@@ -2,6 +2,7 @@
 
 --disable wrapMultilineStatementBraces
 --disable wrapMultilineFunctionChains
+--enable blankLineAfterSwitchCase
 --enable blankLinesAfterGuardStatements
 --enable blankLinesBetweenImports
 --enable wrapIfStatementBodies
