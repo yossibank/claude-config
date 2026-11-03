@@ -23,7 +23,10 @@ if [[ $crop != full ]]; then
     filter="$filter,crop=$crop"
 fi
 
+status=0
 ffmpeg -loglevel error -y -ss "$start" -t "$duration" -i "$video" \
-    -vf "$filter,scale=320:-1,tile=${columns}x${rows}" -frames:v 1 "$out"
+    -vf "$filter,scale=320:-1,tile=${columns}x${rows}" -frames:v 1 "$out" || status=$?
+[[ $status -eq 0 ]] || { echo "NG ffmpeg が失敗した（終了コード ${status}）"; exit 1; }
+[[ -s $out ]] || { echo "NG 画像ができなかった: $out"; exit 1; }
 
 echo "OK ${out}（${count} コマ、${columns} 列）"

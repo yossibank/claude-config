@@ -18,7 +18,7 @@ def main():
     want = sys.argv[2] if len(sys.argv) > 2 else ""
     try:
         lines = Path(path).read_text(encoding="utf-8").splitlines()
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         print(f"NG 読めない: {path}")
         sys.exit(1)
     depth = None
