@@ -48,6 +48,7 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/store-reply.sh` | 通信せずに試す。引数の NG・返信済みのレビューの除外・`--dry-run` で送らないこと・送る JSON の形を確かめる |
 | `tests/store-report.sh` | 通信せずに、引数の NG と売上の表の集計を出せるか。取れなかった数字を WARNING に書くか |
 | `tests/swift-format.sh` | Mintfile に swiftformat がある時だけ走らせるか。時間切れと失敗で止めずに知らせるか |
+| `tests/swift-style-check.sh` | 整形で直らない改行と空行の外れで止め、合う時は通すか。文字列とコメントの中は見ないか |
 | `tests/ui-record.sh` | 偽の ffmpeg と偽の xcrun で、コマ数と出力先を決められ、引数の NG を出すか |
 | `tests/ui-snapshot.sh` | パッケージにテストのターゲットを足せ、引数や出力先が違う時は走らせる前に NG にするか |
 
