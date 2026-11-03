@@ -1,5 +1,5 @@
 import GRDB
 
-enum MigrationV1 {
+enum MigrationV001 {
     static func migrate(_: Database) throws {}
 }
