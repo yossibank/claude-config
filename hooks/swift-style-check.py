@@ -9,7 +9,9 @@ from hook_io import block_on_findings, target_paths  # noqa: E402
 WIDTH = 100
 INDENT = 4
 
-TERNARY = re.compile(r"(&&|\|\|).* \? .* : ")
+LOGICAL = re.compile(r"&&|\|\|")
+ASSIGN = re.compile(r"(?<![=!<>])=(?!=)")
+RETURN = re.compile(r"^return\b")
 DECLARATION = re.compile(r"^\s*(?:[@\w]+(?:\([^)]*\))?\s+)*(?:func\s+[^\s(]+|init[?!]?|subscript)(?:<[^>]*>)?\($")
 CONTAINER = re.compile(
     r"^\s*(?:"
@@ -87,9 +89,25 @@ def indent_of(line):
     return len(line) - len(line.lstrip(" "))
 
 
+def ternary_condition(line, mark):
+    depth = 0
+    for index in range(mark - 1, -1, -1):
+        c = line[index]
+        if c in ")]":
+            depth += 1
+        elif c in "([":
+            if depth == 0:
+                return line[index + 1 : mark]
+            depth -= 1
+        elif depth == 0 and (c in ",{" or ASSIGN.match(line, index)):
+            return line[index + 1 : mark]
+    return line[:mark]
+
+
 def check_ternary(code):
     for n, line in enumerate(code, 1):
-        if TERNARY.search(line):
+        marks = [index for index in range(len(line)) if line.startswith(" ? ", index)]
+        if any(line.find(" : ", mark) > 0 and LOGICAL.search(ternary_condition(line, mark)) for mark in marks):
             yield n, "条件に && か || がある三項演算子は、? と : の前で折り返す"
 
 
@@ -142,7 +160,7 @@ def check_returns(code, lines):
         if len(items) < 2 or any(first != last for first, last in items):
             continue
         heads = [code[first].strip() for first, _ in items]
-        if not heads[-1].startswith("return") or not all(head.startswith("let ") for head in heads[:-1]):
+        if not RETURN.match(heads[-1]) or not all(head.startswith("let ") for head in heads[:-1]):
             continue
         for before, after in zip(items, items[1:]):
             if blank_between(lines, before, after):

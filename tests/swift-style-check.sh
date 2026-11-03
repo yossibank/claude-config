@@ -20,6 +20,8 @@ style_case() {
 style_case 2 "&& のある三項演算子を 1 行に書けば止める" $'var a: Int {\n    b && c ? 1 : 2\n}' "Case.swift:2: 条件に && か ||"
 style_case 0 "&& のある三項演算子を折り返せば通る" $'var a: Int {\n    b && c\n        ? 1\n        : 2\n}'
 style_case 0 "条件が 1 つの三項演算子は 1 行で通る" $'var a: Int {\n    b ? 1 : 2\n}'
+style_case 0 "三項演算子の条件の外にある && は見ない" $'func a() {\n    if b && c { d = e ? 1 : 2 }\n    f(g && h, i ? 1 : 2)\n}'
+style_case 2 "代入の後ろの条件にある && で止める" $'func a() {\n    b = c == d && e ? 1 : 2\n}' "Case.swift:2: 条件に && か ||"
 style_case 0 "文字列とコメントの中の && と ? は見ない" $'let a = "x && y ? 1 : 2" // b || c ? 1 : 2'
 
 style_case 2 "引数が 1 つの宣言を、収まるのに折り返せば止める" $'func a(\n    b: Int\n) {}' "Case.swift:1: 引数が 1 つの宣言"
@@ -31,6 +33,7 @@ style_case 0 "1 行にすると 100 字を超える宣言は折り返して通�
 ) {}"
 
 style_case 2 "1 行の let と return の間に空行があれば止める" $'var a: Int {\n    let b = 1\n    let c = 2\n\n    return b + c\n}' "Case.swift:5: 1 行の let の並び"
+style_case 0 "return で始まる名前への代入は return と数えない" $'func a() {\n    let b = 1\n\n    returnValue = b\n}'
 style_case 0 "1 行の let と return を続けて書けば通る" $'var a: Int {\n    let b = 1\n    let c = 2\n    let d = 3\n    return b + c + d\n}'
 
 style_case 2 "同じ型の 1 行のビューの間に空行があれば止める" $'var a: some View {\n    VStack {\n        Text("a")\n\n        Text("b")\n    }\n}' "Case.swift:5: 同じ型の 1 行のビュー"

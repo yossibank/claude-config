@@ -146,7 +146,7 @@ flowchart LR
     editBefore --> detect["rules-detect-bash-edits"]
     editAfter["Edit・Write の後"] -->|.md だけ| docs["docs-check"]
     editAfter -->|.swift だけ| swift["swift-format"]
-    editAfter -->|.swift だけ| style["swift-style-check"]
+    swift --> style["swift-style-check"]
     editAfter -->|.sh だけ| shell["shell-check"]
     editAfter --> detect
     bashBefore["Bash の前"] --> detect
@@ -173,7 +173,7 @@ flowchart LR
 | [rules-require-read](hooks/rules-require-read.py) | 🛑 止める | rules の `.md` の Read と、Edit・Write の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
 | [shell-check](hooks/shell-check.py) | 💬 知らせる | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
 | [swift-format](hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
-| [swift-style-check](hooks/swift-style-check.py) | 💬 知らせる | `.swift` を Edit・Write した後 | `.swift` が、整形で直らない `rules/swift-*.md` の改行と空行に合わない時 |
+| [swift-style-check](hooks/swift-style-check.py) | 💬 知らせる | `.swift` を Edit・Write した後。swift-format の後に順に走る | `.swift` が、整形で直らない `rules/swift-*.md` の改行と空行に合わない時 |
 
 pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。
 
