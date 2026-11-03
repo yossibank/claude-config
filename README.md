@@ -98,6 +98,7 @@ PR を積んで出す時だけ入れる。squash でマージしても積んだ 
 | 文書 | 読む時 | 中身 |
 | --- | --- | --- |
 | [docs/architecture-ios.md](docs/architecture-ios.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
+| [docs/architecture-ios-naming.md](docs/architecture-ios-naming.md) | ファイルを足す・名前を付ける時 | iOS アプリのフォルダとファイルの名前、迷いやすい置き場所 |
 | [docs/improvements.md](docs/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
 | [docs/development.md](docs/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・スクリプト・足し方 |
 | [docs/testing.md](docs/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方・テストの共通の処理 |
