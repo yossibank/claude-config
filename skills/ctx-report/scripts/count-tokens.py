@@ -11,22 +11,17 @@ from transcripts import entries, projects_dir, repo_of, sessions_since, subagent
 WEIGHTS = {"input": 1, "write_5m": 1.25, "write_1h": 2, "read": 0.1, "output": 5}
 
 
-def usage_of(path, seen, month=None):
+def usage_of(path, seen, month):
     requests = {}
     custom = ai = ""
     place = ""
     branches = collections.Counter()
-    first = None
     for entry in entries(path):
         kind = entry.get("type")
         if kind == "custom-title":
             custom = entry.get("customTitle") or custom
         if kind == "ai-title":
             ai = entry.get("aiTitle") or ai
-        if entry.get("timestamp") and first is None:
-            first = to_jst(entry["timestamp"])
-            if month and month_of(entry["timestamp"]) != month:
-                return None
         if entry.get("cwd") and not place:
             place = repo_of(entry["cwd"]) or os.path.basename(entry["cwd"])
         if entry.get("gitBranch"):
@@ -35,15 +30,18 @@ def usage_of(path, seen, month=None):
             message = entry.get("message", {})
             usage = message.get("usage")
             key = entry.get("requestId") or message.get("id")
-            if usage and key:
-                requests[key] = usage
+            stamp = entry.get("timestamp")
+            if usage and key and stamp and month_of(stamp) == month:
+                requests[key] = (usage, to_jst(stamp))
     total = {name: 0 for name in WEIGHTS}
     counted = 0
-    for key, usage in requests.items():
+    first = None
+    for key, (usage, moment) in requests.items():
         if key in seen:
             continue
         seen.add(key)
         counted += 1
+        first = moment if first is None else min(first, moment)
         cache = usage.get("cache_creation") or {}
         written = usage.get("cache_creation_input_tokens", 0)
         hour = cache.get("ephemeral_1h_input_tokens", 0)
@@ -82,7 +80,7 @@ def main():
             continue
         sub = 0
         for agent in subagents_of(path):
-            sub += weighted(usage_of(agent, seen)["total"])
+            sub += weighted(usage_of(agent, seen, month)["total"])
         main_weight = weighted(session["total"])
         rows.append((main_weight + sub, sub, session))
 
