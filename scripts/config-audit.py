@@ -437,7 +437,7 @@ def check_ledger():
         cells = [cell.strip() for cell in line.strip("|").split("|")]
         if len(cells) < 3 or cells[1] == "場所" or set(cells[1]) <= {"-", " "}:
             continue
-        found = BACKTICKED.search(cells[1])
+        found = BACKTICKED.match(cells[1])
         if not found:
             yield LEDGER, number, f"台帳の場所の先頭にパスが無い: {cells[1]}"
         elif not os.path.exists(os.path.join(ROOT, found.group(1))):
