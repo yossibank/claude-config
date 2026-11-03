@@ -74,6 +74,35 @@ check "run-check: 確認の間に変わった記録を NG で残す" grep -q "^N
 rm -f "$repo/changed.txt"
 bash "$scripts/run-check.sh" "$repo" --drop touchy >/dev/null
 
+required=$(git_file "$repo" pr-required)
+checks=$(git_file "$repo" pr-checks)
+printf 'verify:\n\ttrue\n' >"$repo/Makefile"
+bash "$scripts/classify-diff.sh" "$repo" origin/main >/dev/null
+check "classify-diff: make の目標の確認は、要る確認として記録する" test "$(cat "$required")" == "make verify"
+rm -f "$checks"
+bash "$scripts/run-check.sh" "$repo" lint true >/dev/null
+expect "NG 要る確認を通していない: make verify" "run-check: 要る確認を通さずに別の確認だけ通しても --status は NG" bash "$scripts/run-check.sh" "$repo" --status
+bash "$scripts/run-check.sh" "$repo" verify make verify >/dev/null
+expect OK "run-check: 要る確認を通せば --status は通る" bash "$scripts/run-check.sh" "$repo" --status
+rm -f "$checks"
+state=$(bash "$scripts/hash-state.sh" "$repo")
+printf 'OK\tverify\t%s\n' "$state" >"$checks"
+expect "NG 要る確認を通していない" "run-check: 4 列目の無い古い行は要る確認と数えない" bash "$scripts/run-check.sh" "$repo" --status
+rm -f "$checks"
+rm -f "$repo/Makefile"
+docs_repo="$work/docs-repo"
+clone_with_origin "$docs_repo"
+printf 'verify-docs:\n\ttrue\n' >"$docs_repo/Makefile"
+commit "$docs_repo" makefile
+git -C "$docs_repo" push -q origin main
+echo b >>"$docs_repo/a.md"
+bash "$scripts/classify-diff.sh" "$docs_repo" origin/main >/dev/null
+check "classify-diff: docs の差分は make verify-docs を要る確認にする" test "$(cat "$(git_file "$docs_repo" pr-required)")" == "make verify-docs"
+echo b >"$repo/b.md"
+bash "$scripts/classify-diff.sh" "$repo" origin/main >/dev/null
+check "classify-diff: make の目標でなければ要る確認の記録を消す" test ! -e "$required"
+rm -f "$repo/b.md" "$checks"
+
 route="$scripts/route-pr.sh"
 echo body >"$work/body.txt"
 fake_gh 'echo "o n ${GH_PERMISSION:-WRITE}"'

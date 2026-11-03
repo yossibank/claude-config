@@ -141,11 +141,11 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
 | `tests/docs-polish.sh` | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
-| `tests/pr-create.sh` | ワークツリー・PR の重さ・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
+| `tests/pr-create.sh` | ワークツリー・PR の重さ・要る確認・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
-| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
+| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。refspec 付きの `--tags` も止めるか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか。積んだブランチを main に載せ直し、ぶつかる時は残すか |
-| `tests/rules-detect-bash-edits.sh` | Bash での書き換えを見つけるか。git だけのコマンドと、Bash の間に Edit・Write で変えたファイルを数えないか |
+| `tests/rules-detect-bash-edits.sh` | Bash と git checkout での書き換えを見つけるか。読むだけの git と、Bash の間に Edit・Write で変えたファイルを数えないか |
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか。`CC_HOOKS_OFF` を run.sh と hook_io で同じ名前に分けるか |
 | `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |
 | `tests/store-release.sh` | 掲載情報の字数と形、プライバシーの申告の足りなさを確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
