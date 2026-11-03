@@ -211,11 +211,12 @@ d=$(copy verb-ok)
 replace "$d/docs/development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
 mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/glue-frames.sh"
 replace "$d/skills/ui-record/SKILL.md" 'tile-frames.sh' 'glue-frames.sh'
+replace "$d/docs/improvements.md" 'tile-frames.sh' 'glue-frames.sh'
 expect_audit "$d" OK "動詞の表にある動詞で始まるスクリプト"
 
 d=$(copy verb-ng)
-mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/frames-tile.sh"
-expect_audit "$d" "頭の動詞が動詞の表に無い: frames" "動詞で始まらないスクリプト"
+mv "$d/skills/ui-record/scripts/record-video.sh" "$d/skills/ui-record/scripts/video-record.sh"
+expect_audit "$d" "頭の動詞が動詞の表に無い: video" "動詞で始まらないスクリプト"
 
 d=$(copy path-ok)
 printf '\n`hooks/<名前>.py` と `scripts/verify.sh` を読む。\n' >>"$d/docs/architecture-ios.md"
@@ -224,6 +225,18 @@ expect_audit "$d" OK "印の入ったパスと、アプリのひな形にある�
 d=$(copy path-ng)
 printf '\n`hooks/nothing.py` を読む。\n' >>"$d/docs/architecture-ios.md"
 expect_audit "$d" "参照先が無い: hooks/nothing.py" "無いファイルへのパス"
+
+d=$(copy path-tests-ng)
+printf '\n`tests/nothing.sh` を読む。\n' >>"$d/docs/architecture-ios.md"
+expect_audit "$d" "参照先が無い: tests/nothing.sh" "tests/ に無いファイルへのパス"
+
+d=$(copy ledger-no-path)
+replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| 前置きだけの文 |'
+expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きだけの文" "台帳の場所にパスが無い行"
+
+d=$(copy ledger-missing-path)
+replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| `hooks/nothing.sh` |'
+expect_audit "$d" "台帳の場所のパスが無い: hooks/nothing.sh" "台帳の場所のパスが無い行"
 
 d=$(copy template-script-ng)
 replace "$d/skills/app-init/templates/ios-app/Makefile" 'scripts/render-snapshots.sh' 'scripts/render.sh'

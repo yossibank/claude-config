@@ -19,6 +19,9 @@ from script_io import fail  # noqa: E402
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
+LEDGER = os.path.join(ROOT, "docs", "improvements.md")
+LEDGER_SECTION = "## 📝 残っている改善"
+BACKTICKED = re.compile(r"`([^`]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 ANCHOR_LINK = re.compile(r"\]\(([^)#\s]*)#([^)\s]+)\)")
 INLINE_CODE = re.compile(r"`[^`]*`")
@@ -31,7 +34,7 @@ INLINE_PYTHON = re.compile(r"\bpython3?(?: -I)? -c\b")
 SCRIPT_HEADER = "set -euo pipefail"
 WORKTREES_LITERAL = ".claude/worktrees"
 SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
-PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills)/[A-Za-z0-9_./-]*)(.?)")
+PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills|tests|agents|settings|output-styles)/[A-Za-z0-9_./-]*)(.?)")
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
 TEMPLATE_TOKEN = re.compile(r"__[A-Za-z]+__")
 LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:py|sh)")
@@ -424,6 +427,23 @@ def check_paths():
                 yield path, number, f"参照先が無い: {reference}"
 
 
+def check_ledger():
+    in_section = False
+    for number, line in enumerate(read(LEDGER).split("\n"), 1):
+        if line.startswith("## "):
+            in_section = line == LEDGER_SECTION
+        if not in_section or not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) < 3 or cells[1] == "場所" or set(cells[1]) <= {"-", " "}:
+            continue
+        found = BACKTICKED.search(cells[1])
+        if not found:
+            yield LEDGER, number, f"台帳の場所の先頭にパスが無い: {cells[1]}"
+        elif not os.path.exists(os.path.join(ROOT, found.group(1))):
+            yield LEDGER, number, f"台帳の場所のパスが無い: {found.group(1)}"
+
+
 def check_template_scripts():
     files = [path for path in tracked("skills/*/templates/**") if path.endswith((".sh", "/Makefile"))]
     for path in files:
@@ -614,6 +634,7 @@ CHECKS = [
     check_links,
     check_anchors,
     check_paths,
+    check_ledger,
     check_docs,
 ]
 
