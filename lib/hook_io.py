@@ -12,6 +12,7 @@ OFF_SEPARATOR = re.compile(r"[\s,]+")
 FILE_EDIT_TOOLS = ("Edit", "Write")
 EDIT_TOOLS = (*FILE_EDIT_TOOLS, "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+SHELL_KEYWORDS = {"!", "{", "do", "elif", "else", "then"}
 PREFIX_VALUE_OPTIONS = {
     "builtin": set(),
     "command": set(),
@@ -93,7 +94,7 @@ def split_commands(command):
 def command_words(words):
     index = 0
     while index < len(words):
-        if ASSIGNMENT.match(words[index]):
+        if ASSIGNMENT.match(words[index]) or words[index] in SHELL_KEYWORDS:
             index += 1
         elif os.path.basename(words[index]) in PREFIX_VALUE_OPTIONS:
             name = os.path.basename(words[index])
