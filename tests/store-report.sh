@@ -37,6 +37,63 @@ EOF
 check "fetch-sales: 課金をアプリにまとめ、ダウンロードと通貨ごとの収益を数える" \
     test "$summary" = $'111\t10\t300.00 JPY 1.50 USD\n222\t5\t0'
 
+daily=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
+import sys
+import urllib.error
+from datetime import date
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+from script_io import Failure
+
+sales = load_module(sys.argv[2])
+sales.require_keys = lambda keys: None
+header = "SKU\tApple Identifier\tParent Identifier\tUnits\tDeveloper Proceeds\tProduct Type Identifier\tCurrency of Proceeds\n"
+
+
+def missing():
+    return urllib.error.HTTPError("x", 404, "Not Found", None, None)
+
+
+def fake(reports):
+    def fetch_text(frequency, day):
+        if (frequency, day) not in reports:
+            raise missing()
+        return header + reports[(frequency, day)]
+    return fetch_text
+
+
+sales.fetch_text = fake({
+    ("DAILY", "2026-11-01"): "app1\t111\t\t2\t0\t1F\tJPY\n",
+    ("DAILY", "2026-11-03"): "app1\t111\t\t3\t0\t1F\tJPY\n",
+    ("DAILY", "2026-11-04"): "app1\t111\t\t9\t0\t1F\tJPY\n",
+})
+result, notice = sales.sales_by_app("2026-11", date(2026, 11, 4))
+print(f"daily\t{result['111'][0]}\t{notice}")
+
+sales.fetch_text = fake({("MONTHLY", "2026-10"): "app1\t111\t\t7\t0\t1F\tJPY\n"})
+result, notice = sales.sales_by_app("2026-10", date(2026, 11, 4))
+print(f"monthly\t{result['111'][0]}\t{notice}")
+
+sales.fetch_text = fake({})
+try:
+    sales.sales_by_app("2026-11", date(2026, 11, 4))
+except Failure as error:
+    print(f"none\t{error}")
+
+print("days", *(len(sales.month_days(m, t)) for m, t in [
+    ("2026-02", date(2026, 3, 10)),
+    ("2026-12", date(2027, 1, 5)),
+    ("2026-11", date(2026, 11, 1)),
+    ("2026-11", date(2026, 11, 4)),
+]))
+EOF
+)
+check "fetch-sales: 月のレポートが無ければ、前の日までの日ごとのレポートを足す" \
+    grep -qx $'daily\t5\t月のレポートがまだ無いので、2026-11-03 までの日ごとのレポートを足した。レポートのあった日は 2 日' <<<"$daily"
+check "fetch-sales: 月のレポートがあれば、それを使って断り書きを付けない" grep -qx $'monthly\t7\tNone' <<<"$daily"
+check "fetch-sales: 日ごとのレポートも無ければ NG" grep -qx $'none\t2026-11 のレポートがまだ無い' <<<"$daily"
+check "fetch-sales: 日ごとに読む日は、月の初めから前の日まで" grep -qx 'days 28 31 0 3' <<<"$daily"
+
 expect "月は YYYY-MM で書く" "write-report: 月の形が違えば NG" python3 -I "$scripts/write-report.py" 2026-13
 mkdir -p "$work/none"
 CC_APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "write-report: アプリが無ければ NG" python3 -I "$scripts/write-report.py" 2026-09
