@@ -89,7 +89,7 @@ print("days", *(len(sales.month_days(m, t)) for m, t in [
 EOF
 )
 check "fetch-sales: 月のレポートが無ければ、前の日までの日ごとのレポートを足す" \
-    grep -qx $'daily\t5\t月のレポートがまだ無いので、日ごとのレポートを 2 日分足した' <<<"$daily"
+    grep -qx $'daily\t5\t月のレポートがまだ無いので、2026-11-03 までの日ごとのレポートを足した。レポートのあった日は 2 日' <<<"$daily"
 check "fetch-sales: 月のレポートがあれば、それを使って断り書きを付けない" grep -qx $'monthly\t7\tNone' <<<"$daily"
 check "fetch-sales: 日ごとのレポートも無ければ NG" grep -qx $'none\t2026-11 のレポートがまだ無い' <<<"$daily"
 check "fetch-sales: 日ごとに読む日は、月の初めから前の日まで" grep -qx 'days 28 31 0 3' <<<"$daily"

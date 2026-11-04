@@ -45,9 +45,9 @@ def month_days(month, today):
     return [first + timedelta(days=offset) for offset in range((last - first).days + 1)]
 
 
-def daily_texts(month, today):
+def daily_texts(days):
     texts = []
-    for day in month_days(month, today):
+    for day in days:
         try:
             texts.append(fetch_text("DAILY", day.isoformat()))
         except urllib.error.HTTPError as error:
@@ -58,20 +58,22 @@ def daily_texts(month, today):
 
 def sales_by_app(month, today=None):
     require_keys(KEYS)
+    days = month_days(month, today or date.today())
     try:
         try:
             return summarize(fetch_text("MONTHLY", month)), None
         except urllib.error.HTTPError as error:
             if error.code != 404:
                 raise
-        texts = daily_texts(month, today or date.today())
+        texts = daily_texts(days)
     except urllib.error.HTTPError as error:
         raise Failure(f"レポートを読めなかった: {error.code}") from error
     except (*ASC_ERRORS, EOFError, zlib.error) as error:
         raise Failure(f"レポートを読めなかった: {asc_reason(error)}") from error
     if not texts:
         raise Failure(f"{month} のレポートがまだ無い")
-    return summarize(*texts), f"月のレポートがまだ無いので、日ごとのレポートを {len(texts)} 日分足した"
+    notice = f"月のレポートがまだ無いので、{days[-1].isoformat()} までの日ごとのレポートを足した。レポートのあった日は {len(texts)} 日"
+    return summarize(*texts), notice
 
 
 def summarize(*texts):

@@ -35,7 +35,7 @@ def main():
         notes.append(f"売上とダウンロードは取れなかった（{failure_of(error)}）")
     else:
         if notice:
-            notes.append(f"売上とダウンロードは月の途中までの数字（{notice}）")
+            notes.append(f"売上とダウンロードは日ごとのレポートの合計（{notice}）")
 
     rows = []
     for repo, app_id in apps:
