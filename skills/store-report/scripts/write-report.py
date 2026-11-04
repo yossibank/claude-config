@@ -29,10 +29,13 @@ def main():
     notes = []
     sales_ok = True
     try:
-        sales = fetch_sales.sales_by_app(month)
+        sales, notice = fetch_sales.sales_by_app(month)
     except Exception as error:
         sales_ok = False
         notes.append(f"売上とダウンロードは取れなかった（{failure_of(error)}）")
+    else:
+        if notice:
+            notes.append(f"売上とダウンロードは月の途中までの数字（{notice}）")
 
     rows = []
     for repo, app_id in apps:
