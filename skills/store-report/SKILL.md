@@ -60,6 +60,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 | --- | --- |
 | store-report | 財務 |
 | store-reply | カスタマーサポート |
+| store-release の `create-custom-pages.py` | App マネージャ |
 
 両方を使う時は、両方の役割を付けるか、Admin にする。
 

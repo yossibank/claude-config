@@ -96,11 +96,11 @@ def token():
     return (signing + b"." + b64(raw_signature(der))).decode()
 
 
-def asc_request(url, accept="application/json", body=None, timeout=30):
+def asc_request(url, accept="application/json", body=None, timeout=30, method=None):
     request = urllib.request.Request(
         url if url.startswith("https://") else f"{ASC_API}{url}",
         data=None if body is None else json.dumps(body).encode(),
-        method="GET" if body is None else "POST",
+        method=method or ("GET" if body is None else "POST"),
         headers={
             "Authorization": f"Bearer {token()}",
             "Accept": accept,
@@ -111,8 +111,8 @@ def asc_request(url, accept="application/json", body=None, timeout=30):
         return response.read()
 
 
-def asc_json(url, body=None, timeout=30):
-    return json.loads(asc_request(url, body=body, timeout=timeout))
+def asc_json(url, body=None, timeout=30, method=None):
+    return json.loads(asc_request(url, body=body, timeout=timeout, method=method))
 
 
 def asc_reason(error):
