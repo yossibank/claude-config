@@ -44,7 +44,7 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/rules-detect-bash-edits.sh` | Bash と git checkout での書き換えを見つけるか。読むだけの git と、Bash の間に Edit・Write で変えたファイルを数えないか |
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか。`CC_HOOKS_OFF` を run.sh と hook_io で同じ名前に分けるか |
 | `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |
-| `tests/store-release.sh` | 掲載情報の字数と形、プライバシーの申告の足りなさを確かめられるか。アーカイブの失敗をログの error の行で知らせるか |
+| `tests/store-release.sh` | 掲載情報の字数と形、申告の足りなさ、カスタムプロダクトページの案の誤りを、送る前に止めるか。アーカイブの失敗をログの error の行で知らせるか |
 | `tests/store-reply.sh` | 通信せずに試す。引数の NG・返信済みのレビューの除外・`--dry-run` で送らないこと・送る JSON の形を確かめる |
 | `tests/store-report.sh` | 通信せずに、引数の NG と売上の表の集計を出せるか。取れなかった数字を WARNING に書くか |
 | `tests/swift-format.sh` | Mintfile に swiftformat がある時だけ走らせるか。時間切れと失敗で止めずに知らせるか |
