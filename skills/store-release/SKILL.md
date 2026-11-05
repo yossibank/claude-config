@@ -1,6 +1,6 @@
 ---
 name: store-release
-description: App Store に出す前の申告・掲載情報・スクリーンショット・版を確かめ、アーカイブを TestFlight に送る。人がストアへの公開や配布を頼んだ時に使う。
+description: App Store に出す前の申告・掲載情報・スクリーンショット・版を確かめ、アーカイブを TestFlight に送る。カスタムプロダクトページも作る。人がストアへの公開や配布、ページ作りを頼んだ時に使う。
 argument-hint: "[<アプリのリポジトリ>]"
 allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh *)
 ---
@@ -18,6 +18,7 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 | `ios/<App>/PrivacyInfo.xcprivacy` | `${CLAUDE_SKILL_DIR}/../app-init/templates/ios-app/` の同じ名前 | 理由の申告が要る API と、集めるデータ |
 | `store/ja/*.txt` | `${CLAUDE_SKILL_DIR}/templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
 | `store/screenshots/` | | 6.9 インチの PNG |
+| `store/custom-pages.json` | | カスタムプロダクトページの案。作る時だけ置く |
 
 ## 手順
 
@@ -98,6 +99,35 @@ ${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム
 
 ログは、出力先の `archive.log` にある。失敗した時は、`error:` の行だけを出す。
 
+## create-custom-pages.py がすること
+
+`create-custom-pages.py` は、案のファイルのページを App Store Connect に作る。配信中の版がある時だけ使う。`--dry-run` を付けると、送らずに中身と画像の並びを出す。
+
+```sh
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-custom-pages.py <アプリのリポジトリ> [--dry-run]
+```
+
+案のファイルは、次の形で書く。
+
+```json
+{
+  "locale": "ja",
+  "screenshots": {"APP_IPHONE_61": "screenshots/6.3"},
+  "pages": [
+    {"name": "家族", "keywords": ["家族"], "lead": ["09-share.png"], "promotionalText": "…"}
+  ]
+}
+```
+
+| 項目 | 決まり |
+| --- | --- |
+| `screenshots` | 画像の型と、`store/` から見たフォルダの組。型は配信中のページにそろえる |
+| `keywords` | 配信中の版のキーワードにある語だけを選ぶ。ほかのページと同じ語は使わない |
+| `lead` | 先頭に並べる画像。残りの画像は、名前の順で後ろに続く |
+| `promotionalText` | 170 字まで |
+
+同じ名前のページが既にあれば、作らずに次へ進む。途中で止まったページは、App Store Connect で消してから実行し直す。審査への提出は、人が App Store Connect で行う。
+
 ## 報告
 
 人には、通した確認の結果と、App Store Connect で人がすることを返す。人がすることは、次の順に渡す。終えたら、人に結果を聞く。
@@ -116,4 +146,4 @@ ${CLAUDE_SKILL_DIR}/scripts/archive-app.sh <ワークスペース> <スキーム
 
 ## 制約
 
-`archive-app.sh` は外に出す操作なので、走らせる前に人の承認を得る。
+`archive-app.sh` は外に出す操作なので、走らせる前に人の承認を得る。`--dry-run` を付けない `create-custom-pages.py` も同じである。`create-custom-pages.py` の API のキーには、App マネージャの役割が要る。

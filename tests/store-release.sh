@@ -89,4 +89,108 @@ match "check-privacy: 壊れた申告のファイルは stdout に NG" "$(python
 printf '<?xml version="1.0"?>\n<plist version="1.0"><dict>\n' >"$work/priv/PrivacyInfo.xcprivacy"
 match "check-privacy: 途中で切れた XML の申告のファイルも stdout に NG" "$(python3 -I "$privacy" "$work/priv" 2>/dev/null)" "NG*"
 
+pages="$root/skills/store-release/scripts/create-custom-pages.py"
+export https_proxy=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9
+unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
+
+repo="$work/pages"
+mkdir -p "$repo/store/shots"
+printf '123456\n' >"$repo/store/app-id.txt"
+touch "$repo/store/shots/01-a.png" "$repo/store/shots/02-b.png" "$repo/store/shots/03-c.png"
+write_plan() {
+    printf '{"locale": "ja", "screenshots": {"APP_IPHONE_67": "shots"}, "pages": [%s]}\n' "$1" >"$repo/store/custom-pages.json"
+}
+page_a='{"name": "節約", "keywords": ["家計簿"], "promotionalText": "毎日の支出を記録", "lead": ["03-c.png"]}'
+
+expect "NG 使い方" "create-custom-pages: 引数が無ければ NG" python3 -I "$pages"
+
+write_plan "$page_a"
+match "create-custom-pages: --dry-run は lead の画像を先頭に並べて作る予定を出す" \
+    "$(python3 -I "$pages" "$repo" --dry-run)" "*OK 作る予定:*03-c.png → 01-a.png → 02-b.png*"
+
+rm "$repo/store/custom-pages.json"
+expect "ページの案のファイルが無い" "create-custom-pages: 案のファイルが無ければ NG" python3 -I "$pages" "$repo" --dry-run
+
+write_plan '{"name": "節約", "keywords": ["家計簿"]}, {"name": "支出", "keywords": ["家計簿"]}'
+expect "ほかのページと語が重なっている" "create-custom-pages: 同じキーワードが 2 ページにあれば NG" python3 -I "$pages" "$repo" --dry-run
+
+write_plan '{"name": "節約", "keywords": ["家計簿"]}, {"name": "節約", "keywords": ["支出"]}'
+expect "同じ name のページが 2 つある" "create-custom-pages: 同じ name のページが 2 つあれば NG" python3 -I "$pages" "$repo" --dry-run
+
+write_plan '{"name": "節約", "keywords": ["家計簿"], "lead": ["99-z.png"]}'
+expect "のフォルダに無い画像" "create-custom-pages: lead にフォルダに無い画像があれば NG" python3 -I "$pages" "$repo" --dry-run
+
+long=$(printf 'あ%.0s' $(seq 171))
+write_plan "{\"name\": \"節約\", \"keywords\": [\"家計簿\"], \"promotionalText\": \"$long\"}"
+expect "170 字まで" "create-custom-pages: promotionalText が 171 字なら NG" python3 -I "$pages" "$repo" --dry-run
+
+write_plan "$page_a"
+expect "環境変数が無い" "create-custom-pages: --dry-run 無しで ASC_* が無ければ NG" python3 -I "$pages" "$repo"
+
+# 引数: 案のあるリポジトリ、シナリオ（unapproved・existing・new）
+run_pages() {
+    ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH=z python3 -I - "$root" "$pages" "$repo" "$1" 2>&1 <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+
+module = load_module(sys.argv[2])
+repo, scenario = sys.argv[3], sys.argv[4]
+approved = {"unapproved": [], "existing": [{"id": "家計簿"}], "new": [{"id": "家計簿"}]}[scenario]
+names = [{"attributes": {"name": "節約"}}] if scenario == "existing" else []
+calls = []
+
+
+def fake(url, body=None, method=None):
+    calls.append((method or ("POST" if body else "GET"), url, body))
+    if "READY_FOR_SALE" in url:
+        return {"data": [{"id": "v1"}]}
+    if url.endswith("/appStoreVersionLocalizations?filter%5Blocale%5D=ja"):
+        return {"data": [{"id": "l1"}]}
+    if url.startswith("/v1/appStoreVersionLocalizations/l1/searchKeywords"):
+        return {"data": approved, "links": {}}
+    if url.startswith("/v1/apps/123456/appCustomProductPages"):
+        return {"data": names, "links": {}}
+    if url == "/v1/appCustomProductPages":
+        return {"data": {"id": "p1"}}
+    if url == "/v1/appCustomProductPages/p1/appCustomProductPageVersions":
+        return {"data": [{"id": "pv1"}]}
+    if url == "/v1/appCustomProductPageVersions/pv1/appCustomProductPageLocalizations":
+        return {"data": [{"id": "pl1", "attributes": {"locale": "ja"}}]}
+    if url == "/v1/appScreenshotSets":
+        return {"data": {"id": "s1"}}
+    if url == "/v1/appScreenshots":
+        return {"data": {"id": "shot1", "attributes": {"uploadOperations": [{"url": "u", "method": "PUT", "offset": 0, "length": 0}]}}}
+    return {"data": {}}
+
+
+module.asc_json = fake
+module.asc_request = lambda url, body=None, **kwargs: calls.append(("REQUEST", url, body))
+module.put_parts = lambda operations, data: calls.append(("PUT", "parts", None))
+sys.argv = ["create-custom-pages.py", repo]
+try:
+    module.main()
+except SystemExit:
+    pass
+for method, url, body in calls:
+    print(f"CALL {method} {url}")
+    if url.endswith("relationships/searchKeywords"):
+        print(f"KEYWORDS {body['data'][0]['id']}")
+    if method == "PATCH":
+        print(f"CHECKSUM {body['data']['attributes']['sourceFileChecksum']}")
+EOF
+}
+
+out=$(run_pages unapproved)
+match "create-custom-pages: 配信中の版に無い語は NG で、ページを作る POST をしない" "$out" "*NG 節約: 配信中の版のキーワードに無い語: 家計簿*"
+check "create-custom-pages: 語が通らなければ appCustomProductPages に POST しない" test -z "$(grep -x 'CALL POST /v1/appCustomProductPages' <<<"$out")"
+
+match "create-custom-pages: 既にある名前のページは作らない" "$(run_pages existing)" "*OK 節約 は既にあるので作らなかった*"
+
+out=$(run_pages new)
+check "create-custom-pages: 新しいページは POST で作る" grep -qx 'CALL POST /v1/appCustomProductPages' <<<"$out"
+check "create-custom-pages: キーワードを searchKeywords の関係に入れる" grep -qx 'KEYWORDS 家計簿' <<<"$out"
+check "create-custom-pages: 画像を PATCH で確定し、md5 の sourceFileChecksum を付ける" grep -qx 'CHECKSUM d41d8cd98f00b204e9800998ecf8427e' <<<"$out"
+check "create-custom-pages: 画像の確定は appScreenshots/<id> への PATCH" grep -qx 'CALL PATCH /v1/appScreenshots/shot1' <<<"$out"
+
 finish
