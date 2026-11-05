@@ -114,6 +114,9 @@ expect "ページの案のファイルが無い" "create-custom-pages: 案のフ
 write_plan '{"name": "節約", "keywords": ["家計簿"]}, {"name": "支出", "keywords": ["家計簿"]}'
 expect "ほかのページと語が重なっている" "create-custom-pages: 同じキーワードが 2 ページにあれば NG" python3 -I "$pages" "$repo" --dry-run
 
+write_plan '{"name": "節約", "keywords": ["家計簿"]}, {"name": "節約", "keywords": ["支出"]}'
+expect "同じ name のページが 2 つある" "create-custom-pages: 同じ name のページが 2 つあれば NG" python3 -I "$pages" "$repo" --dry-run
+
 write_plan '{"name": "節約", "keywords": ["家計簿"], "lead": ["99-z.png"]}'
 expect "のフォルダに無い画像" "create-custom-pages: lead にフォルダに無い画像があれば NG" python3 -I "$pages" "$repo" --dry-run
 
