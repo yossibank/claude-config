@@ -1,6 +1,6 @@
 ---
 name: store-release
-description: App Store に出す前の申告・掲載情報・スクリーンショット・版を確かめ、アーカイブを TestFlight に送る。人がストアへの公開や配布を頼んだ時に使う。
+description: App Store に出す前の申告・掲載情報・スクリーンショット・版を確かめ、アーカイブを TestFlight に送る。カスタムプロダクトページも作る。人がストアへの公開や配布、ページ作りを頼んだ時に使う。
 argument-hint: "[<アプリのリポジトリ>]"
 allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh *)
 ---

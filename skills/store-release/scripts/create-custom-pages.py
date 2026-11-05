@@ -50,10 +50,13 @@ def screenshot_folders(store, plan):
     return folders
 
 
-def check_page(page, folders, used):
+def check_page(page, folders, used, names):
     name = page.get("name")
     if not isinstance(name, str) or not name.strip():
         raise Failure("ページの name が空")
+    if name in names:
+        raise Failure(f"{name}: 同じ name のページが 2 つある")
+    names.add(name)
     keywords = page.get("keywords")
     if not isinstance(keywords, list) or not keywords or not all(isinstance(word, str) for word in keywords):
         raise Failure(f"{name}: keywords に語を 1 つ以上書く")
@@ -84,10 +87,11 @@ def read_plan(repo):
         raise Failure("pages にページを 1 つ以上書く")
     folders = screenshot_folders(store, plan)
     used = set()
+    names = set()
     for page in pages:
         if not isinstance(page, dict):
             raise Failure("pages の中身は、ページごとのオブジェクトにする")
-        check_page(page, folders, used)
+        check_page(page, folders, used, names)
     return read_app(store), locale, folders, pages
 
 
@@ -152,8 +156,13 @@ def page_body(app, locale, page):
 
 def page_localization(page, locale):
     versions = asc_json(f"/v1/appCustomProductPages/{page}/appCustomProductPageVersions")["data"]
+    if not versions:
+        raise ValueError("作ったページに版が無い")
     localizations = asc_json(f"/v1/appCustomProductPageVersions/{versions[0]['id']}/appCustomProductPageLocalizations")
-    return next(item["id"] for item in localizations["data"] if item["attributes"]["locale"] == locale)
+    matched = [item["id"] for item in localizations["data"] if item["attributes"]["locale"] == locale]
+    if not matched:
+        raise ValueError(f"作ったページに {locale} の掲載情報が無い")
+    return matched[0]
 
 
 def add_keywords(localization, keywords):
