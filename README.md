@@ -6,6 +6,8 @@ Claude Code の、全リポジトリに共通の決まり。`~/.claude` から�
 ![Python 3.9+](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)
 ![Bash](https://img.shields.io/badge/Bash-4EAA25?logo=gnubash&logoColor=white)
 
+決まりを守らせるフック ・ 作業の手順のスキル ・ 仕事を任せるエージェント ・ アプリのひな形と共通の構成
+
 したいことに合わせて、次の節から読む。
 
 | したいこと | 読む節 | 次に読む |
