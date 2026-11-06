@@ -149,7 +149,7 @@ flowchart LR
     editBefore --> detect["rules-detect-bash-edits"]
     editAfter["Edit・Write の後"] -->|.md だけ| docs["docs-check"]
     editAfter -->|.swift だけ| swift["swift-format"]
-    swift --> style["swift-style-check"]
+    swift --> swiftStyle["swift-style-check"]
     editAfter -->|.sh だけ| shell["shell-check"]
     editAfter --> detect
     bashBefore["Bash の前"] --> detect
@@ -162,7 +162,7 @@ flowchart LR
     classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
     classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
     class limit,require,gate block
-    class docs,style,shell,detect,clear inform
+    class docs,swiftStyle,shell,detect,clear inform
     class swift tidy
 ```
 
