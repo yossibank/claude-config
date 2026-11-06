@@ -15,6 +15,21 @@ PUSH_SKIPPED = {"--delete", "-d"}
 SHELLS = {"bash", "sh", "zsh"}
 UNRESOLVED = object()
 SUBSTITUTED = re.compile(r"\$SUB(\d+)")
+QUOTED_HEREDOC = re.compile(r"(?<!<)<<(-?)\s*(['\"])([^'\"\s]+)\2")
+
+
+def without_quoted_heredocs(command):
+    kept = []
+    ends = []
+    for line in command.split("\n"):
+        if ends:
+            strip, end = ends[0]
+            if (line.lstrip("\t") if strip else line) == end:
+                ends.pop(0)
+            continue
+        kept.append(line)
+        ends = [(strip == "-", end) for strip, _, end in QUOTED_HEREDOC.findall(line)]
+    return "\n".join(kept)
 
 
 def shell_command(words):
@@ -104,7 +119,7 @@ def push_gated(args):
 
 
 def gated_repo(command, cwd):
-    command, inners = substitutions(command)
+    command, inners = substitutions(without_quoted_heredocs(command))
     for parts in split_commands(command):
         for word in parts:
             for number in SUBSTITUTED.findall(word):
