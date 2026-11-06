@@ -17,7 +17,9 @@ doc_case() {
         ng "docs-check: ${label}（終了コード ${status}、期待は ${expect} と「${want}」）" "$out"
     fi
 }
+mkdir -p "$work/docs-case/.git"
 doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
+doc_case 0 "直下ではない README には文の段落を書ける" sub/README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n次のコマンドで入れる。'
 doc_case 2 "コードも一文の字数に数える" README.md $'# t\n\n`/very/long/path/that/goes/on/and/on/and/on/and/on/x.sh` を走らせて結果を確かめる。'
 doc_case 2 "段落は 3 文まで" README.md $'# t\n\n一つ目。二つ目。三つ目。四つ目。'
 doc_case 0 "一文の読点は 3 つまで通る" README.md $'# t\n\nあ、い、う、えを使う。'

@@ -42,6 +42,7 @@ COMMAND = re.compile(
 )
 MEMORY = re.compile(r"/\.claude/projects/[^/]+/memory/")
 HANDOFF = re.compile(r"/\.claude/handoff\.md$")
+TEMPLATE_README = re.compile(r"/templates/[^/]+/README\.md$")
 POLITE = re.compile(r"(です|(?<![済冷覚澄励醒騙だすさ])(?<!はげ)ます|ました|ません)(?=[。！？!?]|\s*$)")
 LINK = re.compile(r"!?\[[^\]]*\]\([^)]*\)|<https?://[^>]*>|https?://\S+")
 QUOTED = re.compile(r"「[^」]*」")
@@ -306,6 +307,11 @@ def check_shields(doc):
     return [(number, message) for number, _, _, what in doc.rows if what != "code" and SHIELDS in doc.lines[number - 1]]
 
 
+def is_entry_readme(doc):
+    folder = os.path.dirname(os.path.abspath(doc.path))
+    return doc.readme and (os.path.exists(os.path.join(folder, ".git")) or TEMPLATE_README.search(doc.path) is not None)
+
+
 def check_readme_body(doc):
     found = []
     in_section = False
@@ -483,7 +489,7 @@ CHECKS = [
     (always, check_blocks),
     (always, check_toc),
     (lambda doc: doc.human, check_shields),
-    (lambda doc: doc.readme, check_readme_body),
+    (is_entry_readme, check_readme_body),
     (always, check_list_endings),
     (always, check_short_lists),
     (lambda doc: doc.readme, check_readme_order),

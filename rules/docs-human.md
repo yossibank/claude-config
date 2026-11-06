@@ -93,7 +93,7 @@ python3 -I ~/Applications/AI/claude-config/scripts/docs-tech-icons.py docs/image
 
 ## README の形
 
-README は、表・図・画像で見せる。文は冒頭の 1 文だけにし、アラートは使わない。
+リポジトリの直下とひな形の README は、表・図・画像で見せる。文は冒頭の 1 文だけにし、アラートは使わない。
 
 | 順 | 節 | 中身 |
 | --- | --- | --- |
