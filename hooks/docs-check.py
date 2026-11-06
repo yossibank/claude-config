@@ -18,7 +18,7 @@ SENTENCES = 3
 CELL_SENTENCES = 2
 SIZE_LIMIT = 15_000
 ALERTS = ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"]
-STATE_BADGES = ["workflow", "release", "license"]
+SHIELDS = "https://img.shields.io/"
 INLINE_CODE_LIMIT = 40
 NOTE_LINES = 3
 SHORT_LIST = 2
@@ -34,7 +34,6 @@ SPACE = re.compile(rf"[{JA}][A-Za-z0-9]|[A-Za-z0-9][{JA}]")
 HAS_JA = re.compile(rf"[{JA}]")
 ALERT = re.compile(r"^>\s*\[!([A-Za-z]+)\]")
 TREE = re.compile(r"[├└]──")
-BADGE = re.compile(r"!\[[^\]]*\]\((https://img\.shields\.io/[^)\s]+)\)")
 TOC_ITEM = re.compile(r"^([-*]|\d+\.)\s+\[[^\]]+\]\(#[^)]*\)\s*$")
 DECORATION = re.compile(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|!\[[^\]]*\]\([^)]*\)|</?[A-Za-z][A-Za-z0-9]*(\s[^>]*)?/?>")
 TREE_NOTE = re.compile(r"#|\s{2,}\S")
@@ -43,6 +42,7 @@ COMMAND = re.compile(
 )
 MEMORY = re.compile(r"/\.claude/projects/[^/]+/memory/")
 HANDOFF = re.compile(r"/\.claude/handoff\.md$")
+TEMPLATE_README = re.compile(r"/templates/[^/]+/README\.md$")
 POLITE = re.compile(r"(です|(?<![済冷覚澄励醒騙だすさ])(?<!はげ)ます|ました|ません)(?=[。！？!?]|\s*$)")
 LINK = re.compile(r"!?\[[^\]]*\]\([^)]*\)|<https?://[^>]*>|https?://\S+")
 QUOTED = re.compile(r"「[^」]*」")
@@ -85,7 +85,7 @@ def check_headings(doc):
                 marked[number] = bool(emojis)
                 if emojis and doc.human and allowed and bare(emojis[0]) not in allowed:
                     found.append((number, f"## の見出しの絵文字は rules/docs-human.md の表から選ぶ（{emojis[0]}）"))
-        elif what in ("body", "quote") and heading:
+        elif heading and (what in ("body", "quote") or (doc.readme and what != "blank")):
             heading[1] = True
     if doc.human and "/docs/decisions/" not in doc.path and marked and not all(marked.values()):
         first = min(number for number, has in marked.items() if not has)
@@ -302,37 +302,27 @@ def check_toc(doc):
     return found
 
 
-def badges_of(doc):
-    return [(number, url) for number, _, _, what in doc.rows if what != "code" for url in BADGE.findall(doc.lines[number - 1])]
+def check_shields(doc):
+    message = "shields.io のバッジは使わない。技術は scripts/docs-tech-icons.py の SVG にする"
+    return [(number, message) for number, _, _, what in doc.rows if what != "code" and SHIELDS in doc.lines[number - 1]]
 
 
-def check_badges(doc):
-    return check_badge_order(doc.lines, badges_of(doc))
+def is_entry_readme(doc):
+    folder = os.path.dirname(os.path.abspath(doc.path))
+    return doc.readme and (os.path.exists(os.path.join(folder, ".git")) or TEMPLATE_README.search(doc.path) is not None)
 
 
-def check_badge_order(lines, badges):
+def check_readme_body(doc):
     found = []
-    first_tech = last_state = None
-    rank = 0
-    dynamic_lines = {number for number, url in badges if "/badge/" not in url}
-    for number, url in badges:
-        if "/badge/" in url and (number in dynamic_lines or any(key in url.lower() for key in STATE_BADGES)):
-            found.append((number, "状態の段は動的なバッジにする。/badge/ の固定のバッジを置かない"))
-            continue
-        if "/badge/" in url:
-            first_tech = first_tech or number
-            continue
-        if first_tech:
-            found.append((number, "バッジは、状態の段を技術の段より先に並べる"))
-            continue
-        state = next((index for index, key in enumerate(STATE_BADGES) if key in url), None)
-        if state is not None and state < rank:
-            found.append((number, "状態のバッジは CI → リリース → ライセンスの順に並べる"))
-        rank = max(rank, state or 0)
-        last_state = number
-    between = range(last_state or 0, (first_tech or 0) + 1)
-    if first_tech and last_state and last_state <= first_tech and all(lines[n - 1].strip() for n in between):
-        found.append((first_tech, "状態と技術のバッジの段の間を、空行で分ける"))
+    in_section = False
+    for number, text, _, what in doc.rows:
+        line = doc.lines[number - 1]
+        if what == "heading":
+            in_section = in_section or heading_level(text) >= 2
+        elif what == "quote" and ALERT.match(text.strip()):
+            found.append((number, "README にはアラートを使わない"))
+        elif what == "body" and in_section and not is_decoration(line) and not is_link_only(line):
+            found.append((number, "README の節には文の段落を書かない。表・図・画像・箇条書きにする"))
     return found
 
 
@@ -498,7 +488,8 @@ CHECKS = [
     (always, check_sections),
     (always, check_blocks),
     (always, check_toc),
-    (always, check_badges),
+    (lambda doc: doc.human, check_shields),
+    (is_entry_readme, check_readme_body),
     (always, check_list_endings),
     (always, check_short_lists),
     (lambda doc: doc.readme, check_readme_order),

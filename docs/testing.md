@@ -37,6 +37,7 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
 | `tests/docs-polish.sh` | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |
+| `tests/docs-tech-icons.sh` | 引数の形を確かめ、アイコンを並べた SVG を書くか |
 | `tests/pr-create.sh` | ワークツリー・PR の重さ・要る確認・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
 | `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。`--tags` や変数の cd も止めるか |
