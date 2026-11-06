@@ -15,21 +15,54 @@ PUSH_SKIPPED = {"--delete", "-d"}
 SHELLS = {"bash", "sh", "zsh"}
 UNRESOLVED = object()
 SUBSTITUTED = re.compile(r"\$SUB(\d+)")
-QUOTED_HEREDOC = re.compile(r"(?<!<)<<(-?)\s*(['\"])([^'\"\s]+)\2")
+HEREDOC = re.compile(r"<<(-?)[ \t]*(?:'([^'\n]*)'|\"([^\"\n]*)\"|([A-Za-z0-9_.-]+))")
+COMMENT_AFTER = set(" \t;&|(")
+
+
+def heredocs(line, quote):
+    found = []
+    index = 0
+    while index < len(line):
+        char = line[index]
+        if quote == "'":
+            quote = None if char == "'" else quote
+        elif char == "\\":
+            index += 2
+            continue
+        elif quote == '"':
+            quote = None if char == '"' else quote
+        elif char in "'\"":
+            quote = char
+        elif char == "#" and (index == 0 or line[index - 1] in COMMENT_AFTER):
+            break
+        elif line.startswith("<<<", index):
+            index += 3
+            continue
+        elif match := HEREDOC.match(line, index):
+            strip, single, double, bare = match.groups()
+            quoted = single is not None or double is not None
+            found.append((strip == "-", next(word for word in (single, double, bare) if word is not None), quoted))
+            index = match.end()
+            continue
+        index += 1
+    return found, quote
 
 
 def without_quoted_heredocs(command):
     kept = []
     ends = []
+    quote = None
     for line in command.split("\n"):
         if ends:
-            strip, end = ends[0]
+            strip, end, quoted = ends[0]
             if (line.lstrip("\t") if strip else line) == end:
                 ends.pop(0)
+            elif not quoted:
+                kept.append(line)
             continue
         kept.append(line)
-        ends = [(strip == "-", end) for strip, _, end in QUOTED_HEREDOC.findall(line)]
-    return "\n".join(kept)
+        ends, quote = heredocs(line, quote)
+    return command if ends else "\n".join(kept)
 
 
 def shell_command(words):
