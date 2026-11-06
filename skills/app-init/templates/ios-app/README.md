@@ -2,20 +2,18 @@
 
 __Summary__
 
-![iOS 18+](https://img.shields.io/badge/iOS-18%2B-000000?logo=apple&logoColor=white)
-![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-0A84FF?logo=swift&logoColor=white)
-![GRDB](https://img.shields.io/badge/GRDB-003B57?logo=sqlite&logoColor=white)
+<img src="docs/images/tech.svg" alt="iOS 18 以上、Swift 6、SwiftUI、GRDB">
 
-## 🚀 動かし方
+## 💻 実行環境
 
-Xcode と Homebrew が要る。
+| 道具 | 版 |
+| --- | --- |
+| iOS | 18 以上 |
+| Swift | 6 |
+| Xcode | 最新 |
+| Homebrew | 最新 |
 
-1. `make setup` で道具を入れる。最初に 1 回だけ走らせる。
-2. `make open` で Xcode のワークスペースを開く。
-3. 変えたら `make verify` で、Kit のテストと iOS のビルドを通す。
-
-ほかのコマンドは、architecture-ios.md の [make のコマンド](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md#make-のコマンド) にある。
+[make のコマンド](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md#make-のコマンド)
 
 ## 📚 文書
 

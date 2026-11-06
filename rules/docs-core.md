@@ -128,7 +128,7 @@ paths:
 | HTML と大きさ | README と `docs/` の外の HTML、使ってよいタグ、`docs/` の 1 ファイルの大きさ | |
 | 絵文字 | 見出しの絵文字の数と位置、Claude が読む文書の絵文字、本文の絵文字の表 | |
 | 人が読む文書の見出し | README と `docs/`・`spec/` の `##` の絵文字が、付いているか、表にあるか、重なっていないか。`docs/decisions/` はそろっているか | |
-| バッジと README | バッジの段の並び、状態の段が動的なバッジか、README の節の順 | |
+| 技術のアイコンと README | shields.io のバッジ、README の節の順、README のアラートと文の段落 | |
 | Claude が読む文書 | 文の中の長いコマンド | rules の `paths`、ひな形の CLAUDE.md の節の順 |
 | SKILL.md | | 「手順」と「報告」の有無、固定の節の順、ほかの節の置き場所、番号付きの手順。description の文末と字数 |
 | agents | | `name`・`model` と最後の「返す形」。本文に「書き換えない」とある agents の `tools` |
@@ -140,9 +140,10 @@ paths:
 - ひな形の Makefile と `.sh` が呼ぶ claude-config のファイルがあるか
 - ひな形の `__<名前>__` の印が、`replace-placeholders.py` の tokens にあるか
 - `replace-placeholders.py` が、`__<名前>__` のほかを置き換えていないか
-- skills・agents・rules・hooks・scripts が README の表にあるか
+- skills・agents・rules・hooks・scripts が部品の文書の表にあるか
+- 部品の文書は、`docs/components.md` と `docs/skills.md` を見る
 - フック・scripts・スクリプトを持つスキルと `tests/` のテストが 1 対 1 か
-- スキルが README の使う順の図にあるか
+- スキルが `docs/skills.md` の使う順の図にあるか
 - 文書のパスは、`hooks/`・`rules/`・`scripts/`・`lib/`・`skills/` で始まるものを見る
 - 同じく `tests/`・`agents/`・`settings/`・`output-styles/` で始まるものも見る
 - 台帳の「残っている改善」で、「場所」列のパスがあるか

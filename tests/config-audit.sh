@@ -72,8 +72,8 @@ replace "$d/docs/development.md" '[接頭語の表](#接頭語の表)' '[接頭�
 expect_audit "$d" "リンク先の見出しが無い: #無い表" "壊れた見出しへのリンク"
 
 d=$(copy flow)
-replace "$d/README.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
-expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "README のスキルの図に無いスキル"
+replace "$d/docs/skills.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
+expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "skills.md のスキルの図に無いスキル"
 
 d=$(copy terms)
 printf '\n作業場所で確かめる。\n' >>"$d/skills/ui-record/SKILL.md"
@@ -105,7 +105,7 @@ expect_audit "$d" "編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ" 
 
 d=$(copy readme)
 echo 'print(1)' >"$d/hooks/post-tool-extra.py"
-expect_audit "$d" "README の表に載っていない: hooks/post-tool-extra.py" "README に無いフック"
+expect_audit "$d" "部品の文書の表に載っていない: hooks/post-tool-extra.py" "部品の文書に無いフック"
 
 d=$(copy test-missing-hook)
 rm -f "$d/tests/swift-format.sh"

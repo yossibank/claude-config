@@ -20,6 +20,7 @@ SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
 LEDGER = os.path.join(ROOT, "docs", "improvements.md")
+COMPONENT_DOCS = ["components.md", "skills.md"]
 LEDGER_SECTION = "## 📝 残っている改善"
 BACKTICKED = re.compile(r"`([^`]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
@@ -237,13 +238,13 @@ def check_rules():
 
 
 def check_readme():
-    readme = os.path.join(ROOT, "README.md")
-    links = {target.rstrip("/") for target in LINK.findall(read(readme))}
+    docs = [os.path.join(ROOT, "docs", name) for name in COMPONENT_DOCS]
+    links = {os.path.normpath(os.path.join("docs", target.rstrip("/"))) for path in docs for target in LINK.findall(read(path))}
     entries = [f"skills/{name}/SKILL.md" for name in skill_names()]
     entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "output-styles/*.md", "rules/*.md", "hooks/*.py", "hooks/*.sh", "scripts/*")]
     for entry in entries:
         if entry not in links:
-            yield readme, 1, f"README の表に載っていない: {entry}"
+            yield docs[0], 1, f"部品の文書の表に載っていない: {entry}"
 
 
 def test_targets():
@@ -266,15 +267,14 @@ def check_test_pairs():
 
 
 def check_readme_flow():
-    readme = os.path.join(ROOT, "README.md")
-    section = re.search(r"^## 🧰 .*?(?=^## |\Z)", read(readme), re.M | re.S)
-    flow = "".join(re.findall(r"```mermaid\n(.*?)```", section.group(0), re.S)) if section else ""
+    skills = os.path.join(ROOT, "docs", "skills.md")
+    flow = "".join(re.findall(r"```mermaid\n(.*?)```", read(skills), re.S))
     if not flow:
-        yield readme, 1, "## 🧰 スキルの節に、スキルを使う順の Mermaid の図が無い"
+        yield skills, 1, "スキルを使う順の Mermaid の図が無い"
         return
     for name in skill_names():
         if not re.search(rf"(?<![A-Za-z0-9_-]){re.escape(name)}(?![A-Za-z0-9_-])", flow):
-            yield readme, 1, f"スキルを使う順の図に載っていない: {name}"
+            yield skills, 1, f"スキルを使う順の図に載っていない: {name}"
 
 
 def naming_table(heading, first_column):

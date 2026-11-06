@@ -31,15 +31,16 @@ doc_case 2 "README の ## には絵文字を付ける" README.md $'# t\n\n## �
 doc_case 2 "## の見出しの絵文字をそろえる" docs/x.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 
 note=$'# t\n\n> [!NOTE]\n> 分かる。\n'
-state_badge='![CI](https://img.shields.io/github/actions/workflow/status/o/r/verify.yml?label=Verify&logo=github)'
-tech_badge='![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)'
-doc_case 0 "README の節は全体像・動かし方・文書の順" README.md $'# t\n\nあ。\n\n## 🗺️ 全体像\n\nい。\n\n## 🚀 入れ方\n\nう。\n\n## 📚 文書\n\nえ。'
+shields='![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)'
+icons='<img src="docs/images/tech.svg" alt="技術">'
+doc_case 0 "README の節は全体像・実行環境・入れ方・文書の順" README.md $'# t\n\nあ。\n\n## 🗺️ 全体像\n\n![い](i.png)\n\n## 💻 実行環境\n\n![う](u.png)\n\n## 🚀 入れ方\n\n![え](e.png)\n\n## 📚 文書\n\n![お](o.png)'
 doc_case 2 "README の文書の節を動かし方より前に置かない" README.md $'# t\n\nあ。\n\n## 📚 文書\n\nい。\n\n## 🚀 入れ方\n\nう。' "README の ## は"
-doc_case 0 "README の機能の節は全体像の前に置ける" README.md $'# t\n\nあ。\n\n## ✨ 機能\n\nい。\n\n## 🗺️ 全体像\n\nう。'
+doc_case 0 "README の機能の節は全体像の前に置ける" README.md $'# t\n\nあ。\n\n## ✨ 機能\n\n![い](i.png)\n\n## 🗺️ 全体像\n\n![う](u.png)'
 doc_case 2 "README の機能の節を全体像より後に置かない" README.md $'# t\n\nあ。\n\n## 🗺️ 全体像\n\nい。\n\n## ✨ 機能\n\nう。' "README の ## は"
 doc_case 0 "docs の冒頭に [!NOTE] を置けば通る" docs/x.md "$note"
 doc_case 2 "docs の冒頭に [!NOTE] が無い" docs/x.md $'# t\n\n本文である。' "タイトルの直後に [!NOTE]"
-doc_case 0 "親が違えば同じ名前の見出しを使える" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\nい。\n\n### 手順\n\nう。\n\n## 🧪 確かめ方\n\nえ。\n\n### 手順\n\nお。'
+doc_case 0 "親が違えば同じ名前の見出しを使える" docs/x.md "$note"$'\n## 🚀 入れ方\n\nい。\n\n### 手順\n\nう。\n\n## 🧪 確かめ方\n\nえ。\n\n### 手順\n\nお。'
+doc_case 0 "README は見出しと小見出しの間の表を中身と数える" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n| a | b |\n| --- | --- |\n| x | y |\n\n### 手順\n\n![う](u.png)'
 doc_case 2 "同じ親の下に同じ名前の見出しを置かない" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\nい。\n\n### 手順\n\nう。\n\n### 手順\n\nえ。' "同じ名前の見出し"
 doc_case 0 "見出しの絵文字が表にあれば通る" docs/x.md "$note"$'\n## 🪟 ウィジェット\n\nあ。'
 doc_case 2 "見出しの絵文字が表に無い" docs/x.md "$note"$'\n## 🎉 祝い\n\nあ。' "表から選ぶ"
@@ -58,8 +59,11 @@ doc_case 0 "名前だけのフォルダの木は通る" README.md $'# t\n\nあ�
 doc_case 2 "フォルダの木に説明を書かない" README.md $'# t\n\nあ。\n\n```text\na/\n├── b/  # 部品\n└── c.md\n```' "名前だけを書く"
 doc_case 0 "本文の中のページ内リンクは目次にしない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)\n- りんご\n- みかん'
 doc_case 2 "手で目次を書かない" README.md $'# t\n\nあ。\n\n- [入れ方](#入れ方)\n- [決まり](#決まり)' "目次は GitHub が作る"
-doc_case 0 "バッジは状態の段の後に技術の段" README.md $'# t\n\nあ。\n\n'"$state_badge"$'\n\n'"$tech_badge"
-doc_case 2 "技術のバッジを状態のバッジより前に置かない" README.md $'# t\n\nあ。\n\n'"$tech_badge"$'\n\n'"$state_badge" "状態の段を技術の段より先"
+doc_case 0 "技術のアイコンの SVG は置ける" README.md $'# t\n\nあ。\n\n'"$icons"
+doc_case 2 "README に shields.io のバッジを使わない" README.md $'# t\n\nあ。\n\n'"$shields" "shields.io のバッジは使わない"
+doc_case 2 "README にアラートを使わない" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n> [!NOTE]\n> 要る。' "README にはアラートを使わない"
+doc_case 2 "README の節に文の段落を書かない" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n次のコマンドで入れる。' "文の段落を書かない"
+doc_case 0 "README の節にリンクだけの行と箇条書きは置ける" README.md $'# t\n\nあ。\n\n## 📚 文書\n\n[a](a.md) ・ [b](b.md)\n\n- りんご\n- みかん\n- ぶどう'
 doc_case 0 "Claude が読む文書の短いコードは通る" rules/x.md $'# t\n\nあ。\n\n`git log` で見る。'
 doc_case 2 "Claude が読む文書の文の中に長いコマンドを書かない" rules/x.md $'# t\n\nあ。\n\n- `git log --oneline --graph a..b -- x y z w` を走らせる。' "長いコマンドを書かない"
 doc_case 2 "Claude が読む文書のタイトルの直後に 1 文を書く" rules/x.md $'# t\n\n- 項目である。' "タイトルの直後に、何があるかを 1 文"
@@ -71,10 +75,10 @@ doc_case 2 "1 つの一覧の中で文末をそろえる" README.md $'# t\n\nあ
 doc_case 0 "入れ子の一覧は親と別に文末をそろえる" README.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n   - 語句\n   - 語句\n2. 次の手順である。'
 doc_case 2 "パスで始まる長いコマンドは止める" rules/x.md $'# t\n\nあ。\n\n- `~/Applications/AI/claude-config/scripts/docs-section.sh <file>` を使う。' "長いコマンドを書かない"
 doc_case 0 "README と docs の外は ## の絵文字を表から選ばせない" .github/pull_request_template.md $'## 👀 見どころ\n\nあ。\n\n## 🔗 関連\n\nい。'
-doc_case 2 "タイトルの直後がバッジだけなら 1 文と数えない" README.md $'# t\n\n'"$state_badge"$'\n\nあ。' "タイトルの直後に、何があるかを 1 文"
+doc_case 2 "タイトルの直後が画像だけなら 1 文と数えない" README.md $'# t\n\n'"$icons"$'\n\nあ。' "タイトルの直後に、何があるかを 1 文"
 doc_case 0 "空白を含むファイル名は木の説明にしない" docs/x.md "$note"$'\n```text\nApp/\n├── My File.swift\n└── b.swift\n```'
 doc_case 2 "text 以外の囲みのフォルダの木も見る" docs/x.md "$note"$'\n```sh\nApp/\n├── Sources   # 説明\n```' "名前だけを書く"
-doc_case 2 "状態の段に固定のバッジを置かない" docs/x.md "$note"$'\n'"$state_badge"' ![License](https://img.shields.io/badge/License-MIT-blue)' "状態の段は動的なバッジにする"
+doc_case 2 "docs にも shields.io のバッジを使わない" docs/x.md "$note"$'\n'"$shields" "shields.io のバッジは使わない"
 doc_case 0 "節の中のページ内リンクの一覧は目次にしない" docs/x.md "$note"$'\n## 📚 文書\n\n関係する節を次に置く。\n\n- [入れ方](#入れ方)\n- [使い方](#使い方)\n- [直し方](#直し方)'
 doc_case 0 "小文字のアラートも種類を見分ける" docs/x.md $'# t\n\n> [!note]\n> 分かる。'
 doc_case 2 "節の名前を並べた文は目次として止める" rules/x.md $'# t\n\n画面・文字・色・ほかの決まりがある。\n\n## 画面\n\nう。\n\n## 文字\n\nえ。\n\n## 色\n\nお。' "節の名前を並べた文は目次になる"

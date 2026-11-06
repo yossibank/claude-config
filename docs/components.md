@@ -1,0 +1,123 @@
+# 部品
+
+> [!NOTE]
+> claude-config の部品が、それぞれいつ動き、何をするかが分かる。
+> スキルは [skills.md](skills.md)、入れ方は [install.md](install.md) にある。
+
+## 📏 決まり
+
+CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを読み書きする時だけ読み込まれる。
+
+矢印の先の rules は、元の rules に足して読み込まれる。
+
+```mermaid
+flowchart LR
+    docsCore["docs-core"] --> docsHuman["docs-human"]
+    docsCore --> docsClaude["docs-claude"]
+    docsCore --> docsApp["docs-app"]
+    swiftCore["swift-core"] --> swiftUi["swift-ui"]
+    swiftCore --> swiftTest["swift-test"]
+```
+
+| ファイル | 読み込まれる時 | 決めること |
+| --- | --- | --- |
+| [CLAUDE.md](../CLAUDE.md) | いつも | 言語、進め方、使う量、報告、ブランチ・commit・PR |
+| [output-styles/report.md](../output-styles/report.md) | いつも。config-install.sh が `outputStyle` に入れる | 結論を先に書き、表と状態の印で組む日本語の報告の形 |
+| [rules/code-comments.md](../rules/code-comments.md) | Swift・Kotlin・設定・シェル | コメントを書かない |
+| [rules/docs-app.md](../rules/docs-app.md) | `docs/`・`spec/`・README・CLAUDE.md | アプリの文書ごとの役割と、足す条件 |
+| [rules/docs-claude.md](../rules/docs-claude.md) | CLAUDE.md・rules・SKILL.md・agents | 飾らない形と、節の並び |
+| [rules/docs-core.md](../rules/docs-core.md) | `.md` | 運用、文、表現、守らせる仕組み |
+| [rules/docs-human.md](../rules/docs-human.md) | README・`docs/`・`spec/` | 冒頭、見出しの絵文字、技術のアイコン、README の形 |
+| [rules/swift-core.md](../rules/swift-core.md) | Swift | 宣言の置き方、改行、空行、ファイル |
+| [rules/swift-test.md](../rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | テストの空行と型の置き方 |
+| [rules/swift-ui.md](../rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | `View` の分け方、ビューの並べ方 |
+
+## 🪝 フック
+
+フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。どれも [hooks/run.sh](../hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
+
+図の色は、表の動きの印に合わせる。赤は 🛑 止める、青は 💬 知らせる、緑は 🧹 整える。
+
+```mermaid
+flowchart LR
+    readBefore["Read の前"] --> limit["ctx-limit-read"]
+    readBefore -->|rules の .md だけ| require["rules-require-read"]
+    editBefore["Edit・Write の前"] --> require
+    editBefore --> detect["rules-detect-bash-edits"]
+    editAfter["Edit・Write の後"] -->|.md だけ| docs["docs-check"]
+    editAfter -->|.swift だけ| swift["swift-format"]
+    swift --> swiftStyle["swift-style-check"]
+    editAfter -->|.sh だけ| shell["shell-check"]
+    editAfter --> detect
+    bashBefore["Bash の前"] --> detect
+    bashBefore --> gate["pr-gate"]
+    bashAfter["Bash の後"] --> detect
+    bashAfter --> clear["ctx-suggest-clear"]
+    stop["応答の終わり"] --> clear
+
+    classDef block fill:#f8d7da,stroke:#c0392b,color:#000
+    classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
+    classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
+    class limit,require,gate block
+    class docs,swiftStyle,shell,detect,clear inform
+    class swift tidy
+```
+
+| フック | 動き | 動く時 | 当たる時 |
+| --- | --- | --- | --- |
+| [ctx-limit-read](../hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
+| [ctx-suggest-clear](../hooks/ctx-suggest-clear.py) | 💬 知らせる | 応答の終わり、`gh pr create` の後 | 文脈が 20 万トークンを超える時と、PR を作った時 |
+| [docs-check](../hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `rules/docs-*.md` に合わない時 |
+| [pr-gate](../hooks/pr-gate.py) | 🛑 止める | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時。cd と `git -C` の先が変数でも止める |
+| [rules-detect-bash-edits](../hooks/rules-detect-bash-edits.py) | 💬 知らせる | Bash と Edit・Write の前と後 | Bash でファイルを書き換えた時。git・make は出力の向け先と checkout などの書き換えだけを見て、Edit・Write の分は数えない |
+| [rules-require-read](../hooks/rules-require-read.py) | 🛑 止める | rules の `.md` の Read と、Edit・Write の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
+| [shell-check](../hooks/shell-check.py) | 💬 知らせる | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
+| [swift-format](../hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
+| [swift-style-check](../hooks/swift-style-check.py) | 💬 知らせる | `.swift` を Edit・Write した後。swift-format の後に順に走る | `.swift` が、整形で直らない `rules/swift-*.md` の改行と空行に合わない時 |
+
+pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。
+
+フックを止める時は、[環境変数](#-環境変数)の `CC_HOOKS_OFF` に名前を並べる。
+
+```sh
+CC_HOOKS_OFF="pr-gate,rules-require-read" claude
+```
+
+## 👷 エージェント
+
+エージェントは、仕事の重さに合わせてモデルを分ける。
+
+| エージェント | モデル | 呼ぶ所 | 任せること |
+| --- | --- | --- | --- |
+| [debugger](../agents/debugger.md) | Opus | code-debug、CLAUDE.md の「任せる」 | 仮説ごとに裏付けと反証を集めて返す。書き換えない |
+| [explorer](../agents/explorer.md) | Haiku | CLAUDE.md の「任せる」 | 場所と事実を探して短く返す。書き換えない |
+| [implementer](../agents/implementer.md) | Sonnet | CLAUDE.md の「任せる」と「並べる」 | 方針の決まった実装、削除、名前の変更、文書の書き換え |
+| [reviewer](../agents/reviewer.md) | Opus | pr-create | 差分を読み、マージすると困る所を 5 件まで返す |
+| [tester](../agents/tester.md) | Sonnet | code-debug、CLAUDE.md の「任せる」 | 正常・異常・境界のテストを書いて通す。本体は直さない |
+
+## 📜 スクリプト
+
+呼ぶ時の詳しい説明は、[development.md のスクリプト](development.md#-スクリプト) にある。
+
+| スクリプト | すること |
+| --- | --- |
+| [scripts/config-audit.py](../scripts/config-audit.py) | 表・図・参照先と名前の食い違い、書き方の違反を見る |
+| [scripts/config-install.sh](../scripts/config-install.sh) | `~/.claude` からリンクを張り、settings.json の案を作る |
+| [scripts/config-install.jq](../scripts/config-install.jq) | config-install.sh から呼ばれ、settings.json の案を混ぜる |
+| [scripts/docs-section.sh](../scripts/docs-section.sh) | 見出しの一覧か、指定した節だけを出す |
+| [scripts/docs-section.py](../scripts/docs-section.py) | docs-section.sh の中身 |
+| [scripts/docs-tech-icons.py](../scripts/docs-tech-icons.py) | 技術のアイコンを並べた SVG を作る |
+
+## 🔧 環境変数
+
+フックとスクリプトの動きは、次の環境変数で変えられる。claude-config だけの変数は、`CC_` と分類で始める。
+
+| 変数 | 使う所 | 中身 |
+| --- | --- | --- |
+| `ASC_ISSUER_ID` ほか `ASC_*` | store-reply、store-report | App Store Connect API のキー |
+| `CC_APPS_DIR` | app-init、store-reply、store-report | アプリのリポジトリの置き場所 |
+| `CC_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr に出す（デバッグのログでだけ見える） |
+| `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
+| `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
+| `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
+| `CC_UI_WORK_DIR` | ui-snapshot | 描く時の写しを置くフォルダ。既定は `~/Library/Caches/ui-snapshot` |

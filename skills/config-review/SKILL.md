@@ -31,7 +31,7 @@ claude-config の改善点や直せる所を聞かれた時に使う。1 つの 
 | --- | --- | --- |
 | 人が読む文書 | `README.md`、`docs/`、ひな形の `.md` | 文書の構成、区切れる長い文、表・図・アラートにできる所 |
 | Claude が読む文書 | `CLAUDE.md`、`rules/`、`skills/*/SKILL.md`、`agents/`、`output-styles/` | 読み違える文、決まりどうしやコードとの食い違い |
-| 名前と並び | 全部のファイルの名前、`settings/`、README の表 | 接頭語と動詞、並べる順、同じ中身の重なり |
+| 名前と並び | 全部のファイルの名前、`settings/`、`docs/components.md` と `docs/skills.md` の表 | 接頭語と動詞、並べる順、同じ中身の重なり |
 | 処理 | `hooks/`、`lib/`、`scripts/`、`skills/*/scripts/` | バグ、黙って落ちる所、重なった処理、遅い所 |
 | テスト | `tests/` | 分岐の抜け、利用者の環境に左右される所 |
 
