@@ -35,6 +35,8 @@ state_badge='![CI](https://img.shields.io/github/actions/workflow/status/o/r/ver
 tech_badge='![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)'
 doc_case 0 "README の節は全体像・動かし方・文書の順" README.md $'# t\n\nあ。\n\n## 🗺️ 全体像\n\nい。\n\n## 🚀 入れ方\n\nう。\n\n## 📚 文書\n\nえ。'
 doc_case 2 "README の文書の節を動かし方より前に置かない" README.md $'# t\n\nあ。\n\n## 📚 文書\n\nい。\n\n## 🚀 入れ方\n\nう。' "README の ## は"
+doc_case 0 "README の機能の節は全体像の前に置ける" README.md $'# t\n\nあ。\n\n## ✨ 機能\n\nい。\n\n## 🗺️ 全体像\n\nう。'
+doc_case 2 "README の機能の節を全体像より後に置かない" README.md $'# t\n\nあ。\n\n## 🗺️ 全体像\n\nい。\n\n## ✨ 機能\n\nう。' "README の ## は"
 doc_case 0 "docs の冒頭に [!NOTE] を置けば通る" docs/x.md "$note"
 doc_case 2 "docs の冒頭に [!NOTE] が無い" docs/x.md $'# t\n\n本文である。' "タイトルの直後に [!NOTE]"
 doc_case 0 "親が違えば同じ名前の見出しを使える" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\nい。\n\n### 手順\n\nう。\n\n## 🧪 確かめ方\n\nえ。\n\n### 手順\n\nお。'
