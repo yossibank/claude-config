@@ -2,12 +2,10 @@
 
 __Summary__
 
-![iOS 18+](https://img.shields.io/badge/iOS-18+-000000?logo=apple&logoColor=white)
+![iOS 18+](https://img.shields.io/badge/iOS-18%2B-000000?logo=apple&logoColor=white)
 ![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-0D96F6?logo=swift&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-0A84FF?logo=swift&logoColor=white)
 ![GRDB](https://img.shields.io/badge/GRDB-003B57?logo=sqlite&logoColor=white)
-
-<img src="docs/images/<画面>-<状態>.png" width="250" alt="<画面の要点>">
 
 ## 🚀 動かし方
 
