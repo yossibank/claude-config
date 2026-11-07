@@ -24,7 +24,7 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟡 低 | `tests/config-audit.sh` | expect_audit を 69 回、毎回リポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
+| 🟡 低 | `tests/config-audit.sh` | expect_audit が、呼ぶたびにリポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
 
 ## ⚠️ 直さないと決めたこと
 
