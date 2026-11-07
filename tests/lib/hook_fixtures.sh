@@ -39,7 +39,7 @@ hook_case() {
     local hook=$1 expect=$2 label=$3 path=$4 text=$5 want=${6:-} out status
     mkdir -p "$(dirname "$path")"
     printf '%s\n' "$text" >"$path"
-    out=$(echo "{\"tool_input\":{\"file_path\":\"$path\"}}" | bash "$hooks" "$hook" 2>&1)
+    out=$(file_call "$path" | bash "$hooks" "$hook" 2>&1)
     status=$?
     if [[ $status == "$expect" && $out == *"$want"* && ( $expect != 2 || -n $want ) ]]; then
         ok "$hook: $label"
@@ -58,6 +58,13 @@ read_rule() {
         '{session_id: $session, agent_id: $agent, tool_name: "Read", tool_input: {file_path: $path}}' | bash "$hooks" rules-require-read
 }
 
+# <ファイルのパス> を編集した入力
+file_call() {
+    jq -cn --arg path "$1" '{tool_input: {file_path: $path}}'
+}
+
+# <tool_use_id> <コマンド> を $app で走らせた入力
 bash_call() {
-    echo "{\"session_id\":\"b\",\"tool_use_id\":\"$1\",\"cwd\":\"$app\",\"tool_input\":{\"command\":\"$2\"}}"
+    jq -cn --arg id "$1" --arg cwd "$app" --arg command "$2" \
+        '{session_id: "b", tool_use_id: $id, cwd: $cwd, tool_input: {command: $command}}'
 }

@@ -141,8 +141,8 @@ doc_case 0 "節の多い decisions は ## の絵文字を付けないでそろ�
 # --- 読めない・壊れた入力 ---
 printf '# t\n\nあ。\n' >"$work/unreadable.md"
 chmod 000 "$work/unreadable.md"
-run docs-check 0 "docs-check: 読めないファイルは、落ちずに知らせて通す" "{\"tool_input\":{\"file_path\":\"$work/unreadable.md\"}}"
-out=$(echo "{\"tool_input\":{\"file_path\":\"$work/unreadable.md\"}}" | bash "$hooks" docs-check 2>&1)
+run docs-check 0 "docs-check: 読めないファイルは、落ちずに知らせて通す" "$(file_call "$work/unreadable.md")"
+out=$(echo "$(file_call "$work/unreadable.md")" | bash "$hooks" docs-check 2>&1)
 match "docs-check: 読めないファイルは systemMessage で理由を知らせる" "$out" '{"systemMessage": "docs-check が想定外の失敗で確かめられなかった（'*
 out=$(python3 -I - "$root" "$work/docs-case/README.md" 2>&1 <<'EOF'
 import sys

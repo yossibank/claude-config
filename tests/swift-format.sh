@@ -5,7 +5,7 @@ source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
 source "$(dirname "$0")/lib/hook_fixtures.sh"
 
-payload="{\"tool_input\":{\"file_path\":\"$swift\"}}"
+payload="$(file_call "$swift")"
 calls="$work/swiftformat-calls"
 
 format() {
@@ -28,7 +28,7 @@ check "swift: Mintfile に swiftformat が無ければ走らせない" test ! -e
 match "swift: Mintfile に swiftformat が無くても終了コード 0 で何も出さない" "$out" "status 0"
 
 echo x >"$app/note.txt"
-run swift-format 0 "swift: .swift 以外は走らせない" "{\"tool_input\":{\"file_path\":\"$app/note.txt\"}}"
+run swift-format 0 "swift: .swift 以外は走らせない" "$(file_call "$app/note.txt")"
 check "swift: .swift 以外では swiftformat を呼ばない" test ! -e "$calls"
 
 echo '# nicklockwood/SwiftFormat@0.54.6' >"$app/Mintfile"
