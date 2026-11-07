@@ -39,7 +39,7 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/docs-tech-icons.sh` | 引数の形を確かめ、アイコンを並べた SVG を書くか |
 | `tests/pr-create.sh` | ワークツリー・PR の重さ・要る確認・本文・出し方を決められるか。偽の gh と作り物のリポジトリで試す |
 | `tests/pr-fix.sh` | 偽の gh で、直すものを集められるか |
-| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。`--tags` や変数の cd、`gh -R`・`--repo` を付けた PR の作成も止めるか |
+| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。refspec 付きの `--tags`、xargs・eval の先、変数の cd、`gh -R` 付きの PR も止めるか |
 | `tests/pr-prune.sh` | 偽の gh と作り物のリポジトリで、消してよいものだけを消すか。積んだブランチを main に載せ直し、ぶつかる時は残すか |
 | `tests/rules-detect-bash-edits.sh` | Bash と git checkout での書き換えを見つけ、make などの道具では検査の NG だけ返すか。Bash の間に Edit・Write で変えたファイルを数えないか |
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか。`CC_HOOKS_OFF` の名前を、run.sh と hook_io が空白・カンマ・タブ・改行で同じに分けるか |

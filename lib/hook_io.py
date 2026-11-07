@@ -8,7 +8,9 @@ from hook_messages import GATE_FAILED
 
 SEGMENT = re.compile(r"&&|\|\||;|\||\n")
 SEPARATOR_CHARS = set(";&|()\n")
-OFF_SEPARATOR = re.compile(r"[\s,]+")
+HIDDEN = {char: chr(0xE000 + index) for index, char in enumerate(sorted(SEPARATOR_CHARS))}
+VISIBLE = {hidden: char for char, hidden in HIDDEN.items()}
+EMPTY_ARGUMENT = chr(0xE100)
 FILE_EDIT_TOOLS = ("Edit", "Write")
 EDIT_TOOLS = (*FILE_EDIT_TOOLS, "NotebookEdit")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
@@ -23,6 +25,7 @@ PREFIX_VALUE_OPTIONS = {
     "sudo": {"-C", "-D", "-g", "-p", "-R", "-T", "-U", "-u"},
     "time": set(),
     "timeout": {"-k", "-s"},
+    "xargs": {"-a", "-d", "-E", "-I", "-L", "-n", "-P", "-s"},
 }
 PREFIX_ARGUMENTS = {"timeout": 1}
 GIT_VALUE_OPTIONS = {"-C", "-c", "--attr-source", "--config-env", "--exec-path", "--git-dir", "--namespace", "--work-tree"}
@@ -64,8 +67,15 @@ def run_gate(name, main):
         sys.exit(2)
 
 
+def run_hook(name, main):
+    try:
+        main()
+    except Exception as error:
+        notify(f"{name} が想定外の失敗で確かめられなかった（{type(error).__name__}: {error}）")
+
+
 def hook_off(name):
-    return name in OFF_SEPARATOR.split(os.environ.get("CC_HOOKS_OFF", ""))
+    return name in os.environ.get("CC_HOOKS_OFF", "").split()
 
 
 def tool_input(payload):
@@ -73,8 +83,39 @@ def tool_input(payload):
     return value if isinstance(value, dict) else {}
 
 
+def hide_quoted_separators(command):
+    out = []
+    quote = None
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if char == "\\" and quote != "'" and index + 1 < len(command):
+            out.append(char + HIDDEN.get(command[index + 1], command[index + 1]))
+            index += 2
+        elif quote:
+            out.append(char if char == quote else HIDDEN.get(char, char))
+            quote = None if char == quote else quote
+            index += 1
+        elif char in "'\"":
+            if command.startswith(char * 2, index):
+                out.append(EMPTY_ARGUMENT)
+                index += 2
+            else:
+                quote = char
+                out.append(char)
+                index += 1
+        else:
+            out.append(char)
+            index += 1
+    return "".join(out)
+
+
+def restore(token):
+    return "".join(VISIBLE.get(char, char) for char in token).replace(EMPTY_ARGUMENT, "")
+
+
 def split_commands(command):
-    lexer = shlex.shlex(command, posix=True, punctuation_chars="();<>|&\n")
+    lexer = shlex.shlex(hide_quoted_separators(command), posix=True, punctuation_chars="();<>|&\n")
     lexer.whitespace = " \t\r"
     lexer.whitespace_split = True
     lexer.commenters = ""
@@ -87,7 +128,7 @@ def split_commands(command):
         if set(token) <= SEPARATOR_CHARS:
             parts.append([])
         else:
-            parts[-1].append(token)
+            parts[-1].append(restore(token))
     return [words for words in parts if words]
 
 
