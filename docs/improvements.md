@@ -72,7 +72,6 @@
 | 🟡 低 | `skills/config-learn/SKILL.md` | 0 回の行の扱いが無い |
 | 🟡 低 | `skills/store-reply/SKILL.md` | description の `py*` と `py *` が揺れる |
 | 🟡 低 | `README.md` | WARNING を IMPORTANT にする。「上の PR」と見出し「一覧」が読みにくい |
-| 🟡 低 | `README.md` | ctx-suggest-clear が 20 万ごとに勧めることが読めない |
 | 🟡 低 | `docs/architecture-ios.md` | spec/ の扱い、「裏に回る前の対策」「開く」の言い方が揺れる |
 | 🟡 低 | `README.md` | 「CI は置かない」と「make verify を通す」が重なる |
 | 🟡 低 | `skills/app-init/templates/ios-app/docs/overview.md` | 「上の表」、CLAUDE.md の「共通の形」、README の main 固定 URL が指す先を読めない |
@@ -106,7 +105,6 @@
 | 🟠 中 | `hooks/rules-require-read.py` | 編集のたびに会話の記録を最大 32MB 読み直す。読んだ所を覚えて続きだけ読む |
 | 🟡 低 | `skills/pr-prune/scripts/prune-merged.sh` | 載せ直しの処理を別のスクリプトに分け、グローバル変数をやめる |
 | 🟡 低 | `lib/md_blocks.py` | 見出しの読み方が 4 か所で別々にある。ここに 1 つにまとめる |
-| 🟡 低 | `hooks/ctx-suggest-clear.py` | 止まるたびに記録を 4MB 読む。後ろから読む処理を `lib/transcripts.py` に置く |
 | 🟡 低 | `lib/hook_state.py` | 呼ぶたびに状態のフォルダを全部見て掃除する。1 時間に 1 回にする |
 | 🟡 低 | `lib/app_store.py` | ページをめくるたびに openssl で署名する。期限までトークンを使い回す |
 | 🟡 低 | `lib/script_io.py` | OK と NG の集計が 3 か所、アプリ ID の確かめが 2 か所にある |

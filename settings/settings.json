@@ -104,22 +104,7 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(gh pr create *)",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-suggest-clear pr"
-          },
-          {
-            "type": "command",
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits post"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" ctx-suggest-clear"
           }
         ]
       }
