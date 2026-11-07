@@ -17,7 +17,7 @@ esac
 pascal="$(tr '[:lower:]' '[:upper:]' <<<"${name:0:1}")${name:1}"
 
 if [[ -d $root ]]; then
-    others=$(find "$root" -mindepth 1 -maxdepth 1 ! -name docs ! -name .DS_Store | head -1)
+    others=$(find "$root" -mindepth 1 -maxdepth 1 ! -name docs ! -name .DS_Store -print -quit)
     [[ -z $others ]] || { echo "NG docs/ のほかに中身がある: $root"; exit 1; }
 fi
 
@@ -25,6 +25,7 @@ fi
 copied=()
 
 cleanup() {
+    trap - ERR INT TERM
     if [[ -n $fresh ]]; then
         rm -rf "$root"
     else
@@ -34,9 +35,10 @@ cleanup() {
         done
     fi
     echo "NG 途中で止まったので、作りかけを消した: $root"
+    exit 1
 }
 
-trap cleanup ERR
+trap cleanup ERR INT TERM
 
 mkdir -p "$root/docs"
 rsync -a --exclude .DS_Store --exclude /docs/ "$skill/templates/ios-app/" "$root/"
@@ -54,5 +56,5 @@ git -C "$root" init -q -b main
 git -C "$root" add -A
 git -C "$root" commit -q -m "chore: start $name from the ios-app template"
 
-trap - ERR
+trap - ERR INT TERM
 echo "OK $root"

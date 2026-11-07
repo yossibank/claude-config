@@ -63,4 +63,23 @@ check "collect-corrections: _ や . を含むフォルダのメモリを、元�
 check "collect-corrections: ワークツリーのメモリも、元のリポジトリの名前で拾う" grep -qF -- "- My_App／b.md：ワークツリーの説明" <<<"$report"
 check "collect-corrections: Applications の外のメモリは拾わない" bash -c '! grep -q "対象外" <<<"$1"' _ "$report"
 
+checked=$(python3 -I - "$root" "$collect" <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+
+module = load_module(sys.argv[2])
+quoted = module.GIT_C.search('git -C "/a b/repo" status')
+print("quoted", next(group for group in quoted.groups() if group))
+print("null", repr(module.correction_of({"type": "user", "message": None})))
+tally = module.Tally()
+for uuid in ("u1", "u2"):
+    module.count_blocks({"cwd": None, "uuid": uuid}, [(None, "rules")], tally)
+print("blocked", sum(row["rules"] for row in tally.stats.values()))
+module.count_broken({"cwd": None, "attachment": {"type": "hook_non_blocking_error", "stderr": None}}, tally)
+EOF
+)
+check "collect-corrections: -C の値の空白を引用符で受ける" grep -qx 'quoted /a b/repo' <<<"$checked"
+check "collect-corrections: message が null でも落ちない" grep -qx "null ''" <<<"$checked"
+
 finish

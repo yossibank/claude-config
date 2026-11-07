@@ -24,6 +24,19 @@ def run_main(main):
         fail(f"{os.path.basename(sys.argv[0])}: 想定外の失敗（{type(error).__name__}: {error}）")
 
 
+def finish(lines):
+    ok = True
+    for line in lines:
+        print(line)
+        ok = ok and not line.startswith("NG")
+    sys.exit(0 if ok else 1)
+
+
+def split_dry_run(argv):
+    args = [arg for arg in argv if arg != "--dry-run"]
+    return args, len(args) < len(argv)
+
+
 def require_month(arg, usage):
     if arg is None:
         fail(usage)
@@ -39,6 +52,7 @@ def write_json(path, data):
     try:
         with os.fdopen(handle, "w", encoding="utf-8") as file:
             file.write(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+        os.chmod(temporary, 0o644)
         os.replace(temporary, path)
     except BaseException:
         os.unlink(temporary)

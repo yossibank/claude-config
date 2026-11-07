@@ -4,9 +4,13 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from script_io import fail  # noqa: E402
+from script_io import fail, run_main  # noqa: E402
 
 ANCHOR = "    targets: [\n"
+
+
+def swift_string(value):
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 def main():
@@ -18,9 +22,9 @@ def main():
     for line in Path(targets).read_text(encoding="utf-8").split():
         if ":" in line:
             product, package = line.split(":", 1)
-            dependencies.append(f'.product(name: "{product}", package: "{package}")')
+            dependencies.append(f".product(name: {swift_string(product)}, package: {swift_string(package)})")
         else:
-            dependencies.append(f'"{line}"')
+            dependencies.append(swift_string(line))
 
     target = (
         "        .testTarget(\n"
@@ -38,4 +42,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

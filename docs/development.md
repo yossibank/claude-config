@@ -92,7 +92,7 @@
 
 | ファイル | 中身 |
 | --- | --- |
-| [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
+| [lib/app_store.py](../lib/app_store.py) | 検索とレビューの読み方、失敗の理由、ページ送りの `paginate`・`asc_pages`。App Store Connect API のキーと署名、アプリの一覧と ID の確かめ、返信案のファイルの読み方 |
 | [lib/build_log.sh](../lib/build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す `show_errors` |
 | [lib/dates.py](../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
 | [lib/git.py](../lib/git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所（`WORKTREES` など）。根は、まだ無いフォルダからも在る親をたどって探す |
@@ -103,8 +103,10 @@
 | [lib/loader.py](../lib/loader.py) | claude-config の根（`ROOT`）と、場所を指して .py を読む処理 |
 | [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出しの下の表、コードの囲みの見分け方 |
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表からの絵文字・README の順の読み方。`md_blocks` の上に作る |
-| [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
+| [lib/script_io.py](../lib/script_io.py) | `NG` で止める `fail`・`run_main` と、結果の行を出す `finish`。引数を読む `require_month`・`split_dry_run`、JSON を書く `write_json` |
+| [lib/swift_source.py](../lib/swift_source.py) | Swift のコードから、コメントと文字列（補間の中の入れ子も）の中身を空白にする `mask` |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方とリポジトリの名前（`repo_of`）。ある日時より後の記録の一覧（`sessions_since` など） |
+| [lib/worktree.sh](../lib/worktree.sh) | ブランチのワークツリーを探す `worktree_of` |
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま使う。スキルからは `${CLAUDE_SKILL_DIR}/../<スキル>/scripts/` で呼ぶ。フックからは、リポジトリの根からの `skills/<スキル>/scripts/` で呼ぶ。
 

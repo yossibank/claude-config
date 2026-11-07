@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from dates import month_of, month_start, to_jst  # noqa: E402
-from script_io import fail, require_month  # noqa: E402
+from script_io import fail, require_month, run_main  # noqa: E402
 from transcripts import entries, projects_dir, repo_of, sessions_since, subagents_of  # noqa: E402
 
 WEIGHTS = {"input": 1, "write_5m": 1.25, "write_1h": 2, "read": 0.1, "output": 5}
@@ -27,7 +27,7 @@ def usage_of(path, seen, month):
         if entry.get("gitBranch"):
             branches[entry["gitBranch"]] += 1
         if kind == "assistant":
-            message = entry.get("message", {})
+            message = entry.get("message") or {}
             usage = message.get("usage")
             key = entry.get("requestId") or message.get("id")
             stamp = entry.get("timestamp")
@@ -43,13 +43,13 @@ def usage_of(path, seen, month):
         counted += 1
         first = moment if first is None else min(first, moment)
         cache = usage.get("cache_creation") or {}
-        written = usage.get("cache_creation_input_tokens", 0)
-        hour = cache.get("ephemeral_1h_input_tokens", 0)
-        total["input"] += usage.get("input_tokens", 0)
+        written = usage.get("cache_creation_input_tokens") or 0
+        hour = cache.get("ephemeral_1h_input_tokens") or 0
+        total["input"] += usage.get("input_tokens") or 0
         total["write_1h"] += hour
         total["write_5m"] += written - hour
-        total["read"] += usage.get("cache_read_input_tokens", 0)
-        total["output"] += usage.get("output_tokens", 0)
+        total["read"] += usage.get("cache_read_input_tokens") or 0
+        total["output"] += usage.get("output_tokens") or 0
     named = [name for name, _ in branches.most_common() if name != "HEAD"]
     branch = named[0] if named else ("HEAD" if branches else "")
     return {"requests": counted, "total": total, "title": custom or ai, "place": place, "branch": branch, "first": first}
@@ -107,4 +107,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

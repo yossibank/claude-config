@@ -51,8 +51,7 @@ expect "確認の後に変更がある" "write-body: 確認の後に変えたら
 git -C "$repo" checkout -q -- a.md
 rm -f "$repo/a|b.md" "$repo/日本語.md"
 bash "$scripts/run-check.sh" "$repo" true true >/dev/null
-expect OK "write-body: 差分が無くても本文を作る" bash "$scripts/write-body.sh" "$repo" origin/main
-check "write-body: 差分が無ければ重さの行を出さない" bash -c '! grep -q "差分の重さ" "$1"' _ "$pr_body"
+expect "差分が無い" "write-body: 差分が無ければ本文を作らずに NG" bash "$scripts/write-body.sh" "$repo" origin/main
 echo 'x' >"$repo/a.swift"
 bash "$scripts/run-check.sh" "$repo" true true >/dev/null
 bash "$scripts/write-body.sh" "$repo" origin/main >/dev/null
@@ -111,6 +110,12 @@ out=$(bash "$route" "$repo" main title "$work/body.txt")
 check "route-pr: 書き込める時は gh で作る" test "$out" == gh
 out=$(GH_PERMISSION=READ bash "$route" "$repo" main title "$work/body.txt")
 check "route-pr: 読むだけの時は compare の URL を出す" test "$out" == "compare https://github.com/o/n/compare/main...main?expand=1&title=title&body=body%0A"
+git -C "$repo" checkout -q --detach
+expect "detached HEAD" "route-pr: ブランチが無ければ NG" bash "$route" "$repo" main title "$work/body.txt"
+git -C "$repo" checkout -q -
+printf 'あ%.0s' $(seq 1 1000) >"$work/long.txt"
+out=$(GH_PERMISSION=READ bash "$route" "$repo" main title "$work/long.txt" 2>/dev/null)
+check "route-pr: 本文が長ければ URL に入れない" test "$out" == "compare https://github.com/o/n/compare/main...main?expand=1&title=title"
 
 create="$scripts/create-worktree.sh"
 expect "NG 使い方" "create-worktree: 引数が足りなければ NG" bash "$create" "$repo"

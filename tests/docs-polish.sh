@@ -21,4 +21,9 @@ check "check-layout: 言語の無いコードの囲みの中は文に数えな�
 check "check-layout: 図のある文書は OK" grep -qF "OK $work/repo/docs/a.md" <<<"$out"
 check "check-layout: フォルダでは README・docs・spec の外を見ない" bash -c '! grep -q "memo.md" <<<"$1"' _ "$out"
 
+out=$(python3 -I "$layout" "$work/repo/docs")
+check "check-layout: docs フォルダを渡しても、その下の文書を見る" grep -qF "OK $work/repo/docs/a.md" <<<"$out"
+printf '# q\n\n## 引用だけ\n\nあ。\nい。\nう。\nえ。\n> \n' >"$work/quote.md"
+expect "quote.md:3 引用だけ" "check-layout: 中身の無い > だけの行は、表示ありに数えない" python3 -I "$layout" "$work/quote.md"
+
 finish

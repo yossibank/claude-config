@@ -8,8 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ASC_ERRORS, ASC_KEYS, asc_json, asc_reason, asc_request, require_keys  # noqa: E402
-from script_io import Failure, fail, run_main  # noqa: E402
+from app_store import ASC_ERRORS, ASC_KEYS, asc_json, asc_pages, asc_reason, asc_request, require_app_id, require_keys  # noqa: E402
+from script_io import Failure, fail, run_main, split_dry_run  # noqa: E402
 
 USAGE = "使い方: create-custom-pages.py <アプリのリポジトリ> [--dry-run]"
 PROMOTION_LIMIT = 170
@@ -31,8 +31,7 @@ def read_app(store):
         app = path.read_text(encoding="utf-8").strip()
     except OSError as error:
         raise Failure(f"アプリの ID のファイルが無い: {path}") from error
-    if not app.isdigit():
-        raise Failure(f"アプリの ID は数字で書く: {app}")
+    require_app_id(app)
     return app
 
 
@@ -100,12 +99,7 @@ def ordered(files, lead):
 
 
 def all_pages(url):
-    items = []
-    while url:
-        response = asc_json(url)
-        items.extend(response.get("data", []))
-        url = response.get("links", {}).get("next")
-    return items
+    return [item for page in asc_pages(url) for item in page.get("data", [])]
 
 
 def approved_keywords(app, locale):
@@ -121,8 +115,8 @@ def approved_keywords(app, locale):
     return {item["id"] for item in all_pages(f"/v1/appStoreVersionLocalizations/{localization}/searchKeywords?limit={PAGE_LIMIT}")}
 
 
-def existing_names(app):
-    return {item["attributes"]["name"] for item in all_pages(f"/v1/apps/{app}/appCustomProductPages?limit={PAGE_LIMIT}")}
+def existing_pages(app):
+    return {item["attributes"]["name"]: item["id"] for item in all_pages(f"/v1/apps/{app}/appCustomProductPages?limit={PAGE_LIMIT}")}
 
 
 def page_body(app, locale, page):
@@ -229,14 +223,35 @@ def create_page(app, locale, folders, page):
         upload_set(localization, kind, path, ordered(files, page.get("lead", [])))
 
 
+def unfinished(created, locale, folders, page):
+    try:
+        localization = page_localization(created, locale)
+    except ValueError as error:
+        return str(error)
+    keywords = {item["id"] for item in all_pages(f"/v1/appCustomProductPageLocalizations/{localization}/searchKeywords?limit={PAGE_LIMIT}")}
+    missing = [word for word in page["keywords"] if word not in keywords]
+    if missing:
+        return f"キーワードが入っていない: {', '.join(missing)}"
+    sets = {
+        item["attributes"]["screenshotDisplayType"]: item["id"]
+        for item in all_pages(f"/v1/appCustomProductPageLocalizations/{localization}/appScreenshotSets?limit={PAGE_LIMIT}")
+    }
+    for kind, (_, files) in folders.items():
+        if kind not in sets:
+            return f"{kind} の画像の組が無い"
+        uploaded = all_pages(f"/v1/appScreenshotSets/{sets[kind]}/appScreenshots?limit={PAGE_LIMIT}")
+        if len(uploaded) != len(files):
+            return f"{kind} の画像が {len(uploaded)} 枚で、{len(files)} 枚に足りない"
+    return ""
+
+
 def describe(page, folders):
     sets = "、".join(f"{kind}: {' → '.join(ordered(files, page.get('lead', [])))}" for kind, (_, files) in folders.items())
     return f"{page['name']}（キーワード: {', '.join(page['keywords'])}。{sets}）"
 
 
 def main():
-    args = [arg for arg in sys.argv[1:] if arg != "--dry-run"]
-    dry_run = len(args) < len(sys.argv) - 1
+    args, dry_run = split_dry_run(sys.argv[1:])
     if len(args) != 1:
         fail(USAGE)
 
@@ -251,7 +266,7 @@ def main():
     require_keys(ASC_KEYS)
     try:
         approved = approved_keywords(app, locale)
-        names = existing_names(app)
+        existing = existing_pages(app)
     except ASC_ERRORS as error:
         fail(f"App Store Connect を読めなかった: {asc_reason(error)}")
     for page in pages:
@@ -260,12 +275,18 @@ def main():
             fail(f"{page['name']}: 配信中の版のキーワードに無い語: {', '.join(missing)}")
 
     for page in pages:
-        if page["name"] in names:
+        if page["name"] in existing:
+            try:
+                problem = unfinished(existing[page["name"]], locale, folders, page)
+            except ASC_ERRORS as error:
+                fail(f"{page['name']} の中身を読めなかった: {asc_reason(error)}")
+            if problem:
+                fail(f"{page['name']} は既にあるが、途中で止まったままになっている（{problem}）。App Store Connect で消してから、もう一度実行する")
             print(f"OK {page['name']} は既にあるので作らなかった")
             continue
         try:
             create_page(app, locale, folders, page)
-        except ASC_ERRORS as error:
+        except Exception as error:
             fail(f"{page['name']} を作る途中で止まった: {asc_reason(error)}。App Store Connect で途中のページを消してから、もう一度実行する")
         print(f"OK {describe(page, folders)} を作った")
     print("OK 審査への提出は、人が App Store Connect で行う")
