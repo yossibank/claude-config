@@ -8,6 +8,7 @@
       "Bash(git show *)",
       "Bash(git status *)",
       "Bash(make audit)",
+      "Bash(make build)",
       "Bash(make test)",
       "Bash(make test *)",
       "Bash(make test-*)",

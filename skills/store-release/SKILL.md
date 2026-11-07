@@ -113,7 +113,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-custom-pages.py <アプリのリ�
 ```json
 {
   "locale": "ja",
-  "screenshots": {"APP_IPHONE_69": "screenshots/6.9"},
+  "screenshots": {"APP_IPHONE_67": "screenshots/6.9"},
   "pages": [
     {"name": "家族", "keywords": ["家族"], "lead": ["09-share.png"], "promotionalText": "…"}
   ]
