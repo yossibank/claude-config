@@ -31,20 +31,21 @@ expect "NG 画像ができなかった: $work/none.png" "tile-frames: 何も書�
 expect "NG 使い方" "record-video: 引数が足りなければ NG" bash "$record" udid 1
 expect "NG 録画する秒数は 0 より大きい数にする" "record-video: 秒数が数でなければ NG" bash "$record" udid x "$work/rec/a.mp4"
 expect "NG 録画する秒数は 0 より大きい数にする" "record-video: 秒数が 0 なら NG" bash "$record" udid 0 "$work/rec/a.mp4"
+seconds=0.3
 fake_command xcrun 'exit 1'
 expect "NG 録画が始まらなかった: udid" "record-video: simctl がすぐ終われば NG" bash "$record" udid 1 "$work/rec/a.mp4"
-fake_command xcrun '#!/usr/bin/env python3
+fake_command xcrun "#!$(command -v python3)"'
 import signal, sys, time
 signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
 open(sys.argv[-1], "w").write("v")
-time.sleep(3)'
-match "record-video: 出力先のフォルダを作って録る" "$(bash "$record" udid 1 "$work/rec/b.mp4")" "OK $work/rec/b.mp4"
+time.sleep(2)'
+match "record-video: 出力先のフォルダを作って録る" "$(bash "$record" udid "$seconds" "$work/rec/b.mp4")" "OK $work/rec/b.mp4"
 check "record-video: mp4 ができる" test -s "$work/rec/b.mp4"
-fake_command xcrun '#!/usr/bin/env python3
+fake_command xcrun "#!$(command -v python3)"'
 import signal, sys, time
 signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
-time.sleep(3)'
-expect "NG 録画できなかった: $work/rec/c.mp4" "record-video: ファイルが空なら NG" bash "$record" udid 1 "$work/rec/c.mp4"
+time.sleep(2)'
+expect "NG 録画できなかった: $work/rec/c.mp4" "record-video: ファイルが空なら NG" bash "$record" udid "$seconds" "$work/rec/c.mp4"
 
 fake_command ffmpeg "echo \"\$@\" >\"$work/ffmpeg.args\"; echo png >\"\${@: -1}\""
 bash "$tile" video.mp4 0 1 2 'min(100,200):50:0:0' 1 "$work/comma.png" >/dev/null

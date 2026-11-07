@@ -11,11 +11,8 @@ expect "NG 使い方" "docs-section: 引数が無ければ NG" bash "$section"
 match "docs-section: コードの中の # を見出しにしない" "$(bash "$section" "$work/section.md" | wc -l | tr -d ' ')" 3
 
 out=$(bash "$section" "$work/section.md" a)
-if [[ $out == *x* && $out != *y* && $out != *"## b"* ]]; then
-    ok "docs-section: 節だけを出す"
-else
-    ng "docs-section: 節だけを出す" "$out"
-fi
+check "docs-section: 節の中身を出す" grep -qF x <<<"$out"
+check "docs-section: 次の節は出さない" test -z "$(grep -F -e y -e '## b' <<<"$out")"
 
 out=$(bash "$section" "$work/section.md" none)
 status=$?

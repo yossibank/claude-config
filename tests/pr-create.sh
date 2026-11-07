@@ -32,6 +32,20 @@ printf '\0\1' >"$repo/a.bin"
 out=$(bash "$scripts/classify-diff.sh" "$repo" origin/main)
 match "classify-diff: 行の無いファイルだけの差分も、差分が無いとしない" "$out" "small | 0 行*"
 rm -f "$repo/a.bin"
+seq 200 >"$repo/lines.txt"
+match "classify-diff: 200 行ちょうどは small" "$(bash "$scripts/classify-diff.sh" "$repo" origin/main)" "small | 200 行*"
+seq 201 >"$repo/lines.txt"
+match "classify-diff: 201 行は large" "$(bash "$scripts/classify-diff.sh" "$repo" origin/main)" "large | 201 行*"
+rm -f "$repo/lines.txt"
+mkdir -p "$repo/db/migrations" "$repo/App.xcodeproj" "$repo/sub/fixtures" "$repo/settings"
+for risky in db/migrations/1.swift query.sql App.xcodeproj/project.pbxproj Package.resolved sub/fixtures/a.json settings/settings.local.json Schema.swift; do
+    echo x >"$repo/$risky"
+    match "classify-diff: $risky に触れたら large で、触れた所に出す" "$(bash "$scripts/classify-diff.sh" "$repo" origin/main)" "large | 1 行*触れた所: $risky"
+    rm -f "$repo/$risky"
+done
+echo x >"$repo/notes.txt"
+match "classify-diff: 普通のコードは触れた所を出さない" "$(bash "$scripts/classify-diff.sh" "$repo" origin/main)" "small | 1 行 | 確認: *レビュー: reviewer（sonnet）"
+rm -rf "$repo/notes.txt" "$repo/db" "$repo/App.xcodeproj" "$repo/sub" "$repo/settings"
 expect "NG nope との分かれ目が見つからない" "classify-diff: base が無ければ NG" bash "$scripts/classify-diff.sh" "$repo" nope
 expect "NG nope との分かれ目が見つからない" "write-body: base が無ければ NG" bash "$scripts/write-body.sh" "$repo" nope
 
@@ -97,6 +111,7 @@ git -C "$docs_repo" push -q origin main
 echo b >>"$docs_repo/a.md"
 bash "$scripts/classify-diff.sh" "$docs_repo" origin/main >/dev/null
 check "classify-diff: docs の差分は make verify-docs を要る確認にする" test "$(cat "$(git_file "$docs_repo" pr-required)")" == "make verify-docs"
+check "classify-diff: 消す前に要る確認の記録がある" test -e "$required"
 echo b >"$repo/b.md"
 bash "$scripts/classify-diff.sh" "$repo" origin/main >/dev/null
 check "classify-diff: make の目標でなければ要る確認の記録を消す" test ! -e "$required"

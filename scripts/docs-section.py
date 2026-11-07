@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from md_blocks import fence_marks, heading_of  # noqa: E402
 from md_doc import title_of  # noqa: E402
-from script_io import fail  # noqa: E402
+from script_io import fail, run_main  # noqa: E402
 
 
 def main():
@@ -38,4 +38,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

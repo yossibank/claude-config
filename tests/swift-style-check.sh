@@ -3,18 +3,12 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hooks.sh"
+source "$(dirname "$0")/lib/hook_fixtures.sh"
 
 style_case() {
-    local expect=$1 label=$2 text=$3 want=${4:-} out status
-    printf '%s\n' "$text" >"$work/Case.swift"
-    out=$(echo "{\"tool_input\":{\"file_path\":\"$work/Case.swift\"}}" | bash "$hooks" swift-style-check 2>&1)
-    status=$?
-    if [[ $status == "$expect" && $out == *"$want"* ]]; then
-        ok "swift-style-check: $label"
-    else
-        ng "swift-style-check: ${label}（終了コード ${status}、期待は ${expect} と「${want}」）" "$out"
-    fi
+    local expect=$1 label=$2 text=$3 want=${4:-}
+    [[ $expect != 2 || -n $want ]] || want="Swift の決まり（rules/swift-*.md）に合わない箇所がある"
+    hook_case swift-style-check "$expect" "$label" "$work/Case.swift" "$text" "$want"
 }
 
 style_case 2 "&& のある三項演算子を 1 行に書けば止める" $'var a: Int {\n    b && c ? 1 : 2\n}' "Case.swift:2: 条件に && か ||"

@@ -3,7 +3,8 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hooks.sh"
+source "$(dirname "$0")/lib/hook_fixtures.sh"
+STOP="pr-create の手順の確認を通す"
 
 push() {
     echo "{\"cwd\":\"$1\",\"tool_input\":{\"command\":\"$2\"}}"
@@ -13,15 +14,16 @@ run pr-gate 2 "pr: 確認の記録が無いと push を止める" "$(push "$app"
 "$run_check" "$app" "true" true >/dev/null
 run pr-gate 0 "pr: 確認を通せば push を通す" "$(push "$app" 'git push -u origin feat/x')"
 run pr-gate 0 "pr: 確認を通せば gh pr create を通す" "$(push "$app" 'gh pr create --title x')"
-run pr-gate 2 "pr: git -C の先が変数なら、確かめられないので止める" "$(push "$app" 'git -C \"$W/$d\" push')"
-run pr-gate 2 "pr: cd の先が変数なら、確かめられないので止める" "$(push "$app" 'cd \"$WT\" && git push')"
-run pr-gate 2 "pr: git -C の先がコマンド置換なら止める" "$(push "$work" 'git -C $(pwd) push origin main')"
+STOP="どのリポジトリかを確かめられるように" run pr-gate 2 "pr: git -C の先が変数なら、確かめられないので止める" "$(push "$app" 'git -C \"$W/$d\" push')"
+STOP="どのリポジトリかを確かめられるように" run pr-gate 2 "pr: cd の先が変数なら、確かめられないので止める" "$(push "$app" 'cd \"$WT\" && git push')"
+STOP="どのリポジトリかを確かめられるように" run pr-gate 2 "pr: git -C の先がコマンド置換なら止める" "$(push "$work" 'git -C $(pwd) push origin main')"
 run pr-gate 0 "pr: 本文のコマンド置換では止めない" "$(push "$app" 'gh pr create --body \"$(cat body.txt)\"')"
 git init -q "$work/other"
 run pr-gate 2 "pr: cd の後のコマンド置換は cd の先で見る" "$(push "$app" "cd $work/other && echo \$(git push)")"
-run pr-gate 0 "pr: \$HOME は展開して確かめる" "$(push "$work" "git -C \$HOME/${app#"$HOME"/} push")"
+HOME="$work" run pr-gate 0 "pr: \$HOME は展開して確かめる" "$(push "$work" "git -C \$HOME/app push")"
 echo 'struct B {}' >>"$swift"
 run pr-gate 2 "pr: 確認の後に変えると止める" "$(push "$app" 'git push')"
+HOME="$work" run pr-gate 2 "pr: \$HOME を展開した先でも、確認の後に変えると止める" "$(push "$work" "git -C \$HOME/app push")"
 "$run_check" "$app" "true" true >/dev/null
 "$run_check" "$app" "false" false >/dev/null
 run pr-gate 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')"
@@ -114,8 +116,8 @@ check "pr: 止めた時に CC_HOOKS_OFF での外し方を出す" grep -qF "CC_H
 printf '#!/bin/bash\necho "壊れた" >&2\nexit 3\n' >"$work/broken-check.sh"
 out=$(python3 -I - "$root" "$work/broken-check.sh" "$app" <<'EOF'
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_hook
+import os
+exec(os.environ["PY_PRELUDE"])
 gate = load_hook("pr-gate")
 gate.CHECK_SH = sys.argv[2]
 print(gate.problems(sys.argv[3]))
@@ -124,8 +126,8 @@ EOF
 check "pr: run-check.sh が何も出さずに落ちたら、理由に stderr の末尾を出す" grep -q "run-check.sh が失敗した（終了コード 3）: 壊れた" <<<"$out"
 out=$(python3 -I - "$root" "$app" 2>&1 <<'EOF'
 import subprocess, sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_hook
+import os
+exec(os.environ["PY_PRELUDE"])
 gate = load_hook("pr-gate")
 gate.git_root = lambda repo: repo
 
