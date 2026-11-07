@@ -84,7 +84,7 @@ flowchart LR
 pr-gate と rules-require-read は、フック自体が落ちた時の動きが決まっている。
 
 > [!IMPORTANT]
-> pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。
+> pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時も止める。
 
 ほかのフックは、想定外の例外を知らせて通す。
 
