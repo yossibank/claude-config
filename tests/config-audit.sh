@@ -238,6 +238,10 @@ d=$(copy ledger-path-later)
 replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| 前置きの文 `hooks/run.sh` |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きの文" "台帳の場所のパスが先頭に無い行"
 
+d=$(copy ledger-docs-missing-path)
+replace "$d/docs/improvements-docs.md" '| `README.md` |' '| `README.nothing` |'
+expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "文書の台帳の場所のパスが無い行"
+
 d=$(copy ledger-missing-path)
 replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| `hooks/nothing.sh` |'
 expect_audit "$d" "台帳の場所のパスが無い: hooks/nothing.sh" "台帳の場所のパスが無い行"

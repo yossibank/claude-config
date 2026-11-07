@@ -74,7 +74,7 @@ flowchart LR
 
 pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。
 
-フックを止める時は、[環境変数](#-環境変数)の `CC_HOOKS_OFF` に名前を並べる。
+フックを無効にする時は、[環境変数](#-環境変数)の `CC_HOOKS_OFF` に名前を並べる。
 
 ```sh
 CC_HOOKS_OFF="pr-gate,rules-require-read" claude

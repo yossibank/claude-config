@@ -19,7 +19,7 @@ from script_io import fail  # noqa: E402
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
-LEDGER = os.path.join(ROOT, "docs", "improvements.md")
+LEDGERS = [os.path.join(ROOT, "docs", name) for name in ("improvements.md", "improvements-docs.md")]
 COMPONENT_DOCS = ["components.md", "skills.md"]
 LEDGER_SECTION = "## 📝 残っている改善"
 BACKTICKED = re.compile(r"`([^`]+)`")
@@ -428,20 +428,21 @@ def check_paths():
 
 
 def check_ledger():
-    in_section = False
-    for number, line in enumerate(read(LEDGER).split("\n"), 1):
-        if line.startswith("## "):
-            in_section = line == LEDGER_SECTION
-        if not in_section or not line.startswith("|"):
-            continue
-        cells = [cell.strip() for cell in line.strip("|").split("|")]
-        if len(cells) < 3 or cells[1] == "場所" or set(cells[1]) <= {"-", " "}:
-            continue
-        found = BACKTICKED.match(cells[1])
-        if not found:
-            yield LEDGER, number, f"台帳の場所の先頭にパスが無い: {cells[1]}"
-        elif not os.path.exists(os.path.join(ROOT, found.group(1))):
-            yield LEDGER, number, f"台帳の場所のパスが無い: {found.group(1)}"
+    for ledger in LEDGERS:
+        in_section = False
+        for number, line in enumerate(read(ledger).split("\n"), 1):
+            if line.startswith("## "):
+                in_section = line == LEDGER_SECTION
+            if not in_section or not line.startswith("|"):
+                continue
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            if len(cells) < 3 or cells[1] == "場所" or set(cells[1]) <= {"-", " "}:
+                continue
+            found = BACKTICKED.match(cells[1])
+            if not found:
+                yield ledger, number, f"台帳の場所の先頭にパスが無い: {cells[1]}"
+            elif not os.path.exists(os.path.join(ROOT, found.group(1))):
+                yield ledger, number, f"台帳の場所のパスが無い: {found.group(1)}"
 
 
 def check_template_scripts():
