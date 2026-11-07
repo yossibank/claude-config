@@ -1,9 +1,14 @@
+import os
 import re
 import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
 from xml.sax.saxutils import escape
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+
+from script_io import fail  # noqa: E402
 
 CDN = "https://cdn.simpleicons.org/{slug}/white"
 ITEM = re.compile(r"^([a-z0-9]+):([0-9A-Fa-f]{6}):([^:]+)(?::([^:]+))?$")
@@ -12,11 +17,6 @@ STEP = 112
 TILE = 88
 FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'
 USAGE = "NG 使い方: docs-tech-icons.py [--icons <フォルダ>] <出力.svg> <slug>:<色>:<名前>[:<版>]..."
-
-
-def fail(message):
-    print(f"NG {message}")
-    sys.exit(1)
 
 
 def parse(args):

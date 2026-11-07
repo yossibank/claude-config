@@ -18,6 +18,6 @@ if [[ $status -eq 0 ]]; then
     exit 0
 fi
 
-grep -E "error:|failed|Test Case .* failed|✖" "$log" | sort -u | head -40
+{ grep -E -i 'error:|fail|^NG ' "$log" || true; } | awk '!seen[$0]++' | tail -n 20
 echo "NG ${label}（ログ: ${log}）"
 exit "$status"
