@@ -1,4 +1,4 @@
-# 改善の台帳
+# 台帳
 
 > [!NOTE]
 > claude-config の調べ直しで見つけて、まだ直していない改善と、直さないと決めたことが分かる。文書の改善は [improvements-docs](improvements-docs.md) にある。
@@ -105,7 +105,7 @@
 | 🟡 低 | `tests/lib/hooks.sh` | JSON を文字列で組んでいる |
 | 🟡 低 | `tests/shell-check.sh` | 対象外の入力のテストが無い。`tests/swift-format.sh`・`tests/ctx-limit-read.sh` も同じ |
 | 🟡 低 | `tests/lib/fixtures.sh` | commit で commit.gpgsign を切らない |
-| 🟡 低 | `tests/config-audit.sh` | expect_audit を 68 回、毎回リポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
+| 🟡 低 | `tests/config-audit.sh` | expect_audit を 69 回、毎回リポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
 | 🟡 低 | `tests/store-release.sh` | 内部の関数を差し替える。store-reply・store-report も同じ |
 | 🟡 低 | `tests/config-audit.sh` | docs/improvements.md などの文言に頼る置き換えがある |
 | 🟡 低 | `tests/ctx-limit-read.sh` | 30_000 などの上限ちょうどが通るテストが無い。docs-check・swift-style-check も同じ |
@@ -130,6 +130,7 @@
 | `make test` を並べて走らせる | 人が見送ると決めた |
 | bash 5.2 で確かめる | 手元の bash が 3.2 だけで、確かめる場所が無い |
 | `docs-section.sh`・`rules-detect-bash-edits.py` の改名 | 人が打つ名前なので、慣れた名前を残す |
+| `make test` と `make test *` の許可の重なりを 1 つにする | 引数の無い呼び出しに `*` が当たるかを確かめられない |
 | `run-check.sh`・`hooks/run.sh` の改名 | 参照が 30 件近くあり、変える益が小さい |
 | `find-simulator.sh` の写しを 1 つにする | ひな形のアプリが単独で動くように、写しを持つ。同じかはテストで見る |
 | lib の `.sh` と `.py` をフォルダで分ける | `source` のパスが 12 か所で変わり、益が小さい |

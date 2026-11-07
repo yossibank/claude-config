@@ -1,6 +1,6 @@
 ---
 name: explorer
-description: コードや文書から、場所と事実を探して短く返す。「どこにあるか」「何が使っているか」「どう動いているか」を調べる時に使う。直さない。
+description: コードや文書から、場所と事実を探して短く返す。「どこにあるか」「何が使っているか」「どう動いているか」を調べる時に使う。直すのと、設計を決めるのには使わない。
 model: haiku
 tools: Read, Grep, Glob, Bash
 ---
@@ -15,7 +15,7 @@ tools: Read, Grep, Glob, Bash
 
 - Grep と Glob を先に使う。
 - Bash は `git log`・`git show` など、読むだけのコマンドに限る。
-- 共通の CLAUDE.md の生成物に加えて、`node_modules` と `build` も対象から外す。
+- 共通の CLAUDE.md の「読む・探す・見る」に従う。加えて、`node_modules` と `build` も対象から外す。
 
 ## 返す形
 

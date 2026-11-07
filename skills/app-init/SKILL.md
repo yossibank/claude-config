@@ -1,13 +1,13 @@
 ---
 name: app-init
-description: 新しい iOS アプリのリポジトリを、kakeibot の形のひな形から作る。app-plan で企画を書いた後や、人が新しいアプリを始める時に使う。
+description: 新しい iOS アプリのリポジトリを、共通の形のひな形から作る。app-plan で企画を書いた後や、人が新しいアプリを始める時に使う。
 argument-hint: "<アプリの名前（英小文字と数字）> <ストアの表示名>"
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/create-app.sh *)
 ---
 
 # アプリを立ち上げる
 
-ビルドとテストが通る新しいアプリのリポジトリを、ひな形から作る手順。ひな形は `${CLAUDE_SKILL_DIR}/templates/ios-app/` にある。構成は `docs/architecture-ios.md` の共通の形に従う。
+ビルドとテストが通る新しいアプリのリポジトリを、ひな形から作る手順。ひな形は `${CLAUDE_SKILL_DIR}/templates/ios-app/` にある。構成は、claude-config の `docs/architecture-ios.md` の共通の形に従う。
 
 ## 入力
 
@@ -38,18 +38,22 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 - 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる。
 - ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える。
 - `docs/overview.md`・`docs/roadmap.md` は、無い方だけをひな形から置く。`app-plan` の下書きは上書きしない。
-- overview の最初の 1 文を、README の説明の文に写す。
+- overview の最初の 1 文を、README の `__Summary__` に写す。
 - `git init` し、最初の commit を作る。
+- 途中で失敗したら、新しく作ったフォルダは丸ごと消す。既にあったフォルダは、`docs/` のほかを消し、この実行で置いた `docs/` の文書も消す。
 
 置き換えた後の名前は、次の形になる。
 
 | 印 | 値 | `kakeibot` の例 |
 | --- | --- | --- |
 | `<App>` | 名前の頭を大文字にしたもの | `Kakeibot` |
+| `__DisplayName__` | 引数の表示名 | 引数のとおり |
 | Bundle ID | `com.yossibank.<名前>` | `com.yossibank.kakeibot` |
 | App Group | `group.com.yossibank.<名前>` | `group.com.yossibank.kakeibot` |
 
 ## ひな形の中身
+
+`templates/` の子フォルダは、アプリ 1 本分のひな形の単位である（今は `ios-app`）。
 
 ひな形は、kakeibot からアプリだけの事実を外した形である。ウィジェットと通知のターゲットは入れていない。要る時に、共通の形に合わせて Xcode で足す。
 

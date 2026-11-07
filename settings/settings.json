@@ -1,23 +1,49 @@
 {
   "permissions": {
     "allow": [
-      "Bash(make verify)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr view *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git status *)",
       "Bash(make audit)",
       "Bash(make build)",
       "Bash(make test)",
       "Bash(make test *)",
       "Bash(make test-*)",
-      "Bash(swift test *)",
-      "Bash(git status *)",
-      "Bash(git diff *)",
-      "Bash(git log *)",
-      "Bash(git show *)",
-      "Bash(gh pr view *)",
-      "Bash(gh pr checks *)"
+      "Bash(make verify)",
+      "Bash(swift test *)"
     ]
   },
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pr-gate"
+          },
+          {
+            "type": "command",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits pre"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits edit"
+          },
+          {
+            "type": "command",
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-require-read"
+          }
+        ]
+      },
       {
         "matcher": "Read",
         "hooks": [
@@ -31,35 +57,18 @@
             "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-require-read"
           }
         ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-require-read"
-          },
-          {
-            "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits edit"
-          }
-        ]
-      },
+      }
+    ],
+    "PostToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits pre"
-          },
-          {
-            "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" pr-gate"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits post"
           }
         ]
-      }
-    ],
-    "PostToolUse": [
+      },
       {
         "matcher": "Edit|Write",
         "hooks": [
@@ -75,13 +84,7 @@
           },
           {
             "type": "command",
-            "if": "Edit(//**/*.swift)",
-            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-style-check"
-          },
-          {
-            "type": "command",
-            "if": "Write(//**/*.swift)",
-            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-style-check"
+            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits edit"
           },
           {
             "type": "command",
@@ -95,16 +98,13 @@
           },
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits edit"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
+            "if": "Edit(//**/*.swift)",
+            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-style-check"
+          },
           {
             "type": "command",
-            "command": "bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" rules-detect-bash-edits post"
+            "if": "Write(//**/*.swift)",
+            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/Applications/AI/claude-config/hooks/run.sh\" swift-style-check"
           }
         ]
       }

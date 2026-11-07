@@ -61,11 +61,18 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 | 重さ | 条件 | 確認 | レビュー |
 | --- | --- | --- | --- |
 | `docs` | `.md` と `docs/` の下だけ | Makefile に `verify-docs` があれば `make verify-docs`。無ければ、変えた `.md` への `docs-check.py` | 自分で差分を読む |
-| `small` | 200 行まで | Makefile に `verify` があれば `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` に `model: sonnet` を付けて頼む |
+| `small` | 200 行まで | Makefile に `verify` があれば `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` を呼ぶ時に、Agent の `model` に `sonnet` を指定する |
 | `large` | 200 行を超える。または移行・スキーマ・fixtures・プロジェクトの設定・フック・settings に触れる | `small` と同じ | `reviewer`（opus）に頼む |
 
-確認が `make verify` か `make verify-docs` の時、コマンドを `pr-required` に書く。
-場所は git のフォルダの中である。それ以外の時は、`pr-required` を消す。
+`pr-required` には、確認のコマンドを書く。書くのは、`make verify` か `make verify-docs` の時だけである。
+それ以外の時は、`pr-required` を消す。
+`pr-required` は、git のフォルダの中に置く。
+
+変えた `.md` への `docs-check.py` は、次の形で呼ぶ。
+
+```sh
+python3 -I ~/Applications/AI/claude-config/hooks/docs-check.py <変えた .md…>
+```
 
 reviewer には、ワークツリーのパスと base のブランチ名だけを渡す。
 
@@ -93,6 +100,8 @@ reviewer には、ワークツリーのパスと base のブランチ名だけ�
 | `## 📝 変更` | 変えたファイルごとの表の行 | 各行の「変えたこと」。同じ変更のファイルは 1 行にまとめ、10 行を超えたらフォルダでまとめる |
 | `## 🧪 確認` | 差分の重さの行（`🔴` large・`🟡` small・`⚪` docs）。通った確認は `✅ 通った`、未検証は `⬜ 未検証` の行 | レビューの行。結果には、直した指摘の数を書く |
 
+重さの絵文字は、docs-human の重さの表に当たる。large が高、small が低、docs が無しである。
+
 次の節は、当たる時だけ書き足す。置く場所は表の順で、中身の無い節は作らない。
 
 | 節 | 置く場所 | 書く時 | 中身 |
@@ -102,7 +111,7 @@ reviewer には、ワークツリーのパスと base のブランチ名だけ�
 
 ## route-pr.sh の出力
 
-`route-pr.sh` は、gh でログインしている人の、そのリポジトリへの権限で出し方を決める。push は gh の権限ではなく、リポジトリの git の設定で通す。deploy key の `core.sshCommand` などである。
+`route-pr.sh` は、gh でログインしている人の、そのリポジトリへの権限で出し方を決める。push は gh の権限と関係なく、リポジトリの git の設定で通す。
 
 | 出力 | すること |
 | --- | --- |
