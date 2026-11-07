@@ -24,7 +24,6 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟡 低 | `docs/development.md` の「結果」 | データを返すスクリプトは OK と NG を出さない。その形を決まりに書く |
 | 🟡 低 | `skills/pr-create/scripts/hash-state.sh` | `git add -A` を確認のたびに 2 回走らせる |
 
 ### テスト
