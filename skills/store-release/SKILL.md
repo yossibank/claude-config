@@ -127,7 +127,9 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-custom-pages.py <アプリのリ�
 | `lead` | 先頭に並べる画像。残りの画像は、名前の順で後ろに続く |
 | `promotionalText` | 170 字まで |
 
-同じ名前のページが既にあれば、作らずに次へ進む。途中で止まったページは、App Store Connect で消してから実行し直す。審査への提出は、人が App Store Connect で行う。
+同じ名前のページが既にあれば、作らずに次へ進む。手元のキーワードや画像の枚数と違う時は、stderr で知らせる。キーワードか画像の組が 1 つも無いページは、途中で止まったものとして `NG` で止まる。
+
+審査への提出は、人が App Store Connect で行う。
 
 ## 報告
 

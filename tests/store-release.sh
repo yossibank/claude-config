@@ -137,7 +137,7 @@ from loader import load_module
 module = load_module(sys.argv[2])
 repo, scenario = sys.argv[3], sys.argv[4]
 approved = {"unapproved": []}.get(scenario, [{"id": "家計簿"}])
-names = [{"id": "p1", "attributes": {"name": "節約"}}] if scenario in ("existing", "partial") else []
+names = [{"id": "p1", "attributes": {"name": "節約"}}] if scenario in ("existing", "partial", "differs") else []
 shots = [{"id": "x"}] * (3 if scenario == "existing" else 1)
 calls = []
 
@@ -163,7 +163,8 @@ def fake(url, body=None, method=None):
     if url.startswith("/v1/appCustomProductPageLocalizations/pl1/searchKeywords?"):
         return {"data": approved, "links": {}}
     if url.startswith("/v1/appCustomProductPageLocalizations/pl1/appScreenshotSets?"):
-        return {"data": [{"id": "s1", "attributes": {"screenshotDisplayType": "APP_IPHONE_67"}}], "links": {}}
+        sets = [] if scenario == "partial" else [{"id": "s1", "attributes": {"screenshotDisplayType": "APP_IPHONE_67"}}]
+        return {"data": sets, "links": {}}
     if url.startswith("/v1/appScreenshotSets/s1/appScreenshots?"):
         return {"data": shots, "links": {}}
     if url == "/v1/appScreenshotSets":
@@ -196,7 +197,9 @@ match "create-custom-pages: 配信中の版に無い語は NG で、ページを
 check "create-custom-pages: 語が通らなければ appCustomProductPages に POST しない" test -z "$(grep -x 'CALL POST /v1/appCustomProductPages' <<<"$out")"
 
 match "create-custom-pages: 既にある名前のページは、中身がそろっていれば作らない" "$(run_pages existing)" "*OK 節約 は既にあるので作らなかった*"
-match "create-custom-pages: 既にある名前のページでも、画像が足りなければ途中で止まったものとして NG" "$(run_pages partial)" "*NG 節約 は既にあるが、途中で止まったままになっている（APP_IPHONE_67 の画像が 1 枚で、3 枚に足りない）*"
+match "create-custom-pages: 既にあるページに画像の組が 1 つも無ければ、途中で止まったものとして NG" "$(run_pages partial)" "*NG 節約 は既にあるが、途中で止まったままになっている（画像の組が 1 つも無い）*"
+out=$(run_pages differs)
+match "create-custom-pages: 手元と枚数が違うだけの既にあるページは、知らせて作らずに進む" "$out" "*節約: APP_IPHONE_67 の画像がページでは 1 枚で、手元は 3 枚*OK 節約 は既にあるので作らなかった*OK 審査への提出*"
 match "create-custom-pages: 作る途中の想定外の例外でも、途中のページが残った案内を出す" "$(run_pages broken)" "*NG 節約 を作る途中で止まった: KeyError。App Store Connect で途中のページを消してから*"
 
 out=$(run_pages new)

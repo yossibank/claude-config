@@ -223,26 +223,34 @@ def create_page(app, locale, folders, page):
         upload_set(localization, kind, path, ordered(files, page.get("lead", [])))
 
 
-def unfinished(created, locale, folders, page):
+def inspect_page(created, locale):
+    """ページ側の中身を読む。(途中で止まった理由, キーワードの集合, 画像の組ごとの枚数)"""
     try:
         localization = page_localization(created, locale)
     except ValueError as error:
-        return str(error)
+        return str(error), set(), {}
     keywords = {item["id"] for item in all_pages(f"/v1/appCustomProductPageLocalizations/{localization}/searchKeywords?limit={PAGE_LIMIT}")}
-    missing = [word for word in page["keywords"] if word not in keywords]
-    if missing:
-        return f"キーワードが入っていない: {', '.join(missing)}"
     sets = {
         item["attributes"]["screenshotDisplayType"]: item["id"]
         for item in all_pages(f"/v1/appCustomProductPageLocalizations/{localization}/appScreenshotSets?limit={PAGE_LIMIT}")
     }
+    counts = {kind: len(all_pages(f"/v1/appScreenshotSets/{id}/appScreenshots?limit={PAGE_LIMIT}")) for kind, id in sets.items()}
+    if not keywords:
+        return "キーワードが 1 つも入っていない", keywords, counts
+    if not counts:
+        return "画像の組が 1 つも無い", keywords, counts
+    return "", keywords, counts
+
+
+def differences(page, folders, keywords, counts):
+    found = []
+    missing = [word for word in page["keywords"] if word not in keywords]
+    if missing:
+        found.append(f"手元のキーワードがページに無い: {', '.join(missing)}")
     for kind, (_, files) in folders.items():
-        if kind not in sets:
-            return f"{kind} の画像の組が無い"
-        uploaded = all_pages(f"/v1/appScreenshotSets/{sets[kind]}/appScreenshots?limit={PAGE_LIMIT}")
-        if len(uploaded) != len(files):
-            return f"{kind} の画像が {len(uploaded)} 枚で、{len(files)} 枚に足りない"
-    return ""
+        if counts.get(kind) != len(files):
+            found.append(f"{kind} の画像がページでは {counts.get(kind, 0)} 枚で、手元は {len(files)} 枚")
+    return found
 
 
 def describe(page, folders):
@@ -277,11 +285,13 @@ def main():
     for page in pages:
         if page["name"] in existing:
             try:
-                problem = unfinished(existing[page["name"]], locale, folders, page)
+                problem, keywords, counts = inspect_page(existing[page["name"]], locale)
             except ASC_ERRORS as error:
                 fail(f"{page['name']} の中身を読めなかった: {asc_reason(error)}")
             if problem:
                 fail(f"{page['name']} は既にあるが、途中で止まったままになっている（{problem}）。App Store Connect で消してから、もう一度実行する")
+            for difference in differences(page, folders, keywords, counts):
+                print(f"{page['name']}: {difference}。既にあるページは作り直さない", file=sys.stderr)
             print(f"OK {page['name']} は既にあるので作らなかった")
             continue
         try:
