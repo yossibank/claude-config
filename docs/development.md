@@ -6,22 +6,38 @@
 
 ## 🏷️ 名前の付け方
 
-名前は、頭に `<分類>-` を付けてそろえる。フォルダの中を名前の順に並べると、分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
+名前は、頭に `<分類>-` を付けてそろえる。スキル・フック・rules・scripts は、フォルダの中を名前の順に並べると分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
 | スキル | `<分類>-<すること>` | `pr-create`、`ctx-handoff` |
-| フック | `<分類>-<すること、または名詞>.py`。イベントは settings.json に書く。`.py` 以外は `run.sh` だけを置く | `docs-check.py`、`pr-gate.py` |
-| rules | `<分類>-<範囲>.md` | `swift-core.md` |
+| フック | `<分類>-<すること、または名詞>.py` | `docs-check.py`、`pr-gate.py` |
+| フックのフォルダ | `.py` 以外は `run.sh` だけを置く。イベントは `settings/settings.json` に書く | `hooks/run.sh` |
+| rules | `<分類>-<範囲>.md`。範囲は、言語・読み手・主題のどれか | `swift-core.md`、`code-comments.md` |
 | scripts | `<分類>-<すること、または名詞>.sh`・`.py`・`.jq` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
+| scripts の拡張子違いの組 | `.sh` が入口で、同じ名前の `.py`・`.jq` はその中身 | `docs-section.sh` と `docs-section.py` |
+| スクリプトの置き場所 | そのスキルだけが呼ぶものは `skills/<名前>/scripts/` に置く。人・フック・複数のスキルが呼ぶ共通の道具は `scripts/` に置く | `scripts/docs-section.sh` |
+| ひな形のフォルダ | `skills/<名前>/templates/<単位>/`。単位は、アプリ 1 本・言語・セットのどれか | `templates/ios-app/`、`templates/ja/` |
+| docs/ の文書 | 名詞の kebab-case の `.md`。主題を分ける時は `<主題>-<分類>.md` | `setup.md`、`architecture-ios-naming.md` |
 | lib | 中身の名詞を `snake_case` にする。Python の import で読める形に、`.sh` もそろえる | `hook_io.py`、`build_log.sh` |
 | tests/lib | 中身の名詞を `snake_case` の `.sh` にする | `assert.sh`、`fixtures.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
 | 環境変数 | `CC_[<分類>_]<中身>`。分類は接頭語の表の名前を大文字にする | `CC_UI_DEVICE`、`CC_APPS_DIR` |
-| ひな形の印 | スクリプトが置き換える所は `__<名前>__` にし、`replace-placeholders.py` の tokens に入れる。人が書く所は `<中身>` | `__App__`、`<名前>` |
+| ひな形の印（置き換える所） | `__<名前>__` にし、`replace-placeholders.py` の tokens に入れる | `__App__` |
+| ひな形の印（人が書く所） | `<中身>` にする | `<名前>` |
 | 外の道具が読むファイル | 道具が決めた名前のままにし、この表の形にしない | `ios/license_plist.yml`、`store-release/templates/ja/*.txt` |
+
+### 並べる順
+
+表と一覧は、次の順に並べる。
+
+| 対象 | 順 |
+| --- | --- |
+| docs の表と一覧 | 名前の順。手順・段階・重さのように順に意味がある時は、その順 |
+| `settings/settings.json` の許可 | コマンドの名前の順。同じコマンドは引数の順 |
+| `settings/settings.json` のフック | イベントは処理の順（Pre → Post）、matcher と、その中のフックは名前の順 |
 
 ### 接頭語の表
 
@@ -35,7 +51,7 @@
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
 | `docs-` | 文書 | rules、skills、hooks、scripts |
 | `pr-` | PR | skills、hooks |
-| `rules-` | rules を読ませる | hooks |
+| `rules-` | rules を読ませる、rules を避けた書き換えを見つける | hooks |
 | `shell-` | シェルスクリプト | hooks |
 | `store-` | App Store への公開と数字 | skills |
 | `swift-` | Swift | rules、hooks |
@@ -50,7 +66,8 @@
 | `add`・`create` | 足す、作る |
 | `collect` | 手元の記録（会話の記録など）から集める |
 | `fetch` | 外（App Store などの API）から取ってくる |
-| `find`・`list`・`search` | 手元から合うものを 1 つ出す、並べる、検索する |
+| `find`・`list` | 手元から合うものを 1 つ出す、並べる |
+| `search` | 外の API に検索を頼み、合うものを並べる |
 | `check`・`classify`・`count`・`hash` | 確かめる、分ける、数える、指紋を取る |
 | `record`・`render`・`take`・`tile`・`write` | 録る、描く、撮る、並べる、書く |
 | `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
@@ -92,7 +109,7 @@
 
 | ファイル | 中身 |
 | --- | --- |
-| [lib/app_store.py](../lib/app_store.py) | 検索とレビューの読み方、失敗の理由、ページ送りの `paginate`・`asc_pages`。App Store Connect API のキーと署名、アプリの一覧と ID の確かめ、返信案のファイルの読み方 |
+| [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューを読み、失敗の理由と途中までの知らせの文を作る。ページ送りの `paginate`・`asc_pages` と、アプリの ID の確かめも持つ。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルも扱う |
 | [lib/audit_code.py](../lib/audit_code.py) | config-audit の、シェルと Python の書き方、settings、ひな形、ワークツリーの置き場所の検査 |
 | [lib/audit_docs.py](../lib/audit_docs.py) | config-audit の、README の形、リンク、見出しの参照先、パス、台帳、文書の決まりの検査 |
 | [lib/audit_files.py](../lib/audit_files.py) | config-audit が使う、追跡しているファイルの一覧、読み込み、コードの囲みの外の行、## の見出し |
@@ -104,7 +121,7 @@
 | [lib/docs_rows.py](../lib/docs_rows.py) | docs-check の、文・箇条書き・表の行ごとの検査 |
 | [lib/git.py](../lib/git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所（`WORKTREES` など）。根は、まだ無いフォルダからも在る親をたどって探す |
 | [lib/git.sh](../lib/git.sh) | 根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。分かれ目・変えたファイル・既定のブランチ・書き込みの権限 |
-| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし、止める時と止めない知らせ（`notify`）の出し方。止めたフックの判定、編集する道具の名前、門番の入口 `run_gate`、止めない入口 `run_hook` |
+| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし。止める時と止めない知らせ（`notify`）の出し方、編集する道具の名前、例外でも止める入口 `run_gate`、例外を知らせて通す入口 `run_hook` |
 | [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
 | [lib/hook_state.py](../lib/hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除。掃除は 1 時間に 1 回で、フォルダの中の新しいファイルは残す |
 | [lib/loader.py](../lib/loader.py) | claude-config の根（`ROOT`）と、場所を指して .py を読む処理 |
@@ -115,28 +132,19 @@
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方とリポジトリの名前（`repo_of`）。ある日時より後の記録の一覧（`sessions_since` など）、続きだけを読む `lines_after` |
 | [lib/worktree.sh](../lib/worktree.sh) | ブランチのワークツリーを探す `worktree_of` |
 
-ほかのスキルのスクリプトは、持ち主のスキルに置いたまま使う。スキルからは `${CLAUDE_SKILL_DIR}/../<スキル>/scripts/` で呼ぶ。フックからは、リポジトリの根からの `skills/<スキル>/scripts/` で呼ぶ。
+ほかのスキルのスクリプトは、持ち主のスキルに置いたまま、呼ぶ所に合わせた書き方で使う。
 
-## 📜 スクリプト
-
-入れる時、確かめる時、文書を読む時に、次のスクリプトを使う。
-
-| スクリプト | 呼ぶ時 | すること |
-| --- | --- | --- |
-| [scripts/config-audit.py](../scripts/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
-| [scripts/config-install.sh](../scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
-| [scripts/config-install.jq](../scripts/config-install.jq) | config-install.sh から | config-install.sh から呼ばれ、settings.json の案を混ぜる |
-| [scripts/docs-section.sh](../scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
-| [scripts/docs-section.py](../scripts/docs-section.py) | docs-section.sh から | docs-section.sh の中身。見出しを読み、節を切り出す |
-| [scripts/docs-tech-icons.py](../scripts/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
+| 呼ぶ所 | 書き方 |
+| --- | --- |
+| スキル | `${CLAUDE_SKILL_DIR}/../<スキル>/scripts/` |
+| フック | リポジトリの根からの `skills/<スキル>/scripts/` |
 
 ## 🚀 足し方
-
-スキル・フック・スクリプトを足す時は、次の順に進める。
 
 1. 名前の頭を [接頭語の表](#接頭語の表) で確かめる。スキルのスクリプトは、頭の動詞を [動詞の表](#動詞の表) で確かめる。
 2. 本体を置く。スキルは `skills/<名前>/SKILL.md`、フックは `hooks/<名前>.py`、スクリプトは `scripts/` に置く。
 3. フックは、`settings/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。
 4. `tests/<名前>.sh` を足し、[testing.md のテスト](testing.md#-テスト) の表に行を足す。
 5. [components.md](components.md) か [skills.md](skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
-6. [testing.md](testing.md#-動かし方) の `make verify` を通す。
+6. 文書を足したり書き換えたりする時は、[docs-core](../rules/docs-core.md)・[docs-human](../rules/docs-human.md)・[docs-app](../rules/docs-app.md) の決まりに従う。
+7. [testing.md](testing.md#-動かし方) の `make verify` を通す。

@@ -12,9 +12,9 @@
 | --- | --- |
 | `Screens` の下 | 画面の名前。一覧の画面は複数形 |
 | `Shared` の下 | 部品の役割の名前 |
+| 機能の束 | 機能ごとにフォルダを分ける親のフォルダ。`Core/Concepts`・`Features/Screens`・`AppWidget/Widgets` |
 | `Shared` の置き場所 | 機能のフォルダと同じ階層に置かない。1 段上で機能の束と並べる |
-| 機能の束 | `Core/Concepts`・`Features/Screens`・`AppWidget/Widgets` |
-| テストのフォルダ | ソースと同じフォルダに置く。`Shared` のテストは、`Shared/` の中を子フォルダに分けない |
+| テストのフォルダ | `Tests/` の下に、ソースと同じフォルダ分けで置く。`Shared` のテストは、`Shared/` の中を子フォルダに分けない |
 | フォルダ | ファイルが 1 つだけのフォルダは作らず、近いフォルダに入れる。ターゲットの直下、`Shared` の下の役割のフォルダ、ソースにそろえたテストは例外 |
 | ファイル | 中の型の名前。拡張は `<型>+<役割>.swift` |
 | モディファイア | DesignSystem の、画面をまたいで使うものだけ `View+<役割>.swift` にする。画面ごとのものは画面の名前で始める |
@@ -32,6 +32,13 @@
 | コントロール | ウィジェットと同じく、`AppWidget/Widgets/` の下にフォルダを分ける。ファイルが 1 つでも分ける |
 | 行の型の拡張 | `Store/Records/Rows/` |
 | 行の型が従うプロトコル | `Store/Records/Protocols/` |
+
+次のフォルダは、[architecture-ios](architecture-ios.md) のフォルダの木に無い。頭が同じファイルが増えた時に、役割の子フォルダとして足す。数の目安は、`rules/swift-core.md` の「ファイルとフォルダ」にある。
+
+- `Store/Records/Rows/`
+- `Store/Records/Protocols/`
+- `Store/Writes/Methods/`
+- `Store/Queries/Methods/`
 
 DesignSystem の `Components/` の子フォルダは、種類と題材の 2 通りがある。
 

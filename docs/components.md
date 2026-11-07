@@ -2,21 +2,28 @@
 
 > [!NOTE]
 > claude-config の部品が、それぞれいつ動き、何をするかが分かる。
-> スキルは [skills.md](skills.md)、入れ方は [install.md](install.md) にある。
+> スキルは [skills.md](skills.md)、入れ方は [setup.md](setup.md) にある。
 
 ## 📏 決まり
 
 CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを読み書きする時だけ読み込まれる。
 
-矢印の先の rules は、元の rules に足して読み込まれる。
+矢印の先の rules は、元の rules に足して読み込まれる。図の並びは、表の並びと同じにする。
 
 ```mermaid
 flowchart LR
-    docsCore["docs-core"] --> docsHuman["docs-human"]
-    docsCore --> docsClaude["docs-claude"]
-    docsCore --> docsApp["docs-app"]
-    swiftCore["swift-core"] --> swiftUi["swift-ui"]
-    swiftCore --> swiftTest["swift-test"]
+    docsApp["docs-app"]
+    docsClaude["docs-claude"]
+    docsCore["docs-core"]
+    docsHuman["docs-human"]
+    swiftCore["swift-core"]
+    swiftTest["swift-test"]
+    swiftUi["swift-ui"]
+    docsCore --> docsApp
+    docsCore --> docsClaude
+    docsCore --> docsHuman
+    swiftCore --> swiftTest
+    swiftCore --> swiftUi
 ```
 
 | ファイル | 読み込まれる時 | 決めること |
@@ -34,7 +41,7 @@ flowchart LR
 
 ## 🪝 フック
 
-フックは、決まりを読まずに進めた時や、確認の前に出そうとした時に止める。どれも [hooks/run.sh](../hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
+フックは、決まりを守らせるために、止める・知らせる・整えるのどれかをする。どれも [hooks/run.sh](../hooks/run.sh) が名前で受け、`hooks/<名前>.py` を `python3 -I` で走らせる。
 
 図の色は、表の動きの印に合わせる。赤は 🛑 止める、青は 💬 知らせる、緑は 🧹 整える。
 
@@ -61,7 +68,7 @@ flowchart LR
     class swift tidy
 ```
 
-| フック | 動き | 動く時 | 当たる時 |
+| フック | 動き | 呼ばれる時 | 動く条件 |
 | --- | --- | --- | --- |
 | [ctx-limit-read](../hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
 | [docs-check](../hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `rules/docs-*.md` に合わない時 |
@@ -72,9 +79,21 @@ flowchart LR
 | [swift-format](../hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 | [swift-style-check](../hooks/swift-style-check.py) | 💬 知らせる | `.swift` を Edit・Write した後。swift-format の後に順に走る | `.swift` が、整形で直らない `rules/swift-*.md` の改行と空行に合わない時 |
 
-pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。ほかのフックは、想定外の例外を知らせて通す。
+### 例外で落ちた時
+
+pr-gate と rules-require-read は、フック自体が落ちた時の動きが決まっている。
+
+> [!IMPORTANT]
+> pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。
+
+ほかのフックは、想定外の例外を知らせて通す。
+
+### フックを無効にする
 
 フックを無効にする時は、[環境変数](#-環境変数)の `CC_HOOKS_OFF` に名前を並べる。
+
+> [!WARNING]
+> `CC_HOOKS_OFF` に pr-gate を並べると、PR を出す前の確認の門も外れる。
 
 ```sh
 CC_HOOKS_OFF="pr-gate,rules-require-read" claude
@@ -94,16 +113,16 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 ## 📜 スクリプト
 
-呼ぶ時の詳しい説明は、[development.md のスクリプト](development.md#-スクリプト) にある。
+入れる時、確かめる時、文書を読む時に、次のスクリプトを使う。
 
-| スクリプト | すること |
-| --- | --- |
-| [scripts/config-audit.py](../scripts/config-audit.py) | 表・図・参照先と名前の食い違い、書き方の違反を見る |
-| [scripts/config-install.sh](../scripts/config-install.sh) | `~/.claude` からリンクを張り、settings.json の案を作る |
-| [scripts/config-install.jq](../scripts/config-install.jq) | config-install.sh から呼ばれ、settings.json の案を混ぜる |
-| [scripts/docs-section.sh](../scripts/docs-section.sh) | 見出しの一覧か、指定した節だけを出す |
-| [scripts/docs-section.py](../scripts/docs-section.py) | docs-section.sh の中身 |
-| [scripts/docs-tech-icons.py](../scripts/docs-tech-icons.py) | 技術のアイコンを並べた SVG を作る |
+| スクリプト | 呼ぶ時 | すること |
+| --- | --- | --- |
+| [scripts/config-audit.py](../scripts/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
+| [scripts/config-install.jq](../scripts/config-install.jq) | config-install.sh から | settings.json の案を混ぜる |
+| [scripts/config-install.sh](../scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
+| [scripts/docs-section.py](../scripts/docs-section.py) | docs-section.sh から | docs-section.sh の中身。見出しを読み、節を切り出す |
+| [scripts/docs-section.sh](../scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
+| [scripts/docs-tech-icons.py](../scripts/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
 
 ## 🔧 環境変数
 

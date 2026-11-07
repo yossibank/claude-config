@@ -11,27 +11,27 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 
 ## 入力
 
-公開に使うファイルは、アプリのリポジトリの次の場所に置く。無ければ、表のひな形から写して作る。
+公開に使うファイルは、アプリのリポジトリの次の場所に置く。無ければ、表のひな形から写して作る。`templates/` の子フォルダは、言語の単位である（今は `ja`）。
 
 | ファイル | ひな形 | 中身 |
 | --- | --- | --- |
-| `ios/<App>/PrivacyInfo.xcprivacy` | `${CLAUDE_SKILL_DIR}/../app-init/templates/ios-app/` の同じ名前 | 理由の申告が要る API と、集めるデータ |
+| `ios/<App>/PrivacyInfo.xcprivacy` | `${CLAUDE_SKILL_DIR}/../app-init/templates/ios-app/ios/__App__/PrivacyInfo.xcprivacy` | 理由の申告が要る API と、集めるデータ |
 | `store/ja/*.txt` | `${CLAUDE_SKILL_DIR}/templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
 | `store/screenshots/` | | 6.9 インチの PNG |
 | `store/custom-pages.json` | | カスタムプロダクトページの案。作る時だけ置く |
 
 ## 手順
 
-公開の準備は、次の順に進める。1 つでも `NG` が出たら、直してから次へ進む。各段のやり方は同じ名前の節に、6 の段は「報告」にある。
+公開の準備は、次の順に進める。1 つでも `NG` が出たら、直してから次へ進む。各段のやり方は、段ごとのスクリプトの節に、6 の段は「報告」にある。
 
 1. プライバシーの申告を確かめる。
 2. 掲載情報を書いて確かめる。
 3. スクリーンショットを撮る。
 4. 版の番号を決める。
-5. アーカイブを作って送る。
+5. 人の承認を得てから、アーカイブを作って送る。
 6. 人に、App Store Connect でする作業を渡す。
 
-## プライバシーの申告
+## check-privacy.py がすること
 
 `check-privacy.py` は、Swift のコードから理由の申告が要る API を探し、申告と突き合わせる。
 
@@ -48,7 +48,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-privacy.py <アプリのリポジ�
 
 理由が選べない時は、人に聞く。ライブラリは、それぞれが持つ申告を使う。
 
-## 掲載情報
+## check-listing.py がすること
 
 `store/ja/` の文を書き、`check-listing.py` で字数と抜けを確かめる。
 
@@ -65,10 +65,11 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-listing.py <アプリのリポジ�
 | キーワード | 100 字 |
 | 宣伝文 | 170 字 |
 | 説明 | 4000 字 |
+| 更新の説明 | 4000 字 |
 
 説明の文は、overview の「解決したい不満」と「最初のリリースの機能」から書く。キーワードはカンマで区切る。名前とサブタイトルにある語は、キーワードに入れない。
 
-## スクリーンショット
+## take-screenshot.sh がすること
 
 6.9 インチのシミュレーター（iPhone 18 Pro Max など）でアプリを開き、見せたい画面ごとに撮る。`take-screenshot.sh` は、状態バーを 9:41・電池 100% に固定して撮り、大きさを確かめる。撮った後は固定を戻す。
 
@@ -82,7 +83,7 @@ ${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh <UDID> <アプリのリポジト�
 
 `MARKETING_VERSION` を人に確かめる。ビルドの番号は、送る時に Xcode が上げる。
 
-## アーカイブと送信
+## archive-app.sh がすること
 
 `archive-app.sh` は、Release でアーカイブを作り、App Store Connect に送る。
 
@@ -113,7 +114,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-custom-pages.py <アプリのリ�
 ```json
 {
   "locale": "ja",
-  "screenshots": {"APP_IPHONE_61": "screenshots/6.3"},
+  "screenshots": {"APP_IPHONE_67": "screenshots/6.9"},
   "pages": [
     {"name": "家族", "keywords": ["家族"], "lead": ["09-share.png"], "promotionalText": "…"}
   ]
@@ -149,4 +150,4 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-custom-pages.py <アプリのリ�
 
 ## 制約
 
-`archive-app.sh` は外に出す操作なので、走らせる前に人の承認を得る。`--dry-run` を付けない `create-custom-pages.py` も同じである。`create-custom-pages.py` の API のキーには、App マネージャの役割が要る。
+`archive-app.sh` は外に出す操作なので、走らせる前に人の承認を得る。`--dry-run` を付けない `create-custom-pages.py` も同じである。API のキーに要る役割は、[store-report](../store-report/SKILL.md) の「API のキー」にある。
