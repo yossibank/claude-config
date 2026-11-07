@@ -312,11 +312,11 @@ printf '\n`tests/nothing.sh` を読む。\n' >>"$d/docs/architecture-ios.md"
 expect_audit "$d" "参照先が無い: tests/nothing.sh" "tests/ に無いファイルへのパス"
 
 d=$(copy ledger-no-path)
-replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| 前置きだけの文 |'
+replace "$d/docs/improvements.md" '| `skills/pr-create/scripts/hash-state.sh` |' '| 前置きだけの文 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きだけの文" "台帳の場所にパスが無い行"
 
 d=$(copy ledger-path-later)
-replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| 前置きの文 `hooks/run.sh` |'
+replace "$d/docs/improvements.md" '| `skills/pr-create/scripts/hash-state.sh` |' '| 前置きの文 `skills/pr-create/scripts/hash-state.sh` |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きの文" "台帳の場所のパスが先頭に無い行"
 
 d=$(copy ledger-docs-missing-path)
@@ -324,7 +324,7 @@ replace "$d/docs/improvements-docs.md" '| `README.md` |' '| `README.nothing` |'
 expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "文書の台帳の場所のパスが無い行"
 
 d=$(copy ledger-missing-path)
-replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| `hooks/nothing.sh` |'
+replace "$d/docs/improvements.md" '| `skills/pr-create/scripts/hash-state.sh` |' '| `hooks/nothing.sh` |'
 expect_audit "$d" "台帳の場所のパスが無い: hooks/nothing.sh" "台帳の場所のパスが無い行"
 
 d=$(copy ledger-missing)
