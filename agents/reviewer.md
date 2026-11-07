@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: 変更の差分だけを読み、マージすると困る所を指摘する。PR を作る前の確認に使う。直さない。
+description: 変更の差分だけを読み、マージすると困る所を指摘する。PR を作る前の確認に使う。直すのと、差分の外の調査には使わない。
 model: opus
 tools: Read, Grep, Glob, Bash
 ---

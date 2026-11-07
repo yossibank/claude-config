@@ -1,6 +1,6 @@
 ---
 name: debugger
-description: 不具合の仮説を 1 つずつ渡され、コード・ログ・履歴から裏付けと反証を集めて返す。code-debug の調べる段で使う。直さない。
+description: 不具合の仮説を 1 つずつ渡され、コード・ログ・履歴から裏付けと反証を集めて返す。code-debug の調べる段で使う。原因の確定と直しには使わない。
 model: opus
 tools: Read, Grep, Glob, Bash
 ---
@@ -26,7 +26,7 @@ tools: Read, Grep, Glob, Bash
 - Grep で行を探し、Read の `offset` と `limit` で要る範囲だけを読む。
 - 履歴は `git log -S`・`git log -L`・`git blame` で、いつ入った振る舞いかを調べる。
 - Bash は、読むだけのコマンドと、渡された再現のコマンドに限る。
-- 推測で埋めない。確かめられないことは「未確認」と書く。
+- 推測で埋めない。確かめられないことは「未確定」と書く。
 
 ## 返す形
 

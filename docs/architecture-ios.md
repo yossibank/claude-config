@@ -14,7 +14,7 @@
 
 ## 🗺️ 全体像
 
-依存は、上から下へだけ向ける。
+**依存は、上から下へだけ向ける。** 例外は AppWidget から Notifications への 1 本だけである。ウィジェットから書いた後に、通知を予約し直す時に使う。
 
 ```mermaid
 flowchart TB
@@ -69,7 +69,7 @@ flowchart TB
 
 ### リポジトリの直下
 
-`android/` と `spec/` は、要る時に足す。
+`android/` は、要る時に足す。`spec/` は、両 OS で同じ結果が要る時に足す。
 
 ```text
 <app>/
@@ -93,29 +93,14 @@ flowchart TB
 | --- | --- |
 | `scripts/find-simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す |
 | `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す |
+| `docs/` | アプリの文書。作る文書と足す条件は、claude-config の `rules/docs-app.md` にある |
 | `spec/` | 両 OS で同じ結果が要る計算の fixtures と、書き出しの形 |
 | `.claude/rules/` | このアプリだけの決まり |
 | `.claude/skills/` | このアプリだけの手順 |
 | `.pre-commit-config.yaml` | commit の前の確認（SwiftFormat） |
 | `Brewfile` | jq、Mint、pre-commit、xcbeautify |
-| `Makefile` | 下の make のコマンド |
+| `Makefile` | [動かし方](#-動かし方)の make のコマンド |
 | `Mintfile` | SwiftFormat と LicensePlist の版 |
-
-### make のコマンド
-
-ビルドとテストは、xcbeautify があれば出力を通して整える。
-
-| コマンド | すること |
-| --- | --- |
-| `make setup` | Brewfile・Mintfile の道具を入れ、pre-commit のフックを置く |
-| `make open` | Xcode でワークスペースを開く。`BRANCH=<ブランチ>` で、そのワークツリーのものを開く |
-| `make format` | SwiftFormat で整える |
-| `make licenses` | 設定アプリに出すライセンスの一覧を、LicensePlist で作り直す |
-| `make build` | iOS シミュレーター向けにビルドする |
-| `make verify` | Kit の `swift test` と iOS のビルドを `scripts/verify.sh` を通して走らせる |
-| `make test` | テストプランを iOS シミュレーターで走らせる |
-| `make test-build` | 走らせずにコンパイルだけする |
-| `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` を ui-snapshot で描く。出力は `.build/snapshots/` |
 
 ### Xcode のプロジェクトとパッケージ（ios/）
 
@@ -142,8 +127,8 @@ ios/
 | `<App>.xcworkspace` | プロジェクトと 2 つのパッケージを並べる |
 | `<App>Widget/` | ウィジェット（`@main` で AppWidget を呼ぶだけ） |
 | `license_plist.yml` | LicensePlist に手で足すライセンス |
-| `Packages/<App>App/` | iOS 専用。Xcode でテスト |
-| `Packages/<App>Kit/` | iOS と macOS。Mac の上で `swift test` |
+| `Packages/<App>App/` | 画面と、OS の仕組みへの反映。Kit との違いは[パッケージ](#-パッケージ)にある |
+| `Packages/<App>Kit/` | 画面を持たない型と計算、保存 |
 
 ターゲットと ID は、次の形にそろえる。
 
@@ -155,13 +140,32 @@ ios/
 | Data Protection | | `NSFileProtectionComplete` |
 | ライセンスの一覧 | `<App>/Settings.bundle`。`make licenses` で LicensePlist が作る | 入れない |
 
+## 🚀 動かし方
+
+ビルドとテストは、xcbeautify があれば出力を通して整える。
+
+| コマンド | すること |
+| --- | --- |
+| `make setup` | Brewfile・Mintfile の道具を入れ、pre-commit のフックを置く |
+| `make open` | Xcode でワークスペースを開く。`BRANCH=<ブランチ>` で、そのワークツリーのものを開く |
+| `make format` | SwiftFormat で整える |
+| `make licenses` | 設定アプリに出すライセンスの一覧を、LicensePlist で作り直す |
+| `make build` | iOS シミュレーター向けにビルドする |
+| `make verify` | Kit の `swift test` と iOS のビルドを `scripts/verify.sh` を通して走らせる |
+| `make test` | テストプランを iOS シミュレーターで走らせる |
+| `make test-build` | 走らせずにコンパイルだけする |
+| `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` を ui-snapshot で描く。出力は `.build/snapshots/` |
+
 ## 📦 パッケージ
 
 パッケージは 2 つに分ける。中のフォルダは、そのコードを作る時に足す。
 
-### Kit
+| パッケージ | 入れるもの | 動く OS | テストの方法 |
+| --- | --- | --- | --- |
+| Kit | 画面を持たない型と計算、保存 | iOS・macOS | Mac の上で `swift test` |
+| App | 画面と、OS の仕組みへの反映 | iOS 専用 | Xcode |
 
-画面を持たない型と計算、保存を入れる。macOS でも動くので、Mac の上で `swift test` を回せる。
+### Kit
 
 ```text
 <App>Kit/
@@ -184,7 +188,7 @@ ios/
 | --- | --- |
 | `Core/Concepts/` | 概念ごとのフォルダに、型と計算を一緒に入れる |
 | `Core/Shared/` | 概念をまたいで使う型。型付きの ID など |
-| `Store/Database/` | App Group、DatabasePool、裏に回る前の対策 |
+| `Store/Database/` | App Group、`DatabasePool`、裏に回る時に止める処理 |
 | `Store/Migrations/` | 版ごとに 1 ファイル |
 | `Store/Queries/` | 読み出し |
 | `Store/Records/` | Core の型を GRDB で読み書きできるようにする |
@@ -194,7 +198,7 @@ ios/
 
 ### App
 
-画面と、OS の仕組みへの反映を入れる。`AppWidget` はウィジェットを、`Notifications` は通知を持つ時に足す。
+`AppWidget` はウィジェットを、`Notifications` は通知を持つ時に足す。
 
 ```text
 <App>App/
@@ -216,13 +220,13 @@ ios/
 
 | フォルダ | 中身 |
 | --- | --- |
-| `AppFeature/` | AppModel、RootView、MainView（タブとシート）、起動の処理 |
-| `AppWidget/` | `Widgets/` にウィジェットごと、`Intents/` に AppIntent を置く。`Shared/` はタイムラインなど |
+| `AppFeature/` | `AppModel`、`RootView`、`MainView`（タブとシート）、起動の処理 |
+| `AppWidget/` | `Widgets/` にウィジェットごと、`Intents/` に `AppIntent` を置く。`Shared/` はタイムラインなど |
 | `DesignSystem/Components/` | 部品の種類ごとのフォルダ |
 | `DesignSystem/Theme/` | 色・角の丸み・字体・文字の大きさ |
 | `Features/Screens/` | 画面ごとのフォルダ。タブの画面は `Tabs/` の下 |
 | `Features/Shared/` | 複数の画面で使う部品とモデル。役割ごとのフォルダ |
-| `Notifications/` | 予約されているべき通知と今の予約の差を OS に反映する。押された通知の行き先を受ける |
+| `Notifications/` | あるべき通知の予約と、今の予約の差を OS に反映する。押された通知の行き先を受ける |
 
 ## 📱 Features と AppFeature
 
@@ -248,8 +252,7 @@ ios/
 | 最初の読み込み | 見張りと一緒に `run()` にまとめる。1 回だけ読む値を先に読み、見張りは並べて動かす |
 
 > [!TIP]
-> `observe` はひな形に無い。最初に見張る画面を作る時に、kakeibot から写す。
-> 写し元は `Features/Shared/Model/ScreenModel.swift` である。
+> `observe` はひな形に無い。最初に見張る画面を作る時に、`Features/Shared/Model/ScreenModel.swift` として足す。
 
 ### AppModel と MainView
 
@@ -271,7 +274,8 @@ AppModel は起動と行き先を、MainView はタブとシートを持つ。
 | ほかのプロセス（ウィジェット）の書き込みを、見張りに知らせて読み直させる | | する | する |
 | 通知を予約し直す（通知を持つ時） | する | する | する |
 
-DB は、裏に回ると止め、前面に戻ると再開する。書き込みの最中に裏に回っても、`0xdead10cc` で終了させないためである。
+> [!IMPORTANT]
+> DB は、裏に回ると止め、前面に戻ると再開する。書き込みの最中に裏に回っても、`0xdead10cc` で終了させないためである。
 
 ```mermaid
 stateDiagram-v2
@@ -298,18 +302,18 @@ sequenceDiagram
 
 ## 🪟 ウィジェット
 
-ウィジェットは、AppWidget が App Group の DB を読むだけで開く。
+ウィジェットは、AppWidget が App Group の DB を読むだけで表示する。
 
 | 場面 | 動き |
 | --- | --- |
 | 計算 | アプリの画面と同じ Core のものを使う |
 | 表の形が古い | 読まない |
 | 更新 | AppModel が見張りで起こす。日付が変わる時はタイムラインで切り替える |
-| ウィジェットから書く | その機能を持つ時だけ、AppIntent が書き込み用に開く |
+| ウィジェットから書く | その機能を持つ時だけ、AppIntent が書き込み用に DB を開く |
 
 ## 🧪 テスト
 
-テストターゲットは `ios/<App>.xctestplan` にまとめ、`<App>` スキームに付ける。走らせるコマンドは [make のコマンド](#make-のコマンド) にある。
+テストターゲットは `ios/<App>.xctestplan` にまとめ、`<App>` スキームに付ける。走らせるコマンドは [動かし方](#-動かし方) にある。
 
 テストの対象と方法は、次のとおりである。
 
@@ -319,13 +323,9 @@ sequenceDiagram
 | Store | メモリ上の DB で、表の形の変更・集計・書き出しの往復 |
 | Features | 処理のある画面のモデル |
 | AppFeature | AppModel と通知の予約。通知の予約係だけテスト用に差し替える |
-| 見た目 | プレビューで目で確かめる。UI テストは書かない |
+| 見た目 | プレビューと ui-snapshot で描いた PNG を目で確かめる。XCUITest の UI テストは書かない |
 
-CI は置かない。PR ごとに手元で回す。
+PR ごとに手元で回す。CI の扱いは、[testing](testing.md#-動かし方) にある。
 
 > [!IMPORTANT]
 > パッケージは、プロジェクトのフォルダとしても登録する。こうしないと、スキームからパッケージのテストターゲットが見えない。
-
-## 🏷️ 名前の決まり
-
-フォルダとファイルの名前と、迷いやすいファイルの置き場所は、[architecture-ios-naming](architecture-ios-naming.md) にある。

@@ -25,4 +25,4 @@
 | --- | --- | --- |
 | 機能・画面を足す | [overview](docs/overview.md)、[roadmap](docs/roadmap.md) | overview、roadmap |
 | 作る順番の 1 段を終える | [roadmap](docs/roadmap.md) | roadmap の状態 |
-| 構成を共通の形から外す | 共通の形 | `docs/architecture.md` |
+| 構成を共通の形から外す | claude-config の `docs/architecture-ios.md` | `docs/architecture.md` |
