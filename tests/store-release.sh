@@ -90,13 +90,13 @@ printf '<?xml version="1.0"?>\n<plist version="1.0"><dict>\n' >"$work/priv/Priva
 match "check-privacy: 途中で切れた XML の申告のファイルも stdout に NG" "$(python3 -I "$privacy" "$work/priv" 2>/dev/null)" "NG*"
 
 pages="$root/skills/store-release/scripts/create-custom-pages.py"
-export https_proxy=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9
+offline
 unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
 
 repo="$work/pages"
 mkdir -p "$repo/store/shots"
 printf '123456\n' >"$repo/store/app-id.txt"
-touch "$repo/store/shots/01-a.png" "$repo/store/shots/02-b.png" "$repo/store/shots/03-c.png"
+for shot in 01-a 02-b 03-c; do printf 'image %s\n' "$shot" >"$repo/store/shots/$shot.png"; done
 write_plan() {
     printf '{"locale": "ja", "screenshots": {"APP_IPHONE_67": "shots"}, "pages": [%s]}\n' "$1" >"$repo/store/custom-pages.json"
 }
@@ -205,7 +205,9 @@ match "create-custom-pages: 作る途中の想定外の例外でも、途中の�
 out=$(run_pages new)
 check "create-custom-pages: 新しいページは POST で作る" grep -qx 'CALL POST /v1/appCustomProductPages' <<<"$out"
 check "create-custom-pages: キーワードを searchKeywords の関係に入れる" grep -qx 'KEYWORDS 家計簿' <<<"$out"
-check "create-custom-pages: 画像を PATCH で確定し、md5 の sourceFileChecksum を付ける" grep -qx 'CHECKSUM d41d8cd98f00b204e9800998ecf8427e' <<<"$out"
+for shot in 01-a 02-b 03-c; do
+    check "create-custom-pages: 画像を PATCH で確定し、${shot}.png の md5 を sourceFileChecksum に付ける" grep -qx "CHECKSUM $(openssl dgst -md5 -r "$repo/store/shots/$shot.png" | cut -d' ' -f1)" <<<"$out"
+done
 check "create-custom-pages: 画像の確定は appScreenshots/<id> への PATCH" grep -qx 'CALL PATCH /v1/appScreenshots/shot1' <<<"$out"
 
 mkdir -p "$work/priv2/App" "$work/priv2/Pods" "$work/priv2/build"

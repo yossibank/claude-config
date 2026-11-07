@@ -4,10 +4,11 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
 source "$(dirname "$0")/lib/hook_fixtures.sh"
+STOP="Bash でファイルを書き換えた"
 
 run rules-detect-bash-edits 1 "bash: 知らないモードは止めずに知らせる" "$(bash_call t0 'ls')" before
 run rules-detect-bash-edits 0 "bash: 書き換える前の状態を残す" "$(bash_call t1 'sed -i')" pre
-sed -i '' 's/概要/概要です/' "$app/docs/overview.md"
+printf '# 概要です\n' >"$app/docs/overview.md"
 run rules-detect-bash-edits 2 "bash: Bash で .md を書き換えると知らせて検査する" "$(bash_call t1 'sed -i')" post
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t2 'git checkout')" pre
 git -C "$app" checkout -q -- docs/overview.md
@@ -58,9 +59,9 @@ run rules-detect-bash-edits 2 "bash: git・gh でも、出力をファイルに�
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t12 'git status 2>/dev/null >&2')" pre
 echo 's' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 0 "bash: /dev/null と fd への向け替えは書き込みと数えない" "$(bash_call t12 'git status 2>/dev/null >&2')" post
-run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" pre
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t13 "git status > $work/redirect.log")" pre
 echo 'r' >>"$app/docs/overview.md"
-run rules-detect-bash-edits 0 "bash: 道具の出力を別の所に向けても、道具が変えたファイルは数えない" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" post
+run rules-detect-bash-edits 0 "bash: 道具の出力を別の所に向けても、道具が変えたファイルは数えない" "$(bash_call t13 "git status > $work/redirect.log")" post
 echo "{}" >"$app/docs/quiet.json"
 for tool in make mint swiftformat pre-commit brew xcodebuild swift; do
     run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call "tool-$tool" "$tool run")" pre

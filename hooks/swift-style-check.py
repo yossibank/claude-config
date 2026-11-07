@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import block_on_findings, target_paths  # noqa: E402
+from hook_io import block_on_findings, run_hook, target_paths  # noqa: E402
 from swift_source import mask  # noqa: E402
 
 WIDTH = 100
@@ -148,4 +148,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_hook("swift-style-check", main)

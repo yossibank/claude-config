@@ -22,11 +22,9 @@ esac'
 
 expect "NG 使い方" "fetch-threads: 引数が足りなければ NG" bash "$threads" "$repo"
 out=$(bash "$threads" "$repo" 1)
-status=$?
-if [[ $status == 0 && $out == *"ACCESS write"* && $out == *"CI NG build"* && $out == *"THREAD T1"* && $out == *"REVIEW COMMENTED"* && $out == *"COMMENT @someone"* ]]; then
-    ok "fetch-threads: 権限と落ちた CI と、めくって集めた未解決のスレッドとレビューとコメントを出す"
-else
-    ng "fetch-threads: 権限と落ちた CI と、めくって集めた未解決のスレッドとレビューとコメントを出す（終了コード ${status}）" "$out"
-fi
+check "fetch-threads: 終了コード 0 で終わる" test $? -eq 0
+for want in "ACCESS write" "CI NG build" "THREAD T1" "REVIEW COMMENTED" "COMMENT @someone"; do
+    check "fetch-threads: ${want} を出す" grep -qF "$want" <<<"$out"
+done
 
 finish

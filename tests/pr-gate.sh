@@ -4,6 +4,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
 source "$(dirname "$0")/lib/hook_fixtures.sh"
+STOP="pr-create の手順の確認を通す"
 
 push() {
     echo "{\"cwd\":\"$1\",\"tool_input\":{\"command\":\"$2\"}}"
@@ -13,15 +14,16 @@ run pr-gate 2 "pr: 確認の記録が無いと push を止める" "$(push "$app"
 "$run_check" "$app" "true" true >/dev/null
 run pr-gate 0 "pr: 確認を通せば push を通す" "$(push "$app" 'git push -u origin feat/x')"
 run pr-gate 0 "pr: 確認を通せば gh pr create を通す" "$(push "$app" 'gh pr create --title x')"
-run pr-gate 2 "pr: git -C の先が変数なら、確かめられないので止める" "$(push "$app" 'git -C \"$W/$d\" push')"
-run pr-gate 2 "pr: cd の先が変数なら、確かめられないので止める" "$(push "$app" 'cd \"$WT\" && git push')"
-run pr-gate 2 "pr: git -C の先がコマンド置換なら止める" "$(push "$work" 'git -C $(pwd) push origin main')"
+STOP="どのリポジトリかを確かめられるように" run pr-gate 2 "pr: git -C の先が変数なら、確かめられないので止める" "$(push "$app" 'git -C \"$W/$d\" push')"
+STOP="どのリポジトリかを確かめられるように" run pr-gate 2 "pr: cd の先が変数なら、確かめられないので止める" "$(push "$app" 'cd \"$WT\" && git push')"
+STOP="どのリポジトリかを確かめられるように" run pr-gate 2 "pr: git -C の先がコマンド置換なら止める" "$(push "$work" 'git -C $(pwd) push origin main')"
 run pr-gate 0 "pr: 本文のコマンド置換では止めない" "$(push "$app" 'gh pr create --body \"$(cat body.txt)\"')"
 git init -q "$work/other"
 run pr-gate 2 "pr: cd の後のコマンド置換は cd の先で見る" "$(push "$app" "cd $work/other && echo \$(git push)")"
-run pr-gate 0 "pr: \$HOME は展開して確かめる" "$(push "$work" "git -C \$HOME/${app#"$HOME"/} push")"
+HOME="$work" run pr-gate 0 "pr: \$HOME は展開して確かめる" "$(push "$work" "git -C \$HOME/app push")"
 echo 'struct B {}' >>"$swift"
 run pr-gate 2 "pr: 確認の後に変えると止める" "$(push "$app" 'git push')"
+HOME="$work" run pr-gate 2 "pr: \$HOME を展開した先でも、確認の後に変えると止める" "$(push "$work" "git -C \$HOME/app push")"
 "$run_check" "$app" "true" true >/dev/null
 "$run_check" "$app" "false" false >/dev/null
 run pr-gate 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')"

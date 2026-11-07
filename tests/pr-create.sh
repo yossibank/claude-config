@@ -55,6 +55,7 @@ expect "差分が無い" "write-body: 差分が無ければ本文を作らずに
 echo 'x' >"$repo/a.swift"
 bash "$scripts/run-check.sh" "$repo" true true >/dev/null
 bash "$scripts/write-body.sh" "$repo" origin/main >/dev/null
+check "write-body: 本文のファイルがある" test -s "$pr_body"
 check "write-body: コードの差分は 🟡 small" grep -qF '| 差分の重さ | 🟡 small・1 行。' "$pr_body"
 mkdir -p "$repo/hooks"
 mv "$repo/a.swift" "$repo/hooks/a.py"

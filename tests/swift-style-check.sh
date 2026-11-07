@@ -7,6 +7,7 @@ source "$(dirname "$0")/lib/hook_fixtures.sh"
 
 style_case() {
     local expect=$1 label=$2 text=$3 want=${4:-} out status
+    [[ $expect != 2 || -n $want ]] || want="Swift の決まり（rules/swift-*.md）に合わない箇所がある"
     printf '%s\n' "$text" >"$work/Case.swift"
     out=$(echo "{\"tool_input\":{\"file_path\":\"$work/Case.swift\"}}" | bash "$hooks" swift-style-check 2>&1)
     status=$?

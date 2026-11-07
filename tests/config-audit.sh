@@ -4,11 +4,19 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 
 base="$work/base"
-mkdir -p "$base"
-(cd "$root" && git ls-files -z | rsync -a --from0 --files-from=- ./ "$base/")
-git -C "$base" init -q
-git -C "$base" add -A
-git -C "$base" -c user.name=t -c user.email=t@t commit -q -m base
+
+prepare_base() {
+    mkdir -p "$base" &&
+        (cd "$root" && git ls-files -z -co --exclude-standard | rsync -a --from0 --files-from=- ./ "$base/") &&
+        git -C "$base" init -q &&
+        git -C "$base" add -A &&
+        git -C "$base" -c user.name=t -c user.email=t@t commit -q -m base
+}
+
+if ! prepare_base; then
+    ng "config-audit: 検査する写しを作れなかった"
+    finish
+fi
 
 copy() {
     git -C "$base" reset -q --hard
@@ -17,7 +25,7 @@ copy() {
 }
 
 replace() {
-    python3 -I -c 'import sys; p, a, b = sys.argv[1:]; t = open(p).read(); assert a in t, a; open(p, "w").write(t.replace(a, b))' "$@"
+    replace_text "$1" "$1" "$2" "$3"
 }
 
 audit_matches() {
@@ -25,15 +33,17 @@ audit_matches() {
     if [[ $want == OK ]]; then
         [[ $out == "OK config-audit" ]]
     else
-        grep -q -- "$want" <<<"$out"
+        grep -qF -- "$want" <<<"$out"
     fi
 }
 
 expect_audit() {
-    local dir=$1 want=$2 label=$3 out
+    local dir=$1 want=$2 label=$3 out status=0
     git -C "$dir" add -A
-    out=$(python3 -I "$dir/scripts/config-audit.py")
-    if audit_matches "$want" "$out"; then
+    out=$(python3 -I "$dir/scripts/config-audit.py") || status=$?
+    if [[ $want == OK && $status != 0 ]] || [[ $want != OK && $status != 1 ]]; then
+        ng "config-audit: ${label}: 終了コードが ${status}（OK は 0、NG は 1）" "$out"
+    elif audit_matches "$want" "$out"; then
         ok "config-audit: $label"
     else
         ng "config-audit: ${label}: 期待は「${want}」" "$out"
@@ -121,7 +131,7 @@ expect_audit "$d" "hooks/swift-format.py:1 テストが無い: tests/swift-forma
 
 d=$(copy test-missing-script)
 rm -f "$d/tests/config-install.sh"
-expect_audit "$d" "scripts/config-install\.[a-z]*:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
+expect_audit "$d" "scripts/config-install.jq:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
 
 d=$(copy test-missing-skill)
 rm -f "$d/tests/ui-record.sh"
@@ -176,12 +186,33 @@ replace "$d/skills/app-plan/scripts/search-apps.py" 'def main():' 'month = sys.a
 
 
 def main():'
-expect_audit "$d" "search-apps.py:.* 読み込んだだけで処理が走る" "トップレベルで引数を読む .py"
+expect_audit "$d" "search-apps.py:11 読み込んだだけで処理が走る" "トップレベルで引数を読む .py"
 
 d=$(copy exit-variable)
 replace "$d/skills/app-plan/scripts/search-apps.py" 'def main():' 'def main():
     raise SystemExit(clean("x"))'
 expect_audit "$d" "sys.exit に文を渡すと" "SystemExit に式を渡す .py"
+
+d=$(copy hook-unwrapped)
+replace "$d/hooks/ctx-limit-read.py" 'run_hook("ctx-limit-read", main)' 'main()'
+expect_audit "$d" "hooks/ctx-limit-read.py:1 main を run_gate か run_hook で包む" "run_hook で包まないフック"
+
+d=$(copy script-unwrapped)
+replace "$d/scripts/docs-section.py" 'run_main(main)' 'main()'
+expect_audit "$d" "scripts/docs-section.py:1 main を run_main で包む" "run_main で包まない .py"
+
+d=$(copy script-pair-no-entry)
+rm "$d/scripts/docs-section.sh"
+printf "." >"$d/scripts/docs-section.jq"
+expect_audit "$d" "拡張子違いの組は、.sh を入口にする: docs-section" "入口の .sh が無い組"
+
+d=$(copy script-pair-unused)
+printf '#!/bin/bash\nset -euo pipefail\n' >"$d/scripts/docs-section.sh"
+expect_audit "$d" "scripts/docs-section.py:1 入口の docs-section.sh から呼ばれていない" "入口が中身を呼ばない組"
+
+d=$(copy test-inline-python)
+printf "python3 -I -c 'print(1)'\n" >>"$d/tests/ctx-limit-read.sh"
+expect_audit "$d" "tests/ctx-limit-read.sh" "テストの中の python3 -c"
 
 d=$(copy ng-stderr)
 printf 'printf "%s %%s\\n" x >&2\n' NG >>"$d/skills/ui-record/scripts/record-video.sh"
@@ -219,7 +250,6 @@ d=$(copy verb-ok)
 replace "$d/docs/development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
 mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/glue-frames.sh"
 replace "$d/skills/ui-record/SKILL.md" 'tile-frames.sh' 'glue-frames.sh'
-replace "$d/docs/improvements.md" 'tile-frames.sh' 'glue-frames.sh'
 expect_audit "$d" OK "動詞の表にある動詞で始まるスクリプト"
 
 d=$(copy verb-ng)

@@ -13,15 +13,22 @@ git -C "$app" init -q
 commit "$app" init
 swift="$app/ios/Features/HomeView.swift"
 
+gate_failed="フックが確かめられなかったので止める"
+
+# 終了コード 2 を期待する時は、STOP に止めた理由の文を入れる。フックが例外で落ちた時の 2 とは区別する
 run() {
     local hook=$1 expect=$2 label=$3 payload=$4 out status
     shift 4
     out=$(echo "$payload" | bash "$hooks" "$hook" "$@" 2>&1)
     status=$?
-    if [[ $status == "$expect" ]]; then
-        ok "$label"
-    else
+    if [[ $status != "$expect" ]]; then
         ng "${label}（終了コード ${status}、期待は ${expect}）" "$out"
+    elif [[ $expect == 2 && $out == *"$gate_failed"* ]]; then
+        ng "${label}（フックが例外で落ちた）" "$out"
+    elif [[ $expect == 2 && ( -z ${STOP:-} || $out != *"$STOP"* ) ]]; then
+        ng "${label}（止めた理由の文に「${STOP:-}」が無い）" "$out"
+    else
+        ok "$label"
     fi
 }
 

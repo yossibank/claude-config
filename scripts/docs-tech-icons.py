@@ -8,7 +8,7 @@ from xml.sax.saxutils import escape
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from script_io import fail  # noqa: E402
+from script_io import fail, run_main  # noqa: E402
 
 CDN = "https://cdn.simpleicons.org/{slug}/white"
 ITEM = re.compile(r"^([a-z0-9]+):([0-9A-Fa-f]{6}):([^:]+)(?::([^:]+))?$")
@@ -96,4 +96,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

@@ -33,7 +33,6 @@
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
 | 🟡 低 | `docs/development.md` の「結果」 | データを返すスクリプトは OK と NG を出さない。その形を決まりに書く |
-| 🟡 低 | `tests/config-audit.sh` | 手助けの関数を `tests/lib/` に移し、`python3 -c` と `assert` をやめる |
 | 🟡 低 | `skills/pr-create/scripts/hash-state.sh` | `git add -A` を確認のたびに 2 回走らせる |
 
 ### テスト
@@ -43,14 +42,11 @@
 | 🟠 中 | `lib/app_store.py` | 署名の DER を読む処理にテストが無い |
 | 🟠 中 | `tests/pr-fix.sh` | 偽の gh が完成した行を返し、未解決に絞る式が走らない |
 | 🟠 中 | `tests/pr-prune.sh` | squash でないマージのテストに子のブランチが無く、空振りする |
-| 🟠 中 | `tests/config-audit.sh` | NG のケースで終了コードを見ない |
-| 🟠 中 | `tests/pr-gate.sh` | 利用者の `CC_HOOKS_OFF`・`CC_UI_*`・`CC_STORE_*` を受け継ぐ |
 | 🟠 中 | `scripts/config-audit.py` | skills・agents・rules の frontmatter と settings の検査の分岐にテストが無い |
 | 🟠 中 | `tests/ui-snapshot.sh` | 描けた時の道を通らない。store-report の表の値、app-plan の成功も見ない |
 | 🟠 中 | `skills/pr-create/scripts/classify-diff.sh` | 200 行の境目と、hooks/ 以外の risky のパターンにテストが無い |
 | 🟠 中 | `tests/pr-fix.sh` | READ の権限、no checks reported の分岐にテストが無い |
 | 🟡 低 | `tests/pr-prune.sh` | ls-remote が落ちた時に付け替えを見送る道に、テストが無い |
-| 🟡 低 | `tests/lib/assert.sh` | 利用者の `~/.gitconfig` が効く。`GIT_CONFIG_GLOBAL` を `/dev/null` にする |
 | 🟡 低 | `tests/rules-require-read.sh` | `tests/lib/hook_fixtures.sh` が HOME を分けない。`sleep 1` と date に頼る |
 | 🟡 低 | `tests/pr-prune.sh` | 準備の失敗を `2>/dev/null` で消す |
 | 🟡 低 | `tests/store-release.sh` | 字数の上限ちょうどが通るテストが無い。fixtures.sh を 2 度 source する |
@@ -69,10 +65,7 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟠 中 | `scripts/config-audit.py` | 例外の時に NG の行が出ない main を見つける |
 | 🟠 中 | `scripts/config-audit.py` | SKILL.md の手順のコマンドと allowed-tools を照らし合わせる |
-| 🟠 中 | `scripts/config-audit.py` | `tests/app-init.sh` などの `python3 -c` を対象にする |
-| 🟡 低 | `docs/testing.md` | 上限ちょうどが通るテストを置く、を決まりに書く |
 
 ## ⚠️ 直さないと決めたこと
 

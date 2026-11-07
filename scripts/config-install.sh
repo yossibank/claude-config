@@ -9,6 +9,10 @@ if [[ $root != "$expected" ]]; then
     echo "NG claude-config が $root にある。フックは $expected を読むので、そこに置いてから実行する"
     exit 1
 fi
+if ! command -v jq >/dev/null; then
+    echo "NG jq が見つからない。settings.json の案を作るのに要るので、入れてから実行し直す"
+    exit 1
+fi
 settings="$claude/settings.json"
 installed="$claude/claude-config-allow.json"
 trap 'rm -f "$settings.tmp"' EXIT

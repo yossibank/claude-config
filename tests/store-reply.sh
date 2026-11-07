@@ -4,7 +4,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 
 scripts="$root/skills/store-reply/scripts"
-export https_proxy=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9
+offline
 unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
 
 apps="$work/apps"
@@ -136,7 +136,7 @@ echo '{' >"$work/broken.json"
 expect "JSON として読めない" "send-replies: 壊れた JSON は NG" python3 -I "$scripts/send-replies.py" "$work/broken.json"
 echo '[{"id": "x", "reply": "r", "approved": false}]' >"$work/none-approved.json"
 expect "承認されていて、まだ送っていない返信案が無い" "send-replies: 承認された案が無ければ NG" python3 -I "$scripts/send-replies.py" "$work/none-approved.json" --dry-run
-python3 -I -c 'import json, sys; json.dump([{"id": "x", "reply": "あ" * 5971, "approved": True}], open(sys.argv[1], "w"))' "$work/long.json"
+jq -n --arg reply "$(printf 'あ%.0s' $(seq 5971))" '[{id: "x", reply: $reply, approved: true}]' >"$work/long.json"
 expect "5970 字を超えている" "send-replies: 5970 字を超える案は NG" python3 -I "$scripts/send-replies.py" "$work/long.json" --dry-run
 echo '[{"id": "x", "reply": " ", "approved": true}]' >"$work/empty.json"
 expect "返信が空: x" "send-replies: 空の案は NG" python3 -I "$scripts/send-replies.py" "$work/empty.json" --dry-run

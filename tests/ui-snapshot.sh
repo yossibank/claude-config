@@ -70,6 +70,7 @@ check "render-snapshots: テストの後に診断を集めない" grep -qF -- "-
 check "render-snapshots: 元のパッケージにテストを足さない" test ! -e "$package/Tests"
 check "render-snapshots: 元の Package.swift を書き換えない" cmp -s "$manifest" "$package/Package.swift"
 check "render-snapshots: 写しの Package.swift にテストを足す" grep -q 'name: "UISnapshotTests"' "$work"/copies/pkg-*/Package.swift
+check "render-snapshots: 写しがある" test -n "$(find "$work/copies" -name Package.swift)"
 check "render-snapshots: .gitignore で外すものを写さない" test -z "$(find "$work/copies" -name big)"
 check "render-snapshots: 終わったら .lock を消す" test -z "$(find "$work/copies" -name '*.lock')"
 

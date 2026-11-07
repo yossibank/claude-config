@@ -4,6 +4,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
 source "$(dirname "$0")/lib/hook_fixtures.sh"
+STOP="シェルスクリプトに直すところがある"
 
 printf '#!/bin/bash\necho "x $name%s"\n' '。' >"$work/wide.sh"
 printf '#!/bin/bash\necho "x ${name}。"\n' >"$work/ok.sh"

@@ -4,7 +4,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 
 scripts="$root/skills/app-plan/scripts"
-export https_proxy=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9
+offline
 
 expect "NG 使い方" "fetch-rival-reviews: 引数が無ければ NG" python3 -I "$scripts/fetch-rival-reviews.py"
 expect "NG 使い方" "fetch-rival-reviews: 数字でないアプリの ID は NG" python3 -I "$scripts/fetch-rival-reviews.py" abc

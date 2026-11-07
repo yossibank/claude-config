@@ -14,6 +14,8 @@ RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bs
 HOOK_NAME = re.compile(r"claude-config/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
 INLINE_PYTHON = re.compile(r"\bpython3?(?: -I)? -c\b")
+TEST_INLINE_PYTHON = re.compile(r"^\s*python3?(?: -I)? -c\b")
+ENTRY_CALLS = {"hooks": ("run_gate", "run_hook"), "scripts": ("run_main",)}
 SCRIPT_HEADER = "set -euo pipefail"
 WORKTREES_LITERAL = ".claude/worktrees"
 CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
@@ -176,3 +178,47 @@ def python_problems(path, tree):
     for node in ast.walk(tree):
         if is_exit_with_text(node):
             yield path, node.lineno, "sys.exit に文を渡すと stderr に出る。stdout に NG を出して sys.exit(1) にする"
+
+
+def main_guard_calls(tree):
+    for node in tree.body:
+        if is_main_guard(node):
+            return {ast.unparse(call.func) for call in ast.walk(node) if isinstance(call, ast.Call)}
+    return set()
+
+
+def check_entry_wrappers():
+    for path in tracked("hooks/*.py", "scripts/*.py", "skills/*/scripts/*.py"):
+        try:
+            tree = ast.parse(read(path))
+        except SyntaxError:
+            continue
+        top = "hooks" if os.path.relpath(path, ROOT).startswith("hooks/") else "scripts"
+        wanted = ENTRY_CALLS[top]
+        if not main_guard_calls(tree) & set(wanted):
+            yield path, 1, f"main を {' か '.join(wanted)} で包む。例外で落ちた時に、NG の行か止める文を出すため"
+
+
+def check_script_pairs():
+    groups = {}
+    for path in tracked("scripts/*"):
+        stem, extension = os.path.splitext(os.path.basename(path))
+        groups.setdefault(stem, {})[extension] = path
+    for stem, files in sorted(groups.items()):
+        if len(files) < 2:
+            continue
+        entry = files.get(".sh")
+        if entry is None:
+            yield next(iter(files.values())), 1, f"拡張子違いの組は、.sh を入口にする: {stem}"
+            continue
+        text = read(entry)
+        for extension, path in files.items():
+            if extension != ".sh" and os.path.basename(path) not in text:
+                yield path, 1, f"入口の {stem}.sh から呼ばれていない"
+
+
+def check_test_inline_python():
+    for path in tracked("tests/*.sh", "tests/lib/*.sh"):
+        for number, line in enumerate(read(path).split("\n"), 1):
+            if TEST_INLINE_PYTHON.search(line):
+                yield path, number, "テストの中に python3 -c を書かない。jq・bash で書くか、.py に分ける"

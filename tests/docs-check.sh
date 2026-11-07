@@ -7,6 +7,7 @@ source "$(dirname "$0")/lib/hook_fixtures.sh"
 
 doc_case() {
     local expect=$1 label=$2 name=$3 text=$4 want=${5:-} out status
+    [[ $expect != 2 || -n $want ]] || want="文書の決まり（rules/docs-*.md）に合わない箇所がある"
     mkdir -p "$work/docs-case/$(dirname "$name")"
     printf '%s\n' "$text" >"$work/docs-case/$name"
     out=$(echo "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}" | bash "$hooks" docs-check 2>&1)

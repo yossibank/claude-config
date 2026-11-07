@@ -4,7 +4,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib/assert.sh"
 
 scripts="$root/skills/store-report/scripts"
-export https_proxy=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9
+offline
 unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
 
 expect "使い方" "fetch-ratings: 引数が足りなければ NG" python3 -I "$scripts/fetch-ratings.py" 123

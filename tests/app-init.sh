@@ -12,8 +12,7 @@ make_app() {
     local app=$1 summary=$2
     mkdir -p "$app/docs" "$app/ios/__App__"
     printf 'name: __App__ / __app__ / __DisplayName__\n' >"$app/ios/__App__/__App__App.swift"
-    python3 -I -c 'import sys; src, dst, a, b = sys.argv[1:]; t = open(src).read(); assert a in t, a; open(dst, "w").write(t.replace(a, b))' \
-        "$overview" "$app/docs/overview.md" "$placeholder" "$summary"
+    replace_text "$overview" "$app/docs/overview.md" "$placeholder" "$summary"
     cp "$readme" "$app/README.md"
 }
 
