@@ -10,11 +10,11 @@ collect="$root/skills/config-learn/scripts/collect-corrections.py"
 
 expect "NG 使い方" "collect-corrections: 月が無ければ NG" python3 -I "$collect"
 
-blocked_rules=$(echo "{\"session_id\":\"s9\",\"agent_id\":\"main\",\"tool_name\":\"Edit\",\"transcript_path\":\"$work/empty.jsonl\",\"tool_input\":{\"file_path\":\"$swift\"}}" | bash "$hooks" rules-require-read 2>&1)
+blocked_rules=$(edit s9 main "$work/empty.jsonl" "$swift" | bash "$hooks" rules-require-read 2>&1)
 bash_call t9 'sed -i x' | bash "$hooks" rules-detect-bash-edits pre
 echo '# 変更' >>"$app/docs/overview.md"
 blocked_bash=$(bash_call t9 'sed -i x' | bash "$hooks" rules-detect-bash-edits post 2>&1)
-blocked_pr=$(echo "{\"cwd\":\"$app\",\"tool_input\":{\"command\":\"git push\"}}" | bash "$hooks" pr-gate 2>&1)
+blocked_pr=$(bash_call t10 'git push' | bash "$hooks" pr-gate 2>&1)
 projects="$work/home/.claude/projects"
 mkdir -p "$projects/demo"
 python3 -I - "$projects/demo/s.jsonl" "$work" "$swift" "$app" "$blocked_rules" "$blocked_bash" "$blocked_pr" <<'EOF'

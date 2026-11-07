@@ -30,10 +30,7 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟡 低 | `tests/lib/hook_fixtures.sh` | `bash_call` と `run` の入力を、JSON を文字列で組んでいる |
 | 🟡 低 | `tests/config-audit.sh` | expect_audit を 69 回、毎回リポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
-| 🟡 低 | `tests/config-audit.sh` | docs/improvements.md などの文言に頼る置き換えがある |
-| 🟡 低 | `tests/swift-style-check.sh` | 上限ちょうどが通るテストが無い |
 
 ## ⚠️ 直さないと決めたこと
 

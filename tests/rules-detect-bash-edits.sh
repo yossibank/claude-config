@@ -37,9 +37,9 @@ run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t6 'sed
 echo 'z' >>"$app/docs/日本語.md"
 run rules-detect-bash-edits 2 "bash: 日本語の名前のファイルの書き換えも知らせる" "$(bash_call t6 'sed -i')" post
 rm -f "$app/docs/日本語.md"
-run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t8 'git commit -m \"a; sed -i\"')" pre
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t8 'git commit -m "a; sed -i"')" pre
 echo 'w' >>"$app/docs/overview.md"
-run rules-detect-bash-edits 0 "bash: 引用符の中の ; に引きずられず、git だけと数える" "$(bash_call t8 'git commit -m \"a; sed -i\"')" post
+run rules-detect-bash-edits 0 "bash: 引用符の中の ; に引きずられず、git だけと数える" "$(bash_call t8 'git commit -m "a; sed -i"')" post
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t7 'sed -i')" pre
 printf '# t\n\n```\nx\n```\n' >"$app/docs/off.md"
 out=$(bash_call t7 'sed -i' | CC_HOOKS_OFF="docs-check,rules-require-read" bash "$hooks" rules-detect-bash-edits post 2>&1)
@@ -86,7 +86,7 @@ rm -f "$app/docs/tool.md"
 run rules-detect-bash-edits 0 "bash: 読むだけのコマンドは、前の状態を残さない" "$(bash_call t13 'ls docs | head -3')" pre
 check "bash: 読むだけのコマンドは git status を走らせず、状態のファイルを作らない" test ! -e "$TMPDIR/claude-bash-edits/b-t13"
 no_id() {
-    echo "{\"session_id\":\"n\",\"cwd\":\"$app\",\"tool_input\":{\"command\":\"$1\"}}"
+    jq -cn --arg cwd "$app" --arg command "$1" '{session_id: "n", cwd: $cwd, tool_input: {command: $command}}'
 }
 run rules-detect-bash-edits 0 "bash: tool_use_id が無くても前の状態を残す" "$(no_id 'sed -i a')" pre
 run rules-detect-bash-edits 0 "bash: tool_use_id が無くても別のコマンドは別の状態にする" "$(no_id 'sed -i b')" pre

@@ -21,8 +21,12 @@ style_case 0 "文字列とコメントの中の && と ? は見ない" $'let a =
 style_case 2 "引数が 1 つの宣言を、収まるのに折り返せば止める" $'func a(\n    b: Int\n) {}' "Case.swift:1: 引数が 1 つの宣言"
 style_case 0 "引数が 1 つの宣言を 1 行に書けば通る" $'func a(b: Int) {}'
 style_case 0 "引数が 2 つの宣言は折り返して通る" $'func a(\n    b: Int,\n    c: Int\n) {}'
-long=$(printf 'x%.0s' {1..90})
-style_case 0 "1 行にすると 100 字を超える宣言は折り返して通る" "func a(
+exact=$(printf 'x%.0s' {1..84})
+style_case 2 "1 行にするとちょうど 100 字の宣言を折り返せば止める" "func a(
+    ${exact}: Int
+) {}" "Case.swift:1: 引数が 1 つの宣言"
+long=$(printf 'x%.0s' {1..85})
+style_case 0 "1 行にすると 101 字になる宣言は折り返して通る" "func a(
     ${long}: Int
 ) {}"
 
