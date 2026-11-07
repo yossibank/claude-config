@@ -1,4 +1,4 @@
-def ours: (.command // "") | contains("claude-config/hooks/");
+def claude_config_hook: (.command // "") | contains("claude-config/hooks/");
 
 .[0] as $current
 | .[1] as $config
@@ -10,7 +10,7 @@ def ours: (.command // "") | contains("claude-config/hooks/");
 | .hooks = (
     reduce ($config.hooks | keys_unsorted[]) as $event (
         ($current.hooks // {})
-        | map_values(map(.hooks |= map(select(ours | not)) | select(.hooks | length > 0)));
+        | map_values(map(.hooks |= map(select(claude_config_hook | not)) | select(.hooks | length > 0)));
         .[$event] = ((.[$event] // []) + $config.hooks[$event])
     )
     | with_entries(select(.value | length > 0))

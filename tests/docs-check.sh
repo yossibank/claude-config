@@ -3,7 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hooks.sh"
+source "$(dirname "$0")/lib/hook_fixtures.sh"
 
 doc_case() {
     local expect=$1 label=$2 name=$3 text=$4 want=${5:-} out status

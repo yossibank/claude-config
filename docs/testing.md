@@ -72,4 +72,4 @@ claude-config を変えたら、`make verify` を通す。
 | --- | --- |
 | [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、出力が型に合うかを確かめる `match`、結果の数え方 |
 | [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh・偽のコマンド（`fake_command`） |
-| [tests/lib/hooks.sh](../tests/lib/hooks.sh) | フックのテストの作り物のアプリと、フックへの入力の作り方 |
+| [tests/lib/hook_fixtures.sh](../tests/lib/hook_fixtures.sh) | フックのテストの作り物のアプリと、フックへの入力の作り方 |

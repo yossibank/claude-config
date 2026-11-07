@@ -19,12 +19,8 @@
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
 | 🟡 低 | `README.md` | 技術のアイコン（Bash、Git）と実行環境の表（jq）で、道具が合わない |
-| 🟡 低 | `skills/pr-fix/scripts/list-threads.sh` | GitHub から取ってくるので、動詞は `fetch` にする |
-| 🟡 低 | `tests/lib/hooks.sh` | `hooks/` と名前が重なる。`hook_fixtures.sh` にする |
-| 🟡 低 | `skills/ui-snapshot/templates/screen/` | SKILL.md の呼び名の「セット」に合わせて `set/` にする |
-| 🟡 低 | `scripts/` の拡張子違いの組 | 決まりは docs/development.md の名前の表に書いた。検査にする |
 | 🟡 低 | `skills/app-init/templates/ios-app/ios/Packages/__App__App/Package.swift` | `AppFeature/` と `Features/`、`__App__App` の名前が紛らわしい |
-| 🟡 低 | `scripts/config-install.jq` | `ours` と、`claude-config-allow.json` の名前が役目を表さない |
+| 🟡 低 | `scripts/config-install.jq` | `claude-config-allow.json` の名前が役目を表さない。入れた先のファイル名なので、改名は移行が要る |
 | 🟡 低 | `skills/app-init/templates/ios-app/docs/images/tech.svg` | docs/images/tech.svg と同じ名前で中身が違う |
 | 🟡 低 | `output-styles/report.md`・`skills/store-report/`・`skills/ctx-report/` | `report` の名前が 3 つの物を指す |
 | 🟡 低 | `settings/settings.json` | swift の 2 段のフックの長い行を Edit と Write で 2 回書く |

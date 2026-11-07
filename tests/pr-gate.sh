@@ -3,7 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hooks.sh"
+source "$(dirname "$0")/lib/hook_fixtures.sh"
 
 push() {
     echo "{\"cwd\":\"$1\",\"tool_input\":{\"command\":\"$2\"}}"

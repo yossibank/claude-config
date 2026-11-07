@@ -51,13 +51,13 @@
 | 🟠 中 | `tests/pr-fix.sh` | READ の権限、no checks reported の分岐にテストが無い |
 | 🟡 低 | `tests/pr-prune.sh` | ls-remote が落ちた時に付け替えを見送る道に、テストが無い |
 | 🟡 低 | `tests/lib/assert.sh` | 利用者の `~/.gitconfig` が効く。`GIT_CONFIG_GLOBAL` を `/dev/null` にする |
-| 🟡 低 | `tests/rules-require-read.sh` | `tests/lib/hooks.sh` が HOME を分けない。`sleep 1` と date に頼る |
+| 🟡 低 | `tests/rules-require-read.sh` | `tests/lib/hook_fixtures.sh` が HOME を分けない。`sleep 1` と date に頼る |
 | 🟡 低 | `tests/pr-prune.sh` | 準備の失敗を `2>/dev/null` で消す |
 | 🟡 低 | `tests/store-release.sh` | 字数の上限ちょうどが通るテストが無い。fixtures.sh を 2 度 source する |
 | 🟡 低 | `tests/store-reply.sh` | 字数の上限ちょうどが通るテストが無い |
 | 🟡 低 | `tests/ui-snapshot.sh` | iPhone 1 台で「先頭」を確かめていない |
 | 🟡 低 | `tests/rules-detect-bash-edits.sh` | cd 先に `app/` が無い場合のテストが無い |
-| 🟡 低 | `tests/lib/hooks.sh` | JSON を文字列で組んでいる |
+| 🟡 低 | `tests/lib/hook_fixtures.sh` | JSON を文字列で組んでいる |
 | 🟡 低 | `tests/shell-check.sh` | 対象外の入力のテストが無い。`tests/swift-format.sh`・`tests/ctx-limit-read.sh` も同じ |
 | 🟡 低 | `tests/lib/fixtures.sh` | commit で commit.gpgsign を切らない |
 | 🟡 低 | `tests/config-audit.sh` | expect_audit を 69 回、毎回リポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
