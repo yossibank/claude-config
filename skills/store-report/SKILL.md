@@ -2,7 +2,7 @@
 name: store-report
 description: 公開している全アプリの、月ごとのダウンロード・収益・評価・レビューを 1 枚の表にする。月の初めに前の月の数字を見る時や、人がアプリの数字を聞いた時に使う。
 argument-hint: "<YYYY-MM>"
-allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
+allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/*)
 ---
 
 # アプリの数字をまとめる
@@ -26,6 +26,7 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
+python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <アプリの ID> [星の上限]
 ```
 
 ## write-report.py の出力

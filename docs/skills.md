@@ -38,7 +38,7 @@ flowchart LR
 
 ## 🧰 一覧
 
-呼ぶ人は、絵文字で分ける。
+呼ぶ人は、絵文字で分ける。🙋 は人が頼んだ時だけ、🤝 は人と Claude、🧠 は Claude だけが呼ぶ。
 
 > [!IMPORTANT]
 > pr-create・store-release・store-reply は外に出す操作を含む。人が言葉で頼んだ時だけ呼び、外に出す前に承認を得る。

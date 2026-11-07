@@ -1,7 +1,7 @@
 ---
 name: app-init
 description: 新しい iOS アプリのリポジトリを、kakeibot の形のひな形から作る。app-plan で企画を書いた後や、人が新しいアプリを始める時に使う。
-argument-hint: "<アプリの名前（英小文字）> <ストアの表示名>"
+argument-hint: "<アプリの名前（英小文字と数字）> <ストアの表示名>"
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/create-app.sh *)
 ---
 
@@ -13,7 +13,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/create-app.sh *)
 
 | 入力 | 中身 |
 | --- | --- |
-| 名前 | 英小文字。リポジトリとパッケージの名前になる |
+| 名前 | 英小文字と数字。リポジトリとパッケージの名前になる |
 | 表示名 | ストアに出す名前 |
 
 ## 手順
