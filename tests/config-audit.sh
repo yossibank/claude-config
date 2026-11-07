@@ -28,6 +28,13 @@ replace() {
     replace_text "$1" "$1" "$2" "$3"
 }
 
+# 台帳の「残っている改善」の見出しの直後に行を足す。今の台帳の行に頼らずに場所の列を試す
+add_ledger_row() {
+    local file=$1 tmp
+    tmp=$(mktemp)
+    ROW=$2 awk '{ print } $0 == "## 📝 残っている改善" { print ""; print ENVIRON["ROW"] }' "$file" >|"$tmp" && mv "$tmp" "$file"
+}
+
 audit_matches() {
     local want=$1 out=$2
     if [[ $want == OK ]]; then
@@ -312,19 +319,19 @@ printf '\n`tests/nothing.sh` を読む。\n' >>"$d/docs/architecture-ios.md"
 expect_audit "$d" "参照先が無い: tests/nothing.sh" "tests/ に無いファイルへのパス"
 
 d=$(copy ledger-no-path)
-replace "$d/docs/improvements.md" '| `skills/pr-create/scripts/hash-state.sh` |' '| 前置きだけの文 |'
+add_ledger_row "$d/docs/improvements.md" '| 🟡 低 | 前置きだけの文 | 中身 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きだけの文" "台帳の場所にパスが無い行"
 
 d=$(copy ledger-path-later)
-replace "$d/docs/improvements.md" '| `skills/pr-create/scripts/hash-state.sh` |' '| 前置きの文 `skills/pr-create/scripts/hash-state.sh` |'
+add_ledger_row "$d/docs/improvements.md" '| 🟡 低 | 前置きの文 `skills/pr-create/scripts/hash-state.sh` | 中身 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きの文" "台帳の場所のパスが先頭に無い行"
 
 d=$(copy ledger-docs-missing-path)
-replace "$d/docs/improvements-docs.md" '| `README.md` |' '| `README.nothing` |'
+add_ledger_row "$d/docs/improvements-docs.md" '| 🟡 低 | `README.nothing` | 中身 |'
 expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "文書の台帳の場所のパスが無い行"
 
 d=$(copy ledger-missing-path)
-replace "$d/docs/improvements.md" '| `skills/pr-create/scripts/hash-state.sh` |' '| `hooks/nothing.sh` |'
+add_ledger_row "$d/docs/improvements.md" '| 🟡 低 | `hooks/nothing.sh` | 中身 |'
 expect_audit "$d" "台帳の場所のパスが無い: hooks/nothing.sh" "台帳の場所のパスが無い行"
 
 d=$(copy ledger-missing)

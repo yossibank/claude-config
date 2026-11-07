@@ -2,6 +2,7 @@ import ast
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 from audit_files import read, tracked
 from hook_io import FILE_EDIT_TOOLS
@@ -101,8 +102,11 @@ def check_worktree_literals():
 def check_shell_scripts():
     shell = load_hook("shell-check")
     strict = set(tracked("skills/*/scripts/*.sh", "scripts/*.sh"))
-    for path in tracked("*.sh"):
-        for number, message in shell.check(path):
+    paths = tracked("*.sh")
+    with ThreadPoolExecutor() as pool:
+        found = list(pool.map(shell.check, paths))
+    for path, problems in zip(paths, found):
+        for number, message in problems:
             yield path, number, message
         if os.path.relpath(path, ROOT).startswith("hooks/"):
             continue
