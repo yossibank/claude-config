@@ -1,12 +1,12 @@
 # 改善の台帳
 
 > [!NOTE]
-> claude-config の調べ直しで見つけて、まだ直していない改善と、直さないと決めたことが分かる。
+> claude-config の調べ直しで見つけて、まだ直していない改善と、直さないと決めたことが分かる。文書の改善は [improvements-docs](improvements-docs.md) にある。
 > 調べ方は [config-review](../skills/config-review/SKILL.md) にある。
 
 ## 📏 台帳の書き方
 
-台帳は、残っている改善と見送ったことだけを持つ。直した改善は行を消し、経緯は git の履歴に任せる。
+台帳は、残っている改善と見送ったことだけを持つ。文書と名前の改善は [improvements-docs](improvements-docs.md) に置く。直した改善は行を消し、経緯は git の履歴に任せる。
 
 | 場面 | すること |
 | --- | --- |
@@ -18,13 +18,16 @@
 
 ## 📝 残っている改善
 
-分類ごとに、重さの高い順に並べる。直す時は、同じ分類の行をまとめて 1 本の PR にする。
+分類ごとに、重さの高い順に並べる。文書の読みやすさと名前と並びは、別の台帳に置く。直す時は、同じ分類の行をまとめて 1 本の PR にする。
 
 ### バグ
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
 | 🟠 中 | `skills/docs-polish/scripts/check-layout.py` | `docs/` を渡すと、その下の `docs/**` を探して「文書が無い」で NG になる |
+| 🟠 中 | `skills/store-release/scripts/create-custom-pages.py` | 途中で止まったページを、同じ名前があるだけで OK にする |
+| 🟠 中 | `skills/pr-create/scripts/write-body.sh` | 差分が無い時、重さの行を落として exit 0 で終える |
+| 🟠 中 | `hooks/swift-format.py` | Swift を編集するたびに mint を最大 60 秒待つ。`pinned()` がコメントの行でも真になる |
 | 🟡 低 | `hooks/run.sh` | `CC_HOOKS_OFF` の知らない名前を、見えない stderr に出す。フックの JSON と 1 つにまとめる仕組みが要る |
 | 🟡 低 | `skills/ui-record/scripts/tile-frames.sh` | crop にカンマがあると filter が壊れる |
 | 🟡 低 | `lib/git.sh` | `changed_paths` の終了コードが、diff の失敗を隠す |
@@ -41,68 +44,30 @@
 | 🟡 低 | `hooks/swift-format.py` | mint が無いと黙って通す |
 | 🟡 低 | `scripts/config-install.sh` | diff の終了コード 2 を「違う」と同じに扱う |
 | 🟡 低 | `skills/pr-fix/scripts/list-threads.sh` | reviews と comments の `last:100` にページ送りが無い |
-
-### 文書の読みやすさ
-
-| 重さ | 場所 | 中身 |
-| --- | --- | --- |
-| 🟠 中 | `README.md` の「フック」 | 冒頭の文が「止める」だけで、表の知らせるフックと整えるフックに合わない |
-| 🟠 中 | `README.md` の「入れ方」 | 前提の NOTE が手順の間にある。前提を先に置き、手順を番号付きにする |
-| 🟠 中 | `docs/architecture-ios.md` | 「make のコマンド」がフォルダの木の間にある。「動かし方」の節に出す |
-| 🟠 中 | `skills/code-debug/SKILL.md` | 手順に「効かなかった変更を戻す」「直ったら 1 つずつ外す」が無い |
-| 🟠 中 | `skills/store-release/SKILL.md` | PrivacyInfo のひな形のパスが途中まで。実際は `ios-app/ios/__App__/` の下にある |
-| 🟠 中 | `docs/architecture-ios.md` | 「UI テストは書かない」が ui-snapshot と食い違う |
-| 🟡 低 | `docs/architecture-ios.md` の「パッケージ」 | Kit と App の違いが 3 か所に散らばる。節の頭に比べる表を置く |
-| 🟡 低 | `docs/architecture-ios.md` | `0xdead10cc` の理由をアラートにし、依存の向きを太字にする |
-| 🟡 低 | `README.md` の「入れ方」の手順 | 「実体」「2 つ」の指す先が読めない。settings.json が 1 文に 3 回出る |
-| 🟡 低 | `README.md` のフックの表 | 列の名前の「動く時」と「当たる時」の違いが分からない |
-| 🟡 低 | `docs/development.md` の表 | フックとひな形の印の行で、1 つのセルに別々の指示がある |
-| 🟡 低 | `docs/development.md` | 前置きだけの文が、スクリプトの表と testing.md のテストの表の前などにある。見出しで分かるので消す |
-| 🟡 低 | `agents/debugger.md` | 「未確認」と「未確定」が混ざる |
-| 🟡 低 | `skills/store-report/SKILL.md` | 「上下は無い」と「Admin にする」が食い違う |
-| 🟡 低 | `skills/store-release/SKILL.md` | 字数の表に、更新の説明（4000 字）が無い |
-| 🟡 低 | `skills/app-init/SKILL.md` | 置き換えの印に `__Summary__` が無い。docs/architecture-ios.md が相対パスで書かれている |
-| 🟡 低 | `skills/pr-create/SKILL.md` | docs-check.py の呼び方が無い |
-| 🟡 低 | `skills/ui-record/SKILL.md` | 入力の節が無い |
-| 🟡 低 | `agents/explorer.md` | debugger・explorer・reviewer の description に「使わない時」が無い |
-| 🟡 低 | `agents/tester.md` | 「直さない」と「わざと壊して戻す」が食い違って読める |
-| 🟡 低 | `rules/swift-core.md` | 空行の決まりの範囲が読み取りにくい |
-| 🟡 低 | `rules/swift-ui.md` | 指す先の名前が無い |
-| 🟡 低 | `output-styles/report.md` | 見出しの絵文字の扱いが、`rules/docs-claude.md` と食い違う |
-| 🟡 低 | `skills/config-learn/SKILL.md` | 0 回の行の扱いが無い |
-| 🟡 低 | `skills/store-reply/SKILL.md` | description の `py*` と `py *` が揺れる |
-| 🟡 低 | `README.md` | WARNING を IMPORTANT にする。「上の PR」と見出し「一覧」が読みにくい |
-| 🟡 低 | `docs/architecture-ios.md` | spec/ の扱い、「裏に回る前の対策」「開く」の言い方が揺れる |
-| 🟡 低 | `README.md` | 「CI は置かない」と「make verify を通す」が重なる |
-| 🟡 低 | `skills/app-init/templates/ios-app/docs/overview.md` | 「上の表」、CLAUDE.md の「共通の形」、README の main 固定 URL が指す先を読めない |
-
-### 名前と並び
-
-| 重さ | 場所 | 中身 |
-| --- | --- | --- |
-| 🟠 中 | `settings/settings.json` | 表と一覧の並べる順の決まりが無い。許可とフックも名前の順でない |
-| 🟠 中 | `settings/settings.json` | Makefile に無い `make build` を許可している |
-| 🟡 低 | `skills/pr-fix/scripts/list-threads.sh` | GitHub から取ってくるので、動詞は `fetch` にする |
-| 🟡 低 | `tests/lib/hooks.sh` | `hooks/` と名前が重なる。`hook_fixtures.sh` にする |
-| 🟡 低 | `skills/ui-snapshot/templates/screen/` | SKILL.md の呼び名の「セット」に合わせて `set/` にする |
-| 🟡 低 | `scripts/` の拡張子違いの組 | `.sh` が入口でほかが中身、という決まりを書き、検査にする |
-| 🟡 低 | `docs/development.md` の動詞の表 | 1 行に動詞を詰めている。`search` は外の API も呼ぶので定義と合わない |
-| 🟡 低 | `docs/development.md` のスクリプトの表 | `scripts/config-install.jq` の行が無い |
-| 🟡 低 | `README.md` の「確かめ方」 | スクリプトの一覧が、`docs/development.md` の表と重なる |
-| 🟡 低 | `settings/settings.json` | `make test` の許可が重なる |
-| 🟡 低 | `hooks/rules-detect-bash-edits.py` | pre と post が同じ引数 `edit` で呼ばれる |
-| 🟡 低 | `docs/development.md` | 接頭語 `rules-` の説明が、役目と合わない |
-| 🟡 低 | `skills/app-init/templates/ios-app/ios/Packages/__App__App/Package.swift` | `AppFeature/` と `Features/`、`__App__App` の名前が紛らわしい |
-| 🟡 低 | `scripts/config-install.jq` | `ours` と、`claude-config-allow.json` の名前が役目を表さない |
-| 🟡 低 | `docs/improvements.md` | 「改善の台帳」と「台帳」の呼び方が揺れる |
+| 🟡 低 | `lib/hook_state.py` | 古いフォルダを、中の新しい記録ごと消す |
+| 🟡 低 | `lib/hook_io.py` | `split_commands` が空の引数と、引用符の中の `;` で区切る |
+| 🟡 低 | `lib/transcripts.py` | `tail_lines` が `splitlines()` で U+2028 の所で行を割る |
+| 🟡 低 | `lib/md_blocks.py` | `table_under` が、コードの囲みの中の `#` で表を切る |
+| 🟡 低 | `hooks/pr-gate.py` | xargs・eval の先を見ない。`--tags` の扱いが docs/testing.md と合わず、時間切れの時に通す |
+| 🟡 低 | `skills/pr-prune/scripts/prune-merged.sh` | worktree add が落ちると一時フォルダが残る。外付けのボリュームが外れていると DerivedData を消す |
+| 🟡 低 | `skills/ui-snapshot/scripts/render-snapshots.sh` | 描く前に前の PNG を消す。強制終了の後のロックが残る |
+| 🟡 低 | `skills/config-learn/scripts/collect-corrections.py` | JSON の null で落ちる所がある。count-tokens.py も同じ |
+| 🟡 低 | `skills/config-learn/scripts/collect-corrections.py` | toolUseID の無い知らせを、月に 1 回に潰して数える |
+| 🟡 低 | `skills/store-report/scripts/fetch-ratings.py` | 10 ページで黙って打ち切る |
+| 🟡 低 | `skills/app-plan/scripts/search-apps.py` | 0 件の時に何も出さない |
+| 🟡 低 | `skills/pr-create/scripts/route-pr.sh` | 本文を全部 URL に入れる |
+| 🟡 低 | `skills/store-release/scripts/check-privacy.py` | Pods・build の中の Swift も読む |
+| 🟡 低 | `skills/app-init/scripts/create-app.sh` | `find | head -1` が pipefail の下で SIGPIPE で止まりうる |
+| 🟡 低 | `hooks/rules-detect-bash-edits.py` | tool_use_id が無いと状態のファイル名が全部同じになる |
+| 🟡 低 | `scripts/config-audit.py` | `check_links` がコードの囲みの中も見る |
 
 ### 処理と速さ
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
 | 🟠 中 | `scripts/config-audit.py`・`hooks/docs-check.py` | 500 行を超える。検査の種類ごとに lib へ分ける |
-| 🟠 中 | `hooks/rules-detect-bash-edits.py` | ls や cat などの読むだけのコマンドでも、`git status` を 2 回走らせる |
-| 🟠 中 | `hooks/rules-require-read.py` | 編集のたびに会話の記録を最大 32MB 読み直す。読んだ所を覚えて続きだけ読む |
+| 🟡 低 | `hooks/rules-detect-bash-edits.py` | ls や cat などの読むだけのコマンドでも、`git status` を 2 回走らせる |
+| 🟡 低 | `hooks/rules-require-read.py` | 編集のたびに会話の記録を最大 32MB 読み直す。読んだ所を覚えて続きだけ読む |
 | 🟡 低 | `skills/pr-prune/scripts/prune-merged.sh` | 載せ直しの処理を別のスクリプトに分け、グローバル変数をやめる |
 | 🟡 低 | `lib/md_blocks.py` | 見出しの読み方が 4 か所で別々にある。ここに 1 つにまとめる |
 | 🟡 低 | `lib/hook_state.py` | 呼ぶたびに状態のフォルダを全部見て掃除する。1 時間に 1 回にする |
@@ -122,6 +87,12 @@
 | 🟠 中 | `lib/app_store.py` | 署名の DER を読む処理にテストが無い |
 | 🟠 中 | `tests/pr-fix.sh` | 偽の gh が完成した行を返し、未解決に絞る式が走らない |
 | 🟠 中 | `tests/pr-prune.sh` | squash でないマージのテストに子のブランチが無く、空振りする |
+| 🟠 中 | `tests/config-audit.sh` | NG のケースで終了コードを見ない |
+| 🟠 中 | `tests/pr-gate.sh` | 利用者の `CC_HOOKS_OFF`・`CC_UI_*`・`CC_STORE_*` を受け継ぐ |
+| 🟠 中 | `scripts/config-audit.py` | skills・agents・rules の frontmatter と settings の検査の分岐にテストが無い |
+| 🟠 中 | `tests/ui-snapshot.sh` | 描けた時の道を通らない。store-report の表の値、app-plan の成功も見ない |
+| 🟠 中 | `skills/pr-create/scripts/classify-diff.sh` | 200 行の境目と、hooks/ 以外の risky のパターンにテストが無い |
+| 🟠 中 | `tests/pr-fix.sh` | READ の権限、no checks reported の分岐にテストが無い |
 | 🟡 低 | `tests/pr-prune.sh` | ls-remote が落ちた時に付け替えを見送る道に、テストが無い |
 | 🟡 低 | `tests/lib/assert.sh` | 利用者の `~/.gitconfig` が効く。`GIT_CONFIG_GLOBAL` を `/dev/null` にする |
 | 🟡 低 | `lib/git.py`・`lib/git.sh` | ワークツリーの置き場所を 2 か所で決めている。同じかを確かめるテストが無い |
@@ -133,6 +104,11 @@
 | 🟡 低 | `tests/rules-detect-bash-edits.sh` | cd 先に `app/` が無い場合のテストが無い |
 | 🟡 低 | `tests/lib/hooks.sh` | JSON を文字列で組んでいる |
 | 🟡 低 | `tests/shell-check.sh` | 対象外の入力のテストが無い。`tests/swift-format.sh`・`tests/ctx-limit-read.sh` も同じ |
+| 🟡 低 | `tests/lib/fixtures.sh` | commit で commit.gpgsign を切らない |
+| 🟡 低 | `tests/config-audit.sh` | expect_audit を 68 回、毎回リポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
+| 🟡 低 | `tests/store-release.sh` | 内部の関数を差し替える。store-reply・store-report も同じ |
+| 🟡 低 | `tests/config-audit.sh` | docs/improvements.md などの文言に頼る置き換えがある |
+| 🟡 低 | `tests/ctx-limit-read.sh` | 30_000 などの上限ちょうどが通るテストが無い。docs-check・swift-style-check も同じ |
 
 ### 検査にする案
 
@@ -141,6 +117,7 @@
 | 🟠 中 | `scripts/config-audit.py` | 例外の時に NG の行が出ない main を見つける |
 | 🟠 中 | `scripts/config-audit.py` | SKILL.md の手順のコマンドと allowed-tools を照らし合わせる |
 | 🟠 中 | `scripts/config-audit.py` | `tests/app-init.sh` などの `python3 -c` を対象にする |
+| 🟡 低 | `docs/testing.md` | 上限ちょうどが通るテストを置く、を決まりに書く |
 
 ## ⚠️ 直さないと決めたこと
 
