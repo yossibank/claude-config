@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from git import git_root  # noqa: E402
 from hook_io import notify, read_payload, run_hook, tool_input  # noqa: E402
 
-TIMEOUT = 60
+TIMEOUT = 10
 
 
 def pinned(root):
