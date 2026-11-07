@@ -64,6 +64,17 @@ def repo_of(path):
     return ""
 
 
+def complete_lines(data, base):
+    cut = data.rfind(b"\n") + 1
+    return data[:cut].decode("utf-8", "ignore").split("\n")[:-1], base + cut
+
+
+def lines_after(path, offset):
+    with open(path, "rb") as file:
+        file.seek(offset)
+        return complete_lines(file.read(), offset)
+
+
 def tail_lines(path, limit, marker=None, chunk=4_000_000):
     with open(path, "rb") as file:
         file.seek(0, os.SEEK_END)
@@ -77,5 +88,5 @@ def tail_lines(path, limit, marker=None, chunk=4_000_000):
             index = data.rfind(marker) if marker else -1
             start = data.rfind(b"\n", 0, index) + 1 if index >= 0 else -1
             if start > 0 or (start == 0 and position == 0):
-                return data[start:].decode("utf-8", "ignore").splitlines()
-    return data.decode("utf-8", "ignore").splitlines()
+                return complete_lines(data[start:], position + start)
+    return complete_lines(data, position)

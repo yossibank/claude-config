@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "lib"))
 
 from app_store import apps_dir, listed_apps  # noqa: E402
 from loader import load_module  # noqa: E402
-from script_io import Failure, fail, require_month  # noqa: E402
+from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
 
 def failure_of(error):
@@ -71,4 +71,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

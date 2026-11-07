@@ -65,7 +65,7 @@ printf 'ignored/\n' >"$package/.gitignore"
 mkdir -p "$package/ignored"
 touch "$package/ignored/big"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" /bin/bash "$render" "$package" "$set_dir" "$work/out" >/dev/null
-check "render-snapshots: macOS の bash でも出力先のパスを引用符なしで入れる" grep -qxF "let directory = \"$work/out\"" "$work/written.swift"
+check "render-snapshots: macOS の bash でも出力先のパスを引用符なしで入れる" grep -qxF "let directory = \"$work/out/.rendering\"" "$work/written.swift"
 check "render-snapshots: テストの後に診断を集めない" grep -qF -- "-collect-test-diagnostics never" "$work/arguments"
 check "render-snapshots: 元のパッケージにテストを足さない" test ! -e "$package/Tests"
 check "render-snapshots: 元の Package.swift を書き換えない" cmp -s "$manifest" "$package/Package.swift"
@@ -75,5 +75,18 @@ check "render-snapshots: 終わったら .lock を消す" test -z "$(find "$work
 
 mkdir "$(echo "$work"/copies/pkg-*).lock"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG 同じリポジトリを描いている途中" "render-snapshots: 描いている途中なら NG" bash "$render" "$package" "$set_dir" "$work/out"
+
+printf 'Co"re\nSnap:pk\\g\n' >"$work/escape.txt"
+printf 'let package = Package(\n    targets: [\n    ]\n)\n' >"$work/Escape.swift"
+python3 -I "$add_target" "$work/Escape.swift" "$work/escape.txt"
+check "add-target: 名前の引用符とバックスラッシュを逃がす" grep -qF '"Co\"re"' "$work/Escape.swift"
+check "add-target: 製品とパッケージの名前も逃がす" grep -qF '.product(name: "Snap", package: "pk\\g")' "$work/Escape.swift"
+
+lock=$(echo "$work"/copies/pkg-*.lock)
+touch "$work/out/old.png"
+echo 999999 >"$lock/pid"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG テストが通らなかった（xcodebuild: 1、ログ: " "render-snapshots: 止まった実行のロックは外して、描き直す。失敗の NG にログの場所を出す" bash "$render" "$package" "$set_dir" "$work/out"
+check "render-snapshots: 描けなかった時は、前の PNG を消さない" test -e "$work/out/old.png"
+check "render-snapshots: 全ログを残す" test -f "${lock%.lock}/.build/ui-snapshot.log"
 
 finish

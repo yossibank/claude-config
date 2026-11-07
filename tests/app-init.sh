@@ -31,6 +31,13 @@ make_app "$draft" "$placeholder"
 python3 -I "$replace" "$draft" Draft draft "下書き" >/dev/null
 check "replace-placeholders: overview が書きかけなら README の印を残す" grep -q '<何のアプリかを 1 文で>' "$draft/README.md"
 
+verify="$root/skills/app-init/templates/ios-app/scripts/verify.sh"
+mkdir "$work/verify"
+failing='printf "b.swift:1: error: x\n** BUILD FAILED **\na.swift:2: error: y\n** BUILD FAILED **\n"; exit 65'
+out=$(cd "$work/verify" && bash "$verify" app-build bash -c "$failing")
+match "verify: 大文字の ** BUILD FAILED ** も、順を保って重ねずに出す" "$out" $'b.swift:1: error: x\n** BUILD FAILED **\na.swift:2: error: y\nNG app-build（ログ: .build/verify/app-build.log）'
+expect "NG app-build" "verify: 失敗したら NG と終了コードで返す" bash -c "cd '$work/verify' && bash '$verify' app-build bash -c '$failing'"
+
 create="$root/skills/app-init/scripts/create-app.sh"
 export CC_APPS_DIR="$work/apps"
 export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
@@ -48,5 +55,10 @@ printf '# 下書き\n' >"$CC_APPS_DIR/planned/docs/overview.md"
 expect OK "create-app: app-plan の下書きがある所に作る" bash "$create" planned "下書き"
 check "create-app: app-plan の下書きを上書きしない" grep -qx '# 下書き' "$CC_APPS_DIR/planned/docs/overview.md"
 check "create-app: 無い方のひな形だけを写す" test -f "$CC_APPS_DIR/planned/docs/roadmap.md"
+
+clash="$work/clash"
+make_app "$clash" "家計を記録するアプリ。"
+mkdir -p "$clash/ios/Kakeibot"
+expect "既にある" "replace-placeholders: 置き換えた名前が既にあれば上書きせず NG" python3 -I "$replace" "$clash" Kakeibot kakeibot "カケイボ"
 
 finish

@@ -180,10 +180,15 @@ def gated_repo(command, cwd):
                 if repo is not None:
                     return repo
         words = command_words(parts)
-        if words[:1] == ["cd"] and len(words) > 1:
-            cwd = resolve(cwd, words[1])
+        if words[:1] in (["cd"], ["pushd"]):
+            if len(words) > 1:
+                cwd = resolve(cwd, words[1])
+            elif words[0] == "cd":
+                cwd = resolve(cwd, "~")
             continue
         inner = shell_command(words) if words else None
+        if words[:1] == ["eval"]:
+            inner = " ".join(words[1:])
         if inner is not None:
             repo = gated_repo(inner, cwd)
             if repo is not None:

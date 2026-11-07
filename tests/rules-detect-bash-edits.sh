@@ -79,4 +79,13 @@ else
 fi
 rm -f "$app/docs/tool.md"
 
+run rules-detect-bash-edits 0 "bash: 読むだけのコマンドは、前の状態を残さない" "$(bash_call t13 'ls docs | head -3')" pre
+check "bash: 読むだけのコマンドは git status を走らせず、状態のファイルを作らない" test ! -e "$TMPDIR/claude-bash-edits/b-t13"
+no_id() {
+    echo "{\"session_id\":\"n\",\"cwd\":\"$app\",\"tool_input\":{\"command\":\"$1\"}}"
+}
+run rules-detect-bash-edits 0 "bash: tool_use_id が無くても前の状態を残す" "$(no_id 'sed -i a')" pre
+run rules-detect-bash-edits 0 "bash: tool_use_id が無くても別のコマンドは別の状態にする" "$(no_id 'sed -i b')" pre
+check "bash: tool_use_id が無い時は、コマンドごとに状態のファイルを分ける" test "$(find "$TMPDIR/claude-bash-edits" -name 'n-*' | wc -l | tr -d ' ')" = 2
+
 finish

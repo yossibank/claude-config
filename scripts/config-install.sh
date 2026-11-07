@@ -62,10 +62,15 @@ jq -s -f "$root/scripts/config-install.jq" "$settings" "$root/settings/settings.
 mv -f "$settings.tmp" "$settings.new"
 jq '.permissions.allow' "$root/settings/settings.json" >|"$installed.new"
 
-if diff -u "$settings" "$settings.new"; then
+status=0
+diff -u "$settings" "$settings.new" || status=$?
+if [[ $status -eq 0 ]]; then
     rm "$settings.new"
     mv -f "$installed.new" "$installed"
     echo "OK settings.json は変わらない"
-else
+elif [[ $status -eq 1 ]]; then
     echo "確かめてから置き換える: mv \"$settings.new\" \"$settings\" && mv \"$installed.new\" \"$installed\""
+else
+    echo "NG diff が失敗した（終了コード ${status}）。$settings と $settings.new を確かめる"
+    exit 1
 fi

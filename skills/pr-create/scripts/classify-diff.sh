@@ -11,26 +11,30 @@ limit=200
 risky='(^|/)(Migration|migrations?/)|[Ss]chema|\.sql$|fixtures/|\.pbxproj$|Package\.(swift|resolved)$|(^|/)hooks/|settings[^/]*\.json$'
 
 changes() {
-    git -C "$repo" diff --numstat -z --no-renames "$base" | tr '\0' '\n'
     local path count
-    untracked_paths "$repo" | while IFS= read -r -d '' path; do
+    git -C "$repo" diff --numstat -z --no-renames "$base" | tr '\0' '\n' || return 1
+    untracked_paths "$repo" | tr '\0' '\n' | while IFS= read -r path; do
         count=0
         [[ -f $repo/$path && -r $repo/$path ]] && count=$(wc -l < "$repo/$path" | tr -d ' ')
         printf '%s\t0\t%s\n' "$count" "$path"
     done
 }
 
+all_changes=$(changes) || { echo "NG $2 との差分を取れない"; exit 1; }
+
 lines=0
 files=0
 docs_only=1
 touched=()
-while IFS=$'\t' read -r added deleted path; do
-    [[ $added == - ]] && added=0 deleted=0
-    files=$((files + 1))
-    lines=$((lines + added + deleted))
-    [[ $path == *.md || $path == docs/* ]] || docs_only=0
-    [[ $path =~ $risky ]] && touched+=("$path")
-done < <(changes)
+if [[ -n $all_changes ]]; then
+    while IFS=$'\t' read -r added deleted path; do
+        [[ $added == - ]] && added=0 deleted=0
+        files=$((files + 1))
+        lines=$((lines + added + deleted))
+        [[ $path == *.md || $path == docs/* ]] || docs_only=0
+        [[ $path =~ $risky ]] && touched+=("$path")
+    done <<< "$all_changes"
+fi
 
 [[ $files -gt 0 ]] || { echo "NG $2 との差分が無い"; exit 1; }
 

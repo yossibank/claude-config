@@ -137,4 +137,22 @@ doc_case 0 "docs の外のファイルは 15KB を超えてもよい" README.md 
 doc_case 2 "docs の ## には絵文字を付ける" docs/x.md "$note"$'\n## 入れ方\n\nあ。' "頭に絵文字を 1 つ付ける"
 doc_case 0 "節の多い decisions は ## の絵文字を付けないでそろえてよい" docs/decisions/x.md "$note"$'\n## 入れ方\n\nあ。\n\n## 使い方\n\nい。'
 
+printf '# t\n\nあ。\n' >"$work/unreadable.md"
+chmod 000 "$work/unreadable.md"
+run docs-check 0 "docs-check: 読めないファイルは、落ちずに知らせて通す" "{\"tool_input\":{\"file_path\":\"$work/unreadable.md\"}}"
+out=$(echo "{\"tool_input\":{\"file_path\":\"$work/unreadable.md\"}}" | bash "$hooks" docs-check 2>&1)
+match "docs-check: 読めないファイルは systemMessage で理由を知らせる" "$out" '{"systemMessage": "docs-check が想定外の失敗で確かめられなかった（'*
+out=$(python3 -I - "$root" "$work/docs-case/README.md" 2>&1 <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_hook
+import md_doc
+md_doc.RULES = ["/nonexistent/docs-core.md"]
+hook = load_hook("docs-check")
+hook.target_paths = lambda suffix: [sys.argv[2]]
+hook.main()
+EOF
+)
+match "docs-check: rules の表が読めない時は、検査を飛ばしたと systemMessage で知らせる" "$out" '*"systemMessage": "docs-check: /nonexistent/docs-core.md を読めない*'
+
 finish

@@ -40,13 +40,54 @@ run hooks-runner 1 "run.sh: hooks/ に無い名前は NG で止める" "{}"
 off=$' x1,x2\tx3\nx4 ,, x5,'
 out=$(echo '{}' | CC_HOOKS_OFF="$off" bash "$hooks" rules-require-read 2>&1)
 match "rules: run.sh は CC_HOOKS_OFF を空白・カンマ・タブ・改行で名前に分ける" "$out" "*hooks/ に無い名前がある: x1 x2 x3 x4 x5"
-out=$(CC_HOOKS_OFF="$off" python3 -I - "$root" 2>&1 <<'EOF'
+mkdir "$work/probe"
+cp "$hooks" "$work/probe/run.sh"
+cat >"$work/probe/probe.py" <<PY
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
+sys.path.insert(0, "$root/lib")
 from hook_io import hook_off
-print(" ".join(name for name in ["x", "x1", "x2", "x3", "x4", "x5", "x1,x2", "x4 "] if hook_off(name)))
+print(" ".join(name for name in ["x", "x1", "x2", "x3", "x4", "x5", "x6", "x1,x2", "x4 "] if hook_off(name)))
+PY
+out=$(CC_HOOKS_OFF="$off"$'\r'x6 bash "$work/probe/run.sh" probe 2>/dev/null)
+match "rules: hook_io の hook_off は run.sh が分けた名前の並びを使い、\\r も区切る" "$out" "x1 x2 x3 x4 x5 x6"
+
+inc="$work/inc.jsonl"
+: >"$inc"
+for name in code-comments.md swift-core.md swift-ui.md; do read_rule s5 main "$name"; done
+run rules-require-read 0 "rules: 記録が空でも読んだ rules で通る" "$(edit s5 main "$inc" "$swift")"
+printf '{"type":"x","note":"a\xe2\x80\xa8b"}\n' >>"$inc"
+run rules-require-read 0 "rules: 続きの行を足しても通る" "$(edit s5 main "$inc" "$swift")"
+out=$(python3 -I - "$root" "$inc" 2>&1 <<'EOF'
+import json, os, sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from transcripts import tail_lines
+lines, end = tail_lines(sys.argv[2], 1_000_000)
+print(len(lines), end == os.path.getsize(sys.argv[2]))
 EOF
 )
-match "rules: hook_io の hook_off は run.sh と同じ名前の並びに分ける" "$out" "x1 x2 x3 x4 x5"
+match "rules: tail_lines は U+2028 で行を割らず、読み終えた位置を返す" "$out" "1 True"
+sleep 1
+echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}" >>"$inc"
+sleep 1
+run rules-require-read 2 "rules: 前に調べた続きの圧縮の印でも、また止まる" "$(edit s5 main "$inc" "$swift")"
+out=$(python3 -I - "$root" "$work/stale" 2>&1 <<'EOF'
+import os, sys, time
+sys.path.insert(0, sys.argv[1] + "/lib")
+from hook_state import prepare_state
+folder = sys.argv[2]
+os.makedirs(folder + "/old")
+for name, age in (("old/new", 0), ("old/dead", 100), ("alone", 100)):
+    open(os.path.join(folder, name), "w").close()
+    os.utime(os.path.join(folder, name), (time.time() - age, time.time() - age))
+os.utime(folder + "/old", (time.time() - 100, time.time() - 100))
+prepare_state(folder, 50)
+first = sorted(os.listdir(folder + "/old")), os.path.exists(folder + "/alone")
+open(folder + "/later", "w").close()
+os.utime(folder + "/later", (time.time() - 100, time.time() - 100))
+prepare_state(folder, 50)
+print(first, os.path.exists(folder + "/later"))
+EOF
+)
+check "rules: 古いフォルダの中の新しい記録を残し、掃除は 1 時間に 1 回にする" test "$out" = "(['new'], False) True"
 
 finish

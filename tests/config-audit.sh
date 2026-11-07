@@ -55,6 +55,14 @@ d=$(copy wide)
 printf 'echo "x $name%s"\n' '。' >>"$d/skills/ui-record/scripts/record-video.sh"
 expect_audit "$d" "変数の直後に全角" "変数の直後の全角"
 
+d=$(copy fenced-link)
+printf '\n```text\n[x](nothing.md)\n```\n' >>"$d/docs/testing.md"
+expect_audit "$d" OK "コードの囲みの中のリンクは見ない"
+
+d=$(copy broken-link)
+printf '\n[x](nothing.md)\n' >>"$d/docs/testing.md"
+expect_audit "$d" "リンク先が無い: nothing.md" "文中のリンク先が無い"
+
 d=$(copy missing)
 printf '\n`${CLAUDE_SKILL_DIR}/scripts/nothing.sh`\n' >>"$d/skills/ui-record/SKILL.md"
 expect_audit "$d" "参照先が無い: scripts/nothing.sh" "無いスクリプトへの参照"
@@ -151,7 +159,7 @@ expect_audit "$d" "orphan.sh:1 どこからも使われていない" "自分の�
 
 d=$(copy no-guard)
 replace "$d/skills/config-learn/scripts/collect-corrections.py" 'if __name__ == "__main__":
-    main()' 'main()'
+    run_main(main)' 'run_main(main)'
 expect_audit "$d" "collect-corrections.py:1 if __name__" "main の呼び出しを守っていない .py"
 
 d=$(copy top-level)

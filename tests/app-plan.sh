@@ -37,4 +37,19 @@ expect "NG 使い方" "search-apps: 引数が無ければ NG" python3 -I "$scrip
 expect "NG 使い方" "search-apps: 数字でない件数は NG" python3 -I "$scripts/search-apps.py" 家計簿 x
 expect "NG 検索できなかった" "search-apps: 通信できなければ NG" python3 -I "$scripts/search-apps.py" 家計簿
 
+none=$(python3 -I - "$root" "$scripts/search-apps.py" <<'EOF'
+import sys
+
+sys.path.insert(0, f"{sys.argv[1]}/lib")
+
+from loader import load_module
+
+search = load_module(sys.argv[2])
+search.itunes_json = lambda url: {"results": []}
+sys.argv = ["search-apps.py", "家計簿"]
+search.main()
+EOF
+)
+match "search-apps: 0 件なら NG を出す" "$none" "NG 該当するアプリが無い: 家計簿"
+
 finish

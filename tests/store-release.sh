@@ -136,8 +136,9 @@ from loader import load_module
 
 module = load_module(sys.argv[2])
 repo, scenario = sys.argv[3], sys.argv[4]
-approved = {"unapproved": [], "existing": [{"id": "家計簿"}], "new": [{"id": "家計簿"}]}[scenario]
-names = [{"attributes": {"name": "節約"}}] if scenario == "existing" else []
+approved = {"unapproved": []}.get(scenario, [{"id": "家計簿"}])
+names = [{"id": "p1", "attributes": {"name": "節約"}}] if scenario in ("existing", "partial", "differs") else []
+shots = [{"id": "x"}] * (3 if scenario == "existing" else 1)
 calls = []
 
 
@@ -156,7 +157,16 @@ def fake(url, body=None, method=None):
     if url == "/v1/appCustomProductPages/p1/appCustomProductPageVersions":
         return {"data": [{"id": "pv1"}]}
     if url == "/v1/appCustomProductPageVersions/pv1/appCustomProductPageLocalizations":
+        if scenario == "broken":
+            return {}
         return {"data": [{"id": "pl1", "attributes": {"locale": "ja"}}]}
+    if url.startswith("/v1/appCustomProductPageLocalizations/pl1/searchKeywords?"):
+        return {"data": approved, "links": {}}
+    if url.startswith("/v1/appCustomProductPageLocalizations/pl1/appScreenshotSets?"):
+        sets = [] if scenario == "partial" else [{"id": "s1", "attributes": {"screenshotDisplayType": "APP_IPHONE_67"}}]
+        return {"data": sets, "links": {}}
+    if url.startswith("/v1/appScreenshotSets/s1/appScreenshots?"):
+        return {"data": shots, "links": {}}
     if url == "/v1/appScreenshotSets":
         return {"data": {"id": "s1"}}
     if url == "/v1/appScreenshots":
@@ -165,6 +175,7 @@ def fake(url, body=None, method=None):
 
 
 module.asc_json = fake
+sys.modules["app_store"].asc_json = fake
 module.asc_request = lambda url, body=None, **kwargs: calls.append(("REQUEST", url, body))
 module.put_parts = lambda operations, data: calls.append(("PUT", "parts", None))
 sys.argv = ["create-custom-pages.py", repo]
@@ -185,12 +196,35 @@ out=$(run_pages unapproved)
 match "create-custom-pages: 配信中の版に無い語は NG で、ページを作る POST をしない" "$out" "*NG 節約: 配信中の版のキーワードに無い語: 家計簿*"
 check "create-custom-pages: 語が通らなければ appCustomProductPages に POST しない" test -z "$(grep -x 'CALL POST /v1/appCustomProductPages' <<<"$out")"
 
-match "create-custom-pages: 既にある名前のページは作らない" "$(run_pages existing)" "*OK 節約 は既にあるので作らなかった*"
+match "create-custom-pages: 既にある名前のページは、中身がそろっていれば作らない" "$(run_pages existing)" "*OK 節約 は既にあるので作らなかった*"
+match "create-custom-pages: 既にあるページに画像の組が 1 つも無ければ、途中で止まったものとして NG" "$(run_pages partial)" "*NG 節約 は既にあるが、途中で止まったままになっている（画像の組が 1 つも無い）*"
+out=$(run_pages differs)
+match "create-custom-pages: 手元と枚数が違うだけの既にあるページは、知らせて作らずに進む" "$out" "*節約: APP_IPHONE_67 の画像がページでは 1 枚で、手元は 3 枚*OK 節約 は既にあるので作らなかった*OK 審査への提出*"
+match "create-custom-pages: 作る途中の想定外の例外でも、途中のページが残った案内を出す" "$(run_pages broken)" "*NG 節約 を作る途中で止まった: KeyError。App Store Connect で途中のページを消してから*"
 
 out=$(run_pages new)
 check "create-custom-pages: 新しいページは POST で作る" grep -qx 'CALL POST /v1/appCustomProductPages' <<<"$out"
 check "create-custom-pages: キーワードを searchKeywords の関係に入れる" grep -qx 'KEYWORDS 家計簿' <<<"$out"
 check "create-custom-pages: 画像を PATCH で確定し、md5 の sourceFileChecksum を付ける" grep -qx 'CHECKSUM d41d8cd98f00b204e9800998ecf8427e' <<<"$out"
 check "create-custom-pages: 画像の確定は appScreenshots/<id> への PATCH" grep -qx 'CALL PATCH /v1/appScreenshots/shot1' <<<"$out"
+
+mkdir -p "$work/priv2/App" "$work/priv2/Pods" "$work/priv2/build"
+write_manifest "$work/priv2" "<string>x</string>"
+printf '// UserDefaults は使わない\nlet note = "UserDefaults"\nlet s = url.stat(path)\nlet t = "\\(a ? "UserDefaults" : "b")"\n' >"$work/priv2/App/Note.swift"
+echo 'let d = UserDefaults.standard' >"$work/priv2/Pods/Lib.swift"
+echo 'let d = UserDefaults.standard' >"$work/priv2/build/Gen.swift"
+expect OK "check-privacy: コメントと文字列の中の語、x.stat(、Pods と build、dict でない申告の要素は見ない" python3 -I "$privacy" "$work/priv2"
+echo 'let n = stat(path, &info)' >"$work/priv2/App/Call.swift"
+expect "NG NSPrivacyAccessedAPICategoryFileTimestamp" "check-privacy: C の stat( の呼び出しは申告を求める" python3 -I "$privacy" "$work/priv2"
+
+mkdir -p "$work/odd/name.txt"
+expect "想定外の失敗" "check-listing: 想定外の例外は traceback にせず NG にする" python3 -I "$listing" "$work/odd"
+printf '家計簿,\n節約\n' >"$folder/keywords.txt"
+expect "改行がある" "check-listing: keywords.txt の途中の改行は NG" python3 -I "$listing" "$folder"
+
+fake_command xcrun 'echo "$*" >>"'"$work"'/xcrun.log"'
+fake_command sips 'exit 1'
+bash "$screenshot" udid "$work/shot.png" >/dev/null 2>&1
+check "take-screenshot: 終わったらステータスバーの固定を戻す" grep -qx "simctl status_bar udid clear" "$work/xcrun.log"
 
 finish

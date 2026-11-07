@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$(dirname "$0")/../../../lib/build_log.sh"
+
 [[ $# -ge 3 ]] || { echo "NG 使い方: $(basename "$0") <パッケージのフォルダ> <セットのフォルダ> <出力先のフォルダ>"; exit 1; }
 
 [[ -d $1 ]] || { echo "NG パッケージのフォルダが無い: $1"; exit 1; }
@@ -33,8 +35,16 @@ tests="$work/Tests/UISnapshotTests"
 lock="$copy.lock"
 
 mkdir -p "$(dirname "$copy")"
-mkdir "$lock" 2>/dev/null || { echo "NG 同じリポジトリを描いている途中: ${lock}。終わるのを待つか、止まっていればフォルダを消す"; exit 1; }
-trap 'rmdir "$lock"' EXIT
+if ! mkdir "$lock" 2>/dev/null; then
+    holder=$(cat "$lock/pid" 2>/dev/null || true)
+    if [[ -n $holder ]] && ! kill -0 "$holder" 2>/dev/null; then
+        rm -rf "$lock"
+    fi
+    mkdir "$lock" 2>/dev/null || { echo "NG 同じリポジトリを描いている途中: ${lock}。終わるのを待つか、止まっていればフォルダを消す"; exit 1; }
+fi
+stage="$out/.rendering"
+trap 'rm -rf "$lock" "$stage"' EXIT
+echo $$ >"$lock/pid"
 mkdir -p "$copy"
 rsync -a --delete --exclude .git --exclude .build --exclude DerivedData --filter=':- .gitignore' "$root/" "$copy/"
 
@@ -43,22 +53,29 @@ python3 -I "$skill/scripts/add-target.py" "$work/Package.swift" "$set_dir/target
 mkdir -p "$tests"
 source_text=$(<"$set_dir/SnapshotTests.swift")
 shopt -u patsub_replacement 2>/dev/null || true
-test_text=${source_text//__OUT__/$out}
+test_text=${source_text//__OUT__/$stage}
 printf '%s\n' "$test_text" >|"$tests/SnapshotTests.swift"
-rm -f "$out"/*.png
+rm -rf "$stage"
+mkdir -p "$stage"
 touch "$marker"
 
 cd "$work"
 
-set +e
+log="$work/.build/ui-snapshot.log"
+mkdir -p "$(dirname "$log")"
+status=0
 xcodebuild test \
     -scheme "$scheme" \
     -destination "id=$device" \
     -collect-test-diagnostics never \
-    -only-testing:UISnapshotTests 2>&1 | grep -E "error:|TEST (SUCCEEDED|FAILED)"
-status=${PIPESTATUS[0]}
-set -e
+    -only-testing:UISnapshotTests >|"$log" 2>&1 || status=$?
 
-[[ $status -eq 0 ]] || { echo "NG テストが通らなかった（xcodebuild: ${status}）"; exit "${status}"; }
-compgen -G "$out/*.png" >/dev/null || { echo "NG PNG が描かれなかった: $out"; exit 1; }
+if [[ $status -ne 0 ]]; then
+    show_errors "$log"
+    echo "NG テストが通らなかった（xcodebuild: ${status}、ログ: ${log}）"
+    exit 1
+fi
+compgen -G "$stage/*.png" >/dev/null || { echo "NG PNG が描かれなかった（ログ: ${log}）"; exit 1; }
+rm -f "$out"/*.png
+mv "$stage"/*.png "$out/"
 ls "$out"/*.png

@@ -2,6 +2,10 @@ import os
 import re
 import tempfile
 import time
+from pathlib import Path
+
+SWEEP_INTERVAL = 60 * 60
+SWEEP_MARK = ".swept"
 
 
 def safe_name(text):
@@ -14,7 +18,18 @@ def state_folder(name):
 
 def prepare_state(folder, age):
     os.makedirs(folder, exist_ok=True)
+    mark = os.path.join(folder, SWEEP_MARK)
+    try:
+        if time.time() - os.path.getmtime(mark) < SWEEP_INTERVAL:
+            return
+    except OSError:
+        pass
     remove_stale(folder, age)
+    Path(mark).touch()
+
+
+def is_stale(path, age):
+    return time.time() - os.path.getmtime(path) > age
 
 
 def remove_stale(folder, age):
@@ -25,12 +40,17 @@ def remove_stale(folder, age):
     for name in names:
         path = os.path.join(folder, name)
         try:
-            if time.time() - os.path.getmtime(path) > age:
-                if os.path.isdir(path):
-                    for child in os.listdir(path):
-                        os.remove(os.path.join(path, child))
-                    os.rmdir(path)
-                else:
+            if name == SWEEP_MARK:
+                continue
+            if not os.path.isdir(path):
+                if is_stale(path, age):
                     os.remove(path)
+                continue
+            old = is_stale(path, age)
+            for child in os.listdir(path):
+                if is_stale(os.path.join(path, child), age):
+                    os.remove(os.path.join(path, child))
+            if old:
+                os.rmdir(path)
         except OSError:
             continue

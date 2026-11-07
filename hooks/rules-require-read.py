@@ -1,4 +1,4 @@
-import functools
+import json
 import os
 import re
 import sys
@@ -13,12 +13,15 @@ from hook_messages import RULES_UNREAD  # noqa: E402
 from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from loader import ROOT  # noqa: E402
 from md_blocks import front_matter  # noqa: E402
-from transcripts import parse_entry, tail_lines  # noqa: E402
+from script_io import write_json  # noqa: E402
+from transcripts import lines_after, parse_entry, tail_lines  # noqa: E402
 
 RULES = os.path.join(ROOT, "rules")
 STATE = state_folder("rules-read")
 STALE = 7 * 24 * 60 * 60
 TAIL_LIMIT = 32_000_000
+COMPACT_BOUNDARY = b'"compact_boundary"'
+SCAN_STATE = "scan.json"
 
 
 def to_regex(pattern):
@@ -41,7 +44,6 @@ def to_regex(pattern):
     return re.compile(out + "$")
 
 
-@functools.cache
 def rule_paths(path):
     fields = front_matter(Path(path).read_text(encoding="utf-8").split("\n")) or {}
     paths = fields.get("paths")
@@ -80,12 +82,8 @@ def is_rule(path):
     return os.path.dirname(real) == os.path.realpath(RULES) or path.startswith(os.path.expanduser("~/.claude/rules/"))
 
 
-def scan(transcript):
-    compacted = 0.0
-    loaded = set()
-    if not transcript or not os.path.isfile(transcript):
-        return compacted, loaded
-    for line in tail_lines(transcript, TAIL_LIMIT, b'"compact_boundary"'):
+def apply_lines(lines, compacted, loaded):
+    for line in lines:
         if '"compact_boundary"' in line:
             stamp = (parse_entry(line) or {}).get("timestamp", "")
             try:
@@ -104,6 +102,33 @@ def scan(transcript):
     return compacted, loaded
 
 
+def saved_scan(data, transcript):
+    try:
+        saved = json.loads(Path(state_dir(data), SCAN_STATE).read_text(encoding="utf-8"))
+        if saved["transcript"] == transcript and saved["offset"] <= os.path.getsize(transcript):
+            return saved["offset"], float(saved["compacted"]), set(saved["loaded"])
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return None
+
+
+def scan(data, transcript):
+    if not transcript or not os.path.isfile(transcript):
+        return 0.0, set()
+    saved = saved_scan(data, transcript)
+    if saved:
+        lines, offset = lines_after(transcript, saved[0])
+        compacted, loaded = apply_lines(lines, *saved[1:])
+    else:
+        lines, offset = tail_lines(transcript, TAIL_LIMIT, COMPACT_BOUNDARY)
+        compacted, loaded = apply_lines(lines, 0.0, set())
+    write_json(
+        os.path.join(state_dir(data), SCAN_STATE),
+        {"transcript": transcript, "offset": offset, "compacted": compacted, "loaded": sorted(loaded)},
+    )
+    return compacted, loaded
+
+
 def record_read(data, path):
     if not is_rule(path):
         return
@@ -117,7 +142,7 @@ def check_edit(data, path):
     if not rules:
         return
     transcript = data.get("transcript_path", "")
-    compacted, loaded = scan(transcript)
+    compacted, loaded = scan(data, transcript)
     missing = [name for name in rules if read_time(data, name) <= compacted and name not in loaded]
     if missing:
         print(
