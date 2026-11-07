@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from hook_io import read_payload, tool_input  # noqa: E402
+from hook_io import read_payload, run_hook, tool_input  # noqa: E402
 
 LIMIT = 30_000
 TEXT = (".md", ".swift", ".kt", ".py", ".sh", ".js", ".ts", ".html", ".json", ".jsonl", ".txt", ".log", ".yml", ".yaml", ".csv")
@@ -30,4 +30,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_hook("ctx-limit-read", main)
