@@ -61,5 +61,22 @@ run rules-detect-bash-edits 0 "bash: /dev/null と fd への向け替えは書�
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" pre
 echo 'r' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 0 "bash: 道具の出力を別の所に向けても、道具が変えたファイルは数えない" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" post
+echo "{}" >"$app/docs/quiet.json"
+for tool in make mint swiftformat pre-commit brew xcodebuild swift; do
+    run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call "tool-$tool" "$tool run")" pre
+    echo "$tool" >>"$app/docs/quiet.json"
+    run rules-detect-bash-edits 0 "bash: $tool の書き換えで検査が通れば黙る" "$(bash_call "tool-$tool" "$tool run")" post
+done
+rm -f "$app/docs/quiet.json"
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t20 'make fmt')" pre
+printf '# t\n\n```\nx\n```\n' >"$app/docs/tool.md"
+out=$(bash_call t20 'make fmt' | bash "$hooks" rules-detect-bash-edits post 2>&1)
+rc=$?
+if [[ $rc == 2 && $out == *tool.md* && $out != *Edit・Write* ]]; then
+    ok "bash: make の書き換えで検査が NG なら、NG の行だけ返す"
+else
+    ng "bash: make の書き換えで検査が NG なら、NG の行だけ返す" "$rc $out"
+fi
+rm -f "$app/docs/tool.md"
 
 finish
