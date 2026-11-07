@@ -50,7 +50,6 @@ flowchart LR
 | Claude Code | 最新 |
 | Python | 3.9 以上 |
 | jq | 最新 |
-| 置き場所 | `~/Applications/AI/claude-config` |
 
 ## 🚀 入れ方
 
