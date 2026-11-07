@@ -14,8 +14,10 @@ from loader import load_hook  # noqa: E402
 
 STATE = state_folder("bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
-TOOLS = {"git", "make", "mint", "swiftformat", "pre-commit", "gh", "brew", "xcodebuild", "swift", "cd"}
+TOOLS = {"git", "gh", "cd"}
+WRITERS = {"make", "mint", "swiftformat", "pre-commit", "brew", "xcodebuild", "swift"}
 GIT_WRITES = {"checkout", "restore", "switch", "apply", "am", "stash", "merge", "pull", "rebase", "reset", "cherry-pick", "revert", "mv", "rm"}
+CHECKS = {".md": "docs-check", ".sh": "shell-check"}
 STALE = 24 * 60 * 60
 REDIRECT_CHARS = set("<>|&")
 
@@ -68,15 +70,15 @@ def redirect_targets(command, cwd):
     return targets
 
 
-def is_tool(words):
-    if not words or words[0] not in TOOLS:
+def is_tool(words, tools):
+    if not words or words[0] not in tools:
         return False
     return words[0] != "git" or (git_subcommand(words)[1] or [""])[0] not in GIT_WRITES
 
 
-def only_tools(command):
+def only_tools(command, tools=TOOLS):
     parts = [command_words(words) for words in split_commands(command)]
-    return bool(parts) and all(is_tool(words) for words in parts)
+    return bool(parts) and all(is_tool(words, tools) for words in parts)
 
 
 def cwd_of(data):
@@ -104,9 +106,11 @@ def after(data):
     command = tool_input(data).get("command", "")
     if not isinstance(earlier, dict) or "root" not in earlier:
         return
-    targets = redirect_targets(command, cwd_of(data)) if only_tools(command) else None
+    redirects = redirect_targets(command, cwd_of(data))
+    targets = redirects if only_tools(command) else None
     if targets is not None and not targets:
         return
+    quiet = targets is None and not redirects and only_tools(command, TOOLS | WRITERS)
     _, files = changed_files(earlier["root"])
     edited = sorted(
         path
@@ -119,6 +123,16 @@ def after(data):
     )
     if not edited:
         return
+    if quiet:
+        found = []
+        for path in edited:
+            name = next((hook for suffix, hook in CHECKS.items() if path.endswith(suffix)), None)
+            if name and not hook_off(name):
+                found += [f"{path}:{n}: {m}" for n, m in load_hook(name).check(path)]
+        if found:
+            print("\n".join(found), file=sys.stderr)
+            sys.exit(2)
+        return
     lines = [
         f"{BASH_EDITED}。ファイルの変更は Edit・Write で行う。書き換えたファイルに、Edit の後と同じ検査をかけた。",
         *edited,
@@ -128,9 +142,8 @@ def after(data):
         rules = sorted({name for path in edited for name in guard.matching_rules(path, earlier["root"])})
         if rules:
             lines.append("当たる決まり（まだ読んでいなければ Read で読む）: " + "、".join(rules))
-    checks = {".md": "docs-check", ".sh": "shell-check"}
     for path in edited:
-        name = next((hook for suffix, hook in checks.items() if path.endswith(suffix)), None)
+        name = next((hook for suffix, hook in CHECKS.items() if path.endswith(suffix)), None)
         if name and not hook_off(name):
             lines += [f"{path}:{n}: {m}" for n, m in load_hook(name).check(path)]
     print("\n".join(lines), file=sys.stderr)
