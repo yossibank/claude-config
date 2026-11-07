@@ -57,7 +57,7 @@ replace_text() {
         echo "置き換える語が無い: $old" >&2
         return 1
     fi
-    printf '%s' "${text//"$old"/$new}" >"$dest"
+    printf '%s' "${text//"$old"/"$new"}" >"$dest"
 }
 
 # Python のドライバーが先頭で exec する。argv[1] を claude-config の根にして lib を読めるようにする

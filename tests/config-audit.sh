@@ -251,7 +251,11 @@ expect_audit "$d" "scripts/docs-section.py:1 入口の docs-section.sh から呼
 
 d=$(copy test-inline-python)
 printf "python3 -I -c 'print(1)'\n" >>"$d/tests/ctx-limit-read.sh"
-expect_audit "$d" "tests/ctx-limit-read.sh" "テストの中の python3 -c"
+expect_audit "$d" "tests/ctx-limit-read.sh" "テストの中のインラインの Python"
+
+d=$(copy test-inline-python-substitution)
+printf 'out=$(%s -I -c %s)\n' "python3" "'print(1)'" >>"$d/tests/ctx-limit-read.sh"
+expect_audit "$d" "tests/ctx-limit-read.sh" "コマンド置換の中のインラインの Python"
 
 d=$(copy ng-stderr)
 printf 'printf "%s %%s\\n" x >&2\n' NG >>"$d/skills/ui-record/scripts/record-video.sh"
