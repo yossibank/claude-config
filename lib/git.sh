@@ -21,7 +21,7 @@ untracked_paths() {
 }
 
 changed_paths() {
-    git -C "$1" diff --name-only -z "$2"
+    git -C "$1" diff --name-only -z "$2" || return $?
     untracked_paths "$1"
 }
 
@@ -32,7 +32,8 @@ worktree_root() {
 default_branch() {
     local head
     git -C "$1" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null && return 0
-    head=$(git -C "$1" ls-remote --symref origin HEAD 2>/dev/null | awk '$1 == "ref:" && !found {sub("refs/heads/", "", $2); print $2; found = 1}') || true
+    head=$(GIT_TERMINAL_PROMPT=0 timeout 10 git -C "$1" ls-remote --symref origin HEAD 2>/dev/null | awk '$1 == "ref:" && !found {sub("refs/heads/", "", $2); print $2; found = 1}') || true
+    [[ -n $head ]] || echo "既定のブランチを origin から取れなかったので、origin/main とみなす" >&2
     echo "origin/${head:-main}"
 }
 

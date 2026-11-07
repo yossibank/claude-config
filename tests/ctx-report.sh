@@ -66,4 +66,14 @@ out=$(python3 -I "$count" 2026-10)
 check "count-tokens: 次の月に続く会話は、その月の要求だけを数える" \
     grep -qxF '| 10-30 | span @feat/span | 月またぎ | 1 | 170 | 47% | 90.0 | 0 |' <<<"$out"
 
+nulls="$work/nulls"
+mkdir -p "$nulls/p/"
+{
+    echo '{"type":"user","timestamp":"2026-09-20T01:00:00.000Z"}'
+    echo '{"type":"assistant","requestId":"z1","timestamp":"2026-09-20T02:00:00.000Z","message":null}'
+    usage z2 '{"input_tokens":null,"cache_creation_input_tokens":null,"cache_read_input_tokens":null,"output_tokens":10000}' 2026-09-20T02:00:00.000Z
+} >"$nulls/p/s.jsonl"
+out=$(CC_PROJECTS_DIR="$nulls" python3 -I "$count" 2026-09)
+check "count-tokens: message や usage の数が null でも数える" grep -q '^会話は 1 件' <<<"$out"
+
 finish

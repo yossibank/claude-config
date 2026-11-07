@@ -7,14 +7,15 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git, git_root  # noqa: E402
-from hook_io import command_words, git_subcommand, hook_off, notify, read_payload, split_commands, tool_input  # noqa: E402
+from hook_io import command_words, git_subcommand, hook_off, notify, read_payload, run_hook, split_commands, tool_input  # noqa: E402
 from hook_messages import BASH_EDITED  # noqa: E402
 from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 from loader import load_hook  # noqa: E402
 
 STATE = state_folder("bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
-TOOLS = {"git", "gh", "cd"}
+READ_ONLY = {"cat", "diff", "echo", "file", "grep", "head", "ls", "printf", "pwd", "rg", "stat", "tail", "tree", "wc", "which"}
+TOOLS = {"git", "gh", "cd"} | READ_ONLY
 WRITERS = {"make", "mint", "swiftformat", "pre-commit", "brew", "xcodebuild", "swift"}
 GIT_WRITES = {"checkout", "restore", "switch", "apply", "am", "stash", "merge", "pull", "rebase", "reset", "cherry-pick", "revert", "mv", "rm"}
 CHECKS = {".md": "docs-check", ".sh": "shell-check"}
@@ -43,7 +44,9 @@ def changed_files(cwd):
 
 
 def state_file(data):
-    return os.path.join(STATE, safe_name(f"{data.get('session_id', '')}-{data.get('tool_use_id', '')}"))
+    command = tool_input(data).get("command", "")
+    call = data.get("tool_use_id") or hashlib.sha256(command.encode()).hexdigest()[:16]
+    return os.path.join(STATE, safe_name(f"{data.get('session_id', '')}-{call}"))
 
 
 def edit_mark(path):
@@ -171,4 +174,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_hook("rules-detect-bash-edits", main)

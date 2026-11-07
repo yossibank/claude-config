@@ -43,4 +43,7 @@ style_case 2 "複数行のビューを含む並びに空行が無ければ止め
 style_case 0 "型が変わるビューの間に空行があれば通る" $'var a: some View {\n    HStack {\n        Text("a")\n\n        Spacer()\n    }\n}'
 style_case 0 "let を含むビューの並びは見ない" $'#Preview {\n    let a = 1\n    Text("a")\n}'
 
+style_case 0 "補間の中の入れ子の文字列も、文字列として見ない" 'let a = "\(c ? "x && y ? 1 : 2" : "z")"'
+style_case 2 "補間のある文字列の後ろの三項演算子は見る" $'let a = "\\(b)"; let c = d && e ? 1 : 2' "Case.swift:1: 条件に && か ||"
+
 finish

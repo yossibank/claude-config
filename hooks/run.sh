@@ -4,8 +4,9 @@ set -uo pipefail
 here=$(dirname "$0")
 hook="${here}/${1:-}.py"
 [[ $# -ge 1 && -f $hook ]] || { echo "NG フックが無い: ${hook}。claude-config を ~/Applications/AI/claude-config に置き、config-install.sh を走らせ直す" >&2; exit 1; }
-off=${CC_HOOKS_OFF:-}
-read -ra names <<<"${off//[,$'\t'$'\n']/ }"
+off=$(printf '%s' "${CC_HOOKS_OFF:-}" | tr -s '[:space:],' ' ')
+export CC_HOOKS_OFF=$off
+read -ra names <<<"$off"
 unknown=()
 for name in ${names[@]+"${names[@]}"}; do
     [[ -f "${here}/${name}.py" ]] || unknown+=("$name")

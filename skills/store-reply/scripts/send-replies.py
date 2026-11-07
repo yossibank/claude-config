@@ -7,7 +7,7 @@ import urllib.parse
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from app_store import ASC_ERRORS, ASC_KEYS, asc_json, asc_reason, read_drafts, require_keys  # noqa: E402
-from script_io import Failure, fail, run_main, write_json  # noqa: E402
+from script_io import Failure, fail, run_main, split_dry_run, write_json  # noqa: E402
 
 REPLY_LIMIT = 5970
 USAGE = "使い方: send-replies.py <返信案の JSON> [--dry-run]"
@@ -49,8 +49,7 @@ def existing_response(review):
 
 
 def main():
-    args = [arg for arg in sys.argv[1:] if arg != "--dry-run"]
-    dry_run = len(args) < len(sys.argv) - 1
+    args, dry_run = split_dry_run(sys.argv[1:])
     if len(args) != 1:
         fail(USAGE)
     path = args[0]

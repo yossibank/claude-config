@@ -6,7 +6,17 @@ set -euo pipefail
 device="$1"
 out="$2"
 
-xcrun simctl bootstatus "$device" -b >/dev/null || { echo "NG シミュレーターが起動しない: $device"; exit 1; }
+limit=120
+xcrun simctl bootstatus "$device" -b >/dev/null 2>&1 &
+pid=$!
+waited=0
+while kill -0 "$pid" 2>/dev/null; do
+    (( waited < limit )) || { kill "$pid" 2>/dev/null || true; echo "NG シミュレーターの起動を ${limit} 秒待ったが終わらない: $device"; exit 1; }
+    sleep 1
+    waited=$((waited + 1))
+done
+wait "$pid" || { echo "NG シミュレーターが起動しない: $device"; exit 1; }
+trap 'xcrun simctl status_bar "$device" clear >/dev/null 2>&1 || true' EXIT
 xcrun simctl status_bar "$device" override \
     --time "9:41" \
     --dataNetwork wifi \

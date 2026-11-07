@@ -61,6 +61,14 @@ out=$(bash "$config/scripts/config-install.sh" 2>&1)
 check "config-install: 2 回目は変わらない" grep -q 'OK settings.json は変わらない' <<<"$out"
 check "config-install: 変わらない時は、許可の一覧の案を残さない" test ! -e "$claude/claude-config-allow.json.new"
 
+mkdir "$work/bin"
+printf '#!/bin/bash\nexit 2\n' >"$work/bin/diff"
+chmod +x "$work/bin/diff"
+out=$(PATH="$work/bin:$PATH" bash "$config/scripts/config-install.sh" 2>&1)
+status=$?
+check "config-install: diff が失敗したら、違うのと区別して NG にする" test "$status" -ne 0
+check "config-install: diff の失敗を NG の行で知らせる" grep -q '^NG diff が失敗した（終了コード 2）' <<<"$out"
+
 rm -f "$claude/CLAUDE.md"
 echo '# mine' >"$claude/CLAUDE.md"
 out=$(bash "$config/scripts/config-install.sh" 2>&1)

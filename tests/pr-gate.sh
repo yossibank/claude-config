@@ -28,6 +28,13 @@ run pr-gate 2 "pr: NG の確認が残ると止める" "$(push "$app" 'git push')
 "$run_check" "$app" --drop "false" >/dev/null
 run pr-gate 0 "pr: --drop で外せば通す" "$(push "$app" 'git push')"
 echo 'struct C {}' >>"$swift"
+run pr-gate 0 "pr: pushd の先がリポジトリでなければ、cd と同じに通す" "$(push "$app" "pushd $work >/dev/null && git push")"
+HOME="$work" run pr-gate 0 "pr: 引数の無い cd は HOME に移ったと見る" "$(push "$app" 'cd && git push')"
+run pr-gate 0 "pr: 引用符の中の ; で区切らない" "$(push "$app" 'echo \";\" git push')"
+run pr-gate 2 "pr: 空の引数の後ろの && でも push を止める" "$(push "$app" 'git commit -m \"\" && git push')"
+run pr-gate 2 "pr: xargs の先の push も止める" "$(push "$app" 'echo x | xargs -n 1 git push')"
+run pr-gate 2 "pr: eval の先の push も止める" "$(push "$app" 'eval \"git push origin main\"')"
+run pr-gate 0 "pr: eval の先が push でなければ止めない" "$(push "$app" 'eval \"git status\"')"
 run pr-gate 2 "pr: コマンド置換の中の push も止める" "$(push "$app" 'echo $(git push)')"
 run pr-gate 2 "pr: バッククォートの中の push も止める" "$(push "$app" 'echo `git push`')"
 run pr-gate 2 "pr: for の do の後の push も止める" "$(push "$app" 'for d in a; do git push; done')"
@@ -138,5 +145,14 @@ out=$(push "$app" 'git status' | CC_HOOKS_OFF="pr-gate.py" bash "$hooks" pr-gate
 check "pr: CC_HOOKS_OFF に hooks/ に無い名前があれば警告する" grep -q "hooks/ に無い名前がある: pr-gate.py" <<<"$out"
 out=$(push "$app" 'git status' | CC_HOOKS_OFF="" bash "$hooks" pr-gate 2>&1)
 check "pr: CC_HOOKS_OFF が空なら何も出さない" test -z "$out"
+
+out=$(python3 -I - "$root" <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from git import WORKTREES
+print(WORKTREES + "repo")
+EOF
+)
+match "lib: git.py の WORKTREES と git.sh の worktree_root は同じ場所を指す" "$(source "$root/lib/git.sh"; worktree_root repo)" "$out"
 
 finish

@@ -32,4 +32,11 @@ expect "NG 読めない" "docs-section: 無いファイルは NG" bash "$section
 printf '# \xff\xfe\n' >"$work/binary.md"
 expect "NG 読めない" "docs-section: UTF-8 でないファイルは NG" bash "$section" "$work/binary.md"
 
+printf '# t\n\n## 🚀 入れ方\n\nx\n\n## 📦 中身\n\ny\n' >"$work/emoji.md"
+out=$(bash "$section" "$work/emoji.md" "入れ方")
+match "docs-section: 頭の絵文字を外した見出しで節を出す" "$out" $'## 🚀 入れ方\n\nx'
+out=$(bash "$section" "$work/emoji.md" "🚀 入れ方")
+match "docs-section: 絵文字付きの見出しでも節を出す" "$out" $'## 🚀 入れ方\n\nx'
+expect "候補: t / 🚀 入れ方 / 📦 中身" "docs-section: 見出しが無い時は候補を NG の行に出す" bash "$section" "$work/emoji.md" none
+
 finish

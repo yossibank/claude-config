@@ -5,7 +5,7 @@ import urllib.parse
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
 from app_store import clean, itunes_json, reason  # noqa: E402
-from script_io import fail  # noqa: E402
+from script_io import fail, run_main  # noqa: E402
 
 
 def main():
@@ -21,6 +21,9 @@ def main():
     except Exception as error:
         fail(f"検索できなかった: {reason(error)}")
 
+    if not results:
+        fail(f"該当するアプリが無い: {term}")
+
     for app in results:
         rating = app.get("averageUserRating", 0)
         count = app.get("userRatingCount", 0)
@@ -29,4 +32,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

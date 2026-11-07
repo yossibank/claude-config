@@ -4,7 +4,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ReviewPageError, clean, itunes_json, reason, review_pages  # noqa: E402
+from app_store import PAGES, ReviewPageError, clean, itunes_json, reason, require_app_id, review_pages  # noqa: E402
 from dates import month_of  # noqa: E402
 from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
@@ -13,8 +13,7 @@ LOOKUP = "https://itunes.apple.com/lookup"
 
 
 def ratings(app, month):
-    if not app.isdigit():
-        raise Failure(f"アプリの ID は数字で書く: {app}")
+    require_app_id(app)
     try:
         results = itunes_json(f"{LOOKUP}?{urllib.parse.urlencode({'id': app, 'country': 'jp'})}")["results"]
     except Exception as error:
@@ -26,9 +25,11 @@ def ratings(app, month):
     reviews = 0
     low = 0
     notice = ""
+    pages = 0
 
     try:
         for entries in review_pages(app):
+            pages += 1
             older = False
             for entry in entries:
                 updated = month_of(entry["updated"]["label"])
@@ -40,6 +41,9 @@ def ratings(app, month):
                     low += int(entry["im:rating"]["label"]) <= 2
             if older:
                 break
+        else:
+            if pages == PAGES:
+                notice = f"レビューは新しい順に {PAGES} ページ（上限）までしか読めない。{month} の分を数え切れていないかもしれない"
     except ReviewPageError as error:
         if error.page == 1:
             raise Failure(f"レビューを読めなかった: {reason(error.cause)}") from error

@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from script_io import fail  # noqa: E402
+from script_io import fail, finish, run_main  # noqa: E402
 
 LIMITS = {
     "name.txt": 30,
@@ -36,6 +36,8 @@ def check_file(folder, name, limit):
 
 def check_keywords(text):
     words = text.strip().split(",")
+    if "\n" in text.strip():
+        yield "NG keywords.txt に改行がある。1 行にカンマで区切って書く"
     if any(w != w.strip() for w in words):
         yield "NG keywords.txt のカンマの前後に空白がある。字数の無駄になる"
     if "、" in text or "，" in text:
@@ -54,21 +56,12 @@ def check_folder(folder):
         yield from check_keywords(Path(keywords).read_text(encoding="utf-8"))
 
 
-def report(lines):
-    ok = True
-    for line in lines:
-        print(line)
-        ok = ok and not line.startswith("NG")
-    return ok
-
-
 def main():
     if len(sys.argv) < 2:
         fail("使い方: check-listing.py <掲載情報のフォルダ>")
 
-    ok = report(check_folder(sys.argv[1]))
-    sys.exit(0 if ok else 1)
+    finish(check_folder(sys.argv[1]))
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

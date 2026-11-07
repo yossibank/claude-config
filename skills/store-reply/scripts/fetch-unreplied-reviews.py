@@ -5,7 +5,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ASC_ERRORS, ASC_KEYS, apps_dir, asc_json, asc_reason, listed_apps, read_drafts, require_keys  # noqa: E402
+from app_store import ASC_ERRORS, ASC_KEYS, apps_dir, asc_pages, asc_reason, listed_apps, read_drafts, require_app_id, require_keys  # noqa: E402
 from dates import JST, to_jst  # noqa: E402
 from script_io import Failure, fail, run_main, write_json  # noqa: E402
 
@@ -23,15 +23,13 @@ def reviews_url(app_id):
 
 
 def unanswered(repo, app_id):
-    if not app_id.isdigit():
-        raise Failure(f"アプリの ID は数字で書く: {app_id}")
+    require_app_id(app_id)
     found = []
-    url = reviews_url(app_id)
-    while url:
-        try:
-            page = asc_json(url)
-        except ASC_ERRORS as error:
-            raise Failure(f"レビューを読めなかった: {asc_reason(error)}") from error
+    try:
+        pages = list(asc_pages(reviews_url(app_id)))
+    except ASC_ERRORS as error:
+        raise Failure(f"レビューを読めなかった: {asc_reason(error)}") from error
+    for page in pages:
         for review in page.get("data", []):
             attributes = review.get("attributes", {})
             response = review.get("relationships", {}).get("response", {}).get("data")
@@ -48,7 +46,6 @@ def unanswered(repo, app_id):
                 "reply": "",
                 "approved": False,
             })
-        url = page.get("links", {}).get("next")
     return found
 
 

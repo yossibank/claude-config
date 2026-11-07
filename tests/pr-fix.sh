@@ -11,20 +11,22 @@ fake_gh 'case "$1 $2" in
     "repo view") echo "o n WRITE" ;;
     "pr checks") echo "CI NG build https://ci.example.com/1"; exit 8 ;;
     "api graphql")
-        if [[ $3 == --paginate && $* == *endCursor* ]]; then
+        if [[ $* == *reviewThreads* ]]; then
             echo "THREAD T1 a.swift:3 @reviewer: 直す"
-        else
+        elif [[ $* == *"reviews(first: 100, after: \$endCursor)"* && $3 == --paginate ]]; then
             echo "REVIEW COMMENTED @reviewer: 全体"
+        elif [[ $* == *"comments(first: 100, after: \$endCursor)"* && $3 == --paginate ]]; then
+            echo "COMMENT @someone: 質問"
         fi ;;
 esac'
 
 expect "NG 使い方" "list-threads: 引数が足りなければ NG" bash "$threads" "$repo"
 out=$(bash "$threads" "$repo" 1)
 status=$?
-if [[ $status == 0 && $out == *"ACCESS write"* && $out == *"CI NG build"* && $out == *"THREAD T1"* && $out == *"REVIEW COMMENTED"* ]]; then
-    ok "list-threads: 権限と落ちた CI と、めくって集めた未解決のスレッドとレビューを出す"
+if [[ $status == 0 && $out == *"ACCESS write"* && $out == *"CI NG build"* && $out == *"THREAD T1"* && $out == *"REVIEW COMMENTED"* && $out == *"COMMENT @someone"* ]]; then
+    ok "list-threads: 権限と落ちた CI と、めくって集めた未解決のスレッドとレビューとコメントを出す"
 else
-    ng "list-threads: 権限と落ちた CI と、めくって集めた未解決のスレッドとレビューを出す（終了コード ${status}）" "$out"
+    ng "list-threads: 権限と落ちた CI と、めくって集めた未解決のスレッドとレビューとコメントを出す（終了コード ${status}）" "$out"
 fi
 
 finish

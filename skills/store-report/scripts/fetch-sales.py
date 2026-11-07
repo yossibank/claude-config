@@ -7,6 +7,7 @@ import urllib.error
 import urllib.parse
 import zlib
 from datetime import date, timedelta
+from decimal import Decimal
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
@@ -56,24 +57,32 @@ def daily_texts(days):
     return texts
 
 
-def sales_by_app(month, today=None):
-    require_keys(KEYS)
-    days = month_days(month, today or date.today())
+def load_texts(month, days):
     try:
         try:
-            return summarize(fetch_text("MONTHLY", month)), None
+            return [fetch_text("MONTHLY", month)], True
         except urllib.error.HTTPError as error:
             if error.code != 404:
                 raise
-        texts = daily_texts(days)
-    except urllib.error.HTTPError as error:
-        raise Failure(f"レポートを読めなかった: {error.code}") from error
+        return daily_texts(days), False
     except (*ASC_ERRORS, EOFError, zlib.error) as error:
         raise Failure(f"レポートを読めなかった: {asc_reason(error)}") from error
+
+
+def sales_by_app(month, today=None):
+    require_keys(KEYS)
+    days = month_days(month, today or date.today())
+    texts, monthly = load_texts(month, days)
     if not texts:
         raise Failure(f"{month} のレポートがまだ無い")
+    try:
+        sales = summarize(*texts)
+    except (KeyError, ValueError, ArithmeticError) as error:
+        raise Failure(f"レポートの中身が想定と違う（{type(error).__name__}: {error}）") from error
+    if monthly:
+        return sales, None
     notice = f"月のレポートがまだ無いので、{days[-1].isoformat()} までの日ごとのレポートを足した。レポートのあった日は {len(texts)} 日"
-    return summarize(*texts), notice
+    return sales, notice
 
 
 def summarize(*texts):
@@ -85,13 +94,13 @@ def summarize(*texts):
         parent = row.get("Parent Identifier", "").strip()
         app = apps_by_sku.get(parent, parent) if parent else row["Apple Identifier"]
         units = int(float(row["Units"] or 0))
-        proceeds = float(row["Developer Proceeds"] or 0) * units
+        proceeds = Decimal(row["Developer Proceeds"] or 0) * units
         total = totals.setdefault(app, {"downloads": 0, "proceeds": {}})
         if row["Product Type Identifier"] in DOWNLOADS:
             total["downloads"] += units
         if proceeds:
             currency = row["Currency of Proceeds"]
-            total["proceeds"][currency] = total["proceeds"].get(currency, 0) + proceeds
+            total["proceeds"][currency] = total["proceeds"].get(currency, Decimal(0)) + proceeds
 
     sales = {}
     for app, total in sorted(totals.items()):

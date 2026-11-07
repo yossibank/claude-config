@@ -20,7 +20,7 @@ rows=$(( (count + columns - 1) / columns ))
 filter="fps=$fps"
 
 if [[ $crop != full ]]; then
-    filter="$filter,crop=$crop"
+    filter="$filter,crop=${crop//,/\\,}"
 fi
 
 status=0

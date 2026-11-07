@@ -6,12 +6,15 @@ from pathlib import Path
 from typing import NamedTuple
 
 from loader import ROOT
-from md_blocks import fence_marks, front_matter_end, table_under
+from md_blocks import fence_marks, front_matter_end, heading_of, table_under
 
 RULES = [os.path.join(ROOT, "rules", name) for name in ("docs-core.md", "docs-claude.md", "docs-human.md")]
 
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⬀-⯿]️?")
 CODE = re.compile(r"`([^`]*)`")
+MARKDOWN_LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+BARE_LINK = re.compile(r"<https?://[^>]*>|https?://\S+")
+LINK = re.compile(f"{MARKDOWN_LINK.pattern}|{BARE_LINK.pattern}")
 LIST = re.compile(r"^([-*]|\d+\.)\s")
 FOR_CLAUDE = re.compile(r"(^|/)(CLAUDE|SKILL)\.md$|/(rules|agents|output-styles)/[^/]+\.md$")
 
@@ -39,6 +42,13 @@ def bare(emoji):
     return emoji.replace("\ufe0f", "")
 
 
+RULE_PROBLEMS = set()
+
+
+def rule_problems():
+    return sorted(RULE_PROBLEMS)
+
+
 @functools.cache
 def rule_table(heading, first_column):
     lines = []
@@ -46,8 +56,11 @@ def rule_table(heading, first_column):
         try:
             lines += Path(path).read_text(encoding="utf-8").split("\n")
         except OSError:
-            continue
-    return table_under(lines, heading, first_column)
+            RULE_PROBLEMS.add(f"{path} を読めないので、その表に頼る検査を飛ばした")
+    table = table_under(lines, heading, first_column)
+    if not table:
+        RULE_PROBLEMS.add(f"rules/docs-*.md に表「{heading}」が読めないので、その表に頼る検査を飛ばした")
+    return table
 
 
 def heading_emojis():
@@ -68,17 +81,20 @@ def readme_order():
     return order
 
 
+def title_of(text):
+    return EMOJI.sub("", text.lstrip("#")).strip()
+
+
 def without_links(line):
-    line = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", line)
-    line = re.sub(r"<https?://[^>]*>", "", line)
-    line = re.sub(r"https?://\S+", "", line)
+    line = MARKDOWN_LINK.sub(r"\1", line)
+    line = BARE_LINK.sub("", line)
     return re.sub(r"<!--.*?-->", "", line)
 
 
 def kind(text):
     if not text:
         return "blank"
-    if text.startswith("#"):
+    if heading_of(text):
         return "heading"
     if text.startswith("|"):
         return "table"

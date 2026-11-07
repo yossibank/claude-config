@@ -37,7 +37,8 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 
 - 突き合わせる先は、そのファイルに一番近い上の階層の `PrivacyInfo.xcprivacy` である
 - 近くに無ければ、アプリの申告と突き合わせる
-- テストのコードは見ない
+- テストのコードと、`Pods`・`build` の下は見ない
+- コメントと文字列の中の語は見ない
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-privacy.py <アプリのリポジトリ>
@@ -70,7 +71,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/check-listing.py <アプリのリポジ�
 
 ## take-screenshot.sh がすること
 
-6.9 インチのシミュレーター（iPhone 18 Pro Max など）でアプリを開き、見せたい画面ごとに撮る。`take-screenshot.sh` は、状態バーを 9:41・電池 100% に固定して撮り、大きさを確かめる。
+6.9 インチのシミュレーター（iPhone 18 Pro Max など）でアプリを開き、見せたい画面ごとに撮る。`take-screenshot.sh` は、状態バーを 9:41・電池 100% に固定して撮り、大きさを確かめる。撮った後は固定を戻す。
 
 ```sh
 ${CLAUDE_SKILL_DIR}/scripts/take-screenshot.sh <UDID> <アプリのリポジトリ>/store/screenshots/<番号>-<画面>.png
@@ -127,7 +128,9 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-custom-pages.py <アプリのリ�
 | `lead` | 先頭に並べる画像。残りの画像は、名前の順で後ろに続く |
 | `promotionalText` | 170 字まで |
 
-同じ名前のページが既にあれば、作らずに次へ進む。途中で止まったページは、App Store Connect で消してから実行し直す。審査への提出は、人が App Store Connect で行う。
+同じ名前のページが既にあれば、作らずに次へ進む。手元のキーワードや画像の枚数と違う時は、stderr で知らせる。キーワードか画像の組が 1 つも無いページは、途中で止まったものとして `NG` で止まる。
+
+審査への提出は、人が App Store Connect で行う。
 
 ## 報告
 

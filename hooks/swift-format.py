@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from git import git_root  # noqa: E402
-from hook_io import notify, read_payload, tool_input  # noqa: E402
+from hook_io import notify, read_payload, run_hook, tool_input  # noqa: E402
 
 TIMEOUT = 60
 
@@ -16,7 +16,7 @@ def pinned(root):
     if not os.path.isfile(mintfile):
         return False
     with open(mintfile) as file:
-        return any("swiftformat" in line.lower() for line in file)
+        return any("swiftformat" in line.lower() for line in file if not line.lstrip().startswith("#"))
 
 
 def main():
@@ -29,7 +29,10 @@ def main():
     root = git_root(path)
     if not root or not os.path.isfile(os.path.join(root, ".swiftformat")):
         return
-    if shutil.which("mint") is None or not pinned(root):
+    if not pinned(root):
+        return
+    if shutil.which("mint") is None:
+        notify("mint が見つからないので、swiftformat を走らせなかった")
         return
     try:
         result = subprocess.run(
@@ -47,4 +50,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_hook("swift-format", main)
