@@ -37,6 +37,6 @@ PR を積んで出す時だけ入れる。squash でマージしても積んだ 
 
 | 対象 | 設定 | 効き目 |
 | --- | --- | --- |
-| GitHub（Settings → General） | 「Automatically delete head branches」を ON | マージしたブランチを消す。積んだ PR の base は、既定のブランチに付け替わる |
+| GitHub（Settings → General） | 「Automatically delete head branches」を ON | マージしたブランチを消す。その上に積んだ PR の base は、既定のブランチに付け替わる |
 | git | `git config --global rerere.enabled true` | 一度解いたコンフリクトの解き方を、次から使う |
 | git | `git config --global rebase.updateRefs true` | 手で rebase する時に、積んだブランチをまとめて動かす |

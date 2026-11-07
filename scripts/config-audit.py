@@ -429,6 +429,9 @@ def check_paths():
 
 def check_ledger():
     for ledger in LEDGERS:
+        if not os.path.exists(ledger):
+            yield ledger, 0, "台帳が無い"
+            continue
         in_section = False
         for number, line in enumerate(read(ledger).split("\n"), 1):
             if line.startswith("## "):
