@@ -246,6 +246,10 @@ d=$(copy ledger-missing-path)
 replace "$d/docs/improvements.md" '| `hooks/run.sh` |' '| `hooks/nothing.sh` |'
 expect_audit "$d" "台帳の場所のパスが無い: hooks/nothing.sh" "台帳の場所のパスが無い行"
 
+d=$(copy ledger-missing)
+rm "$d/docs/improvements-docs.md"
+expect_audit "$d" "台帳が無い" "台帳のファイルが無い時に NG を出す"
+
 d=$(copy template-script-ng)
 replace "$d/skills/app-init/templates/ios-app/Makefile" 'scripts/render-snapshots.sh' 'scripts/render.sh'
 expect_audit "$d" "claude-config の参照先が無い: skills/ui-snapshot/scripts/render.sh" "ひな形の Makefile が無いスクリプトを呼ぶ"
