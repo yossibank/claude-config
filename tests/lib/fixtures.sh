@@ -1,6 +1,6 @@
 commit() {
     git -C "$1" add -A
-    git -C "$1" -c user.name=t -c user.email=t@t commit -q -m "$2"
+    git -C "$1" -c user.name=t -c user.email=t@t -c commit.gpgsign=false commit -q -m "$2"
 }
 
 clone_with_origin() {

@@ -22,6 +22,8 @@ claude-config を変えたら、`make verify` を通す。
 
 テストの対象は、フックの `.py`、`scripts/` のファイル、`scripts/` を持つスキルである。テストの名前は、対象の拡張子を除いた名前にする。config-audit が、テストと対象が 1 対 1 でないと `NG` にする。
 
+テストには `rsync` と `jq` が要る。上限のあるものは、上限ちょうどが通るテストも置く。
+
 テストは `tests/<対象>.sh` に置く。
 
 ### フックのテスト
@@ -70,6 +72,7 @@ claude-config を変えたら、`make verify` を通す。
 
 | ファイル | 中身 |
 | --- | --- |
-| [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、出力が型に合うかを確かめる `match`、結果の数え方 |
+| [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、`match`、`offline`、`replace_text`、結果の数え方 |
 | [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh・偽のコマンド（`fake_command`） |
-| [tests/lib/hooks.sh](../tests/lib/hooks.sh) | フックのテストの作り物のアプリと、フックへの入力の作り方 |
+| [tests/lib/hook_fixtures.sh](../tests/lib/hook_fixtures.sh) | フックのテストの作り物のアプリと、入力の作り方。`run` は終了コード 2 の時に `STOP` の理由を比べ、`hook_case` は中身を書いて試す |
+| [tests/lib/http_fake.sh](../tests/lib/http_fake.sh) | 通信の境界 `urlopen` を差し替える Python の部品と、鍵を作る `asc_keys`。知らない URL は NG にする |

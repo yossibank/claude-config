@@ -3,7 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hooks.sh"
+source "$(dirname "$0")/lib/hook_fixtures.sh"
 
 collect="$root/skills/config-learn/scripts/collect-corrections.py"
 : >"$work/empty.jsonl"
@@ -65,8 +65,8 @@ check "collect-corrections: Applications の外のメモリは拾わない" bash
 
 checked=$(python3 -I - "$root" "$collect" <<'EOF'
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+import os
+exec(os.environ["PY_PRELUDE"])
 
 module = load_module(sys.argv[2])
 quoted = module.GIT_C.search('git -C "/a b/repo" status')

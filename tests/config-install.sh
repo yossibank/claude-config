@@ -9,7 +9,7 @@ claude="$HOME/.claude"
 settings="$claude/settings.json"
 
 mkdir -p "$config" "$claude/skills"
-(cd "$root" && git ls-files -z | rsync -a --from0 --files-from=- ./ "$config/")
+(cd "$root" && git ls-files -z -co --exclude-standard | rsync -a --from0 --files-from=- ./ "$config/")
 
 cat >"$settings" <<'JSON'
 {
@@ -68,6 +68,29 @@ out=$(PATH="$work/bin:$PATH" bash "$config/scripts/config-install.sh" 2>&1)
 status=$?
 check "config-install: diff が失敗したら、違うのと区別して NG にする" test "$status" -ne 0
 check "config-install: diff の失敗を NG の行で知らせる" grep -q '^NG diff が失敗した（終了コード 2）' <<<"$out"
+
+mkdir "$work/nojq"
+ln -s "$(command -v dirname)" "$work/nojq/dirname"
+out=$(PATH="$work/nojq" /bin/bash "$config/scripts/config-install.sh" 2>&1)
+status=$?
+check "config-install: jq が無ければ止まる" test "$status" -ne 0
+check "config-install: jq が無いことを NG の行で知らせる" grep -qF 'NG jq が見つからない' <<<"$out"
+
+cp "$settings" "$work/settings.good"
+echo '{ broken' >"$settings"
+out=$(bash "$config/scripts/config-install.sh" 2>&1)
+status=$?
+check "config-install: 壊れた settings.json では止まる" test "$status" -ne 0
+check "config-install: 壊れた settings.json は書き換えない" grep -qF '{ broken' "$settings"
+cp "$work/settings.good" "$settings"
+
+cp "$claude/claude-config-allow.json" "$work/allow.good"
+echo '[ broken' >"$claude/claude-config-allow.json"
+out=$(bash "$config/scripts/config-install.sh" 2>&1)
+status=$?
+check "config-install: 壊れた許可の一覧では止まる" test "$status" -ne 0
+check "config-install: 壊れた許可の一覧は書き換えない" grep -qF '[ broken' "$claude/claude-config-allow.json"
+cp "$work/allow.good" "$claude/claude-config-allow.json"
 
 rm -f "$claude/CLAUDE.md"
 echo '# mine' >"$claude/CLAUDE.md"

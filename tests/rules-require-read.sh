@@ -3,16 +3,15 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hooks.sh"
+source "$(dirname "$0")/lib/hook_fixtures.sh"
+STOP="この編集に当たる決まりを、この会話でまだ読んでいない"
 
 log="$work/t.jsonl"
 : >"$log"
 run rules-require-read 2 "rules: 読まずに Swift を編集すると止まる" "$(edit s1 main "$log" "$swift")"
 for name in code-comments.md swift-core.md swift-ui.md; do read_rule s1 main "$name"; done
 run rules-require-read 0 "rules: Read した後は通る" "$(edit s1 main "$log" "$swift")"
-sleep 1
-echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}" >>"$log"
-sleep 1
+echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"2099-01-01T00:00:00.000Z\"}" >>"$log"
 run rules-require-read 2 "rules: 読んだ後に圧縮があれば、また止まる" "$(edit s1 main "$log" "$swift")"
 auto="$HOME/.claude/rules"
 echo "{\"type\":\"attachment\",\"attachment\":{\"type\":\"instructions\",\"files\":[{\"path\":\"$auto/code-comments.md\"},{\"path\":\"$auto/swift-core.md\"},{\"path\":\"$auto/swift-ui.md\"}]}}" >>"$log"
@@ -66,9 +65,7 @@ print(len(lines), end == os.path.getsize(sys.argv[2]))
 EOF
 )
 match "rules: tail_lines は U+2028 で行を割らず、読み終えた位置を返す" "$out" "1 True"
-sleep 1
-echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}" >>"$inc"
-sleep 1
+echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"2099-01-01T00:00:00.000Z\"}" >>"$inc"
 run rules-require-read 2 "rules: 前に調べた続きの圧縮の印でも、また止まる" "$(edit s5 main "$inc" "$swift")"
 out=$(python3 -I - "$root" "$work/stale" 2>&1 <<'EOF'
 import os, sys, time
@@ -89,5 +86,56 @@ print(first, os.path.exists(folder + "/later"))
 EOF
 )
 check "rules: 古いフォルダの中の新しい記録を残し、掃除は 1 時間に 1 回にする" test "$out" = "(['new'], False) True"
+
+# --- lib の直接のテスト（hook_state・transcripts） ---
+out=$(python3 -I - "$root" "$work" 2>&1 <<'EOF'
+import json, os, sys, time
+import os
+exec(os.environ["PY_PRELUDE"])
+import hook_state
+import transcripts
+
+work = sys.argv[2]
+print(hook_state.safe_name("a/b c.d-e_f"))
+print(os.path.basename(hook_state.state_folder("x")))
+old = os.path.join(work, "stale-file")
+open(old, "w").close()
+os.utime(old, (time.time() - 100, time.time() - 100))
+print(hook_state.is_stale(old, 50), hook_state.is_stale(old, 500))
+hook_state.remove_stale(os.path.join(work, "no-such-folder"), 1)
+print("missing folder ok")
+
+print(repr(transcripts.parse_entry("not json")), repr(transcripts.parse_entry("[1]")), transcripts.parse_entry('{"a": 1}'))
+log = os.path.join(work, "t.jsonl")
+with open(log, "w", encoding="utf-8") as file:
+    file.write('{"n": 1}\nbroken\n{"n": 2}\n{"n": 3')
+print([entry["n"] for entry in transcripts.entries(log)])
+lines, end = transcripts.lines_after(log, 0)
+print(len(lines), end)
+lines, end = transcripts.lines_after(log, 9)
+print(lines, end)
+print(transcripts.repo_of("/nonexistent/path") == "")
+sessions = os.path.join(work, "projects", "p")
+os.makedirs(os.path.join(sessions, "s1", "subagents"))
+open(os.path.join(sessions, "s1.jsonl"), "w").close()
+open(os.path.join(sessions, "s1", "subagents", "a.jsonl"), "w").close()
+import datetime
+start = datetime.datetime.now(transcripts.JST) - datetime.timedelta(days=1)
+projects = os.path.join(work, "projects")
+print(len(transcripts.sessions_since(projects, start)), len(transcripts.subagents_since(projects, start)), len(transcripts.subagents_of(os.path.join(sessions, "s1.jsonl"))))
+print(len(transcripts.sessions_since(projects, start + datetime.timedelta(days=3))))
+EOF
+)
+check "hook_state・transcripts: 名前・古さ・無いフォルダ・壊れた行・続きの読み・記録の一覧" test "$out" == "a_b_c_d-e_f
+claude-x
+True False
+missing folder ok
+None None {'a': 1}
+[1, 2]
+3 25
+['broken', '{\"n\": 2}'] 25
+True
+1 1 1
+0"
 
 finish
