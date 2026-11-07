@@ -33,7 +33,6 @@ claude-config を変えたら、`make verify` を通す。
 | `tests/config-learn.sh` | フックが止めた回数を、config-learn が数えられるか |
 | `tests/ctx-limit-read.sh` | 大きいファイルを範囲なしで読む時だけ止めるか |
 | `tests/ctx-report.sh` | 作り物の会話の記録から、月ごとのトークンを数えられるか |
-| `tests/ctx-suggest-clear.sh` | 文脈が大きい時に、同じ段で 1 回だけ区切りを勧めるか |
 | `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
 | `tests/docs-polish.sh` | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
 | `tests/docs-section.sh` | 見出しの一覧と節の出し方 |

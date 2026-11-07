@@ -52,21 +52,18 @@ flowchart LR
     bashBefore["Bash の前"] --> detect
     bashBefore --> gate["pr-gate"]
     bashAfter["Bash の後"] --> detect
-    bashAfter --> clear["ctx-suggest-clear"]
-    stop["応答の終わり"] --> clear
 
     classDef block fill:#f8d7da,stroke:#c0392b,color:#000
     classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
     classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
     class limit,require,gate block
-    class docs,swiftStyle,shell,detect,clear inform
+    class docs,swiftStyle,shell,detect inform
     class swift tidy
 ```
 
 | フック | 動き | 動く時 | 当たる時 |
 | --- | --- | --- | --- |
 | [ctx-limit-read](../hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
-| [ctx-suggest-clear](../hooks/ctx-suggest-clear.py) | 💬 知らせる | 応答の終わり、`gh pr create` の後 | 文脈が 20 万トークンを超える時と、PR を作った時 |
 | [docs-check](../hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `rules/docs-*.md` に合わない時 |
 | [pr-gate](../hooks/pr-gate.py) | 🛑 止める | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時。cd と `git -C` の先が変数でも止める |
 | [rules-detect-bash-edits](../hooks/rules-detect-bash-edits.py) | 💬 知らせる | Bash と Edit・Write の前と後 | Bash でファイルを書き換えた時。git・make は出力の向け先と checkout などの書き換えだけを見て、Edit・Write の分は数えない |
