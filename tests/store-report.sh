@@ -2,6 +2,7 @@
 set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/lib/http_fake.sh"
 
 scripts="$root/skills/store-report/scripts"
 offline
@@ -28,8 +29,8 @@ ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH=z ASC_VENDOR_NUMBER=1 \
 summary=$(python3 -I - "$root" "$scripts/fetch-sales.py" "$work/sales.tsv" <<'EOF'
 import sys
 from pathlib import Path
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+import os
+exec(os.environ["PY_PRELUDE"])
 sales = load_module(sys.argv[2]).summarize(Path(sys.argv[3]).read_text())
 print("\n".join("\t".join([app, *values]) for app, values in sales.items()))
 EOF
@@ -37,32 +38,36 @@ EOF
 check "fetch-sales: 課金をアプリにまとめ、ダウンロードと通貨ごとの収益を数える" \
     test "$summary" = $'111\t10\t300.00 JPY 1.50 USD\n222\t5\t0'
 
+asc_keys
+export ASC_VENDOR_NUMBER=1
 daily=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
+import gzip
+import os
 import sys
-import urllib.error
+import urllib.parse
 from datetime import date
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 from script_io import Failure
 
 sales = load_module(sys.argv[2])
-sales.require_keys = lambda keys: None
 header = "SKU\tApple Identifier\tParent Identifier\tUnits\tDeveloper Proceeds\tProduct Type Identifier\tCurrency of Proceeds\n"
 
 
-def missing():
-    return urllib.error.HTTPError("x", 404, "Not Found", None, None)
+def serve(reports):
+    def route(method, url, body):
+        if not url.startswith("/v1/salesReports?"):
+            return None
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
+        key = (query["filter[frequency]"][0], query["filter[reportDate]"][0])
+        if key not in reports:
+            return (404, "{}")
+        return gzip.compress((header + reports[key]).encode())
+
+    install(route)
 
 
-def fake(reports):
-    def fetch_text(frequency, day):
-        if (frequency, day) not in reports:
-            raise missing()
-        return header + reports[(frequency, day)]
-    return fetch_text
-
-
-sales.fetch_text = fake({
+serve({
     ("DAILY", "2026-11-01"): "app1\t111\t\t2\t0\t1F\tJPY\n",
     ("DAILY", "2026-11-03"): "app1\t111\t\t3\t0\t1F\tJPY\n",
     ("DAILY", "2026-11-04"): "app1\t111\t\t9\t0\t1F\tJPY\n",
@@ -70,11 +75,11 @@ sales.fetch_text = fake({
 result, notice = sales.sales_by_app("2026-11", date(2026, 11, 4))
 print(f"daily\t{result['111'][0]}\t{notice}")
 
-sales.fetch_text = fake({("MONTHLY", "2026-10"): "app1\t111\t\t7\t0\t1F\tJPY\n"})
+serve({("MONTHLY", "2026-10"): "app1\t111\t\t7\t0\t1F\tJPY\n"})
 result, notice = sales.sales_by_app("2026-10", date(2026, 11, 4))
 print(f"monthly\t{result['111'][0]}\t{notice}")
 
-sales.fetch_text = fake({})
+serve({})
 try:
     sales.sales_by_app("2026-11", date(2026, 11, 4))
 except Failure as error:
@@ -99,10 +104,8 @@ mkdir -p "$work/none"
 CC_APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "write-report: アプリが無ければ NG" python3 -I "$scripts/write-report.py" 2026-09
 
 apps="$work/apps"
-mkdir -p "$apps/foo/store" "$apps/bar/store"
-echo 123 >"$apps/foo/store/app-id.txt"
-echo abc >"$apps/bar/store/app-id.txt"
-out=$(CC_APPS_DIR="$apps" python3 -I "$scripts/write-report.py" 2026-09)
+make_apps "$apps" foo=123 bar=abc
+out=$(CC_APPS_DIR="$apps" env -u ASC_ISSUER_ID -u ASC_KEY_ID -u ASC_KEY_PATH -u ASC_VENDOR_NUMBER python3 -I "$scripts/write-report.py" 2026-09)
 check "write-report: 通信できなくても表を書く" test -f "$apps/reports/2026-09.md"
 check "write-report: 取れなかったものを WARNING にまとめる" grep -qx '> \[!WARNING\]' <<<"$out"
 check "write-report: 売上が取れなければ WARNING の行に書く" grep -q "売上とダウンロードは取れなかった（NG 環境変数が無い" <<<"$out"
@@ -110,19 +113,62 @@ check "write-report: 評価が取れなければ WARNING の行に書く" grep -
 check "write-report: 数字でないアプリの ID は通信せずに NG にする" grep -q "bar の評価は取れなかった（NG アプリの ID は数字で書く: abc）" <<<"$out"
 check "write-report: 取れなかった欄は — にする" grep -q '^| foo | — | — | — | — | — | — |$' <<<"$out"
 
+# 公開の境界（URL と応答）だけを差し替えて、表の数字まで通す
+ok_apps="$work/ok-apps"
+make_apps "$ok_apps" foo=123
+fake_report() {
+    CC_APPS_DIR="$ok_apps" python3 -I - "$root" "$scripts/write-report.py" "$@" 2>&1 <<'EOF'
+import gzip
+import json
+import os
+import sys
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
+
+tsv = "SKU\tApple Identifier\tParent Identifier\tUnits\tDeveloper Proceeds\tProduct Type Identifier\tCurrency of Proceeds\n" \
+    "app1\t123\t\t7\t0\t1F\tJPY\n" \
+    "coin\t901\t123\t2\t150\t1F\tJPY\n"
+entry = lambda day, rating: {"updated": {"label": f"2026-09-{day}T00:00:00-07:00"}, "im:rating": {"label": rating}}
+
+
+def route(method, url, body):
+    if url.startswith("/v1/salesReports"):
+        return gzip.compress(tsv.encode())
+    if url.startswith("https://itunes.apple.com/lookup"):
+        return {"results": [{"trackName": "Foo", "averageUserRating": 4.5, "userRatingCount": 20}]}
+    if url.startswith("https://itunes.apple.com/jp/rss/customerreviews/page=1/"):
+        return {"feed": {"entry": [entry("10", "5"), entry("11", "1"), entry("12", "2")]}}
+    if url.startswith("https://itunes.apple.com/jp/rss/customerreviews/page=2/"):
+        return {"feed": {}}
+    return None
+
+
+module = load_module(sys.argv[2])
+install(route)
+sys.argv = ["write-report.py", "2026-09"]
+module.run_main(module.main)
+report_unknown()
+EOF
+}
+out=$(fake_report)
+check "write-report: 表の数字を、売上・評価・レビューから出す" grep -qx '| foo | 9 | 300.00 JPY | 4.5 | 20 | 3 | 2 |' <<<"$out"
+check "write-report: 全部取れた時は WARNING を出さない" test -z "$(grep WARNING <<<"$out")"
+check "write-report: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$out")"
+
 checked=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
+import gzip
+import os
 import sys
 from datetime import date
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 from script_io import Failure
 
 sales = load_module(sys.argv[2])
-sales.require_keys = lambda keys: None
 header = "SKU\tApple Identifier\tParent Identifier\tUnits\tDeveloper Proceeds\tProduct Type Identifier\tCurrency of Proceeds\n"
-sales.fetch_text = lambda frequency, day: header + "app1\t111\t\t1\t2.675\t1F\tUSD\n"
+install(lambda method, url, body: gzip.compress((header + "app1\t111\t\t1\t2.675\t1F\tUSD\n").encode()))
 print("decimal", sales.sales_by_app("2026-10", date(2026, 11, 4))[0]["111"][1])
-sales.fetch_text = lambda frequency, day: header + "app1\t111\t\tx\t0\t1F\tUSD\n"
+install(lambda method, url, body: gzip.compress((header + "app1\t111\t\tx\t0\t1F\tUSD\n").encode()))
 try:
     sales.sales_by_app("2026-10", date(2026, 11, 4))
 except Failure as error:
@@ -132,19 +178,41 @@ EOF
 check "fetch-sales: 金額を Decimal で足す" grep -qx 'decimal 2.68 USD' <<<"$checked"
 check "fetch-sales: 中身が想定と違う時は、読めなかったではなく中身の NG にする" grep -q '^broken レポートの中身が想定と違う（ValueError' <<<"$checked"
 
-pages=$(python3 -I - "$root" "$scripts/fetch-ratings.py" <<'EOF'
+ratings_run() {
+    python3 -I - "$root" "$scripts/fetch-ratings.py" "$1" 2>&1 <<'EOF'
+import os
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 
 ratings = load_module(sys.argv[2])
-ratings.itunes_json = lambda url: {"results": [{"trackName": "A"}]}
-entry = {"updated": {"label": "2026-10-05T00:00:00-07:00"}, "im:rating": {"label": "1"}}
-ratings.review_pages = lambda app: iter([[entry]] * 10)
+rows = {
+    "old": [{"updated": {"label": "2026-09-05T00:00:00-07:00"}, "im:rating": {"label": "1"}}],
+    "all": [{"updated": {"label": "2026-10-05T00:00:00-07:00"}, "im:rating": {"label": "1"}}],
+}[sys.argv[3]]
+
+
+def route(method, url, body):
+    if url.startswith("https://itunes.apple.com/lookup"):
+        return {"results": [{"trackName": "A", "averageUserRating": 3.5, "userRatingCount": 8}]}
+    if "/customerreviews/page=" in url:
+        return {"feed": {"entry": rows}}
+    return None
+
+
+install(route)
 fields, notice = ratings.ratings("123", "2026-10")
+print("|".join(fields))
 print(notice)
+report_unknown()
 EOF
-)
+}
+pages=$(ratings_run all)
 check "fetch-ratings: 10 ページ読み切っても月の終わりに届かなければ知らせる" grep -q '10 ページ（上限）までしか読めない' <<<"$pages"
+
+done_run=$(ratings_run old)
+check "fetch-ratings: 取れた時は名前・評価・評価の数・今月のレビュー・星 2 以下を出す" grep -qx 'A|3.5|8|0|0' <<<"$done_run"
+check "fetch-ratings: 月より古いレビューで読むのをやめる" grep -qx '' <<<"$(sed -n 2p <<<"$done_run")"
+check "fetch-ratings: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$pages$done_run")"
 
 finish

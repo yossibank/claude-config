@@ -65,8 +65,8 @@ check "collect-corrections: Applications の外のメモリは拾わない" bash
 
 checked=$(python3 -I - "$root" "$collect" <<'EOF'
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+import os
+exec(os.environ["PY_PRELUDE"])
 
 module = load_module(sys.argv[2])
 quoted = module.GIT_C.search('git -C "/a b/repo" status')

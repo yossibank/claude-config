@@ -3,6 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
 source "$(dirname "$0")/lib/fixtures.sh"
+source "$(dirname "$0")/lib/http_fake.sh"
 
 listing="$root/skills/store-release/scripts/check-listing.py"
 archive="$root/skills/store-release/scripts/archive-app.sh"
@@ -10,18 +11,18 @@ archive="$root/skills/store-release/scripts/archive-app.sh"
 expect "NG 使い方" "archive-app: 引数が足りなければ NG" bash "$archive" a b
 CC_STORE_EXPORT=export expect "NG CC_STORE_EXPORT と CC_STORE_ARCHIVE_ONLY は読まない" "archive-app: 前の変数が付いていれば、送らずに NG" bash "$archive" a b "$work/out"
 CC_STORE_DESTINATION=x expect "NG CC_STORE_DESTINATION は upload・export・archive" "archive-app: 行き先が違えば NG" bash "$archive" a b "$work/out"
-source "$root/tests/lib/fixtures.sh"
 fake_command xcodebuild 'echo "$*" >>"'"$work"'/xcodebuild.args"; [[ " $* " != *" -showBuildSettings "* ]] || echo "    DEVELOPMENT_TEAM = TEAM1"'
 check "archive-app: 送れたら行き先とログの場所を OK で出す" grep -qxF "OK upload（ログ: $work/out/archive.log）" <<<"$(bash "$archive" a b "$work/out")"
 check "archive-app: 署名のチームを書き出しの設定に入れる" grep -qF "<string>TEAM1</string>" "$work/out/ExportOptions.plist"
 : >|"$work/xcodebuild.args"
 check "archive-app: archive ならアーカイブだけを作る" grep -qxF "OK アーカイブ $work/out/b.xcarchive" <<<"$(CC_STORE_DESTINATION=archive bash "$archive" a b "$work/out")"
 check "archive-app: archive なら書き出さない" test -z "$(grep -e -exportArchive "$work/xcodebuild.args")"
-log="$work/archive.log"
-printf 'x\na.swift:1: error: 型が無い\na.swift:1: error: 型が無い\nb.swift:2: warning: 使っていない\n' >"$log"
-fail_with_log=$(awk '/^fail_with_log\(\) \{/,/^\}/' "$archive")
-out=$(log=$log bash -c "source $root/lib/build_log.sh"$'\n'"${fail_with_log}"$'\nfail_with_log アーカイブ')
+fake_command xcodebuild 'if [[ " $* " == *" -showBuildSettings "* ]]; then echo "    DEVELOPMENT_TEAM = TEAM1"; exit 0; fi
+printf "x\na.swift:1: error: 型が無い\na.swift:1: error: 型が無い\nb.swift:2: warning: 使っていない\n"
+exit 1'
+out=$(bash "$archive" a b "$work/fail" 2>&1)
 status=$?
+log="$work/fail/archive.log"
 check "archive-app: 失敗したら終了コード 1 で終える" test "$status" -eq 1
 check "archive-app: ログの error の行を 1 回ずつ出す" test "$(grep -c 'error: 型が無い' <<<"$out")" -eq 1
 check "archive-app: warning の行は出さない" test -z "$(grep warning <<<"$out")"
@@ -39,6 +40,12 @@ expect "NG シミュレーターが起動しない: udid" "take-screenshot: 起�
 fake_command xcrun 'exit 0'
 fake_command sips 'exit 1'
 expect "NG 画像の大きさを読めない" "take-screenshot: 大きさを読めなければ黙って落ちずに NG" bash "$screenshot" udid "$work/shot.png"
+fake_command xcrun 'echo "$*" >>"'"$work"'/xcrun.args"; if [[ "$1 $2" == "simctl io" ]]; then printf png >"${@: -1}"; fi'
+fake_command sips 'printf "x\n  pixelWidth: 1320\n  pixelHeight: 2868\n"'
+match "take-screenshot: 6.9 インチの大きさなら OK で大きさを出す" "$(bash "$screenshot" udid "$work/shots/ok.png")" "OK $work/shots/ok.png（1320x2868）"
+check "take-screenshot: 撮る前にステータスバーを固定し、撮った後に戻す" grep -q 'status_bar udid clear' "$work/xcrun.args"
+fake_command sips 'printf "x\n  pixelWidth: 100\n  pixelHeight: 200\n"'
+expect "6.9 インチの大きさではない" "take-screenshot: 大きさが違えば NG" bash "$screenshot" udid "$work/shots/small.png"
 folder="$work/ja"
 mkdir -p "$folder"
 printf 'カケイボ\n' >"$folder/name.txt"
@@ -51,6 +58,8 @@ printf 'https://example.com/privacy\n' >"$folder/privacy_url.txt"
 expect "NG 使い方" "check-listing: 引数が無ければ NG" python3 -I "$listing"
 expect OK "check-listing: そろった掲載情報は通る" python3 -I "$listing" "$folder"
 
+printf '%030d\n' 0 >"$folder/name.txt"
+expect OK "check-listing: 字数の上限ちょうどは通る" python3 -I "$listing" "$folder"
 printf '%031d\n' 0 >"$folder/name.txt"
 expect "name.txt が 31 字" "check-listing: 字数の上限を超えたら NG" python3 -I "$listing" "$folder"
 printf 'カケイボ\n' >"$folder/name.txt"
@@ -120,6 +129,9 @@ expect "同じ name のページが 2 つある" "create-custom-pages: 同じ na
 write_plan '{"name": "節約", "keywords": ["家計簿"], "lead": ["99-z.png"]}'
 expect "のフォルダに無い画像" "create-custom-pages: lead にフォルダに無い画像があれば NG" python3 -I "$pages" "$repo" --dry-run
 
+limit=$(printf 'あ%.0s' $(seq 170))
+write_plan "{\"name\": \"節約\", \"keywords\": [\"家計簿\"], \"promotionalText\": \"$limit\"}"
+expect OK "create-custom-pages: promotionalText が 170 字ちょうどなら通る" python3 -I "$pages" "$repo" --dry-run
 long=$(printf 'あ%.0s' $(seq 171))
 write_plan "{\"name\": \"節約\", \"keywords\": [\"家計簿\"], \"promotionalText\": \"$long\"}"
 expect "170 字まで" "create-custom-pages: promotionalText が 171 字なら NG" python3 -I "$pages" "$repo" --dry-run
@@ -127,12 +139,17 @@ expect "170 字まで" "create-custom-pages: promotionalText が 171 字なら N
 write_plan "$page_a"
 expect "環境変数が無い" "create-custom-pages: --dry-run 無しで ASC_* が無ければ NG" python3 -I "$pages" "$repo"
 
+asc_keys
+
 # 引数: 案のあるリポジトリ、シナリオ（unapproved・existing・new）
 run_pages() {
-    ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH=z python3 -I - "$root" "$pages" "$repo" "$1" 2>&1 <<'EOF'
+    python3 -I - "$root" "$pages" "$repo" "$1" 2>&1 <<'EOF'
+import os
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+
+exec(os.environ["HTTP_FAKE_PY"])
+import os
+exec(os.environ["PY_PRELUDE"])
 
 module = load_module(sys.argv[2])
 repo, scenario = sys.argv[3], sys.argv[4]
@@ -170,14 +187,17 @@ def fake(url, body=None, method=None):
     if url == "/v1/appScreenshotSets":
         return {"data": {"id": "s1"}}
     if url == "/v1/appScreenshots":
-        return {"data": {"id": "shot1", "attributes": {"uploadOperations": [{"url": "u", "method": "PUT", "offset": 0, "length": 0}]}}}
-    return {"data": {}}
+        return {"data": {"id": "shot1", "attributes": {"uploadOperations": [{"url": "https://upload.example/u", "method": "PUT", "offset": 0, "length": 0}]}}}
+    if url.startswith("/v1/appScreenshots/shot1"):
+        return {"data": {"id": "shot1"}}
+    if url.endswith("/relationships/searchKeywords"):
+        return b""
+    if url == "https://upload.example/u":
+        return b""
+    return None
 
 
-module.asc_json = fake
-sys.modules["app_store"].asc_json = fake
-module.asc_request = lambda url, body=None, **kwargs: calls.append(("REQUEST", url, body))
-module.put_parts = lambda operations, data: calls.append(("PUT", "parts", None))
+install(lambda method, url, body: fake(url, body, method))
 sys.argv = ["create-custom-pages.py", repo]
 try:
     module.main()
@@ -189,6 +209,7 @@ for method, url, body in calls:
         print(f"KEYWORDS {body['data'][0]['id']}")
     if method == "PATCH":
         print(f"CHECKSUM {body['data']['attributes']['sourceFileChecksum']}")
+report_unknown()
 EOF
 }
 
@@ -203,6 +224,7 @@ match "create-custom-pages: 手元と枚数が違うだけの既にあるペー�
 match "create-custom-pages: 作る途中の想定外の例外でも、途中のページが残った案内を出す" "$(run_pages broken)" "*NG 節約 を作る途中で止まった: KeyError。App Store Connect で途中のページを消してから*"
 
 out=$(run_pages new)
+check "create-custom-pages: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$out")"
 check "create-custom-pages: 新しいページは POST で作る" grep -qx 'CALL POST /v1/appCustomProductPages' <<<"$out"
 check "create-custom-pages: キーワードを searchKeywords の関係に入れる" grep -qx 'KEYWORDS 家計簿' <<<"$out"
 for shot in 01-a 02-b 03-c; do
@@ -228,5 +250,22 @@ fake_command xcrun 'echo "$*" >>"'"$work"'/xcrun.log"'
 fake_command sips 'exit 1'
 bash "$screenshot" udid "$work/shot.png" >/dev/null 2>&1
 check "take-screenshot: 終わったらステータスバーの固定を戻す" grep -qx "simctl status_bar udid clear" "$work/xcrun.log"
+
+out=$(python3 -I - 2>&1 <<'EOF'
+import os, urllib.error, urllib.request
+
+exec(os.environ["HTTP_FAKE_PY"])
+install(lambda method, url, body: {"ok": 1} if url == "/v1/known" else None)
+print(urllib.request.urlopen(ASC + "/v1/known").read().decode())
+try:
+    urllib.request.urlopen(ASC + "/v1/other")
+except urllib.error.URLError as error:
+    print("URLError", error.reason)
+report_unknown()
+EOF
+)
+match "http_fake: 知っている URL には応答し、知らない URL は URLError と UNKNOWN にする" "$out" '{"ok": 1}
+URLError 知らない URL: GET /v1/other
+UNKNOWN GET /v1/other'
 
 finish

@@ -74,4 +74,5 @@ claude-config を変えたら、`make verify` を通す。
 | --- | --- |
 | [tests/lib/assert.sh](../tests/lib/assert.sh) | 一時のフォルダ、`OK`・`NG` の出し方、`match`、`offline`、`replace_text`、結果の数え方 |
 | [tests/lib/fixtures.sh](../tests/lib/fixtures.sh) | 作り物のリポジトリと、偽の gh・偽のコマンド（`fake_command`） |
-| [tests/lib/hook_fixtures.sh](../tests/lib/hook_fixtures.sh) | フックのテストの作り物のアプリと、入力の作り方。`run` は終了コード 2 の時に `STOP` の理由を比べる |
+| [tests/lib/hook_fixtures.sh](../tests/lib/hook_fixtures.sh) | フックのテストの作り物のアプリと、入力の作り方。`run` は終了コード 2 の時に `STOP` の理由を比べ、`hook_case` は中身を書いて試す |
+| [tests/lib/http_fake.sh](../tests/lib/http_fake.sh) | 通信の境界 `urlopen` を差し替える Python の部品と、鍵を作る `asc_keys`。知らない URL は NG にする |

@@ -26,6 +26,9 @@ run rules-detect-bash-edits 0 "bash: 何も変えなければ知らせない" "$
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t4 'cd app && git status')" pre
 echo 'x' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 0 "bash: cd と git だけのコマンドは知らせない" "$(bash_call t4 'cd app && git status')" post
+run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t4b 'cd nothing && git status')" pre
+echo 'x2' >>"$app/docs/overview.md"
+run rules-detect-bash-edits 0 "bash: cd の先が無くても落ちずに、cd と git だけのコマンドは知らせない" "$(bash_call t4b 'cd nothing && git status')" post
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t5 'sed -i x && git add')" pre
 echo 'y' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 2 "bash: git が混ざっても書き換えは知らせる" "$(bash_call t5 'sed -i x && git add')" post

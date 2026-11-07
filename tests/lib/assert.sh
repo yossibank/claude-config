@@ -60,6 +60,23 @@ replace_text() {
     printf '%s' "${text//"$old"/$new}" >"$dest"
 }
 
+# Python のドライバーが先頭で exec する。argv[1] を claude-config の根にして lib を読めるようにする
+PY_PRELUDE='import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_hook, load_module'
+export PY_PRELUDE
+
+# <フォルダ> <名前>=<アプリの ID>... で、store/app-id.txt を持つアプリのフォルダを作る
+make_apps() {
+    local dir=$1 entry
+    shift
+    mkdir -p "$dir"
+    for entry in "$@"; do
+        mkdir -p "$dir/${entry%%=*}/store"
+        echo "${entry#*=}" >"$dir/${entry%%=*}/store/app-id.txt"
+    done
+}
+
 finish() {
     exit $((fails > 0))
 }

@@ -1,5 +1,6 @@
 export TMPDIR="$work/state/"
-mkdir -p "$TMPDIR"
+export HOME="$work/home"
+mkdir -p "$TMPDIR" "$HOME"
 hooks="$root/hooks/run.sh"
 run_check="$root/skills/pr-create/scripts/run-check.sh"
 rules="$root/rules"
@@ -32,12 +33,29 @@ run() {
     fi
 }
 
+# <フック> <期待の終了コード> <ラベル> <ファイルのパス> <中身> [期待する文]
+# 中身を書いたファイルを編集した入力をフックに渡し、終了コードと出力の文を比べる。2 の時は文が要る
+hook_case() {
+    local hook=$1 expect=$2 label=$3 path=$4 text=$5 want=${6:-} out status
+    mkdir -p "$(dirname "$path")"
+    printf '%s\n' "$text" >"$path"
+    out=$(echo "{\"tool_input\":{\"file_path\":\"$path\"}}" | bash "$hooks" "$hook" 2>&1)
+    status=$?
+    if [[ $status == "$expect" && $out == *"$want"* && ( $expect != 2 || -n $want ) ]]; then
+        ok "$hook: $label"
+    else
+        ng "$hook: ${label}（終了コード ${status}、期待は ${expect} と「${want}」）" "$out"
+    fi
+}
+
 edit() {
-    echo "{\"session_id\":\"$1\",\"agent_id\":\"$2\",\"tool_name\":\"Edit\",\"transcript_path\":\"$3\",\"tool_input\":{\"file_path\":\"$4\"}}"
+    jq -cn --arg session "$1" --arg agent "$2" --arg transcript "$3" --arg path "$4" \
+        '{session_id: $session, agent_id: $agent, tool_name: "Edit", transcript_path: $transcript, tool_input: {file_path: $path}}'
 }
 
 read_rule() {
-    echo "{\"session_id\":\"$1\",\"agent_id\":\"$2\",\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"$rules/$3\"}}" | bash "$hooks" rules-require-read
+    jq -cn --arg session "$1" --arg agent "$2" --arg path "$rules/$3" \
+        '{session_id: $session, agent_id: $agent, tool_name: "Read", tool_input: {file_path: $path}}' | bash "$hooks" rules-require-read
 }
 
 bash_call() {

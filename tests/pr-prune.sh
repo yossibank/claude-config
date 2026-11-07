@@ -14,12 +14,12 @@ clone_with_origin "$repo"
 git -C "$repo" checkout -q -b feat/done
 echo d >"$repo/d.md"
 commit "$repo" done
-git -C "$repo" push -q origin feat/done 2>/dev/null
+git -C "$repo" push -q origin feat/done
 done_head=$(git -C "$repo" rev-parse HEAD)
 git -C "$repo" checkout -q main
 git -C "$repo" merge -q --squash feat/done >/dev/null && commit "$repo" "squash"
 git -C "$repo" push -q origin main
-git -C "$repo" push -q origin --delete feat/done 2>/dev/null
+git -C "$repo" push -q origin --delete feat/done
 
 git -C "$repo" checkout -q -b feat/open
 echo e >"$repo/e.md"
@@ -61,7 +61,7 @@ commit "$repo" "change a after merge"
 git -C "$repo" push -q origin main
 GH_PR="MERGED x feat/binary" expect OK "prune: 画像を含む squash のブランチも、main が進んだ後に消せる" bash "$prune" "$repo" feat/binary 7
 git -C "$repo" checkout -q --orphan feat/orphan
-git -C "$repo" rm -rfq . 2>/dev/null
+git -C "$repo" rm -rfq .
 echo o >"$repo/o.md"
 commit "$repo" orphan
 git -C "$repo" checkout -q main
@@ -75,12 +75,12 @@ export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER
 git -C "$repo" checkout -q -b feat/base main
 echo b1 >"$repo/b.md"
 commit "$repo" base
-git -C "$repo" push -q origin feat/base 2>/dev/null
+git -C "$repo" push -q origin feat/base
 base_head=$(git -C "$repo" rev-parse HEAD)
 git -C "$repo" checkout -q -b feat/child
 echo b2 >"$repo/b.md"
 commit "$repo" child
-git -C "$repo" push -q origin feat/child 2>/dev/null
+git -C "$repo" push -q origin feat/child
 git -C "$repo" checkout -q -b feat/grand
 echo g >"$repo/g.md"
 commit "$repo" grand
@@ -106,9 +106,13 @@ git -C "$repo" merge -q --ff-only feat/ff
 git -C "$repo" push -q origin main
 git -C "$repo" branch -q feat/after main
 after_head=$(git -C "$repo" rev-parse feat/after)
+git -C "$repo" branch -q feat/ff-child feat/ff
+ff_child_head=$(git -C "$repo" rev-parse feat/ff-child)
 out=$(GH_PR="MERGED $ff_head feat/ff" bash "$prune" "$repo" feat/ff 8 2>&1)
 match "restack: squash でないマージでは付け替えない" "$out" "OK repo:*"
 check "restack: main から切ったブランチはそのまま" test "$(git -C "$repo" rev-parse feat/after)" == "$after_head"
+check "restack: squash でないマージでは、積んだ子のブランチもそのまま" test "$(git -C "$repo" rev-parse feat/ff-child)" == "$ff_child_head"
+check "restack: squash でないマージの子は、元の親を祖先に持ち続ける" git -C "$repo" merge-base --is-ancestor "$ff_head" feat/ff-child
 
 git -C "$repo" checkout -q -b feat/base2 main
 echo x >"$repo/a.md"
@@ -142,7 +146,7 @@ check "restack: 途中の rebase を中止しない" test -d "$(git -C "$work/bu
 git -C "$repo" checkout -q -b feat/integ main
 echo i >"$repo/i.md"
 commit "$repo" integ
-git -C "$repo" push -q origin feat/integ 2>/dev/null
+git -C "$repo" push -q origin feat/integ
 git -C "$repo" checkout -q -b feat/topic
 echo t1 >"$repo/t.md"
 commit "$repo" topic
@@ -152,7 +156,7 @@ echo t2 >"$repo/t.md"
 commit "$repo" topic-kid
 git -C "$repo" checkout -q feat/integ
 git -C "$repo" merge -q --squash feat/topic >/dev/null && commit "$repo" "squash topic"
-git -C "$repo" push -q origin feat/integ 2>/dev/null
+git -C "$repo" push -q origin feat/integ
 git -C "$repo" checkout -q main
 out=$(GH_PR="MERGED $topic_head feat/topic feat/integ" bash "$prune" "$repo" feat/topic 9 2>&1)
 match "restack: 既定以外の base にマージした時は、その base に載せ直す" "$out" "*OK 付け替えた: feat/topic-kid*"
@@ -167,7 +171,7 @@ echo h1 >"$repo/h.md"
 commit "$repo" ahead-kid
 echo h2 >>"$repo/h.md"
 commit "$repo" "ahead-kid from another machine"
-git -C "$repo" push -q origin feat/ahead-kid 2>/dev/null
+git -C "$repo" push -q origin feat/ahead-kid
 ahead_remote=$(git -C "$repo" rev-parse HEAD)
 git -C "$repo" checkout -q main
 git -C "$repo" branch -q -f feat/ahead-kid feat/ahead-kid~1
@@ -192,5 +196,25 @@ git -C "$repo" push -q origin main
 out=$(GH_PR="MERGED $base4_head feat/base4" bash "$prune" "$repo" feat/base4 11 2>&1)
 match "restack: 手元が PR の head より遅れていても、PR の head の上の子を付け替える" "$out" "*OK 付け替えた: feat/late-kid*"
 check "restack: 遅れていた時も子の親が main の先頭になる" test "$(git -C "$repo" rev-parse feat/late-kid^)" == "$(git -C "$repo" rev-parse main)"
+
+git -C "$repo" checkout -q -b feat/base5 main
+echo u1 >"$repo/u.md"
+commit "$repo" base5
+base5_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -b feat/offline-kid
+echo u2 >"$repo/u2.md"
+commit "$repo" offline-kid
+offline_head=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" push -q origin feat/offline-kid
+git -C "$repo" checkout -q main
+git -C "$repo" merge -q --squash feat/base5 >/dev/null && commit "$repo" "squash base5"
+git -C "$repo" push -q origin main
+real_git=$(command -v git)
+mkdir "$work/lsfail"
+printf '#!/bin/bash\nfor arg in "$@"; do [[ $arg != ls-remote ]] || { echo "fatal: ls-remote が落ちた" >&2; exit 128; }; done\nexec %s "$@"\n' "$real_git" >"$work/lsfail/git"
+chmod +x "$work/lsfail/git"
+out=$(PATH="$work/lsfail:$PATH" GH_PR="MERGED $base5_head feat/base5" bash "$prune" "$repo" feat/base5 13 2>&1)
+check "restack: ls-remote が落ちたら付け替えを見送って NG を出す" grep -qF "NG 付け替えなかった: feat/offline-kid（origin のブランチを確かめられない）" <<<"$out"
+check "restack: 見送った子のブランチは元のまま" test "$(git -C "$repo" rev-parse feat/offline-kid)" == "$offline_head"
 
 finish

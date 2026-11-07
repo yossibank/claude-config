@@ -39,27 +39,10 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟠 中 | `lib/app_store.py` | 署名の DER を読む処理にテストが無い |
-| 🟠 中 | `tests/pr-fix.sh` | 偽の gh が完成した行を返し、未解決に絞る式が走らない |
-| 🟠 中 | `tests/pr-prune.sh` | squash でないマージのテストに子のブランチが無く、空振りする |
-| 🟠 中 | `scripts/config-audit.py` | skills・agents・rules の frontmatter と settings の検査の分岐にテストが無い |
-| 🟠 中 | `tests/ui-snapshot.sh` | 描けた時の道を通らない。store-report の表の値、app-plan の成功も見ない |
-| 🟠 中 | `skills/pr-create/scripts/classify-diff.sh` | 200 行の境目と、hooks/ 以外の risky のパターンにテストが無い |
-| 🟠 中 | `tests/pr-fix.sh` | READ の権限、no checks reported の分岐にテストが無い |
-| 🟡 低 | `tests/pr-prune.sh` | ls-remote が落ちた時に付け替えを見送る道に、テストが無い |
-| 🟡 低 | `tests/rules-require-read.sh` | `tests/lib/hook_fixtures.sh` が HOME を分けない。`sleep 1` と date に頼る |
-| 🟡 低 | `tests/pr-prune.sh` | 準備の失敗を `2>/dev/null` で消す |
-| 🟡 低 | `tests/store-release.sh` | 字数の上限ちょうどが通るテストが無い。fixtures.sh を 2 度 source する |
-| 🟡 低 | `tests/store-reply.sh` | 字数の上限ちょうどが通るテストが無い |
-| 🟡 低 | `tests/ui-snapshot.sh` | iPhone 1 台で「先頭」を確かめていない |
-| 🟡 低 | `tests/rules-detect-bash-edits.sh` | cd 先に `app/` が無い場合のテストが無い |
-| 🟡 低 | `tests/lib/hook_fixtures.sh` | JSON を文字列で組んでいる |
-| 🟡 低 | `tests/shell-check.sh` | 対象外の入力のテストが無い。`tests/swift-format.sh`・`tests/ctx-limit-read.sh` も同じ |
-| 🟡 低 | `tests/lib/fixtures.sh` | commit で commit.gpgsign を切らない |
+| 🟡 低 | `tests/lib/hook_fixtures.sh` | `bash_call` と `run` の入力を、JSON を文字列で組んでいる |
 | 🟡 低 | `tests/config-audit.sh` | expect_audit を 69 回、毎回リポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
-| 🟡 低 | `tests/store-release.sh` | 内部の関数を差し替える。store-reply・store-report も同じ |
 | 🟡 低 | `tests/config-audit.sh` | docs/improvements.md などの文言に頼る置き換えがある |
-| 🟡 低 | `tests/ctx-limit-read.sh` | 30_000 などの上限ちょうどが通るテストが無い。docs-check・swift-style-check も同じ |
+| 🟡 低 | `tests/swift-style-check.sh` | 上限ちょうどが通るテストが無い |
 
 ### 検査にする案
 

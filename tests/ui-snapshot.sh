@@ -7,6 +7,11 @@ source "$(dirname "$0")/lib/fixtures.sh"
 find_simulator="$root/skills/ui-snapshot/scripts/find-simulator.sh"
 fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPad Air\",\"udid\":\"PAD\"},{\"name\":\"iPhone 17\",\"udid\":\"PHONE\"}]}}'"
 check "find-simulator: 先頭の iPhone の UDID を出す" test "$("$find_simulator")" == PHONE
+fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPhone 17\",\"udid\":\"FIRST\"}]}}'"
+check "find-simulator: iPhone が 1 台だけならその UDID を出す" test "$("$find_simulator")" == FIRST
+fake_command xcrun "echo '{\"devices\":{\"old\":[{\"name\":\"iPhone 15\",\"udid\":\"OLD\"}],\"new\":[{\"name\":\"iPhone 17\",\"udid\":\"NEW\"}]}}'"
+check "find-simulator: iPhone が複数あれば先頭を出す" test "$("$find_simulator")" == OLD
+fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPad Air\",\"udid\":\"PAD\"},{\"name\":\"iPhone 17\",\"udid\":\"PHONE\"}]}}'"
 fake_command xcrun "echo '{\"devices\":{}}'"
 check "find-simulator: iPhone が無ければ何も出さない" test -z "$("$find_simulator")"
 check "find-simulator: app-init のひな形と中身が同じ" cmp -s "$find_simulator" "$root/skills/app-init/templates/ios-app/scripts/find-simulator.sh"
@@ -89,5 +94,33 @@ echo 999999 >"$lock/pid"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG テストが通らなかった（xcodebuild: 1、ログ: " "render-snapshots: 止まった実行のロックは外して、描き直す。失敗の NG にログの場所を出す" bash "$render" "$package" "$set_dir" "$work/out"
 check "render-snapshots: 描けなかった時は、前の PNG を消さない" test -e "$work/out/old.png"
 check "render-snapshots: 全ログを残す" test -f "${lock%.lock}/.build/ui-snapshot.log"
+
+
+# 描けた時の道: xcodebuild が PNG を書いたことにする
+fake_command xcodebuild "
+if [[ \$1 == -list ]]; then
+    echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
+    exit 0
+fi
+dir=\$(sed -n 's/^let directory = \"\\(.*\\)\"\$/\\1/p' Tests/UISnapshotTests/SnapshotTests.swift)
+printf png >\"\$dir/home-light.png\"
+printf png >\"\$dir/home-dark.png\"
+exit 0"
+rm -rf "$work/copies/"*.lock
+out=$(CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" bash "$render" "$package" "$set_dir" "$work/out" 2>&1)
+check "render-snapshots: 描けたら PNG の一覧を OK 相当で出す" grep -qxF "$work/out/home-dark.png" <<<"$out"
+check "render-snapshots: 描けたら出力先へ PNG を移す" test -s "$work/out/home-light.png"
+check "render-snapshots: 描けたら前の PNG を入れ替える" test ! -e "$work/out/old.png"
+check "render-snapshots: 描いた後に途中の置き場を残さない" test ! -e "$work/out/.rendering"
+
+fake_command xcodebuild "
+if [[ \$1 == -list ]]; then
+    echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
+    exit 0
+fi
+exit 0"
+printf png >"$work/out/keep.png"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG PNG が描かれなかった" "render-snapshots: テストが通っても PNG が無ければ NG" bash "$render" "$package" "$set_dir" "$work/out"
+check "render-snapshots: PNG が描かれなかった時は、前の PNG を消さない" test -s "$work/out/keep.png"
 
 finish

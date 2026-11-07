@@ -2,15 +2,15 @@
 set -uo pipefail
 
 source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/lib/http_fake.sh"
 
 scripts="$root/skills/store-reply/scripts"
 offline
 unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
 
 apps="$work/apps"
-mkdir -p "$apps/foo/store" "$apps/bar/store" "$work/none"
-echo 123 >"$apps/foo/store/app-id.txt"
-echo abc >"$apps/bar/store/app-id.txt"
+mkdir -p "$work/none"
+make_apps "$apps" foo=123 bar=abc
 
 expect "使い方" "fetch-unreplied-reviews: 余計な引数は NG" python3 -I "$scripts/fetch-unreplied-reviews.py" 123
 CC_APPS_DIR="$apps" expect "環境変数が無い: ASC_ISSUER_ID, ASC_KEY_ID, ASC_KEY_PATH" "fetch-unreplied-reviews: キーが無ければ NG" python3 -I "$scripts/fetch-unreplied-reviews.py"
@@ -21,12 +21,14 @@ check "fetch-unreplied-reviews: どのアプリも読めなければ NG" grep -q
 check "fetch-unreplied-reviews: 数字でないアプリの ID は通信せずに知らせる" grep -q "bar のレビューは集められなかった（NG アプリの ID は数字で書く: abc）" <<<"$out"
 check "fetch-unreplied-reviews: 通信できないアプリを知らせる" grep -q "foo のレビューは集められなかった（NG レビューを読めなかった" <<<"$out"
 
+asc_keys
 collected=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
 import glob
 import json
+import os
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 
 module = load_module(sys.argv[2])
 review = lambda id, rating, answered: {
@@ -38,7 +40,7 @@ pages = {
     module.reviews_url("123"): {"data": [review("a", 1, False), review("b", 2, True)], "links": {"next": "https://next"}},
     "https://next": {"data": [review("c", 2, False), review("d", 4, False)], "links": {}},
 }
-sys.modules["app_store"].asc_json = lambda url, body=None: pages[url]
+install(lambda method, url, body: pages.get(url))
 sys.argv = ["fetch-unreplied-reviews.py"]
 try:
     module.main()
@@ -62,12 +64,13 @@ check "fetch-unreplied-reviews: 一時ファイルを残さない" test -z "$(fi
 kept=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
 import glob
 import json
+import os
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 
 module = load_module(sys.argv[2])
-sys.modules["app_store"].asc_json = lambda url, body=None: {"data": [], "links": {}}
+install(lambda method, url, body: {"data": [], "links": {}})
 path = glob.glob(module.apps_dir() + "/replies/*.json")[0]
 drafts = [{"app": "bar", "id": "z", "reply": "案", "approved": True}, {"app": "foo", "id": "y", "reply": "古い", "approved": False}]
 json.dump(drafts, open(path, "w", encoding="utf-8"), ensure_ascii=False)
@@ -82,12 +85,13 @@ EOF
 check "fetch-unreplied-reviews: 集められなかったアプリの案は残し、集めたアプリの古い案は外す" test "${kept##*$'\n'}" == "z:案"
 
 unexpected=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
+import os
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 
 module = load_module(sys.argv[2])
-sys.modules["app_store"].asc_json = lambda url, body=None: {"data": [{"id": "a", "attributes": {"rating": 1}, "relationships": {}}], "links": {}}
+install(lambda method, url, body: {"data": [{"id": "a", "attributes": {"rating": 1}, "relationships": {}}], "links": {}})
 sys.argv = ["fetch-unreplied-reviews.py"]
 module.run_main(module.main)
 EOF
@@ -96,12 +100,13 @@ status=$?
 check "fetch-unreplied-reviews: 想定外の例外は stdout に NG を出して終了コード 1" test "$status" -eq 1 -a "$(grep -c '^NG .*想定外の失敗（KeyError' <<<"$unexpected")" -eq 1
 
 partial=$(CC_APPS_DIR="$apps" python3 -I - "$root" "$scripts/fetch-unreplied-reviews.py" 2>/dev/null <<'EOF'
+import os
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 
 module = load_module(sys.argv[2])
-sys.modules["app_store"].asc_json = lambda url, body=None: {"data": [], "links": {}}
+install(lambda method, url, body: {"data": [], "links": {}})
 sys.argv = ["fetch-unreplied-reviews.py"]
 module.run_main(module.main)
 EOF
@@ -137,6 +142,8 @@ expect "JSON として読めない" "send-replies: 壊れた JSON は NG" python
 echo '[{"id": "x", "reply": "r", "approved": false}]' >"$work/none-approved.json"
 expect "承認されていて、まだ送っていない返信案が無い" "send-replies: 承認された案が無ければ NG" python3 -I "$scripts/send-replies.py" "$work/none-approved.json" --dry-run
 jq -n --arg reply "$(printf 'あ%.0s' $(seq 5971))" '[{id: "x", reply: $reply, approved: true}]' >"$work/long.json"
+jq -n --arg reply "$(printf 'あ%.0s' $(seq 5970))" '[{id: "x", reply: $reply, approved: true}]' >"$work/limit.json"
+expect OK "send-replies: 5970 字ちょうどの案は通る" python3 -I "$scripts/send-replies.py" "$work/limit.json" --dry-run
 expect "5970 字を超えている" "send-replies: 5970 字を超える案は NG" python3 -I "$scripts/send-replies.py" "$work/long.json" --dry-run
 echo '[{"id": "x", "reply": " ", "approved": true}]' >"$work/empty.json"
 expect "返信が空: x" "send-replies: 空の案は NG" python3 -I "$scripts/send-replies.py" "$work/empty.json" --dry-run
@@ -165,36 +172,39 @@ cat >"$sending" <<'EOF'
   {"app": "foo", "id": "e", "reply": "返信済み", "approved": true}
 ]
 EOF
-sent=$(ASC_ISSUER_ID=x ASC_KEY_ID=y ASC_KEY_PATH=z python3 -I - "$root" "$scripts/send-replies.py" "$sending" <<'EOF'
+asc_keys
+sent=$(python3 -I - "$root" "$scripts/send-replies.py" "$sending" <<'EOF'
 import json
+import os
 import sys
-import urllib.error
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_module
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
 
 module = load_module(sys.argv[2])
 drafts = sys.argv[3]
-calls = []
 
 
-def fake(url, body=None):
-    calls.append(("POST" if body else "GET", url, body))
-    if body:
+def route(method, url, body):
+    if method == "POST" and url == "/v1/customerReviewResponses":
         return {"data": {"id": "new"}}
     if url == "/v1/customerReviews/a/response":
-        raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
-    return {"data": {"type": "customerReviewResponses", "id": "old"}}
+        return (404, "{}")
+    if url == "/v1/customerReviews/e/response":
+        return {"data": {"type": "customerReviewResponses", "id": "old"}}
+    return None
 
 
-module.asc_json = fake
+install(route)
 sys.argv = ["send-replies.py", drafts]
 module.main()
 entries = json.load(open(drafts, encoding="utf-8"))
-print(" ".join(f"{method}:{url}" for method, url, _ in calls))
-print(calls[1][2]["data"]["relationships"]["review"]["data"]["id"])
+print(" ".join(f"{method}:{url}" for method, url, _ in requests))
+print(requests[1][2]["data"]["relationships"]["review"]["data"]["id"])
 print(" ".join(str(entry.get("sent")) for entry in entries))
+report_unknown()
 EOF
 )
+check "send-replies: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$sent")"
 check "send-replies: 送る前に返信の有無を確かめ、無いレビューだけを POST する" \
     grep -qx "GET:/v1/customerReviews/a/response POST:/v1/customerReviewResponses GET:/v1/customerReviews/e/response" <<<"$sent"
 check "send-replies: POST の中身は確かめたレビューを指す" grep -qx "a" <<<"$sent"
@@ -202,25 +212,35 @@ check "send-replies: 返信が既にあれば送らずに、その返信の ID �
 check "send-replies: 返信が既にあったことを知らせる" grep -q "^OK foo e 返信が既にあるので送らなかった" <<<"$sent"
 check "send-replies: 一時ファイルを残さない" test -z "$(find "$work" -maxdepth 1 -name '*.tmp')"
 
+cat >|"$work/err.json" <<'EOF'
+[{"app": "foo", "id": "a", "reply": "返信", "approved": true}]
+EOF
+failed=$(python3 -I - "$root" "$scripts/send-replies.py" "$work/err.json" <<'EOF'
+import json
+import os
+import sys
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
+
+module = load_module(sys.argv[2])
+install(lambda method, url, body: (500, json.dumps({"errors": [{"detail": "混んでいる"}]})))
+sys.argv = ["send-replies.py", sys.argv[3]]
+module.run_main(module.main)
+EOF
+)
+check "send-replies: 404 以外の HTTPError は理由を入れた NG にして、sent を書かない" grep -qx "NG foo a を送れなかった: 500: 混んでいる" <<<"$failed"
+check "send-replies: 送れなかった案に sent を書かない" test -z "$(grep sent "$work/err.json")"
+
 reason=$(python3 -I - "$root" <<'EOF'
-import io
 import json
 import os
 import sys
 import urllib.error
-import urllib.request
 sys.path.insert(0, sys.argv[1] + "/lib")
+exec(os.environ["HTTP_FAKE_PY"])
 import app_store
 
-app_store.cached = lambda env: "token"
-body = json.dumps({"errors": [{"detail": "返信が長すぎる"}]}).encode()
-
-
-def refuse(request, timeout=None):
-    raise urllib.error.HTTPError("u", 409, "Conflict", {}, io.BytesIO(body))
-
-
-urllib.request.urlopen = refuse
+install(lambda method, url, body: (409, json.dumps({"errors": [{"detail": "返信が長すぎる"}]})))
 try:
     app_store.asc_request("/v1/x")
 except urllib.error.HTTPError as error:
@@ -240,5 +260,39 @@ print(oct(os.stat(sys.argv[2]).st_mode & 0o777))
 EOF
 )
 check "write_json: 書いたファイルは 0644 にする" test "$mode" == 0o644
+
+# 署名の DER を読む処理（lib/app_store.py）
+der=$(python3 -I - "$root" 2>&1 <<'EOF'
+import base64
+import os
+import sys
+exec(os.environ["PY_PRELUDE"])
+import app_store
+
+r = bytes([0x00, 0x80] + [1] * 31)
+s = bytes([2] * 32)
+body = bytes([0x02, len(r)]) + r + bytes([0x02, len(s)]) + s
+short = bytes([0x30, len(body)]) + body
+raw = app_store.raw_signature(short)
+print(len(raw), raw[:32] == r[1:], raw[32:] == s)
+short_r = bytes([0x02, 1, 7]) + bytes([0x02, len(s)]) + s
+raw = app_store.raw_signature(bytes([0x30, len(short_r)]) + short_r)
+print(raw[:32] == bytes(31) + bytes([7]))
+long_body = bytes([0x30, 0x81, len(body)]) + body
+print(len(app_store.raw_signature(long_body)))
+for bad in (b"", b"\x30", bytes([0x30, 3, 0x04, 1, 0])):
+    try:
+        app_store.raw_signature(bad)
+    except ValueError as error:
+        print("ValueError", error)
+header, payload, signature = app_store.token().split(".")
+print(len(base64.urlsafe_b64decode(signature + "==")))
+EOF
+)
+check "raw_signature: 先頭の 0 を落として 32 バイトずつに詰め、長い形の長さも読む" grep -qx "64 True True" <<<"$der"
+check "raw_signature: 短い整数は 0 で埋める" grep -qx "True" <<<"$der"
+check "raw_signature: 壊れた DER は ValueError にする" grep -qx "ValueError openssl の署名が空" <<<"$der"
+check "raw_signature: 整数の形でない DER は ValueError にする" grep -q "ValueError openssl の署名が DER の整数の形でない" <<<"$der"
+check "token: 本物の鍵で署名した JWT の署名は 64 バイト" test "$(tail -1 <<<"$der")" -eq 64
 
 finish

@@ -6,33 +6,31 @@ source "$(dirname "$0")/lib/fixtures.sh"
 source "$(dirname "$0")/lib/hook_fixtures.sh"
 
 doc_case() {
-    local expect=$1 label=$2 name=$3 text=$4 want=${5:-} out status
+    local expect=$1 label=$2 name=$3 text=$4 want=${5:-}
     [[ $expect != 2 || -n $want ]] || want="文書の決まり（rules/docs-*.md）に合わない箇所がある"
-    mkdir -p "$work/docs-case/$(dirname "$name")"
-    printf '%s\n' "$text" >"$work/docs-case/$name"
-    out=$(echo "{\"tool_input\":{\"file_path\":\"$work/docs-case/$name\"}}" | bash "$hooks" docs-check 2>&1)
-    status=$?
-    if [[ $status == "$expect" && $out == *"$want"* ]]; then
-        ok "docs-check: $label"
-    else
-        ng "docs-check: ${label}（終了コード ${status}、期待は ${expect} と「${want}」）" "$out"
-    fi
+    hook_case docs-check "$expect" "$label" "$work/docs-case/$name" "$text" "$want"
 }
 mkdir -p "$work/docs-case/.git"
+# --- 文・段落・読点の数 ---
 doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
 doc_case 0 "直下ではない README には文の段落を書ける" sub/README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n次のコマンドで入れる。'
 doc_case 2 "コードも一文の字数に数える" README.md $'# t\n\n`/very/long/path/that/goes/on/and/on/and/on/and/on/x.sh` を走らせて結果を確かめる。'
+doc_case 0 "段落は 3 文ちょうどなら通る" README.md $'# t\n\n一つ目。二つ目。三つ目。'
+doc_case 0 "一文は 60 字ちょうどなら通る" README.md $'# t\n\nあああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ。'
+doc_case 2 "一文が 61 字なら止める" README.md $'# t\n\nああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ。' "60 字"
 doc_case 2 "段落は 3 文まで" README.md $'# t\n\n一つ目。二つ目。三つ目。四つ目。'
 doc_case 0 "一文の読点は 3 つまで通る" README.md $'# t\n\nあ、い、う、えを使う。'
 doc_case 2 "一文の読点が 4 つあれば止める" README.md $'# t\n\nあ、い、う、え、おを使う。' "読点は 3 つまで"
 doc_case 0 "句点の無い語の並びは、読点を数えない" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | あ、い、う、え、お |'
 doc_case 2 "表のセルは 2 文まで" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | 一つ。二つ。三つ。 |'
+# --- 絵文字と ## の見出し ---
 doc_case 2 "Claude が読む文書に絵文字を使わない" rules/x.md $'# t\n\n✅ 済んだ。'
 doc_case 0 "人が読む文書は表の絵文字を使える" README.md $'# t\n\n✅ 済んだ。'
 doc_case 2 "人が読む文書でも表に無い絵文字は使わない" README.md $'# t\n\n🎉 済んだ。'
 doc_case 2 "README の ## には絵文字を付ける" README.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 doc_case 2 "## の見出しの絵文字をそろえる" docs/x.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 
+# --- README と docs の形・タイトル直後・アラート ---
 note=$'# t\n\n> [!NOTE]\n> 分かる。\n'
 shields='![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)'
 icons='<img src="docs/images/tech.svg" alt="技術">'
@@ -95,6 +93,7 @@ doc_case 0 "決定の文書は理由の行を重ねてよい" docs/decisions/x.m
 doc_case 0 "条件を組み合わせる 3 列の表は 1 列目が重なってよい" rules/x.md $'# t\n\n案は次のとおり。\n\n| 決まり | 回数 | 案 |\n| --- | --- | --- |\n| 無い | 2 回 | 足す |\n| 無い | 1 回 | 待つ |'
 doc_case 0 "別の表なら 1 列目が同じでもよい" rules/x.md $'# t\n\n一つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 1 |\n\n二つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 2 |'
 
+# --- 箇条書きと見出しの付け方 ---
 doc_case 2 "箇条書きを 1 項目に使わない" rules/x.md $'# t\n\nあ。\n\n- 一つだけの項目である。' "箇条書きを 1 項目に使わない"
 doc_case 2 "箇条書きを 2 項目に使わない" README.md $'# t\n\nあ。\n\n- りんご\n- みかん' "箇条書きを 2 項目に使わない"
 doc_case 2 "入れ子の 2 項目の箇条書きも止める" rules/x.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n   - 語句\n2. 次の手順である。' "箇条書きを 2 項目に使わない"
@@ -108,14 +107,15 @@ doc_case 2 "表のセルの敬体も止める" README.md $'# t\n\nあ。\n\n| a 
 doc_case 0 "コードの囲み・引用・インラインコードの敬体は止めない" rules/x.md $'# t\n\n`返します。` を出す。\n\n> 送ります。\n\n```text\nありがとうございます。\n```'
 doc_case 0 "「でした」で終わる常体は止めない" rules/x.md $'# t\n\n広い探索を自分でした。'
 
+# --- 一覧・敬体・HTML・斜体・スペース ---
 doc_case 0 "項目の下の字下げした段落とコードの囲みで一覧を切らない" README.md $'# t\n\nあ。\n\n- 一つ目\n\n  補足。\n\n  ```sh\n  ls\n  ```\n\n- 二つ目\n- 三つ目'
 doc_case 0 "冒頭の [!NOTE] のリンクだけの行は数えない" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> [README](../README.md)・[開発](development.md)'
 doc_case 2 "冒頭の [!NOTE] のリンクを含む文は数える" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> 詳しくは [README](../README.md) にある。' "冒頭の [!NOTE] は 3 行まで"
 doc_case 0 "引き継ぎのメモは見ない" .claude/handoff.md $'# t\n\n- 目的：直す'
 out=$(python3 -I - "$root" "$work/docs-case/.claude/handoff.md" 2>&1 <<'EOF'
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_hook
+import os
+exec(os.environ["PY_PRELUDE"])
 print(load_hook("docs-check").check(sys.argv[2]))
 EOF
 )
@@ -138,6 +138,7 @@ doc_case 0 "docs の外のファイルは 15KB を超えてもよい" README.md 
 doc_case 2 "docs の ## には絵文字を付ける" docs/x.md "$note"$'\n## 入れ方\n\nあ。' "頭に絵文字を 1 つ付ける"
 doc_case 0 "節の多い decisions は ## の絵文字を付けないでそろえてよい" docs/decisions/x.md "$note"$'\n## 入れ方\n\nあ。\n\n## 使い方\n\nい。'
 
+# --- 読めない・壊れた入力 ---
 printf '# t\n\nあ。\n' >"$work/unreadable.md"
 chmod 000 "$work/unreadable.md"
 run docs-check 0 "docs-check: 読めないファイルは、落ちずに知らせて通す" "{\"tool_input\":{\"file_path\":\"$work/unreadable.md\"}}"
@@ -145,8 +146,8 @@ out=$(echo "{\"tool_input\":{\"file_path\":\"$work/unreadable.md\"}}" | bash "$h
 match "docs-check: 読めないファイルは systemMessage で理由を知らせる" "$out" '{"systemMessage": "docs-check が想定外の失敗で確かめられなかった（'*
 out=$(python3 -I - "$root" "$work/docs-case/README.md" 2>&1 <<'EOF'
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_hook
+import os
+exec(os.environ["PY_PRELUDE"])
 import md_doc
 md_doc.RULES = ["/nonexistent/docs-core.md"]
 hook = load_hook("docs-check")
@@ -155,5 +156,28 @@ hook.main()
 EOF
 )
 match "docs-check: rules の表が読めない時は、検査を飛ばしたと systemMessage で知らせる" "$out" '*"systemMessage": "docs-check: /nonexistent/docs-core.md を読めない*'
+
+
+# --- lib の直接のテスト（md_doc） ---
+out=$(python3 -I - "$root" 2>&1 <<'EOF'
+import os
+exec(os.environ["PY_PRELUDE"])
+import md_doc
+
+print(md_doc.title_of("## 🚀 入れ方"), "|", md_doc.title_of("# 題"))
+print(md_doc.bare("🗺\ufe0f") == "🗺")
+print(md_doc.without_links("[名前](a.md) と <!-- c --> 終わり"))
+print([md_doc.kind(text) for text in ["", "# a", "| a |", "- a", "1. a", "> a", "あ。"]])
+lines = ["---", "title: x", "---", "# t", "", "本文。", "```sh", "ls", "```", "- 項目"]
+print([(row.number, row.what) for row in md_doc.rows_of(lines)])
+print(md_doc.body_start(lines), md_doc.body_start(["# t"]))
+EOF
+)
+check "md_doc: 題・絵文字・リンク・種類・行・本文の始まり" test "$out" == "入れ方 | 題
+True
+名前 と  終わり
+['blank', 'heading', 'table', 'list', 'list', 'quote', 'body']
+[(4, 'heading'), (5, 'blank'), (6, 'body'), (7, 'code'), (9, 'code'), (10, 'list')]
+3 0"
 
 finish

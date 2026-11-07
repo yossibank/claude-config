@@ -121,6 +121,45 @@ d=$(copy matcher)
 replace "$d/settings/settings.json" '"Edit|Write"' '"Edit"'
 expect_audit "$d" "編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ" "編集の道具が欠けた matcher"
 
+d=$(copy settings-no-runner)
+replace "$d/settings/settings.json" 'hooks/run.sh\" ctx-limit-read' 'hooks/ctx-limit-read.py\"'
+expect_audit "$d" "フックを hooks/run.sh で呼んでいない" "run.sh を通さないフック"
+
+d=$(copy settings-missing-hook)
+replace "$d/settings/settings.json" 'hooks/run.sh\" ctx-limit-read' 'hooks/run.sh\" nothing-here'
+expect_audit "$d" "フックのファイルが無い: hooks/nothing-here.py" "settings にあるフックのファイルが無い"
+
+d=$(copy matcher-extra)
+replace "$d/settings/settings.json" '"Edit|Write"' '"Edit|Write|Bash"'
+expect_audit "$d" "編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ" "編集の道具に別の道具が混ざる matcher"
+
+d=$(copy skill-name)
+replace "$d/skills/pr-prune/SKILL.md" 'name: pr-prune' 'name: pr-other'
+expect_audit "$d" "skills/pr-prune/SKILL.md:2 name がフォルダ名 pr-prune と違う: pr-other" "フォルダ名と違う name"
+
+d=$(copy skill-description-end)
+replace "$d/skills/pr-prune/SKILL.md" '使う。
+argument-hint' '使う
+argument-hint'
+expect_audit "$d" "skills/pr-prune/SKILL.md:3 description を「。」で終える" "「。」で終わらない description"
+
+d=$(copy skill-description-long)
+replace "$d/skills/pr-prune/SKILL.md" 'マージされた PR を' "$(printf 'あ%.0s' $(seq 130))"
+expect_audit "$d" "skills/pr-prune/SKILL.md:3 description が 120 字を超えている" "長すぎる description"
+
+d=$(copy agent-name)
+replace "$d/agents/tester.md" 'name: tester' 'name: other'
+expect_audit "$d" "agents/tester.md:2 name がファイル名 tester と違う: other" "ファイル名と違うエージェントの name"
+
+d=$(copy agent-model)
+replace "$d/agents/tester.md" 'model: sonnet
+' ''
+expect_audit "$d" "agents/tester.md:1 model が無い" "model の無いエージェント"
+
+d=$(copy rule-paths)
+replace "$d/rules/swift-core.md" 'paths:' 'globs:'
+expect_audit "$d" "rules/swift-core.md:1 frontmatter に paths が無い" "paths の無い rules"
+
 d=$(copy readme)
 echo 'print(1)' >"$d/hooks/post-tool-extra.py"
 expect_audit "$d" "部品の文書の表に載っていない: hooks/post-tool-extra.py" "部品の文書に無いフック"

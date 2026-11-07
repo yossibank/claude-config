@@ -116,8 +116,8 @@ check "pr: 止めた時に CC_HOOKS_OFF での外し方を出す" grep -qF "CC_H
 printf '#!/bin/bash\necho "壊れた" >&2\nexit 3\n' >"$work/broken-check.sh"
 out=$(python3 -I - "$root" "$work/broken-check.sh" "$app" <<'EOF'
 import sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_hook
+import os
+exec(os.environ["PY_PRELUDE"])
 gate = load_hook("pr-gate")
 gate.CHECK_SH = sys.argv[2]
 print(gate.problems(sys.argv[3]))
@@ -126,8 +126,8 @@ EOF
 check "pr: run-check.sh が何も出さずに落ちたら、理由に stderr の末尾を出す" grep -q "run-check.sh が失敗した（終了コード 3）: 壊れた" <<<"$out"
 out=$(python3 -I - "$root" "$app" 2>&1 <<'EOF'
 import subprocess, sys
-sys.path.insert(0, sys.argv[1] + "/lib")
-from loader import load_hook
+import os
+exec(os.environ["PY_PRELUDE"])
 gate = load_hook("pr-gate")
 gate.git_root = lambda repo: repo
 
