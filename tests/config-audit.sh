@@ -144,7 +144,7 @@ argument-hint'
 expect_audit "$d" "skills/pr-prune/SKILL.md:3 description を「。」で終える" "「。」で終わらない description"
 
 d=$(copy skill-description-long)
-replace "$d/skills/pr-prune/SKILL.md" 'マージされた PR を' "$(printf 'あ%.0s' $(seq 130))"
+replace "$d/skills/pr-prune/SKILL.md" 'マージされた PR の反映と' "$(printf 'あ%.0s' $(seq 130))"
 expect_audit "$d" "skills/pr-prune/SKILL.md:3 description が 120 字を超えている" "長すぎる description"
 
 d=$(copy agent-name)
