@@ -30,7 +30,7 @@ claude-config を変えたら、`make verify` を通す。
 | --- | --- |
 | `tests/ctx-limit-read.sh` | 大きいファイルを範囲なしで読む時だけ止めるか |
 | `tests/docs-check.sh` | 文書の決まりに外れた時に止め、合う時は通すか |
-| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。refspec 付きの `--tags`、xargs・eval の先、変数の cd、`pushd`・引数の無い `cd`、`gh -R`・`--repo` を付けた PR の作成も止めるか |
+| `tests/pr-gate.sh` | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか。`--tags`・xargs・eval・`pushd`・変数の cd・`gh -R` も見るか |
 | `tests/rules-detect-bash-edits.sh` | Bash と git checkout での書き換えを見つけ、make などの道具では検査の NG だけ返すか。Bash の間に Edit・Write で変えたファイルを数えないか |
 | `tests/rules-require-read.sh` | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか。`CC_HOOKS_OFF` の名前を、run.sh と hook_io が空白・カンマ・タブ・改行で同じに分けるか |
 | `tests/shell-check.sh` | `.sh` の構文と、変数の直後の全角で止めるか |

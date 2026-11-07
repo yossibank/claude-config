@@ -109,7 +109,7 @@
 
 | ファイル | 中身 |
 | --- | --- |
-| [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューを読み、失敗の理由と途中までの知らせの文を作る。ページ送りの `paginate`・`asc_pages` と、アプリの ID の確かめも持つ。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルも扱う |
+| [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビュー、失敗の理由、ページ送りの `asc_pages`。App Store Connect API のキーと署名、アプリの ID と一覧、返信案のファイルも扱う |
 | [lib/audit_code.py](../lib/audit_code.py) | config-audit の、シェルと Python の書き方、settings、ひな形、ワークツリーの置き場所の検査 |
 | [lib/audit_docs.py](../lib/audit_docs.py) | config-audit の、README の形、リンク、見出しの参照先、パス、台帳、文書の決まりの検査 |
 | [lib/audit_files.py](../lib/audit_files.py) | config-audit が使う、追跡しているファイルの一覧、読み込み、コードの囲みの外の行、## の見出し |
@@ -121,7 +121,7 @@
 | [lib/docs_rows.py](../lib/docs_rows.py) | docs-check の、文・箇条書き・表の行ごとの検査 |
 | [lib/git.py](../lib/git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所（`WORKTREES` など）。根は、まだ無いフォルダからも在る親をたどって探す |
 | [lib/git.sh](../lib/git.sh) | 根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。分かれ目・変えたファイル・既定のブランチ・書き込みの権限 |
-| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切りと頭の読み飛ばし。止める時と止めない知らせ（`notify`）の出し方、編集する道具の名前、例外でも止める入口 `run_gate`、例外を知らせて通す入口 `run_hook` |
+| [lib/hook_io.py](../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切り、止める時と知らせ（`notify`）の出し方、編集する道具の名前。入口は、例外でも止める `run_gate` と、知らせて通す `run_hook` |
 | [lib/hook_messages.py](../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
 | [lib/hook_state.py](../lib/hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除。掃除は 1 時間に 1 回で、フォルダの中の新しいファイルは残す |
 | [lib/loader.py](../lib/loader.py) | claude-config の根（`ROOT`）と、場所を指して .py を読む処理 |
