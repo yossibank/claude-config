@@ -61,5 +61,10 @@ run rules-detect-bash-edits 0 "bash: /dev/null と fd への向け替えは書�
 run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" pre
 echo 'r' >>"$app/docs/overview.md"
 run rules-detect-bash-edits 0 "bash: 道具の出力を別の所に向けても、道具が変えたファイルは数えない" "$(bash_call t13 'git status > /tmp/claude-config-test.log')" post
+for tool in make mint swiftformat pre-commit brew xcodebuild swift; do
+    run rules-detect-bash-edits 0 "bash: 前の状態を残す" "$(bash_call "tool-$tool" "$tool run")" pre
+    echo 'p' >>"$app/docs/overview.md"
+    run rules-detect-bash-edits 2 "bash: $tool が書き換えたファイルも検査する" "$(bash_call "tool-$tool" "$tool run")" post
+done
 
 finish

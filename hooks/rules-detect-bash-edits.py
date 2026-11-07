@@ -14,7 +14,7 @@ from loader import load_hook  # noqa: E402
 
 STATE = state_folder("bash-edits")
 CHECKED = (".md", ".swift", ".sh", ".py", ".kt", ".kts", ".yml", ".yaml", ".json")
-TOOLS = {"git", "make", "mint", "swiftformat", "pre-commit", "gh", "brew", "xcodebuild", "swift", "cd"}
+TOOLS = {"git", "gh", "cd"}
 GIT_WRITES = {"checkout", "restore", "switch", "apply", "am", "stash", "merge", "pull", "rebase", "reset", "cherry-pick", "revert", "mv", "rm"}
 STALE = 24 * 60 * 60
 REDIRECT_CHARS = set("<>|&")

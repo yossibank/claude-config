@@ -151,6 +151,20 @@ def push_gated(args):
     return "--tags" not in args or len(positional) > 1
 
 
+def gh_words(words):
+    if words[:1] != ["gh"]:
+        return words
+    rest = words[1:]
+    while rest:
+        if rest[0] in ("-R", "--repo"):
+            rest = rest[2:]
+        elif rest[0].startswith("--repo="):
+            rest = rest[1:]
+        else:
+            break
+    return ["gh", *rest]
+
+
 def gated_repo(command, cwd):
     command, inners = substitutions(without_quoted_heredocs(command))
     for parts in split_commands(command):
@@ -169,6 +183,7 @@ def gated_repo(command, cwd):
             if repo is not None:
                 return repo
             continue
+        words = gh_words(words)
         if words[:2] == ["gh", "pr"] and words[2:3] in (["create"], ["new"]):
             return cwd
         if words[:1] != ["git"]:
