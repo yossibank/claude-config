@@ -151,17 +151,23 @@ def push_gated(args):
     return "--tags" not in args or len(positional) > 1
 
 
-def gh_words(words):
-    if words[:1] != ["gh"]:
-        return words
-    rest = words[1:]
+def skip_repo_flags(rest):
     while rest:
         if rest[0] in ("-R", "--repo"):
             rest = rest[2:]
-        elif rest[0].startswith("--repo="):
+        elif rest[0].startswith("--repo=") or (rest[0].startswith("-R") and len(rest[0]) > 2):
             rest = rest[1:]
         else:
             break
+    return rest
+
+
+def gh_words(words):
+    if words[:1] != ["gh"]:
+        return words
+    rest = skip_repo_flags(words[1:])
+    if rest[:1] == ["pr"]:
+        rest = ["pr", *skip_repo_flags(rest[1:])]
     return ["gh", *rest]
 
 
