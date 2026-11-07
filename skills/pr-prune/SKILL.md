@@ -1,6 +1,6 @@
 ---
 name: pr-prune
-description: マージされた PR を手元の main に反映し、ワークツリーとブランチを片付ける。PR がマージされたと分かった時や、人が片付けを頼んだ時に使う。
+description: マージされた PR の反映と片付けをする。手元の main に反映し、ワークツリーとブランチを消す。PR がマージされたと分かった時や、人が片付けを頼んだ時に使う。
 argument-hint: "<リポジトリ> <ブランチ> <PR 番号> [...]"
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh *)
 ---
@@ -68,7 +68,7 @@ squash でマージすると、上に積んだブランチは元の commit を�
 | push | origin にあるものは、`--force-with-lease` で push する。条件は、付け替える前に `ls-remote` で取った origin の先頭である |
 | 止まる | 次の時は `NG` を出して元のまま残し、その上に積んだブランチも付け替えない。未 commit の変更・rebase や merge の途中・コンフリクト・origin が手元より先に進んでいる時 |
 
-PR の base は、GitHub が付け替える。要る設定は、install.md の [積んだ PR のための設定](../../docs/install.md#-積んだ-pr-のための設定) にある。
+PR の base は、GitHub が付け替える。要る設定は、setup.md の [積んだ PR のための設定](../../docs/setup.md#-積んだ-pr-のための設定) にある。
 
 ## 報告
 

@@ -102,7 +102,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/send-replies.py <返信案の JSON>
 人には、集めた件数、送った件数、送れなかった案と理由を返す。
 
 > [!WARNING]
-> 実際の App Store Connect API では試していない。偽の応答で、集め方と送る中身の形だけを確かめた。
+> 実際の App Store Connect API では試していない。
 
 ## 制約
 

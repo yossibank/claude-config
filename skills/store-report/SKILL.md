@@ -21,13 +21,16 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I $
 ## 手順
 
 1. `write-report.py` で表を作る。
-2. 星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには `app-plan` の `fetch-rival-reviews.py` を使う。
-3. 表と、前の月から大きく変わった所と、2 の不満を報告する。
+2. 星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには、`app-plan` の `fetch-rival-reviews.py` に自分のアプリの ID を渡す。
+3. `store/custom-pages.json` を持つアプリがあれば、「カスタムプロダクトページの比べ方」で比べる。
+4. 表と、前の月から大きく変わった所と、2 の不満と、3 の比べた結果を報告する。
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <アプリの ID> [星の上限]
 ```
+
+このスキルは、`app-plan` のスクリプトに依存する。`app-plan` は競合のレビューを取るが、ここでは自分のアプリのレビューを取る。
 
 ## write-report.py の出力
 
@@ -46,7 +49,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 
 ## API のキー
 
-売上のレポートは、App Store Connect API から取る。次の環境変数を、`~/.zshenv` などで渡す。キーのファイルは、リポジトリの外に置く。
+売上のレポートは、App Store Connect API から取る。次の環境変数を、`~/.zshenv` などで渡す。
 
 | 環境変数 | 中身 |
 | --- | --- |
@@ -55,7 +58,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 | `ASC_KEY_PATH` | `.p8` のファイルのパス |
 | `ASC_VENDOR_NUMBER` | 「支払いと財務レポート」にあるベンダー番号 |
 
-キーは、App Store Connect の「ユーザとアクセス」で作る。役割に上下は無いので、使うスキルの役割をすべて付ける。
+キーは、App Store Connect の「ユーザとアクセス」で作る。要る役割は、スキルごとに次のとおりである。
 
 | スキル | 要る役割 |
 | --- | --- |
@@ -65,16 +68,26 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 
 いくつかのスキルで使う時は、要る役割をすべて付けるか、Admin にする。
 
-## 報告
+## カスタムプロダクトページの比べ方
 
-人には、表と、前の月から大きく変わった所と、星 2 以下のレビューから集めた不満を返す。
-
-`store/custom-pages.json` を持つアプリがあれば、カスタムプロダクトページの比べ方も渡す。
+`store/custom-pages.json` を持つアプリは、次の順で比べる。
 
 1. App Analytics の「獲得」→「カスタムプロダクトページ」を開く。ページごとの表示・ダウンロード・ダウンロードの割合を比べる。
 2. 割合の低いページは、`custom-pages.json` の先頭の画像か宣伝文を入れ替える案を出す。
 
 初めてのダウンロードが 5 件に届かないページは、数字が出ない。その時は、比べずに見送ったと書く。
 
+## 報告
+
+人には、次のものを返す。
+
+- 表と、前の月から大きく変わった所
+- 星 2 以下のレビューから集めた不満
+- カスタムプロダクトページを比べた結果
+
 > [!WARNING]
-> 売上のレポートの中身を読めるかは、確かめていない。キーと署名は、本物の API がレポートの無い月に 404 を返すことで確かめた。
+> 売上のレポートの中身を読めるかは、確かめていない。
+
+## 制約
+
+API のキーの `.p8` のファイルは、リポジトリの外に置く。

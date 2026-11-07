@@ -13,7 +13,7 @@ __Summary__
 | Xcode | 最新 |
 | Homebrew | 最新 |
 
-[make のコマンド](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md#make-のコマンド)
+[make のコマンド（claude-config の architecture-ios.md）](https://github.com/yossibank/claude-config/blob/main/docs/architecture-ios.md#-動かし方)
 
 ## 📚 文書
 
