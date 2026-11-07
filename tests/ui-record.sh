@@ -46,4 +46,10 @@ signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
 time.sleep(3)'
 expect "NG 録画できなかった: $work/rec/c.mp4" "record-video: ファイルが空なら NG" bash "$record" udid 1 "$work/rec/c.mp4"
 
+fake_command ffmpeg "echo \"\$@\" >\"$work/ffmpeg.args\"; echo png >\"\${@: -1}\""
+bash "$tile" video.mp4 0 1 2 'min(100,200):50:0:0' 1 "$work/comma.png" >/dev/null
+match "tile-frames: crop のカンマを filter の区切りにしない" "$(cat "$work/ffmpeg.args")" '*crop=min(100\\,200):50:0:0*'
+fake_command xcrun 'echo "Invalid device" >&2; exit 1'
+expect "Invalid device" "record-video: simctl の stderr の最後の行を NG に入れる" bash "$record" udid 5 "$work/rec/d.mp4"
+
 finish

@@ -110,4 +110,41 @@ check "write-report: 評価が取れなければ WARNING の行に書く" grep -
 check "write-report: 数字でないアプリの ID は通信せずに NG にする" grep -q "bar の評価は取れなかった（NG アプリの ID は数字で書く: abc）" <<<"$out"
 check "write-report: 取れなかった欄は — にする" grep -q '^| foo | — | — | — | — | — | — |$' <<<"$out"
 
+checked=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
+import sys
+from datetime import date
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+from script_io import Failure
+
+sales = load_module(sys.argv[2])
+sales.require_keys = lambda keys: None
+header = "SKU\tApple Identifier\tParent Identifier\tUnits\tDeveloper Proceeds\tProduct Type Identifier\tCurrency of Proceeds\n"
+sales.fetch_text = lambda frequency, day: header + "app1\t111\t\t1\t2.675\t1F\tUSD\n"
+print("decimal", sales.sales_by_app("2026-10", date(2026, 11, 4))[0]["111"][1])
+sales.fetch_text = lambda frequency, day: header + "app1\t111\t\tx\t0\t1F\tUSD\n"
+try:
+    sales.sales_by_app("2026-10", date(2026, 11, 4))
+except Failure as error:
+    print("broken", error)
+EOF
+)
+check "fetch-sales: 金額を Decimal で足す" grep -qx 'decimal 2.68 USD' <<<"$checked"
+check "fetch-sales: 中身が想定と違う時は、読めなかったではなく中身の NG にする" grep -q '^broken レポートの中身が想定と違う（ValueError' <<<"$checked"
+
+pages=$(python3 -I - "$root" "$scripts/fetch-ratings.py" <<'EOF'
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from loader import load_module
+
+ratings = load_module(sys.argv[2])
+ratings.itunes_json = lambda url: {"results": [{"trackName": "A"}]}
+entry = {"updated": {"label": "2026-10-05T00:00:00-07:00"}, "im:rating": {"label": "1"}}
+ratings.review_pages = lambda app: iter([[entry]] * 10)
+fields, notice = ratings.ratings("123", "2026-10")
+print(notice)
+EOF
+)
+check "fetch-ratings: 10 ページ読み切っても月の終わりに届かなければ知らせる" grep -q '10 ページ（上限）までしか読めない' <<<"$pages"
+
 finish

@@ -7,7 +7,8 @@ source "$(dirname "$0")/../../../lib/git.sh"
 
 use_repo "$1"
 base=$(merge_base_of "$repo" "$2") || { echo "$base"; exit 1; }
-size=$("$(dirname "$0")/classify-diff.sh" "$repo" "$2") || size=""
+status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$status"; exit 1; }
+size=$("$(dirname "$0")/classify-diff.sh" "$repo" "$2") || { echo "$size"; exit 1; }
 size=${size%%$'\n'*}
 shift 2
 
@@ -30,8 +31,6 @@ size_row() {
     esac
     echo "| 差分の重さ | ${mark} ${weight}・${lines}。${review} |"
 }
-
-status=$("$(dirname "$0")/run-check.sh" "$repo" --status) || { grep '^NG' <<< "$status"; exit 1; }
 
 {
     echo "## 🎯 目的"

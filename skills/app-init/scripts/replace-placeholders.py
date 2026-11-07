@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from script_io import fail  # noqa: E402
+from script_io import Failure, fail, run_main  # noqa: E402
 
 UNWRITTEN_SUMMARY = "<何のアプリかを 1 文で>"
 
@@ -46,8 +46,11 @@ def main():
         for item in files + folders:
             renamed = replace(item, tokens)
             if renamed != item:
-                os.rename(os.path.join(directory, item), os.path.join(directory, renamed))
+                target = os.path.join(directory, renamed)
+                if os.path.lexists(target):
+                    raise Failure(f"置き換えた名前のファイルが既にある: {target}")
+                os.rename(os.path.join(directory, item), target)
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

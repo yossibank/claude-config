@@ -92,7 +92,7 @@
 
 | ファイル | 中身 |
 | --- | --- |
-| [lib/app_store.py](../lib/app_store.py) | App Store の検索とレビューの読み方、失敗の理由と途中までの知らせの文。App Store Connect API のキーと署名、アプリの一覧、返信案のファイルの読み方 |
+| [lib/app_store.py](../lib/app_store.py) | 検索とレビューの読み方、失敗の理由、ページ送りの `paginate`・`asc_pages`。App Store Connect API のキーと署名、アプリの一覧と ID の確かめ、返信案のファイルの読み方 |
 | [lib/audit_code.py](../lib/audit_code.py) | config-audit の、シェルと Python の書き方、settings、ひな形、ワークツリーの置き場所の検査 |
 | [lib/audit_docs.py](../lib/audit_docs.py) | config-audit の、README の形、リンク、見出しの参照先、パス、台帳、文書の決まりの検査 |
 | [lib/audit_files.py](../lib/audit_files.py) | config-audit が使う、追跡しているファイルの一覧、読み込み、コードの囲みの外の行、## の見出し |
@@ -110,8 +110,10 @@
 | [lib/loader.py](../lib/loader.py) | claude-config の根（`ROOT`）と、場所を指して .py を読む処理 |
 | [lib/md_blocks.py](../lib/md_blocks.py) | Markdown の frontmatter、見出し（`heading_of`）、見出しの下の表、コードの囲み |
 | [lib/md_doc.py](../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表の絵文字・README の順（読めない表は `rule_problems`）。`md_blocks` の上に作る |
-| [lib/script_io.py](../lib/script_io.py) | `NG` を出して止める `fail` と、月の引数を確かめる `require_month`。一時ファイルを経て JSON を書く `write_json` |
+| [lib/script_io.py](../lib/script_io.py) | `NG` で止める `fail`・`run_main` と、結果の行を出す `finish`。引数を読む `require_month`・`split_dry_run`、JSON を書く `write_json` |
+| [lib/swift_source.py](../lib/swift_source.py) | Swift のコードから、コメントと文字列（補間の中の入れ子も）の中身を空白にする `mask` |
 | [lib/transcripts.py](../lib/transcripts.py) | 会話の記録の読み方とリポジトリの名前（`repo_of`）。ある日時より後の記録の一覧（`sessions_since` など）、続きだけを読む `lines_after` |
+| [lib/worktree.sh](../lib/worktree.sh) | ブランチのワークツリーを探す `worktree_of` |
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま使う。スキルからは `${CLAUDE_SKILL_DIR}/../<スキル>/scripts/` で呼ぶ。フックからは、リポジトリの根からの `skills/<スキル>/scripts/` で呼ぶ。
 

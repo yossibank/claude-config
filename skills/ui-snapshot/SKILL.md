@@ -28,9 +28,9 @@ ${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ>
 1. パッケージのあるリポジトリを、写しのフォルダに写す。`.git` と、`.gitignore` で外すものは写さない。写しは `CC_UI_WORK_DIR`（既定は `~/Library/Caches/ui-snapshot`）の下に置く。
 2. 写しの Package.swift に、テストのターゲット `UISnapshotTests` を足す。
 3. セットに `patch.py` があれば、写しのパッケージのフォルダを渡して走らせる。
-4. 出力先の古い PNG を消し、セットの `SnapshotTests.swift` を入れる。
+4. セットの `SnapshotTests.swift` を入れる。PNG は出力先の `.rendering` に描く。
 5. シミュレーターで、そのテストだけを動かす。
-6. テストが通れば、描いた PNG の一覧を出す。通らなければ `NG` の行を出して止まる。
+6. テストが通れば、出力先の古い PNG を描いたものに入れ替え、一覧を出す。通らなければ、前の PNG は残し、`NG` の行にログの場所を出して止まる。xcodebuild の全ログは、写しの `.build/ui-snapshot.log` に残す。
 
 元のパッケージのファイルは書き換えない。写しのビルドの成果物は次の回に使い回す。
 

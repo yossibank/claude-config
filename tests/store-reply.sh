@@ -38,7 +38,7 @@ pages = {
     module.reviews_url("123"): {"data": [review("a", 1, False), review("b", 2, True)], "links": {"next": "https://next"}},
     "https://next": {"data": [review("c", 2, False), review("d", 4, False)], "links": {}},
 }
-module.asc_json = lambda url, body=None: pages[url]
+sys.modules["app_store"].asc_json = lambda url, body=None: pages[url]
 sys.argv = ["fetch-unreplied-reviews.py"]
 try:
     module.main()
@@ -67,7 +67,7 @@ sys.path.insert(0, sys.argv[1] + "/lib")
 from loader import load_module
 
 module = load_module(sys.argv[2])
-module.asc_json = lambda url, body=None: {"data": [], "links": {}}
+sys.modules["app_store"].asc_json = lambda url, body=None: {"data": [], "links": {}}
 path = glob.glob(module.apps_dir() + "/replies/*.json")[0]
 drafts = [{"app": "bar", "id": "z", "reply": "案", "approved": True}, {"app": "foo", "id": "y", "reply": "古い", "approved": False}]
 json.dump(drafts, open(path, "w", encoding="utf-8"), ensure_ascii=False)
@@ -87,7 +87,7 @@ sys.path.insert(0, sys.argv[1] + "/lib")
 from loader import load_module
 
 module = load_module(sys.argv[2])
-module.asc_json = lambda url, body=None: {"data": [{"id": "a", "attributes": {"rating": 1}, "relationships": {}}], "links": {}}
+sys.modules["app_store"].asc_json = lambda url, body=None: {"data": [{"id": "a", "attributes": {"rating": 1}, "relationships": {}}], "links": {}}
 sys.argv = ["fetch-unreplied-reviews.py"]
 module.run_main(module.main)
 EOF
@@ -101,7 +101,7 @@ sys.path.insert(0, sys.argv[1] + "/lib")
 from loader import load_module
 
 module = load_module(sys.argv[2])
-module.asc_json = lambda url, body=None: {"data": [], "links": {}}
+sys.modules["app_store"].asc_json = lambda url, body=None: {"data": [], "links": {}}
 sys.argv = ["fetch-unreplied-reviews.py"]
 module.run_main(module.main)
 EOF
@@ -201,5 +201,44 @@ check "send-replies: POST の中身は確かめたレビューを指す" grep -q
 check "send-replies: 返信が既にあれば送らずに、その返信の ID を sent に書く" grep -qx "new None old" <<<"$sent"
 check "send-replies: 返信が既にあったことを知らせる" grep -q "^OK foo e 返信が既にあるので送らなかった" <<<"$sent"
 check "send-replies: 一時ファイルを残さない" test -z "$(find "$work" -maxdepth 1 -name '*.tmp')"
+
+reason=$(python3 -I - "$root" <<'EOF'
+import io
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+sys.path.insert(0, sys.argv[1] + "/lib")
+import app_store
+
+app_store.cached = lambda env: "token"
+body = json.dumps({"errors": [{"detail": "返信が長すぎる"}]}).encode()
+
+
+def refuse(request, timeout=None):
+    raise urllib.error.HTTPError("u", 409, "Conflict", {}, io.BytesIO(body))
+
+
+urllib.request.urlopen = refuse
+try:
+    app_store.asc_request("/v1/x")
+except urllib.error.HTTPError as error:
+    print(app_store.asc_reason(error))
+EOF
+)
+check "asc_reason: HTTPError の本文の detail を理由に入れる" test "$reason" == "409: 返信が長すぎる"
+
+mode=$(python3 -I - "$root" "$work/json/out.json" <<'EOF'
+import os
+import sys
+sys.path.insert(0, sys.argv[1] + "/lib")
+from script_io import write_json
+
+write_json(sys.argv[2], {"a": 1})
+print(oct(os.stat(sys.argv[2]).st_mode & 0o777))
+EOF
+)
+check "write_json: 書いたファイルは 0644 にする" test "$mode" == 0o644
 
 finish

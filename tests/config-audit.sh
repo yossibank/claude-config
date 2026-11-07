@@ -159,7 +159,7 @@ expect_audit "$d" "orphan.sh:1 どこからも使われていない" "自分の�
 
 d=$(copy no-guard)
 replace "$d/skills/config-learn/scripts/collect-corrections.py" 'if __name__ == "__main__":
-    main()' 'main()'
+    run_main(main)' 'run_main(main)'
 expect_audit "$d" "collect-corrections.py:1 if __name__" "main の呼び出しを守っていない .py"
 
 d=$(copy top-level)

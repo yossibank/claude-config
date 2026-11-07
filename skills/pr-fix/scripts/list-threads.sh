@@ -17,11 +17,13 @@ case $access in
 esac
 
 status=0
+errors=$(mktemp)
+trap 'rm -f "$errors"' EXIT
 checks=$(cd "$repo" && gh pr checks "$pr" --json name,bucket,link \
-    -q '.[] | select(.bucket == "fail") | "CI NG \(.name) \(.link)"' 2>&1) || status=$?
+    -q '.[] | select(.bucket == "fail") | "CI NG \(.name) \(.link)"' 2>"$errors") || status=$?
 case $status in
     0 | 8) [[ -z $checks ]] || echo "$checks" ;;
-    *) [[ $checks == *"no checks reported"* ]] || { echo "NG gh pr checks が通らない: $checks"; exit 1; } ;;
+    *) [[ $(<"$errors") == *"no checks reported"* ]] || { echo "NG gh pr checks が通らない: $(<"$errors")"; exit 1; } ;;
 esac
 
 gh api graphql --paginate -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
@@ -39,17 +41,32 @@ query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
 | "THREAD \(.id) \(.path):\(.line // "-") @\(.comments.nodes[0].author.login // "-"): \((.comments.nodes[0].body // "") | split("\n")[0] // "")"
 '
 
-gh api graphql -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
-query($owner: String!, $name: String!, $pr: Int!) {
+gh api graphql --paginate -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
+query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
-      reviews(last: 100) { nodes { author { login } state body url } }
-      comments(last: 100) { nodes { author { login } body url } }
+      reviews(first: 100, after: $endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { author { login } state body url }
+      }
     }
   }
 }' -q '
-.data.repository.pullRequest
-| (.reviews.nodes[] | select((.body // "") != "")
-    | "REVIEW \(.state) @\(.author.login): \(.body | split("\n")[0]) \(.url)"),
-  (.comments.nodes[] | "COMMENT @\(.author.login): \((.body // "") | split("\n")[0]) \(.url)")
+.data.repository.pullRequest.reviews.nodes[] | select((.body // "") != "")
+| "REVIEW \(.state) @\(.author.login): \(.body | split("\n")[0]) \(.url)"
+'
+
+gh api graphql --paginate -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
+query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $pr) {
+      comments(first: 100, after: $endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { author { login } body url }
+      }
+    }
+  }
+}' -q '
+.data.repository.pullRequest.comments.nodes[]
+| "COMMENT @\(.author.login): \((.body // "") | split("\n")[0]) \(.url)"
 '

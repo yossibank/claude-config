@@ -7,18 +7,20 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 
 from md_blocks import fence_marks  # noqa: E402
 from md_doc import body_start, kind  # noqa: E402
-from script_io import fail  # noqa: E402
+from script_io import fail, finish, run_main  # noqa: E402
 
 HEADING = re.compile(r"^(#{2,6})\s+(.*)$")
 SHAPED_KINDS = ("table", "list", "quote")
 SHAPED_STARTS = ("![", "[![", "<")
 PROSE_LIMIT = 4
 HUMAN_DOCS = ("README.md", "docs/**/*.md", "spec/**/*.md")
+DOC_FOLDERS = ("docs", "spec")
 
 
 def human_docs(folder):
     found = set()
-    for pattern in HUMAN_DOCS:
+    patterns = ("**/*.md",) if os.path.basename(os.path.abspath(folder)) in DOC_FOLDERS else HUMAN_DOCS
+    for pattern in patterns:
         found.update(glob.glob(os.path.join(folder, pattern), recursive=True))
     return sorted(found)
 
@@ -38,7 +40,7 @@ def sections(lines):
         if heading:
             current = {"line": number, "title": heading.group(2).strip(), "prose": 0, "shaped": False}
             found.append(current)
-        elif what in SHAPED_KINDS or line.lstrip().startswith(SHAPED_STARTS):
+        elif (what in SHAPED_KINDS and line.strip().strip(">").strip()) or line.lstrip().startswith(SHAPED_STARTS):
             current["shaped"] = True
         elif what == "body":
             current["prose"] += 1
@@ -66,16 +68,12 @@ def main():
             fail(f"ファイルもフォルダも無い: {arg}")
     if not paths:
         fail("人が読む文書（README・docs・spec）が無い")
-    bad = False
+    lines = []
     for path in paths:
-        found = list(problems(path))
-        for number, message in found:
-            print(f"NG {path}:{number} {message}")
-        if not found:
-            print(f"OK {path}")
-        bad = bad or bool(found)
-    sys.exit(1 if bad else 0)
+        found = [f"NG {path}:{number} {message}" for number, message in problems(path)]
+        lines += found or [f"OK {path}"]
+    finish(lines)
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

@@ -42,17 +42,30 @@ def itunes_json(url, timeout=10):
         return json.load(response)
 
 
+def paginate(first, fetch, following):
+    cursor = first
+    while cursor is not None:
+        page = fetch(cursor)
+        yield page
+        cursor = following(cursor, page)
+
+
 def review_pages(app):
-    for page in range(1, PAGES + 1):
+    def fetch(page):
         try:
             entries = itunes_json(REVIEWS.format(page=page, app=app))["feed"].get("entry", [])
         except Exception as error:
             raise ReviewPageError(page, error) from error
-        if isinstance(entries, dict):
-            entries = [entries]
-        if not entries:
-            return
-        yield [entry for entry in entries if "im:rating" in entry]
+        return [entries] if isinstance(entries, dict) else entries
+
+    for entries in paginate(1, fetch, lambda page, entries: page + 1 if entries and page < PAGES else None):
+        if entries:
+            yield [entry for entry in entries if "im:rating" in entry]
+
+
+def require_app_id(app):
+    if not app.isdigit():
+        raise Failure(f"アプリの ID は数字で書く: {app}")
 
 
 def require_keys(keys):
@@ -96,27 +109,63 @@ def token():
     return (signing + b"." + b64(raw_signature(der))).decode()
 
 
+TOKEN_MARGIN = 60
+cached_token = {}
+
+
+def cached(env):
+    now = time.time()
+    entry = cached_token.get(env)
+    if entry is None or entry[1] - TOKEN_MARGIN <= now:
+        entry = (token(), now + 1200)
+        cached_token[env] = entry
+    return entry[0]
+
+
+def error_detail(body):
+    try:
+        errors = json.loads(body)["errors"]
+        return clean("; ".join(str(item.get("detail") or item.get("title") or "") for item in errors))[:200]
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return ""
+
+
 def asc_request(url, accept="application/json", body=None, timeout=30, method=None):
+    env = tuple(os.environ.get(key) for key in ASC_KEYS)
     request = urllib.request.Request(
         url if url.startswith("https://") else f"{ASC_API}{url}",
         data=None if body is None else json.dumps(body).encode(),
         method=method or ("GET" if body is None else "POST"),
         headers={
-            "Authorization": f"Bearer {token()}",
+            "Authorization": f"Bearer {cached(env)}",
             "Accept": accept,
             "Content-Type": "application/json",
         },
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        return response.read()
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.read()
+    except urllib.error.HTTPError as error:
+        try:
+            error.detail = error_detail(error.read())
+        except OSError:
+            error.detail = ""
+        raise
 
 
 def asc_json(url, body=None, timeout=30, method=None):
     return json.loads(asc_request(url, body=body, timeout=timeout, method=method))
 
 
+def asc_pages(url):
+    yield from paginate(url, asc_json, lambda cursor, page: page.get("links", {}).get("next"))
+
+
 def asc_reason(error):
-    return str(error.code) if isinstance(error, urllib.error.HTTPError) else reason(error)
+    if isinstance(error, urllib.error.HTTPError):
+        detail = getattr(error, "detail", "")
+        return f"{error.code}: {detail}" if detail else str(error.code)
+    return reason(error)
 
 
 def apps_dir():

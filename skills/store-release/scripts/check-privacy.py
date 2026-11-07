@@ -7,7 +7,8 @@ from xml.parsers.expat import ExpatError
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from script_io import fail  # noqa: E402
+from script_io import fail, finish, run_main  # noqa: E402
+from swift_source import mask  # noqa: E402
 
 REASONS = {
     "NSPrivacyAccessedAPICategoryUserDefaults": r"\bUserDefaults\b|@AppStorage\b",
@@ -20,7 +21,7 @@ C_CALLS = {
     "NSPrivacyAccessedAPICategoryFileTimestamp": ["stat", "lstat", "fstat", "fstatat", "getattrlist"],
     "NSPrivacyAccessedAPICategoryDiskSpace": ["statfs", "fstatfs", "statvfs", "fstatvfs"],
 }
-SKIP = {".build", ".swiftpm", "DerivedData", ".git", "Tests"}
+SKIP = {".build", ".swiftpm", "DerivedData", ".git", "Tests", "Pods", "build"}
 
 
 def declared_in(manifest):
@@ -29,7 +30,7 @@ def declared_in(manifest):
     return {
         item.get("NSPrivacyAccessedAPIType")
         for item in data.get("NSPrivacyAccessedAPITypes", [])
-        if item.get("NSPrivacyAccessedAPITypeReasons")
+        if isinstance(item, dict) and item.get("NSPrivacyAccessedAPITypeReasons")
     }
 
 
@@ -45,7 +46,7 @@ def categories_in(text):
     for category, pattern in REASONS.items():
         calls = [
             name for name in C_CALLS.get(category, [])
-            if re.search(rf"\b{name}\s*\(", text) and not re.search(rf"\bfunc\s+{name}\b", text)
+            if re.search(rf"(?<![\w.]){name}\s*\(", text) and not re.search(rf"\bfunc\s+{name}\b", text)
         ]
         if re.search(pattern, text) or calls:
             yield category
@@ -62,7 +63,7 @@ def scan(root):
                 manifests.append(path)
             if not file.endswith(".swift"):
                 continue
-            text = Path(path).read_text(encoding="utf-8", errors="ignore")
+            text = "\n".join(mask(Path(path).read_text(encoding="utf-8", errors="ignore")))
             for category in categories_in(text):
                 used.setdefault(category, []).append(os.path.relpath(path, root))
     return used, manifests
@@ -79,15 +80,12 @@ def read_declarations(manifests, root):
 
 
 def report(used, declared, manifests, root):
-    ok = True
     for category, paths in sorted(used.items()):
         missing = [p for p in paths if not any(category in declared[m] for m in manifest_for(p, root, manifests))]
         mark = "NG" if missing else "OK"
-        ok = ok and not missing
-        print(f"{mark} {category}（{len(paths)} ファイル。例: {(missing or paths)[0]}）")
+        yield f"{mark} {category}（{len(paths)} ファイル。例: {(missing or paths)[0]}）"
     for category in sorted(set().union(*declared.values()) - used.keys()):
-        print(f"-- {category} は申告しているが、コードに見つからない")
-    return ok
+        yield f"-- {category} は申告しているが、コードに見つからない"
 
 
 def main():
@@ -96,12 +94,10 @@ def main():
 
     root = sys.argv[1]
     used, manifests = scan(root)
-    if not manifests:
-        print("NG PrivacyInfo.xcprivacy が無い")
     declared = read_declarations(manifests, root)
-    ok = report(used, declared, manifests, root) and bool(manifests)
-    sys.exit(0 if ok else 1)
+    lines = [] if manifests else ["NG PrivacyInfo.xcprivacy が無い"]
+    finish([*lines, *report(used, declared, manifests, root)])
 
 
 if __name__ == "__main__":
-    main()
+    run_main(main)

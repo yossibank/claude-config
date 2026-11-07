@@ -56,4 +56,9 @@ expect OK "create-app: app-plan の下書きがある所に作る" bash "$create
 check "create-app: app-plan の下書きを上書きしない" grep -qx '# 下書き' "$CC_APPS_DIR/planned/docs/overview.md"
 check "create-app: 無い方のひな形だけを写す" test -f "$CC_APPS_DIR/planned/docs/roadmap.md"
 
+clash="$work/clash"
+make_app "$clash" "家計を記録するアプリ。"
+mkdir -p "$clash/ios/Kakeibot"
+expect "既にある" "replace-placeholders: 置き換えた名前が既にあれば上書きせず NG" python3 -I "$replace" "$clash" Kakeibot kakeibot "カケイボ"
+
 finish

@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
 from hook_io import block_on_findings, target_paths  # noqa: E402
+from swift_source import mask  # noqa: E402
 
 WIDTH = 100
 INDENT = 4
@@ -24,65 +25,6 @@ CONTAINER = re.compile(
 LEADING_NAME = re.compile(r"^#?[A-Za-z_][A-Za-z0-9_]*")
 NOT_VIEW = re.compile(r"^(?:let|var|@|if\b|switch\b|for\b|#if\b)")
 CONTINUATION = re.compile(r"^[.)\]}]")
-
-
-def mask(text):
-    out = []
-    i = 0
-    state = "code"
-    depth = 0
-    while i < len(text):
-        c = text[i]
-        rest = text[i : i + 3]
-        if state == "code":
-            if text.startswith("//", i):
-                end = text.find("\n", i)
-                end = len(text) if end < 0 else end
-                out.append(" " * (end - i))
-                i = end
-                continue
-            if text.startswith("/*", i):
-                state, depth = "block", 1
-                out.append("  ")
-                i += 2
-                continue
-            if rest == '"""':
-                state = "multi"
-                out.append('"""')
-                i += 3
-                continue
-            if c == '"':
-                state = "string"
-                out.append('"')
-                i += 1
-                continue
-            out.append(c)
-        elif state == "block":
-            if text.startswith("/*", i):
-                depth += 1
-            elif text.startswith("*/", i):
-                depth -= 1
-                if depth == 0:
-                    state = "code"
-                out.append("  ")
-                i += 2
-                continue
-            out.append("\n" if c == "\n" else " ")
-        else:
-            if c == "\\":
-                out.append("  " if i + 1 < len(text) and text[i + 1] != "\n" else " ")
-                i += 2 if i + 1 < len(text) and text[i + 1] != "\n" else 1
-                continue
-            if state == "multi" and rest == '"""':
-                state = "code"
-                out.append('"""')
-                i += 3
-                continue
-            if state == "string" and (c == '"' or c == "\n"):
-                state = "code"
-            out.append(c if c in '"\n' else " ")
-        i += 1
-    return "".join(out).split("\n")
 
 
 def indent_of(line):
