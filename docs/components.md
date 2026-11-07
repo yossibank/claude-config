@@ -72,7 +72,7 @@ flowchart LR
 | [swift-format](../hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 | [swift-style-check](../hooks/swift-style-check.py) | 💬 知らせる | `.swift` を Edit・Write した後。swift-format の後に順に走る | `.swift` が、整形で直らない `rules/swift-*.md` の改行と空行に合わない時 |
 
-pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。
+pr-gate と rules-require-read は、フックが想定外の例外で落ちた時も止める。pr-gate は、run-check.sh が時間切れの時だけ知らせて通す。ほかのフックは、想定外の例外を知らせて通す。
 
 フックを無効にする時は、[環境変数](#-環境変数)の `CC_HOOKS_OFF` に名前を並べる。
 
@@ -113,7 +113,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | --- | --- | --- |
 | `ASC_ISSUER_ID` ほか `ASC_*` | store-reply、store-report | App Store Connect API のキー |
 | `CC_APPS_DIR` | app-init、store-reply、store-report | アプリのリポジトリの置き場所 |
-| `CC_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・カンマ・タブで区切った名前のフックを動かさない。hooks/ に無い名前は stderr に出す（デバッグのログでだけ見える） |
+| `CC_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・改行・タブ・カンマで区切った名前のフックを動かさない。hooks/ に無い名前は stderr に出す（デバッグのログでだけ見える） |
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |

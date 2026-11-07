@@ -5,6 +5,12 @@ FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 FIELD = re.compile(r"^([a-z-]+):\s*(.*)$")
 NESTED_FIELD = re.compile(r"^\s+([A-Za-z_-]+):\s*(.*)$")
 ITEM = re.compile(r'^\s*-\s*"?([^"]+)"?\s*$')
+HEADING = re.compile(r"^(#+)(?:\s+(.*))?$")
+
+
+def heading_of(line):
+    match = HEADING.match(line)
+    return (len(match.group(1)), (match.group(2) or "").strip()) if match else None
 
 
 def fence_marks(lines):
@@ -58,11 +64,16 @@ def front_matter(lines):
 
 
 def table_under(lines, heading, first_column):
-    if heading not in lines:
+    outside = [mark is None for mark, _ in fence_marks(lines)]
+    start = next((index for index, line in enumerate(lines) if outside[index] and line == heading), None)
+    if start is None:
         return []
     tables = [[]]
-    for line in lines[lines.index(heading) + 1 :]:
-        if line.startswith("#"):
+    for index in range(start + 1, len(lines)):
+        line = lines[index]
+        if not outside[index]:
+            continue
+        if heading_of(line):
             break
         if line.startswith("|"):
             tables[-1].append([cell.strip().strip("`") for cell in line.strip().strip("|").split("|")])
