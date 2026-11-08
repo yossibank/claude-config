@@ -152,7 +152,7 @@ ios/
 | `make licenses` | 設定アプリに出すライセンスの一覧を、LicensePlist で作り直す |
 | `make build` | iOS シミュレーター向けにビルドする |
 | `make verify` | Kit の `swift test` と iOS のビルドを `scripts/verify.sh` を通して走らせる |
-| `make test` | テストプランを iOS シミュレーターで走らせる |
+| `make test` | テストプランを iOS シミュレーターで走らせる。出力は `.build/test.log` にも残す |
 | `make test-build` | 走らせずにコンパイルだけする |
 | `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` を ui-snapshot で描く。出力は `.build/snapshots/` |
 

@@ -35,7 +35,8 @@ test-build:
 
 test:
 	@test -n "$(SIMULATOR)" || { echo "NG iPhone のシミュレーターが無い。SIMULATOR に UDID を渡す"; exit 1; }
-	set -o pipefail; $(XCODEBUILD) -testPlan __App__ $(ON_SIMULATOR) -collect-test-diagnostics never test $(BEAUTIFY)
+	@mkdir -p .build
+	set -o pipefail; $(XCODEBUILD) -testPlan __App__ $(ON_SIMULATOR) -collect-test-diagnostics never test 2>&1 $(BEAUTIFY) | tee .build/test.log
 
 snapshot:
 	@test -n "$(SNAPSHOT)" || { echo "NG SNAPSHOT に .claude/snapshots/ の下のセットの名前を渡す"; exit 1; }
