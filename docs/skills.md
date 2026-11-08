@@ -27,7 +27,6 @@ flowchart LR
         storeReport -->|低い評価| storeReply["store-reply"]
     end
     subgraph care["手入れ（いつでも）"]
-        ctxHandoff["ctx-handoff"]
         ctxReport["ctx-report"]
         configLearn["config-learn"]
         configReview["config-review"]
@@ -75,7 +74,6 @@ flowchart LR
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
-| [ctx-handoff](../skills/ctx-handoff/SKILL.md) | 🤝 人と Claude | 区切る前に、続きに要ることを `.claude/handoff.md` に書く |
 | [ctx-report](../skills/ctx-report/SKILL.md) | 🤝 人と Claude | 月ごとに、トークンを多く使った作業を表にする |
 | [config-learn](../skills/config-learn/SKILL.md) | 🤝 人と Claude | 繰り返した手直しとフックの回数から、決まりの改定案を出す |
 | [config-review](../skills/config-review/SKILL.md) | 🤝 人と Claude | claude-config を観点ごとに調べ、台帳に無い改善だけを出す |

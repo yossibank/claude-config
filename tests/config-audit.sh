@@ -277,11 +277,11 @@ replace "$d/skills/pr-prune/SKILL.md" '## 報告' '## 結果'
 expect_audit "$d" "## 報告 が無い" "SKILL.md に報告の節が無い"
 
 d=$(copy skill-order)
-printf '\n## 入力\n\nx\n' >>"$d/skills/ctx-handoff/SKILL.md"
+printf '\n## 入力\n\nx\n' >>"$d/skills/ctx-report/SKILL.md"
 expect_audit "$d" "## 入力 は" "SKILL.md の節の順が違う"
 
 d=$(copy skill-order-fence)
-printf '\n~~~text\n```swift\n~~~\n\n## 入力\n\nx\n' >>"$d/skills/ctx-handoff/SKILL.md"
+printf '\n~~~text\n```swift\n~~~\n\n## 入力\n\nx\n' >>"$d/skills/ctx-report/SKILL.md"
 expect_audit "$d" "## 入力 は" "チルダの囲みの中のバッククォートで、囲みの外の見出しを見落とさない"
 
 d=$(copy agent-last)
