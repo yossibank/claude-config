@@ -60,6 +60,12 @@ mv -f "$claude/claude-config-allow.json.new" "$claude/claude-config-allow.json"
 out=$(bash "$config/scripts/config-install.sh" 2>&1)
 check "config-install: 2 回目は変わらない" grep -q 'OK settings.json は変わらない' <<<"$out"
 check "config-install: 変わらない時は、許可の一覧の案を残さない" test ! -e "$claude/claude-config-allow.json.new"
+jq '.hooks.PreToolUse |= reverse | .hooks.PreToolUse[].hooks |= reverse | .permissions.allow |= reverse' "$settings" >"$work/reordered.json"
+mv -f "$work/reordered.json" "$settings"
+out=$(bash "$config/scripts/config-install.sh" 2>&1)
+check "config-install: キーと配列の並びだけが違う時は、変わらないとする" grep -q 'OK settings.json は変わらない' <<<"$out"
+check "config-install: 並びだけが違う時は、settings.json の案を残さない" test ! -e "$settings.new"
+check "config-install: 比べるための一時のファイルを残さない" test ! -e "$settings.new.sorted"
 
 mkdir "$work/bin"
 printf '#!/bin/bash\nexit 2\n' >"$work/bin/diff"
