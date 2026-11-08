@@ -10,7 +10,7 @@
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
-| スキル | `<分類>-<すること>` | `pr-create`、`ctx-handoff` |
+| スキル | `<分類>-<すること>` | `pr-create`、`ctx-report` |
 | フック | `<分類>-<すること、または名詞>.py` | `docs-check.py`、`pr-gate.py` |
 | フックのフォルダ | `.py` 以外は `run.sh` だけを置く。イベントは `settings/settings.json` に書く | `hooks/run.sh` |
 | rules | `<分類>-<範囲>.md`。範囲は、言語・読み手・主題のどれか | `swift-core.md`、`code-comments.md` |
