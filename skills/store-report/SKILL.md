@@ -11,12 +11,12 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I $
 
 ## 入力
 
-引数は、まとめる月の `<YYYY-MM>` である。集めるアプリと表の置き場所は、次のとおりである。置き場所は `CC_APPS_DIR` で変えられる。
+引数は、まとめる月の `<YYYY-MM>` である。集めるアプリと表の置き場所は、次のとおりである。アプリの置き場所は `CC_APPS_DIR`、表の置き場所は `CC_REPORTS_DIR` で変えられる。
 
 | 読むもの・書くもの | 場所 |
 | --- | --- |
 | 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
-| 表 | `~/Applications/AppStore/reports/<YYYY-MM>.md` |
+| 表 | `~/Applications/AppReport/<YYYY-MM>.md` |
 
 ## 手順
 

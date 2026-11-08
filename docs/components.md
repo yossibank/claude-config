@@ -132,6 +132,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | --- | --- | --- |
 | `ASC_ISSUER_ID` ほか `ASC_*` | store-reply、store-report | App Store Connect API のキー |
 | `CC_APPS_DIR` | app-init、store-reply、store-report | アプリのリポジトリの置き場所 |
+| `CC_REPORTS_DIR` | store-report | 月ごとの表の置き場所 |
 | `CC_HOOKS_OFF` | hooks/run.sh、rules-detect-bash-edits | 空白・改行・タブ・カンマで区切った名前のフックを動かさない。hooks/ に無い名前は stderr に出す（デバッグのログでだけ見える） |
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
 | `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
