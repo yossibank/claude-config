@@ -15,7 +15,7 @@ if ! command -v jq >/dev/null; then
 fi
 settings="$claude/settings.json"
 installed="$claude/claude-config-allow.json"
-trap 'rm -f "$settings.tmp"' EXIT
+trap 'rm -f "$settings.tmp" "$settings.old.sorted" "$settings.new.sorted"' EXIT
 
 link() {
     local source=$1
@@ -66,8 +66,13 @@ jq -s -f "$root/scripts/config-install.jq" "$settings" "$root/settings/settings.
 mv -f "$settings.tmp" "$settings.new"
 jq '.permissions.allow' "$root/settings/settings.json" >|"$installed.new"
 
+# キーと配列の並びをそろえてから比べる。並びだけの違いでは置き換えを勧めない
+canonical='def canon: if type == "object" then to_entries | sort_by(.key) | map(.value |= canon) | from_entries elif type == "array" then map(canon) | sort_by(tojson) else . end; canon'
+jq "$canonical" "$settings" >|"$settings.old.sorted"
+jq "$canonical" "$settings.new" >|"$settings.new.sorted"
+
 status=0
-diff -u "$settings" "$settings.new" || status=$?
+diff -u --label "$settings" --label "$settings.new" "$settings.old.sorted" "$settings.new.sorted" || status=$?
 if [[ $status -eq 0 ]]; then
     rm "$settings.new"
     mv -f "$installed.new" "$installed"
