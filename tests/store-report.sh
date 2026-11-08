@@ -101,11 +101,11 @@ check "fetch-sales: 日ごとに読む日は、月の初めから前の日まで
 
 expect "月は YYYY-MM で書く" "write-report: 月の形が違えば NG" python3 -I "$scripts/write-report.py" 2026-13
 mkdir -p "$work/none"
-CC_APPS_DIR="$work/none" expect "store/app-id.txt を持つアプリが無い" "write-report: アプリが無ければ NG" python3 -I "$scripts/write-report.py" 2026-09
+CC_APPS_DIR="$work/none" CC_REPORTS_DIR="$work/none/reports" expect "store/app-id.txt を持つアプリが無い" "write-report: アプリが無ければ NG" python3 -I "$scripts/write-report.py" 2026-09
 
 apps="$work/apps"
 make_apps "$apps" foo=123 bar=abc
-out=$(CC_APPS_DIR="$apps" env -u ASC_ISSUER_ID -u ASC_KEY_ID -u ASC_KEY_PATH -u ASC_VENDOR_NUMBER python3 -I "$scripts/write-report.py" 2026-09)
+out=$(CC_APPS_DIR="$apps" CC_REPORTS_DIR="$apps/reports" env -u ASC_ISSUER_ID -u ASC_KEY_ID -u ASC_KEY_PATH -u ASC_VENDOR_NUMBER python3 -I "$scripts/write-report.py" 2026-09)
 check "write-report: 通信できなくても表を書く" test -f "$apps/reports/2026-09.md"
 check "write-report: 取れなかったものを WARNING にまとめる" grep -qx '> \[!WARNING\]' <<<"$out"
 check "write-report: 売上が取れなければ WARNING の行に書く" grep -q "売上とダウンロードは取れなかった（NG 環境変数が無い" <<<"$out"
@@ -117,7 +117,7 @@ check "write-report: 取れなかった欄は — にする" grep -q '^| foo | �
 ok_apps="$work/ok-apps"
 make_apps "$ok_apps" foo=123
 fake_report() {
-    CC_APPS_DIR="$ok_apps" python3 -I - "$root" "$scripts/write-report.py" "$@" 2>&1 <<'EOF'
+    CC_APPS_DIR="$ok_apps" CC_REPORTS_DIR="$ok_apps/reports" python3 -I - "$root" "$scripts/write-report.py" "$@" 2>&1 <<'EOF'
 import gzip
 import json
 import os
