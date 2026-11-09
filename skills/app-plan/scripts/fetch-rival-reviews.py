@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ReviewPageError, clean, reason, review_pages  # noqa: E402
+from app_store import EmptyReviewFeed, ReviewPageError, clean, reason, review_pages  # noqa: E402
 from script_io import fail, run_main  # noqa: E402
 
 WIDTH = 200
@@ -27,6 +27,8 @@ def main():
         if error.page == 1:
             fail(f"レビューを読めなかった: {reason(error.cause)}")
         print(error.notice, file=sys.stderr)
+    except EmptyReviewFeed:
+        fail("レビューを 1 件も取れなかった（RSS が 1 ページ目から空を返した）")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import PAGES, ReviewPageError, clean, itunes_json, reason, require_app_id, review_pages  # noqa: E402
+from app_store import PAGES, EmptyReviewFeed, ReviewPageError, clean, itunes_json, reason, require_app_id, review_pages  # noqa: E402
 from dates import month_of  # noqa: E402
 from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
@@ -48,6 +48,9 @@ def ratings(app, month):
         if error.page == 1:
             raise Failure(f"レビューを読めなかった: {reason(error.cause)}") from error
         notice = error.notice
+    except EmptyReviewFeed:
+        reviews = low = "—"
+        notice = "レビューの RSS が 1 ページ目から空だった。レビューが無いか、RSS が返していない"
 
     fields = [
         clean(info["trackName"]),

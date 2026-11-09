@@ -44,6 +44,25 @@ check "fetch-rival-reviews: 星の上限を渡せば、その星まで出す" gr
 check "fetch-rival-reviews: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$out")"
 check "fetch-rival-reviews: 2 ページ目から先を読めなければ stderr で知らせる" grep -q "2 ページ目から先のレビューを読めなかった（TimeoutError）" <<<"$out"
 
+empty=$(python3 -I - "$root" "$scripts/fetch-rival-reviews.py" 2>&1 <<'EOF'
+import os
+import sys
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
+
+reviews = load_module(sys.argv[2])
+install(lambda method, url, body: {"feed": {"title": {"label": "t"}}} if "/customerreviews/page=" in url else None)
+sys.argv = ["fetch-rival-reviews.py", "123"]
+try:
+    reviews.main()
+except SystemExit as error:
+    print("exit", error.code)
+report_unknown()
+EOF
+)
+check "fetch-rival-reviews: 1 ページ目から entry が無ければ NG で知らせる" grep -q "^NG レビューを 1 件も取れなかった" <<<"$empty"
+check "fetch-rival-reviews: 1 ページ目から entry が無ければ終了コード 1" grep -qx "exit 1" <<<"$empty"
+
 expect "NG 使い方" "search-apps: 引数が無ければ NG" python3 -I "$scripts/search-apps.py"
 expect "NG 使い方" "search-apps: 数字でない件数は NG" python3 -I "$scripts/search-apps.py" 家計簿 x
 expect "NG 検索できなかった" "search-apps: 通信できなければ NG" python3 -I "$scripts/search-apps.py" 家計簿

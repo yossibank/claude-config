@@ -29,6 +29,10 @@ class ReviewPageError(Exception):
         return f"{self.page} ページ目から先のレビューを読めなかった（{reason(self.cause)}）"
 
 
+class EmptyReviewFeed(Exception):
+    pass
+
+
 def reason(error):
     return type(error).__name__
 
@@ -53,9 +57,12 @@ def paginate(first, fetch, following):
 def review_pages(app):
     def fetch(page):
         try:
-            entries = itunes_json(REVIEWS.format(page=page, app=app))["feed"].get("entry", [])
+            feed = itunes_json(REVIEWS.format(page=page, app=app))["feed"]
+            entries = feed.get("entry", [])
         except Exception as error:
             raise ReviewPageError(page, error) from error
+        if page == 1 and "entry" not in feed:
+            raise EmptyReviewFeed()
         return [entries] if isinstance(entries, dict) else entries
 
     for entries in paginate(1, fetch, lambda page, entries: page + 1 if entries and page < PAGES else None):

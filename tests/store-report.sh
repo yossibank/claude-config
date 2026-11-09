@@ -189,6 +189,7 @@ ratings = load_module(sys.argv[2])
 rows = {
     "old": [{"updated": {"label": "2026-09-05T00:00:00-07:00"}, "im:rating": {"label": "1"}}],
     "all": [{"updated": {"label": "2026-10-05T00:00:00-07:00"}, "im:rating": {"label": "1"}}],
+    "empty": [],
 }[sys.argv[3]]
 
 
@@ -196,7 +197,7 @@ def route(method, url, body):
     if url.startswith("https://itunes.apple.com/lookup"):
         return {"results": [{"trackName": "A", "averageUserRating": 3.5, "userRatingCount": 8}]}
     if "/customerreviews/page=" in url:
-        return {"feed": {"entry": rows}}
+        return {"feed": {"entry": rows} if rows else {"title": {"label": "t"}}}
     return None
 
 
@@ -213,6 +214,9 @@ check "fetch-ratings: 10 ページ読み切っても月の終わりに届かな�
 done_run=$(ratings_run old)
 check "fetch-ratings: 取れた時は名前・評価・評価の数・今月のレビュー・星 2 以下を出す" grep -qx 'A|3.5|8|0|0' <<<"$done_run"
 check "fetch-ratings: 月より古いレビューで読むのをやめる" grep -qx '' <<<"$(sed -n 2p <<<"$done_run")"
-check "fetch-ratings: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$pages$done_run")"
+empty_run=$(ratings_run empty)
+check "fetch-ratings: 1 ページ目から entry が無ければ、レビューの数を 0 にせず — にする" grep -qx 'A|3.5|8|—|—' <<<"$empty_run"
+check "fetch-ratings: 1 ページ目から entry が無ければ知らせる" grep -q 'レビューの RSS が 1 ページ目から空だった' <<<"$empty_run"
+check "fetch-ratings: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$pages$done_run$empty_run")"
 
 finish
