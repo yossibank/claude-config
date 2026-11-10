@@ -1,8 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/http_fake.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/http_fake.sh"
 
 scripts="$root/dotclaude/skills/app-plan/scripts"
 offline

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/../support/assert.sh"
 
 base="$work/base"
 
@@ -181,24 +181,28 @@ echo 'print(1)' >"$d/dotclaude/hooks/post-tool-extra.py"
 expect_audit "$d" "部品の文書の表に載っていない: dotclaude/hooks/post-tool-extra.py" "部品の文書に無いフック"
 
 d=$(copy test-missing-hook)
-rm -f "$d/tests/swift-format.sh"
-expect_audit "$d" "dotclaude/hooks/swift-format.py:1 テストが無い: tests/swift-format.sh" "テストの無いフック"
+rm -f "$d/tests/hooks/swift-format.sh"
+expect_audit "$d" "dotclaude/hooks/swift-format.py:1 テストが無い: tests/hooks/swift-format.sh" "テストの無いフック"
 
 d=$(copy test-missing-script)
-rm -f "$d/tests/config-install.sh"
-expect_audit "$d" "scripts/config-install.sh:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
+rm -f "$d/tests/scripts/config-install.sh"
+expect_audit "$d" "scripts/config-install.sh:1 テストが無い: tests/scripts/config-install.sh" "テストの無い scripts のファイル"
 
 d=$(copy test-missing-skill)
-rm -f "$d/tests/ui-record.sh"
-expect_audit "$d" "dotclaude/skills/ui-record/SKILL.md:1 テストが無い: tests/ui-record.sh" "テストの無い、スクリプトを持つスキル"
+rm -f "$d/tests/skills/ui-record.sh"
+expect_audit "$d" "dotclaude/skills/ui-record/SKILL.md:1 テストが無い: tests/skills/ui-record.sh" "テストの無い、スクリプトを持つスキル"
 
 d=$(copy test-orphan)
-printf '#!/bin/bash\n' >"$d/tests/nothing.sh"
-expect_audit "$d" "tests/nothing.sh:1 テストの対象が無い" "対象の無いテスト"
+printf '#!/bin/bash\n' >"$d/tests/hooks/nothing.sh"
+expect_audit "$d" "tests/hooks/nothing.sh:1 テストの対象が無い" "対象の無いテスト"
+
+d=$(copy test-orphan-kind)
+printf '#!/bin/bash\n' >"$d/tests/skills/swift-format.sh"
+expect_audit "$d" "tests/skills/swift-format.sh:1 テストの対象が無い" "種類の違うフォルダに置いたテスト"
 
 d=$(copy test-orphan-run)
-printf '#!/bin/bash\n' >"$d/tests/run.sh"
-expect_audit "$d" "tests/run.sh:1 テストの対象が無い" "hooks/run.sh はテストの対象にしない"
+printf '#!/bin/bash\n' >"$d/tests/hooks/run.sh"
+expect_audit "$d" "tests/hooks/run.sh:1 テストの対象が無い" "hooks/run.sh はテストの対象にしない"
 
 d=$(copy allowed)
 replace "$d/dotclaude/skills/pr-prune/SKILL.md" 'allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/prune-merged.sh *)' 'allowed-tools: Bash(git status *)'
@@ -257,20 +261,20 @@ replace "$d/scripts/docs-tech-icons.py" 'run_main(main)' 'main()'
 expect_audit "$d" "scripts/docs-tech-icons.py:1 main を run_main で包む" "run_main で包まない .py"
 
 d=$(copy lib-unwrapped)
-replace "$d/lib/docs_section.py" 'run_main(main)' 'main()'
-expect_audit "$d" "lib/docs_section.py:1 main を run_main で包む" "run_main で包まない lib の .py"
+replace "$d/lib/docs_section/sections.py" 'run_main(main)' 'main()'
+expect_audit "$d" "lib/docs_section/sections.py:1 main を run_main で包む" "run_main で包まない lib の .py"
 
 d=$(copy script-body)
 printf "." >"$d/scripts/docs-section.jq"
 expect_audit "$d" "scripts/docs-section.jq:1 scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: docs-section" "scripts に置いた中身"
 
 d=$(copy test-inline-python)
-printf "python3 -I -c 'print(1)'\n" >>"$d/tests/ctx-limit-read.sh"
-expect_audit "$d" "tests/ctx-limit-read.sh" "テストの中のインラインの Python"
+printf "python3 -I -c 'print(1)'\n" >>"$d/tests/hooks/ctx-limit-read.sh"
+expect_audit "$d" "tests/hooks/ctx-limit-read.sh" "テストの中のインラインの Python"
 
 d=$(copy test-inline-python-substitution)
-printf 'out=$(%s -I -c %s)\n' "python3" "'print(1)'" >>"$d/tests/ctx-limit-read.sh"
-expect_audit "$d" "tests/ctx-limit-read.sh" "コマンド置換の中のインラインの Python"
+printf 'out=$(%s -I -c %s)\n' "python3" "'print(1)'" >>"$d/tests/hooks/ctx-limit-read.sh"
+expect_audit "$d" "tests/hooks/ctx-limit-read.sh" "コマンド置換の中のインラインの Python"
 
 d=$(copy ng-stderr)
 printf 'printf "%s %%s\\n" x >&2\n' NG >>"$d/dotclaude/skills/ui-record/scripts/record-video.sh"
@@ -472,19 +476,19 @@ expect_check "$d" places "置ける場所の表が読めない" "置ける場所
 add_tests() {
     local dir=$1 count=$2 index
     for index in $(seq "$count"); do
-        printf '#!/bin/bash\n' >"$dir/tests/docs-extra-$index.sh"
+        printf '#!/bin/bash\n' >"$dir/tests/skills/docs-extra-$index.sh"
     done
 }
 
-tests_now=$(git -C "$base" ls-files 'tests/*.sh' | grep -c -v '/support/')
+tests_now=$(git -C "$base" ls-files 'tests/skills/*.sh' | grep -c .)
 
 d=$(copy limit-all-ok)
-add_tests "$d" $((50 - tests_now))
-expect_check "$d" limits OK "テストが上限ちょうどの 50 本"
+add_tests "$d" $((30 - tests_now))
+expect_check "$d" limits OK "テストが上限ちょうどの 30 本"
 
 d=$(copy limit-all-ng)
-add_tests "$d" $((51 - tests_now))
-expect_check "$d" limits 'tests/*.sh のファイルが 51 本で、上限の 50 本を超えた' "テストが上限を超えた"
+add_tests "$d" $((31 - tests_now))
+expect_check "$d" limits 'tests/skills/*.sh のファイルが 31 本で、上限の 30 本を超えた' "テストが上限を超えた"
 
 add_skills() {
     local dir=$1 name
@@ -504,8 +508,8 @@ add_skills "$d" pr-a pr-b pr-c pr-d
 expect_check "$d" limits '頭が pr のファイルが 7 本で、上限の 6 本を超えた' "同じ接頭語のスキルが上限を超えた"
 
 d=$(copy limit-row)
-replace "$d/docs/config/layout.md" '| `tests/*.sh` | 全部 | 50 |' '| `tests/*.sh` | 全部 | 多い |'
-expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部 か 同じ頭、上限を数字にする: tests/*.sh' "上限が数字でない行"
+replace "$d/docs/config/layout.md" '| `tests/skills/*.sh` | 全部 | 30 |' '| `tests/skills/*.sh` | 全部 | 多い |'
+expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部 か 同じ頭、上限を数字にする: tests/skills/*.sh' "上限が数字でない行"
 
 d=$(copy limit-stale)
 replace "$d/docs/config/layout.md" '| `scripts/*` | 全部 | 10 |' '| `script/*` | 全部 | 10 |'
@@ -521,8 +525,12 @@ printf 'x\n' >"$d/dotclaude/commands/extra.md"
 expect_check "$d" install-targets "dotclaude/commands を入れる処理が config-install.sh に無い" "入れる処理の無い種類"
 
 d=$(copy lib-owner-flat)
+printf 'value = 1\n' >"$d/lib/pr_gate.py"
+expect_check "$d" lib-owners "lib/pr_gate.py:1 持ち主が 1 つの中身は、lib の直下に置かない。lib/pr_gate/ に置く" "持ち主が 1 つの中身を lib の直下に置く"
+
+d=$(copy lib-owner-flat-head)
 printf 'value = 1\n' >"$d/lib/config_install_extra.py"
-expect_check "$d" lib-owners "持ち主が 1 つの中身が 2 本以上ある。lib/config_install/ にまとめる" "持ち主が 1 つの中身を平らに 2 本置く"
+expect_check "$d" lib-owners "lib/config_install_extra.py:1 持ち主が 1 つの中身は、lib の直下に置かない。lib/config_install/ に置く" "持ち主の名前で始まる中身を lib の直下に置く"
 
 d=$(copy lib-owner-folder-name)
 mkdir -p "$d/lib/misc"
@@ -533,7 +541,7 @@ expect_check "$d" lib-owners "lib の子フォルダの名前は、持ち主（�
 d=$(copy lib-owner-folder-single)
 mkdir -p "$d/lib/pr_gate"
 printf 'value = 1\n' >"$d/lib/pr_gate/one.py"
-expect_check "$d" lib-owners "lib の子フォルダは、持ち主が 1 つの中身が 2 本以上ある時だけ作る: pr_gate" "1 本だけの子フォルダ"
+expect_check "$d" lib-owners OK "1 本だけの子フォルダ"
 
 d=$(copy lib-folder-unlisted)
 printf 'value = 1\n' >"$d/lib/config_audit/extra.py"

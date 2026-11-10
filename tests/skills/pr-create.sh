@@ -1,8 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
 source "$root/lib/git.sh"
 
 export HOME="$work/home"

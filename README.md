@@ -94,6 +94,7 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/config/setup.md](docs/config/setup.md) | 入れる時 | config-install.sh がすること、settings.json の混ぜ方 |
 | [docs/config/skills.md](docs/config/skills.md) | スキルを選ぶ時 | スキルを使う順と一覧 |
 | [docs/config/testing.md](docs/config/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方 |
-| [lib/README.md](lib/README.md) | 共通の処理を探す時 | lib の名前の頭と子フォルダのまとまり、ファイルの一覧 |
+| [dotclaude/README.md](dotclaude/README.md) | 配るものを探す時 | 配るものの種類と、一覧のある文書 |
+| [lib/README.md](lib/README.md) | 共通の処理を探す時 | lib の名前の頭と持ち主の子フォルダ、ファイルの一覧 |
 | [tests/README.md](tests/README.md) | テストを探す時 | テストと、テストの共通の処理の一覧 |
 | [dotclaude/rules/docs-core.md](dotclaude/rules/docs-core.md)・[dotclaude/rules/docs-human.md](dotclaude/rules/docs-human.md)・[dotclaude/rules/docs-app.md](dotclaude/rules/docs-app.md) | 文書を書く時 | 文書の運用・文・表現、人が読む文書の形、アプリの文書の役割 |

@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
-source "$(dirname "$0")/support/hook_fixtures.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
+source "$(dirname "$0")/../support/hook_fixtures.sh"
 STOP="シェルスクリプトに直すところがある"
 
 printf '#!/bin/bash\necho "x $name%s"\n' '。' >"$work/wide.sh"

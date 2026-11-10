@@ -153,7 +153,7 @@ def check_script_entries():
 
 
 def check_test_inline_python():
-    for path in tracked("tests/*.sh", "tests/support/*.sh"):
+    for path in tracked("tests/*/*.sh"):
         for number, line in enumerate(read(path).split("\n"), 1):
             if TEST_INLINE_PYTHON.search(line):
                 yield path, number, "テストの中に python3 -c を書かない。jq・bash で書くか、.py に分ける"

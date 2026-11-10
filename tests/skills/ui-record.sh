@@ -1,8 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
 
 tile="$root/dotclaude/skills/ui-record/scripts/tile-frames.sh"
 record="$root/dotclaude/skills/ui-record/scripts/record-video.sh"

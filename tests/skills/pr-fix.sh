@@ -1,8 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
 
 threads="$root/dotclaude/skills/pr-fix/scripts/fetch-threads.sh"
 repo="$work/repo"

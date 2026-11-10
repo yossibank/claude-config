@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
-source "$(dirname "$0")/support/hook_fixtures.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
+source "$(dirname "$0")/../support/hook_fixtures.sh"
 STOP="pr-create の手順の確認を通す"
 
 # <cwd> <コマンドの行>… 行は改行でつなぐ

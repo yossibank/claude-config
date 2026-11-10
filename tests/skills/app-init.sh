@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/../support/assert.sh"
 
 replace="$root/dotclaude/skills/app-init/scripts/replace-placeholders.py"
 overview="$root/dotclaude/skills/app-init/templates/ios-app/docs/overview.md"

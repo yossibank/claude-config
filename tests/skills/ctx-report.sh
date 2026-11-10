@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/../support/assert.sh"
 
 count="$root/dotclaude/skills/ctx-report/scripts/count-tokens.py"
 export CC_PROJECTS_DIR="$work/projects"

@@ -4,14 +4,14 @@
 
 ## 🏷️ 名前の頭
 
-名前の頭でまとめる。持ち主が 1 つの中身は、持ち主の名前を `snake_case` にして頭に付ける。2 本以上ある時は、持ち主の名前の子フォルダにまとめる。
+直下には、持ち主が複数の共通の処理を置き、名前の頭でまとめる。持ち主が 1 つの中身は、1 本でも持ち主の名前の子フォルダに置く。
 
 | 名前の頭 | まとまり |
 | --- | --- |
 | `config_audit/` | [config-audit.py](../scripts/config-audit.py) だけが読む中身。`check_` で始まる関数が、検査として走る |
-| `config_install` | [config-install.sh](../scripts/config-install.sh) だけが読む中身 |
+| `config_install/` | [config-install.sh](../scripts/config-install.sh) だけが読む中身 |
 | `docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
-| `docs_section` | [docs-section.sh](../scripts/docs-section.sh) だけが読む中身 |
+| `docs_section/` | [docs-section.sh](../scripts/docs-section.sh) だけが読む中身 |
 | `hook_` | フックの共通の処理 |
 | `md_` | Markdown の読み方 |
 | `store_`・`swift_` | その分類の共通の処理 |
@@ -33,11 +33,11 @@
 | [config_audit/settings.py](config_audit/settings.py) | settings のフックの呼び方と登録、許可とフックの並びの検査 |
 | [config_audit/skills.py](config_audit/skills.py) | スキルの項目、節、参照先、許可、使われていないスクリプトの検査 |
 | [config_audit/templates.py](config_audit/templates.py) | ひな形が呼ぶファイル、置き換える印、ひな形の CLAUDE.md の検査 |
-| [config_install.jq](config_install.jq) | 今の settings.json に、入れるフックと許可を混ぜた案を作る |
+| [config_install/settings.jq](config_install/settings.jq) | 今の settings.json に、入れるフックと許可を混ぜた案を作る |
 | [dates.py](dates.py) | 日本時間、月の形、記録の日時の月 |
 | [docs_check/headings.py](docs_check/headings.py) | 見出しと目次の検査 |
 | [docs_check/rows.py](docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
-| [docs_section.py](docs_section.py) | 見出しを読み、節を切り出す |
+| [docs_section/sections.py](docs_section/sections.py) | 見出しを読み、節を切り出す |
 | [git.py](git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所 |
 | [git.sh](git.sh) | リポジトリの根、ワークツリーの置き場所、ブランチと変えたファイルの調べ方 |
 | [hook_io.py](hook_io.py) | フックの入力の読み方、止め方と知らせ方、例外を受ける入口 |

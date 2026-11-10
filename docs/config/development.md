@@ -16,8 +16,8 @@
 | scripts | `<分類>-<すること、または名詞>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
 | docs/ の文書 | 名詞の kebab-case の `.md`。主題を分ける時は、分けた文書のどれも `<主題>-<分類>.md` にする | `setup.md`、`ios-naming.md`、`ios-architecture.md` |
-| lib | 中身の名詞を `snake_case` にし、`.sh` も Python の import で読める形にそろえる。頭は、持ち主が 1 つなら持ち主の名前、複数なら分類の名前にする | `hook_io.py`、`docs_section.py`、`build_log.sh` |
-| lib の子フォルダ | 持ち主の名前を `snake_case` にする。中のファイルは、頭を付けずに中身の名詞にする | `config_audit/names.py` |
+| lib | 中身の名詞を `snake_case` にし、`.sh` も Python の import で読める形にそろえる。頭は分類の名前にし、分類をまたぐものには付けない | `hook_io.py`、`md_doc.py`、`build_log.sh` |
+| lib の子フォルダ | 持ち主の名前を `snake_case` にする。中のファイルは、頭を付けずに中身の名詞にする | `config_audit/names.py`、`docs_section/sections.py` |
 | tests/support | 中身の名詞を `snake_case` の `.sh` にする | `assert.sh`、`fixtures.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
@@ -38,7 +38,7 @@
 
 ### 接頭語の表
 
-分類は、次の表から選ぶ。表に無い接頭語と使う所に合わない接頭語は、config-audit が `NG` にする。新しい分類が要る時は、行を足してから名前を付ける。
+分類は、次の表から選ぶ。表に無い接頭語と使う所に合わない接頭語は、config-audit が `NG` にする。新しい分類が要る時は、仕組みでなく主題（扱うもの）の名前で行を足してから名前を付ける。
 
 | 接頭語 | 分類 | 使う所 |
 | --- | --- | --- |
@@ -108,10 +108,9 @@
 
 | 決まり | 中身 |
 | --- | --- |
-| 持ち主が 1 つの中身 | 持ち主の名前を `snake_case` にして頭に付ける。`scripts/docs-section.sh` の中身は `lib/docs_section.py` になる |
-| 持ち主が 1 つの中身が 2 本以上 | 持ち主の名前の子フォルダにまとめる。`scripts/config-audit.py` の中身は `lib/config_audit/` になる |
+| 持ち主が 1 つの中身 | 1 本でも、持ち主の名前の子フォルダに置く。`docs-section.sh` の中身は `lib/docs_section/sections.py` になる |
+| `lib/` の直下 | 持ち主が複数の中身だけを置く。持ち主の名前で始まるファイルは、config-audit が `NG` にする |
 | 子フォルダの名前 | フック・scripts・スキルのどれかの名前にする。持ち主でない名前の子フォルダは、config-audit が `NG` にする |
-| 持ち主が複数の中身 | 分類の名前を頭に付ける。分類をまたぐものは、頭を付けない |
 | 一覧 | ファイルを足したら、[lib/README.md](../../lib/README.md) の表に行を足す。載っていないファイルは、config-audit が `NG` にする |
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま、呼ぶ所に合わせた書き方で使う。
@@ -128,7 +127,7 @@
 3. 本体を置く。スキルは `dotclaude/skills/<名前>/SKILL.md` に置く。フックは `dotclaude/hooks/<名前>.py`、スクリプトは `scripts/` に置く。
 4. lib に足した時は、[lib/README.md](../../lib/README.md) の表に行を足す。
 5. フックは、`dotclaude/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。環境変数を足した時は、[components.md](components.md#-環境変数) の表に行を足す。
-6. `tests/<名前>.sh` を足し、[tests/README.md](../../tests/README.md) の表に行を足す。
+6. `tests/<種類>/<名前>.sh` を足し、[tests/README.md](../../tests/README.md) の表に行を足す。
 7. [components.md](components.md) か [skills.md](skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
 8. 文書を足したり書き換えたりする時は、[docs-core](../../dotclaude/rules/docs-core.md)・[docs-human](../../dotclaude/rules/docs-human.md)・[docs-app](../../dotclaude/rules/docs-app.md) の決まりに従う。
 9. [testing.md](testing.md#-動かし方) の `make verify` を通す。
