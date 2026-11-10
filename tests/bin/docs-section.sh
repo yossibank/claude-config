@@ -3,7 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/../support/assert.sh"
 
-section="$root/scripts/docs-section.sh"
+section="$root/bin/docs-section.sh"
 printf '# t\n\n## a\n\nx\n\n```sh\n## not\n```\n\n## b\n\ny\n' >"$work/section.md"
 
 expect "NG 使い方" "docs-section: 引数が無ければ NG" bash "$section"

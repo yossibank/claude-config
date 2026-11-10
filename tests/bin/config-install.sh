@@ -26,7 +26,7 @@ JSON
 ln -s "$work/nowhere" "$claude/skills/gone"
 echo '["Bash(retired *)"]' >"$claude/claude-config-allow.json"
 
-out=$(bash "$config/scripts/config-install.sh" 2>&1)
+out=$(bash "$config/bin/config-install.sh" 2>&1)
 check "config-install: CLAUDE.md をリンクする" test -L "$claude/CLAUDE.md"
 check "config-install: スキルをリンクする" test -L "$claude/skills/pr-create"
 check "config-install: hooks をリンクする" test -L "$claude/hooks"
@@ -53,17 +53,17 @@ git -C "$repo" add -A
 git -C "$repo" -c user.name=t -c user.email=t@t commit -q -m init
 expect OK "config-install: リンクを通したスキルのスクリプトが lib を読める" bash "$claude/skills/pr-create/scripts/hash-state.sh" "$repo"
 
-out=$(bash "$config/scripts/config-install.sh" 2>&1)
+out=$(bash "$config/bin/config-install.sh" 2>&1)
 check "config-install: 置き換えずに走らせ直しても、消えた許可を外す" jq -e '.permissions.allow | index("Bash(retired *)") | not' "$settings.new"
 check "config-install: 置き換えのコマンドで、許可の一覧も一緒に置き換える" grep -q 'claude-config-allow.json.new' <<<"$out"
 mv -f "$settings.new" "$settings"
 mv -f "$claude/claude-config-allow.json.new" "$claude/claude-config-allow.json"
-out=$(bash "$config/scripts/config-install.sh" 2>&1)
+out=$(bash "$config/bin/config-install.sh" 2>&1)
 check "config-install: 2 回目は変わらない" grep -q 'OK settings.json は変わらない' <<<"$out"
 check "config-install: 変わらない時は、許可の一覧の案を残さない" test ! -e "$claude/claude-config-allow.json.new"
 jq '.hooks.PreToolUse |= reverse | .hooks.PreToolUse[].hooks |= reverse | .permissions.allow |= reverse' "$settings" >"$work/reordered.json"
 mv -f "$work/reordered.json" "$settings"
-out=$(bash "$config/scripts/config-install.sh" 2>&1)
+out=$(bash "$config/bin/config-install.sh" 2>&1)
 check "config-install: キーと配列の並びだけが違う時は、変わらないとする" grep -q 'OK settings.json は変わらない' <<<"$out"
 check "config-install: 並びだけが違う時は、settings.json の案を残さない" test ! -e "$settings.new"
 check "config-install: 比べるための一時のファイルを残さない" test ! -e "$settings.new.sorted"
@@ -71,21 +71,21 @@ check "config-install: 比べるための一時のファイルを残さない" t
 mkdir "$work/bin"
 printf '#!/bin/bash\nexit 2\n' >"$work/bin/diff"
 chmod +x "$work/bin/diff"
-out=$(PATH="$work/bin:$PATH" bash "$config/scripts/config-install.sh" 2>&1)
+out=$(PATH="$work/bin:$PATH" bash "$config/bin/config-install.sh" 2>&1)
 status=$?
 check "config-install: diff が失敗したら、違うのと区別して NG にする" test "$status" -ne 0
 check "config-install: diff の失敗を NG の行で知らせる" grep -q '^NG diff が失敗した（終了コード 2）' <<<"$out"
 
 mkdir "$work/nojq"
 ln -s "$(command -v dirname)" "$work/nojq/dirname"
-out=$(PATH="$work/nojq" /bin/bash "$config/scripts/config-install.sh" 2>&1)
+out=$(PATH="$work/nojq" /bin/bash "$config/bin/config-install.sh" 2>&1)
 status=$?
 check "config-install: jq が無ければ止まる" test "$status" -ne 0
 check "config-install: jq が無いことを NG の行で知らせる" grep -qF 'NG jq が見つからない' <<<"$out"
 
 cp "$settings" "$work/settings.good"
 echo '{ broken' >"$settings"
-out=$(bash "$config/scripts/config-install.sh" 2>&1)
+out=$(bash "$config/bin/config-install.sh" 2>&1)
 status=$?
 check "config-install: 壊れた settings.json では止まる" test "$status" -ne 0
 check "config-install: 壊れた settings.json は書き換えない" grep -qF '{ broken' "$settings"
@@ -93,7 +93,7 @@ cp "$work/settings.good" "$settings"
 
 cp "$claude/claude-config-allow.json" "$work/allow.good"
 echo '[ broken' >"$claude/claude-config-allow.json"
-out=$(bash "$config/scripts/config-install.sh" 2>&1)
+out=$(bash "$config/bin/config-install.sh" 2>&1)
 status=$?
 check "config-install: 壊れた許可の一覧では止まる" test "$status" -ne 0
 check "config-install: 壊れた許可の一覧は書き換えない" grep -qF '[ broken' "$claude/claude-config-allow.json"
@@ -101,7 +101,7 @@ cp "$work/allow.good" "$claude/claude-config-allow.json"
 
 rm -f "$claude/CLAUDE.md"
 echo '# mine' >"$claude/CLAUDE.md"
-out=$(bash "$config/scripts/config-install.sh" 2>&1)
+out=$(bash "$config/bin/config-install.sh" 2>&1)
 status=$?
 check "config-install: 同じ名前の実体があれば止まる" test "$status" -ne 0
 check "config-install: 実体を残す" grep -q '# mine' "$claude/CLAUDE.md"

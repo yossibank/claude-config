@@ -6,14 +6,14 @@
 
 ## 🏷️ 名前の付け方
 
-名前は、頭に `<分類>-` を付けてそろえる。スキル・フック・rules・scripts は、フォルダの中を名前の順に並べると分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
+名前は、頭に `<分類>-` を付けてそろえる。スキル・フック・rules・bin は、フォルダの中を名前の順に並べると分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
 | スキル | `<分類>-<すること>` | `pr-create`、`ctx-report` |
 | フック | `<分類>-<すること、または名詞>.py` | `docs-check.py`、`pr-gate.py` |
 | rules | `<分類>-<範囲>.md`。範囲は、言語・読み手・主題のどれか | `swift-core.md`、`code-comments.md` |
-| scripts | `<分類>-<すること、または名詞>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
+| bin | `<分類>-<すること、または名詞>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
 | docs/ の文書 | 名詞の kebab-case の `.md`。主題を分ける時は、分けた文書のどれも `<主題>-<分類>.md` にする | `setup.md`、`ios-naming.md`、`ios-architecture.md` |
 | lib | 中身の名詞を `snake_case` にし、`.sh` も Python の import で読める形にそろえる。頭は分類の名前にし、分類をまたぐものには付けない | `hook_io.py`、`md_doc.py`、`build_log.sh` |
@@ -44,9 +44,9 @@
 | --- | --- | --- |
 | `app-` | 企画・立ち上げ | skills |
 | `code-` | コード全般 | rules、skills |
-| `config-` | claude-config 自体の手入れ | skills、scripts |
+| `config-` | claude-config 自体の手入れ | skills、bin |
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
-| `docs-` | 文書 | rules、skills、hooks、scripts |
+| `docs-` | 文書 | rules、skills、hooks、bin |
 | `pr-` | PR | skills、hooks |
 | `rules-` | rules を読ませる、rules を避けた書き換えを見つける | hooks |
 | `shell-` | シェルスクリプト | hooks |
@@ -90,7 +90,7 @@
 | 対象 | 決まり |
 | --- | --- |
 | Python | 処理は `main()` に入れ、末尾を `if __name__ == "__main__":` にする。呼び出しは `run_gate`・`run_hook`・`run_main` で包み、`assert` は使わない |
-| シェル | スキルと `scripts/` の `.sh` は、2 行目を `set -euo pipefail` にする。終了コードを受ける所は `\|\| status=$?` で受ける |
+| シェル | スキルと `bin/` の `.sh` は、2 行目を `set -euo pipefail` にする。終了コードを受ける所は `\|\| status=$?` で受ける |
 | 言語を混ぜない | `.sh`（テストも）の中に `python3 -c` を書かない。JSON は jq で読み、長い処理は `.py` に分ける |
 | 結果 | 確かめるスクリプトは、stdout に `OK`・`NG` で始まる行で出す。失敗したら終了コード 1 で終える |
 | データを返す | データを返すスクリプトは、成功した時は stdout にデータだけを出す。失敗した時は `NG` の行を出し、終了コード 1 で終える |
@@ -110,7 +110,7 @@
 | --- | --- |
 | 持ち主が 1 つの中身 | 1 本でも、持ち主の名前の子フォルダに置く。`docs-section.sh` の中身は `lib/docs_section/sections.py` になる |
 | `lib/` の直下 | 持ち主が複数の中身だけを置く。持ち主の名前で始まるファイルは、config-audit が `NG` にする |
-| 子フォルダの名前 | フック・scripts・スキルのどれかの名前にする。持ち主でない名前の子フォルダは、config-audit が `NG` にする |
+| 子フォルダの名前 | フック・bin・スキルのどれかの名前にする。持ち主でない名前の子フォルダは、config-audit が `NG` にする |
 | 一覧 | ファイルを足したら、[lib/README.md](../../lib/README.md) の表に行を足す。載っていないファイルは、config-audit が `NG` にする |
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま、呼ぶ所に合わせた書き方で使う。
@@ -124,7 +124,7 @@
 
 1. 置く場所を [置ける場所の表](layout.md#置ける場所の表) で確かめ、無ければ先に行を足す。
 2. 名前の頭を [接頭語の表](#接頭語の表) で確かめる。スキルのスクリプトは、頭の動詞を [動詞の表](#動詞の表) で確かめる。
-3. 本体を置く。スキルは `dotclaude/skills/<名前>/SKILL.md` に置く。フックは `dotclaude/hooks/<名前>.py`、スクリプトは `scripts/` に置く。
+3. 本体を置く。スキルは `dotclaude/skills/<名前>/SKILL.md` に置く。フックは `dotclaude/hooks/<名前>.py`、スクリプトは `bin/` に置く。
 4. lib に足した時は、[lib/README.md](../../lib/README.md) の表に行を足す。
 5. フックは、`dotclaude/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。環境変数を足した時は、[components.md](components.md#-環境変数) の表に行を足す。
 6. `tests/<種類>/<名前>.sh` を足し、[tests/README.md](../../tests/README.md) の表に行を足す。

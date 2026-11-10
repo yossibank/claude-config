@@ -10,6 +10,7 @@ from script_io import fail
 
 NAMING = os.path.join(ROOT, "docs", "config", "development.md")
 LAYOUT = os.path.join(ROOT, "docs", "config", "layout.md")
+BIN_README = "README.md"
 
 
 @functools.cache
@@ -74,12 +75,16 @@ def skill_names():
     return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("dotclaude/skills/*/SKILL.md"))
 
 
+def bin_files():
+    return tuple(path for path in tracked("bin/*") if os.path.basename(path) != BIN_README)
+
+
 def entry_kinds():
     found = {}
     for path in tracked("dotclaude/hooks/*.py"):
         found.setdefault(("hooks", os.path.splitext(os.path.basename(path))[0]), path)
-    for path in tracked("scripts/*"):
-        found.setdefault(("scripts", os.path.splitext(os.path.basename(path))[0]), path)
+    for path in bin_files():
+        found.setdefault(("bin", os.path.splitext(os.path.basename(path))[0]), path)
     for path in tracked("dotclaude/skills/*/scripts/*"):
         skill = os.path.relpath(path, DOTCLAUDE).split(os.sep)[1]
         found.setdefault(("skills", skill), os.path.join(DOTCLAUDE, "skills", skill, "SKILL.md"))

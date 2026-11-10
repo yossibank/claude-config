@@ -8,10 +8,10 @@
 
 | 名前の頭 | まとまり |
 | --- | --- |
-| `config_audit/` | [config-audit.py](../scripts/config-audit.py) だけが読む中身。`check_` で始まる関数が、検査として走る |
-| `config_install/` | [config-install.sh](../scripts/config-install.sh) だけが読む中身 |
+| `config_audit/` | [config-audit.py](../bin/config-audit.py) だけが読む中身。`check_` で始まる関数が、検査として走る |
+| `config_install/` | [config-install.sh](../bin/config-install.sh) だけが読む中身 |
 | `docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
-| `docs_section/` | [docs-section.sh](../scripts/docs-section.sh) だけが読む中身 |
+| `docs_section/` | [docs-section.sh](../bin/docs-section.sh) だけが読む中身 |
 | `hook_` | フックの共通の処理 |
 | `md_` | Markdown の読み方 |
 | `store_`・`swift_` | その分類の共通の処理 |
@@ -25,7 +25,7 @@
 | --- | --- |
 | [build_log.sh](build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す |
 | [config_audit/agents.py](config_audit/agents.py) | エージェントと rules の検査 |
-| [config_audit/code.py](config_audit/code.py) | シェルと Python の書き方、lib を読む行、scripts の入口の検査 |
+| [config_audit/code.py](config_audit/code.py) | シェルと Python の書き方、lib を読む行、bin の入口の検査 |
 | [config_audit/docs.py](config_audit/docs.py) | README の形、リンク、パス、台帳、語の使い方、文書の決まりの検査 |
 | [config_audit/files.py](config_audit/files.py) | 追跡しているファイルの一覧と読み込み、名前の付け方の表の読み方 |
 | [config_audit/layout.py](config_audit/layout.py) | 置ける場所、分ける合図の上限、入れる処理の検査 |

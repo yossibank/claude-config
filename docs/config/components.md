@@ -99,10 +99,10 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 | スクリプト | 呼ぶ時 | すること |
 | --- | --- | --- |
-| [scripts/config-audit.py](../../scripts/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、置き場所、文書とスクリプトの書き方の違反を見る。引数に検査の名前を並べると、その検査だけを走らせる |
-| [scripts/config-install.sh](../../scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
-| [scripts/docs-section.sh](../../scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
-| [scripts/docs-tech-icons.py](../../scripts/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
+| [bin/config-audit.py](../../bin/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、置き場所、文書とスクリプトの書き方の違反を見る。引数に検査の名前を並べると、その検査だけを走らせる |
+| [bin/config-install.sh](../../bin/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
+| [bin/docs-section.sh](../../bin/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
+| [bin/docs-tech-icons.py](../../bin/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
 
 ## 🔧 環境変数
 

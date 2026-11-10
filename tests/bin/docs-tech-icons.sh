@@ -3,7 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/../support/assert.sh"
 
-icons="$root/scripts/docs-tech-icons.py"
+icons="$root/bin/docs-tech-icons.py"
 mkdir -p "$work/icons"
 printf '<svg viewBox="0 0 24 24"><title>A</title><path d="M0 0h24v24H0z"/></svg>' >"$work/icons/swift.svg"
 printf '<svg viewBox="0 0 24 24"><title>B</title></svg>' >"$work/icons/empty.svg"

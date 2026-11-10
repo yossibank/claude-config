@@ -84,13 +84,13 @@ README と `docs/`・`spec/` を読み書きする時に読み込まれる決ま
 
 | 決まり | 中身 |
 | --- | --- |
-| 作り方 | `scripts/docs-tech-icons.py` で `docs/images/tech.svg` を作る。ロゴは Simple Icons から取る |
+| 作り方 | `bin/docs-tech-icons.py` で `docs/images/tech.svg` を作る。ロゴは Simple Icons から取る |
 | 並び | 対応 OS → 言語 → 主な技術。版は対応 OS と言語だけに書く |
 | ロゴの無い技術 | 近いロゴを、その技術の色で使う |
 | ストア | 公開したアプリは、App Store の公式のバッジの画像をストアのページにリンクする |
 
 ```sh
-python3 -I ~/Applications/AI/claude-config/scripts/docs-tech-icons.py docs/images/tech.svg apple:000000:iOS:18+ swift:F05138:Swift:6
+python3 -I ~/Applications/AI/claude-config/bin/docs-tech-icons.py docs/images/tech.svg apple:000000:iOS:18+ swift:F05138:Swift:6
 ```
 
 ## README の形

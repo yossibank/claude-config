@@ -6,7 +6,7 @@
 
 ## 🚀 入れる流れ
 
-前提の道具は、[README の実行環境](../../README.md#-実行環境)にある。[config-install.sh](../../scripts/config-install.sh) は、次の順に進む。
+前提の道具は、[README の実行環境](../../README.md#-実行環境)にある。[config-install.sh](../../bin/config-install.sh) は、次の順に進む。
 
 ```mermaid
 flowchart LR

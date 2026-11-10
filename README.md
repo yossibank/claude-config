@@ -43,14 +43,15 @@ claude-config/
 │   ├── rules/
 │   ├── settings.json
 │   └── skills/
+├── bin/
 ├── docs/
 │   ├── app/
-│   └── config/
+│   ├── config/
+│   └── images/
 ├── lib/
-├── scripts/
 └── tests/
+    ├── bin/
     ├── hooks/
-    ├── scripts/
     ├── skills/
     └── support/
 ```
@@ -64,10 +65,11 @@ claude-config/
 | [dotclaude/output-styles/](dotclaude/output-styles/) | 報告の形 | Claude |
 | [dotclaude/settings.json](dotclaude/settings.json) | フックと許可の登録 | 仕組み |
 | [dotclaude/skills/](dotclaude/skills/) | 手順と、手順が走らせるスクリプト | Claude |
+| [bin/](bin/) | 入れる、検査する、文書を読むスクリプトの入口 | 人・仕組み |
 | [docs/app/](docs/app/) | アプリの共通の構成。アプリのリポジトリから名前で指される | 人・Claude |
 | [docs/config/](docs/config/) | claude-config を直す時の決まり | 人・Claude |
+| [docs/images/](docs/images/) | 文書の画像 | 人 |
 | [lib/](lib/) | フック・スクリプト・スキルの入口から読まれる中身 | 仕組み |
-| [scripts/](scripts/) | 入れる、検査する、文書を読むスクリプトの入口 | 人・仕組み |
 | [tests/](tests/) | フックとスクリプトのテスト | 人・仕組み |
 | [CLAUDE.md](CLAUDE.md) | このリポジトリだけの決まり | Claude |
 
@@ -83,13 +85,15 @@ claude-config/
 
 ```sh
 git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-config
-~/Applications/AI/claude-config/scripts/config-install.sh
+~/Applications/AI/claude-config/bin/config-install.sh
 ```
 
 ## 📚 文書
 
 | 文書 | 読む時 | 中身 |
 | --- | --- | --- |
+| [bin/README.md](bin/README.md) | 入口のスクリプトを探す時 | 名前の頭のまとまりと、一覧のある文書 |
+| [docs/README.md](docs/README.md) | 文書を探す時 | フォルダの役割と、claude-config の文書を読む順 |
 | [docs/app/ios-naming.md](docs/app/ios-naming.md) | ファイルを足す・名前を付ける時 | iOS アプリのフォルダとファイルの名前、迷いやすい置き場所 |
 | [docs/app/ios-architecture.md](docs/app/ios-architecture.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
 | [docs/config/components.md](docs/config/components.md) | 部品を知る時 | 決まり・フック・エージェント・スクリプト・環境変数 |

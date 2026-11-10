@@ -56,7 +56,7 @@ expect_checks() {
     local dir=$1 want=$2 label=$3 out status=0
     shift 3
     git -C "$dir" add -A
-    out=$(python3 -I "$dir/scripts/config-audit.py" "$@") || status=$?
+    out=$(python3 -I "$dir/bin/config-audit.py" "$@") || status=$?
     if [[ $want == OK && $status != 0 ]] || [[ $want != OK && $status != 1 ]]; then
         ng "config-audit: ${label}: 終了コードが ${status}（OK は 0、NG は 1）" "$out"
     elif audit_matches "$want" "$out"; then
@@ -185,8 +185,8 @@ rm -f "$d/tests/hooks/swift-format.sh"
 expect_audit "$d" "dotclaude/hooks/swift-format.py:1 テストが無い: tests/hooks/swift-format.sh" "テストの無いフック"
 
 d=$(copy test-missing-script)
-rm -f "$d/tests/scripts/config-install.sh"
-expect_audit "$d" "scripts/config-install.sh:1 テストが無い: tests/scripts/config-install.sh" "テストの無い scripts のファイル"
+rm -f "$d/tests/bin/config-install.sh"
+expect_audit "$d" "bin/config-install.sh:1 テストが無い: tests/bin/config-install.sh" "テストの無い bin のファイル"
 
 d=$(copy test-missing-skill)
 rm -f "$d/tests/skills/ui-record.sh"
@@ -257,16 +257,16 @@ replace "$d/dotclaude/hooks/ctx-limit-read.py" 'run_hook("ctx-limit-read", main)
 expect_audit "$d" "dotclaude/hooks/ctx-limit-read.py:1 main を run_gate か run_hook で包む" "run_hook で包まないフック"
 
 d=$(copy script-unwrapped)
-replace "$d/scripts/docs-tech-icons.py" 'run_main(main)' 'main()'
-expect_audit "$d" "scripts/docs-tech-icons.py:1 main を run_main で包む" "run_main で包まない .py"
+replace "$d/bin/docs-tech-icons.py" 'run_main(main)' 'main()'
+expect_audit "$d" "bin/docs-tech-icons.py:1 main を run_main で包む" "run_main で包まない .py"
 
 d=$(copy lib-unwrapped)
 replace "$d/lib/docs_section/sections.py" 'run_main(main)' 'main()'
 expect_audit "$d" "lib/docs_section/sections.py:1 main を run_main で包む" "run_main で包まない lib の .py"
 
 d=$(copy script-body)
-printf "." >"$d/scripts/docs-section.jq"
-expect_audit "$d" "scripts/docs-section.jq:1 scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: docs-section" "scripts に置いた中身"
+printf "." >"$d/bin/docs-section.jq"
+expect_audit "$d" "bin/docs-section.jq:1 bin/ には入口だけを置く。同じ名前の中身は lib/ に移す: docs-section" "bin に置いた中身"
 
 d=$(copy test-inline-python)
 printf "python3 -I -c 'print(1)'\n" >>"$d/tests/hooks/ctx-limit-read.sh"
@@ -305,8 +305,8 @@ git -C "$d" mv -q dotclaude/hooks/swift-format.py dotclaude/hooks/format-swift.p
 expect_audit "$d" "名前の接頭語が接頭語の表に無い: format-swift.py" "表に無い接頭語のフック"
 
 d=$(copy prefix-place)
-mv "$d/scripts/docs-section.sh" "$d/scripts/pr-section.sh"
-expect_audit "$d" "接頭語 pr- は scripts に使わない" "使う所の違う接頭語"
+mv "$d/bin/docs-section.sh" "$d/bin/pr-section.sh"
+expect_audit "$d" "接頭語 pr- は bin に使わない" "使う所の違う接頭語"
 
 d=$(copy verb-ok)
 replace "$d/docs/config/development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
@@ -454,9 +454,9 @@ printf 'x\n' >"$d/dotclaude/notes.txt"
 expect_check "$d" places "dotclaude/notes.txt:1 置ける場所の表に無い場所にある" "dotclaude/ の直下の見知らぬファイル"
 
 d=$(copy place-deep)
-mkdir -p "$d/scripts/extra"
-printf '#!/bin/bash\n' >"$d/scripts/extra/docs-extra.sh"
-expect_check "$d" places "scripts/extra/docs-extra.sh:1 置ける場所の表に無い場所にある" "平らに並べる所の子フォルダ"
+mkdir -p "$d/bin/extra"
+printf '#!/bin/bash\n' >"$d/bin/extra/docs-extra.sh"
+expect_check "$d" places "bin/extra/docs-extra.sh:1 置ける場所の表に無い場所にある" "平らに並べる所の子フォルダ"
 
 d=$(copy place-added)
 mkdir -p "$d/tools"
@@ -512,8 +512,8 @@ replace "$d/docs/config/layout.md" '| `tests/skills/*.sh` | 全部 | 30 |' '| `t
 expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部 か 同じ頭、上限を数字にする: tests/skills/*.sh' "上限が数字でない行"
 
 d=$(copy limit-stale)
-replace "$d/docs/config/layout.md" '| `scripts/*` | 全部 | 10 |' '| `script/*` | 全部 | 10 |'
-expect_check "$d" limits '分ける合図の表の場所に、当たるファイルが無い: script/*' "当たるファイルの無い上限の行"
+replace "$d/docs/config/layout.md" '| `bin/*` | 全部 | 10 |' '| `bins/*` | 全部 | 10 |'
+expect_check "$d" limits '分ける合図の表の場所に、当たるファイルが無い: bins/*' "当たるファイルの無い上限の行"
 
 d=$(copy lib-folder-entry)
 printf 'def main():\n    pass\n\n\nif __name__ == "__main__":\n    main()\n' >"$d/lib/config_audit/extra.py"
@@ -536,7 +536,7 @@ d=$(copy lib-owner-folder-name)
 mkdir -p "$d/lib/misc"
 printf 'value = 1\n' >"$d/lib/misc/one.py"
 printf 'value = 1\n' >"$d/lib/misc/two.py"
-expect_check "$d" lib-owners "lib の子フォルダの名前は、持ち主（フック・scripts・スキル）の名前を snake_case にする: misc" "持ち主でない名前の子フォルダ"
+expect_check "$d" lib-owners "lib の子フォルダの名前は、持ち主（フック・bin・スキル）の名前を snake_case にする: misc" "持ち主でない名前の子フォルダ"
 
 d=$(copy lib-owner-folder-single)
 mkdir -p "$d/lib/pr_gate"
@@ -591,8 +591,8 @@ rewrite_settings "$d" '.hooks.PreToolUse[0].hooks |= reverse'
 expect_check "$d" settings-order "PreToolUse の Bash のフックは名前の順に並べる" "名前の順でないフック"
 
 d=$(copy lib-path-form)
-replace "$d/scripts/docs-tech-icons.py" 'os.path.realpath(__file__)' 'os.path.abspath(__file__)'
-expect_check "$d" python-scripts "scripts/docs-tech-icons.py:9 lib を読む行は、この形にそろえる" "lib を読む行の別の書き方"
+replace "$d/bin/docs-tech-icons.py" 'os.path.realpath(__file__)' 'os.path.abspath(__file__)'
+expect_check "$d" python-scripts "bin/docs-tech-icons.py:9 lib を読む行は、この形にそろえる" "lib を読む行の別の書き方"
 
 d=$(copy lib-path-depth)
 replace "$d/dotclaude/hooks/shell-check.py" '"..", "..", "lib"' '"..", "lib"'

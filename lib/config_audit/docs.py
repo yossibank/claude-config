@@ -2,7 +2,7 @@ import functools
 import os
 import re
 
-from config_audit.files import NAMING, naming_table, outside_code, read, skill_names, tracked, tracked_files
+from config_audit.files import NAMING, bin_files, naming_table, outside_code, read, skill_names, tracked, tracked_files
 from loader import DOTCLAUDE, ROOT, load_hook
 from md_blocks import heading_of
 from md_doc import body_emojis, heading_emojis, read_doc, readme_order
@@ -23,7 +23,8 @@ def check_readme():
     docs = [os.path.join(ROOT, "docs", "config", name) for name in COMPONENT_DOCS]
     links = {os.path.normpath(os.path.join("docs", "config", target.rstrip("/"))) for path in docs for target in LINK.findall(read(path))}
     entries = [f"dotclaude/skills/{name}/SKILL.md" for name in skill_names()]
-    entries += [os.path.relpath(path, ROOT) for path in tracked("dotclaude/agents/*.md", "dotclaude/output-styles/*.md", "dotclaude/rules/*.md", "dotclaude/hooks/*.py", "dotclaude/hooks/*.sh", "scripts/*")]
+    entries += [os.path.relpath(path, ROOT) for path in tracked("dotclaude/agents/*.md", "dotclaude/output-styles/*.md", "dotclaude/rules/*.md", "dotclaude/hooks/*.py", "dotclaude/hooks/*.sh")]
+    entries += [os.path.relpath(path, ROOT) for path in bin_files()]
     for entry in entries:
         if entry not in links:
             yield docs[0], 1, f"部品の文書の表に載っていない: {entry}"
