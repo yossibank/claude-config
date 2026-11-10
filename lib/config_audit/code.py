@@ -19,7 +19,7 @@ WORKTREES_LITERAL = ".claude/worktrees"
 
 
 def check_worktree_literals():
-    for path in tracked("dotclaude/hooks/*", "scripts/*", "dotclaude/skills/*/scripts/*"):
+    for path in tracked("dotclaude/hooks/*", "bin/*", "dotclaude/skills/*/scripts/*"):
         if path == os.path.abspath(__file__):
             continue
         for number, line in enumerate(read(path).split("\n"), 1):
@@ -29,7 +29,7 @@ def check_worktree_literals():
 
 def check_shell_scripts():
     shell = load_hook("shell-check")
-    strict = set(tracked("dotclaude/skills/*/scripts/*.sh", "scripts/*.sh"))
+    strict = set(tracked("dotclaude/skills/*/scripts/*.sh", "bin/*.sh"))
     paths = tracked("*.sh")
     with ThreadPoolExecutor() as pool:
         found = list(pool.map(shell.check, paths))
