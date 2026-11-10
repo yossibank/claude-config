@@ -5,7 +5,7 @@ import re
 
 from audit_files import fields_of, headings, read, tracked
 from hook_io import EDIT_TOOLS
-from loader import ROOT
+from loader import DOTCLAUDE
 from md_doc import rule_table
 
 
@@ -53,17 +53,17 @@ def covered(prefix, reference, patterns):
 
 
 def skill_names():
-    return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("skills/*/SKILL.md"))
+    return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("dotclaude/skills/*/SKILL.md"))
 
 
 @functools.cache
 def expanded_skills():
-    return tuple(expand_aliases(read(path)) for path in tracked("skills/*/SKILL.md"))
+    return tuple(expand_aliases(read(path)) for path in tracked("dotclaude/skills/*/SKILL.md"))
 
 
 def check_skill_fields():
     for skill_dir in skill_names():
-        skill = os.path.join(ROOT, "skills", skill_dir, "SKILL.md")
+        skill = os.path.join(DOTCLAUDE, "skills", skill_dir, "SKILL.md")
         fields = fields_of(skill)
         if fields.get("name") != skill_dir:
             yield skill, 2, f"name がフォルダ名 {skill_dir} と違う: {fields.get('name')}"
@@ -75,7 +75,7 @@ def check_skill_fields():
 
 
 def script_permission_problems(skill_dir, line, patterns):
-    base = os.path.join(ROOT, "skills", skill_dir)
+    base = os.path.join(DOTCLAUDE, "skills", skill_dir)
     for prefix, reference in SKILL_PATH.findall(line):
         if "scripts/" not in reference or not os.path.exists(os.path.normpath(os.path.join(base, reference))):
             continue
@@ -89,7 +89,7 @@ def script_permission_problems(skill_dir, line, patterns):
 
 def check_skill_references():
     for skill_dir in skill_names():
-        base = os.path.join(ROOT, "skills", skill_dir)
+        base = os.path.join(DOTCLAUDE, "skills", skill_dir)
         skill = os.path.join(base, "SKILL.md")
         patterns = allowed_patterns(fields_of(skill))
         for number, line in enumerate(expand_aliases(read(skill)).split("\n"), 1):
@@ -109,8 +109,8 @@ def check_skill_unused():
 
 
 def unused_scripts(skill_dir):
-    scripts = tracked(f"skills/{skill_dir}/scripts/*")
-    own_skill = expand_aliases(read(os.path.join(ROOT, "skills", skill_dir, "SKILL.md")))
+    scripts = tracked(f"dotclaude/skills/{skill_dir}/scripts/*")
+    own_skill = expand_aliases(read(os.path.join(DOTCLAUDE, "skills", skill_dir, "SKILL.md")))
     for path in scripts:
         name = os.path.basename(path)
         in_own_skill = f"{SKILL_DIR}/scripts/{name}" in own_skill
@@ -123,7 +123,7 @@ def unused_scripts(skill_dir):
 
 
 def check_agents():
-    for path in tracked("agents/*.md"):
+    for path in tracked("dotclaude/agents/*.md"):
         fields = fields_of(path)
         name = os.path.splitext(os.path.basename(path))[0]
         if fields.get("name") != name:
@@ -142,9 +142,9 @@ def check_agents():
 def check_claude_templates():
     order = [row[1] for row in rule_table("## CLAUDE.md の形", "順")][1:-1]
     if not order:
-        yield os.path.join(ROOT, "rules", "docs-claude.md"), 1, "CLAUDE.md の形の表が読めない"
+        yield os.path.join(DOTCLAUDE, "rules", "docs-claude.md"), 1, "CLAUDE.md の形の表が読めない"
         return
-    for path in tracked("skills/*/templates/*/CLAUDE.md"):
+    for path in tracked("dotclaude/skills/*/templates/*/CLAUDE.md"):
         top = 0
         for number, name in headings(path):
             rank = order.index(name) if name in order else len(order)
@@ -154,14 +154,14 @@ def check_claude_templates():
 
 
 def check_rules():
-    for path in tracked("rules/*.md"):
+    for path in tracked("dotclaude/rules/*.md"):
         if "paths" not in fields_of(path):
             yield path, 1, "frontmatter に paths が無い"
 
 
 def check_skill_steps():
     for name in skill_names():
-        skill = os.path.join(ROOT, "skills", name, "SKILL.md")
+        skill = os.path.join(DOTCLAUDE, "skills", name, "SKILL.md")
         steps = re.search(r"^## 手順\n(.*?)(?=^## |\Z)", read(skill), re.M | re.S)
         if steps and not re.search(r"^1\. ", steps.group(1), re.M):
             yield skill, 1, "「手順」は番号付きの箇条書きで書く"

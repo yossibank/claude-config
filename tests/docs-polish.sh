@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/support/assert.sh"
 
-layout="$root/skills/docs-polish/scripts/check-layout.py"
+layout="$root/dotclaude/skills/docs-polish/scripts/check-layout.py"
 mkdir -p "$work/repo/docs"
 printf '# t\n\n冒頭。\n冒頭。\n冒頭。\n冒頭。\n\n## 長い節\n\nあ。\nい。\nう。\nえ。\n\n## 表の節\n\nお。\nか。\nき。\nく。\n\n| a | b |\n| --- | --- |\n\n## 短い節\n\nけ。\nこ。\nさ。\n\n```\nし。\nす。\nせ。\nそ。\n```\n' >"$work/repo/README.md"
 printf '# d\n\n![a](a)\n![b](b)\n![c](c)\n![d](d)\n\n## 図の節\n\nあ。\nい。\nう。\nえ。\n\n```mermaid\nflowchart LR\n```\n' >"$work/repo/docs/a.md"

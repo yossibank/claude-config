@@ -4,34 +4,34 @@ import re
 
 from audit_files import outside_code, read, tracked
 from audit_skills import skill_names
-from loader import ROOT, load_hook
+from loader import DOTCLAUDE, ROOT, load_hook
 from md_blocks import heading_of
 from md_doc import body_emojis, heading_emojis, readme_order
 
 
-LEDGERS = [os.path.join(ROOT, "docs", name) for name in ("config-ledger-code.md", "config-ledger-docs.md")]
-COMPONENT_DOCS = ["config-components.md", "config-skills.md"]
+LEDGERS = [os.path.join(ROOT, "docs", "config", name) for name in ("improvements-code.md", "improvements-docs.md")]
+COMPONENT_DOCS = ["components.md", "skills.md"]
 LEDGER_SECTION = "## 📝 残っている改善"
 BACKTICKED = re.compile(r"`([^`]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 ANCHOR_LINK = re.compile(r"\]\(([^)#\s]*)#([^)\s]+)\)")
 INLINE_CODE = re.compile(r"`[^`]*`")
-PATH_REF = re.compile(r"(?<![\w./~-])((?:hooks|rules|scripts|lib|skills|tests|agents|settings|output-styles)/[A-Za-z0-9_./-]*)(.?)")
-APP_TEMPLATE = os.path.join(ROOT, "skills", "app-init", "templates", "ios-app")
+PATH_REF = re.compile(r"(?<![\w./~-])((?:dotclaude|hooks|rules|scripts|lib|skills|tests|agents|output-styles)/[A-Za-z0-9_./-]*)(.?)")
+APP_TEMPLATE = os.path.join(DOTCLAUDE, "skills", "app-init", "templates", "ios-app")
 
 
 def check_readme():
-    docs = [os.path.join(ROOT, "docs", name) for name in COMPONENT_DOCS]
-    links = {os.path.normpath(os.path.join("docs", target.rstrip("/"))) for path in docs for target in LINK.findall(read(path))}
-    entries = [f"skills/{name}/SKILL.md" for name in skill_names()]
-    entries += [os.path.relpath(path, ROOT) for path in tracked("agents/*.md", "output-styles/*.md", "rules/*.md", "hooks/*.py", "hooks/*.sh", "scripts/*")]
+    docs = [os.path.join(ROOT, "docs", "config", name) for name in COMPONENT_DOCS]
+    links = {os.path.normpath(os.path.join("docs", "config", target.rstrip("/"))) for path in docs for target in LINK.findall(read(path))}
+    entries = [f"dotclaude/skills/{name}/SKILL.md" for name in skill_names()]
+    entries += [os.path.relpath(path, ROOT) for path in tracked("dotclaude/agents/*.md", "dotclaude/output-styles/*.md", "dotclaude/rules/*.md", "dotclaude/hooks/*.py", "dotclaude/hooks/*.sh", "scripts/*")]
     for entry in entries:
         if entry not in links:
             yield docs[0], 1, f"部品の文書の表に載っていない: {entry}"
 
 
 def check_readme_flow():
-    skills = os.path.join(ROOT, "docs", "config-skills.md")
+    skills = os.path.join(ROOT, "docs", "config", "skills.md")
     flow = "".join(re.findall(r"```mermaid\n(.*?)```", read(skills), re.S))
     if not flow:
         yield skills, 1, "スキルを使う順の Mermaid の図が無い"
@@ -88,9 +88,11 @@ def check_anchors():
 
 def path_bases(path):
     bases = [ROOT, os.path.dirname(path), APP_TEMPLATE]
-    parts = os.path.relpath(path, ROOT).split(os.sep)
+    parts = os.path.relpath(path, DOTCLAUDE).split(os.sep)
+    if parts[0] != os.pardir:
+        bases.append(DOTCLAUDE)
     if parts[0] == "skills" and len(parts) > 2:
-        bases.append(os.path.join(ROOT, "skills", parts[1]))
+        bases.append(os.path.join(DOTCLAUDE, "skills", parts[1]))
     return bases
 
 
@@ -128,7 +130,7 @@ def check_ledger():
 def check_docs():
     docs = load_hook("docs-check")
     if not heading_emojis() or not body_emojis() or not readme_order():
-        yield os.path.join(ROOT, "rules", "docs-human.md"), 1, "見出しの絵文字・本文の絵文字・README の形のどれかの表が読めない"
+        yield os.path.join(DOTCLAUDE, "rules", "docs-human.md"), 1, "見出しの絵文字・本文の絵文字・README の形のどれかの表が読めない"
     for path in tracked("*.md"):
         for number, message in docs.check(path):
             yield path, number, message

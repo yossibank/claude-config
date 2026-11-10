@@ -1,12 +1,12 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/fixtures.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/fixtures.sh"
 
 export HOME="$work/home"
 mkdir -p "$HOME"
-prune="$root/skills/pr-prune/scripts/prune-merged.sh"
+prune="$root/dotclaude/skills/pr-prune/scripts/prune-merged.sh"
 fake_gh 'echo "${GH_PR:-MERGED x x}"'
 repo="$work/repo"
 clone_with_origin "$repo"

@@ -1,11 +1,11 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hook_fixtures.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/fixtures.sh"
+source "$(dirname "$0")/support/hook_fixtures.sh"
 
-collect="$root/skills/config-learn/scripts/collect-corrections.py"
+collect="$root/dotclaude/skills/config-learn/scripts/collect-corrections.py"
 : >"$work/empty.jsonl"
 
 expect "NG 使い方" "collect-corrections: 月が無ければ NG" python3 -I "$collect"

@@ -1,11 +1,11 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/fixtures.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/fixtures.sh"
 
-tile="$root/skills/ui-record/scripts/tile-frames.sh"
-record="$root/skills/ui-record/scripts/record-video.sh"
+tile="$root/dotclaude/skills/ui-record/scripts/tile-frames.sh"
+record="$root/dotclaude/skills/ui-record/scripts/record-video.sh"
 
 expect "NG 使い方" "tile-frames: 引数が足りなければ NG" bash "$tile" video.mp4 0 3 2 full 2
 expect "NG 列数は 1 以上の整数にする" "tile-frames: 列数が整数でなければ NG" bash "$tile" video.mp4 0 3 2 full x "$work/out.png"

@@ -1,4 +1,4 @@
-def claude_config_hook: (.command // "") | contains("claude-config/hooks/");
+def claude_config_hook: (.command // "") | (contains("claude-config/hooks/") or contains("/.claude/hooks/run.sh"));
 
 .[0] as $current
 | .[1] as $config

@@ -1,10 +1,10 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/fixtures.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/fixtures.sh"
 
-find_simulator="$root/skills/ui-snapshot/scripts/find-simulator.sh"
+find_simulator="$root/dotclaude/skills/ui-snapshot/scripts/find-simulator.sh"
 fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPad Air\",\"udid\":\"PAD\"},{\"name\":\"iPhone 17\",\"udid\":\"PHONE\"}]}}'"
 check "find-simulator: 先頭の iPhone の UDID を出す" test "$("$find_simulator")" == PHONE
 fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPhone 17\",\"udid\":\"FIRST\"}]}}'"
@@ -14,9 +14,9 @@ check "find-simulator: iPhone が複数あれば先頭を出す" test "$("$find_
 fake_command xcrun "echo '{\"devices\":{\"rt\":[{\"name\":\"iPad Air\",\"udid\":\"PAD\"},{\"name\":\"iPhone 17\",\"udid\":\"PHONE\"}]}}'"
 fake_command xcrun "echo '{\"devices\":{}}'"
 check "find-simulator: iPhone が無ければ何も出さない" test -z "$("$find_simulator")"
-check "find-simulator: app-init のひな形と中身が同じ" cmp -s "$find_simulator" "$root/skills/app-init/templates/ios-app/scripts/find-simulator.sh"
+check "find-simulator: app-init のひな形と中身が同じ" cmp -s "$find_simulator" "$root/dotclaude/skills/app-init/templates/ios-app/scripts/find-simulator.sh"
 
-add_target="$root/skills/ui-snapshot/scripts/add-target.py"
+add_target="$root/dotclaude/skills/ui-snapshot/scripts/add-target.py"
 manifest="$work/Package.swift"
 cat >"$manifest" <<'SWIFT'
 let package = Package(
@@ -37,7 +37,7 @@ check "add-target: ほかのパッケージの製品を依存に足す" grep -q 
 printf 'let package = Package(name: "Bare")\n' >"$work/Bare.swift"
 expect "targets: [ が見つからない" "add-target: targets が無ければ NG" python3 -I "$add_target" "$work/Bare.swift" "$work/targets.txt"
 
-render="$root/skills/ui-snapshot/scripts/render-snapshots.sh"
+render="$root/dotclaude/skills/ui-snapshot/scripts/render-snapshots.sh"
 package="$work/pkg"
 set_dir="$work/set"
 mkdir -p "$package" "$set_dir"

@@ -3,7 +3,7 @@ import re
 
 from audit_files import read, tracked
 from audit_skills import skill_names
-from loader import ROOT
+from loader import DOTCLAUDE, ROOT
 from md_blocks import table_under
 from md_doc import read_doc
 
@@ -12,16 +12,16 @@ LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:py|sh)")
 TEST_LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.sh")
 AGENT_NAME = re.compile(r"[a-z]+er\.md")
 HOOK_RUNNER = "run.sh"
-NAMING = os.path.join(ROOT, "docs", "config-development.md")
+NAMING = os.path.join(ROOT, "docs", "config", "development.md")
 
 
 def test_targets():
     targets = {}
-    for path in tracked("hooks/*.py", "scripts/*"):
+    for path in tracked("dotclaude/hooks/*.py", "scripts/*"):
         targets.setdefault(os.path.splitext(os.path.basename(path))[0], path)
-    for path in tracked("skills/*/scripts/*"):
-        skill = os.path.relpath(path, ROOT).split(os.sep)[1]
-        targets.setdefault(skill, os.path.join(ROOT, "skills", skill, "SKILL.md"))
+    for path in tracked("dotclaude/skills/*/scripts/*"):
+        skill = os.path.relpath(path, DOTCLAUDE).split(os.sep)[1]
+        targets.setdefault(skill, os.path.join(DOTCLAUDE, "skills", skill, "SKILL.md"))
     return targets
 
 
@@ -69,17 +69,14 @@ def check_prefixes():
         yield NAMING, 1, "名前の付け方の接頭語の表が読めない"
         return
     names = {
-        "skills": [(os.path.join(ROOT, "skills", name, "SKILL.md"), name) for name in skill_names()],
-        "hooks": [(path, os.path.basename(path)) for path in tracked("hooks/*.py")],
-        "docs": [(path, os.path.basename(path)) for path in tracked("docs/*.md")],
-        "rules": [(path, os.path.basename(path)) for path in tracked("rules/*.md")],
+        "skills": [(os.path.join(DOTCLAUDE, "skills", name, "SKILL.md"), name) for name in skill_names()],
+        "hooks": [(path, os.path.basename(path)) for path in tracked("dotclaude/hooks/*.py")],
+        "rules": [(path, os.path.basename(path)) for path in tracked("dotclaude/rules/*.md")],
         "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*")],
-        "lib": [(path, os.path.basename(path)) for path in tracked("lib/*_*")],
     }
     for place, items in names.items():
         for path, name in items:
-            key = name.replace("_", "-") if place == "lib" else name
-            prefix = next((p for p in table if key.startswith(p)), None)
+            prefix = next((p for p in table if name.startswith(p)), None)
             if prefix is None:
                 yield path, 1, f"名前の接頭語が接頭語の表に無い: {name}"
             elif place not in table[prefix]:
@@ -95,7 +92,7 @@ def check_script_verbs():
     if not allowed:
         yield NAMING, 1, "名前の付け方の動詞の表が読めない"
         return
-    for path in tracked("skills/*/scripts/*"):
+    for path in tracked("dotclaude/skills/*/scripts/*"):
         verb = os.path.basename(path).split(".")[0].split("-")[0]
         if verb not in allowed:
             yield path, 1, f"スキルのスクリプトの頭の動詞が動詞の表に無い: {verb}"
@@ -105,13 +102,13 @@ def check_names():
     for path in tracked("lib/*"):
         if not LIB_NAME.fullmatch(os.path.basename(path)):
             yield path, 1, "lib の名前は、中身の名詞を snake_case の .py か .sh にする"
-    for path in tracked("tests/lib/*"):
+    for path in tracked("tests/support/*"):
         if not TEST_LIB_NAME.fullmatch(os.path.basename(path)):
-            yield path, 1, "tests/lib の名前は、中身の名詞を snake_case の .sh にする"
-    for path in tracked("agents/*"):
+            yield path, 1, "tests/support の名前は、中身の名詞を snake_case の .sh にする"
+    for path in tracked("dotclaude/agents/*"):
         if not AGENT_NAME.fullmatch(os.path.basename(path)):
             yield path, 1, "エージェントの名前は、役割の名詞（-er）の .md にする"
-    for path in tracked("hooks/*"):
+    for path in tracked("dotclaude/hooks/*"):
         name = os.path.basename(path)
         if not name.endswith(".py") and name != HOOK_RUNNER:
             yield path, 1, f"hooks/ に置く .py 以外のファイルは {HOOK_RUNNER} だけにする"

@@ -1,0 +1,56 @@
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "..", "lib"))
+
+from script_io import Failure, fail, run_main  # noqa: E402
+
+UNWRITTEN_SUMMARY = "<何のアプリかを 1 文で>"
+
+
+def replace(text, tokens):
+    for token, value in tokens:
+        text = text.replace(token, value)
+    return text
+
+
+def summary_of(overview):
+    lines = Path(overview).read_text(encoding="utf-8").split("\n")
+    body = (line.strip() for line in lines[1:])
+    first = next((line for line in body if line and not line.startswith(">")), "")
+    if first.startswith(("<", "#", "|", "-")):
+        return ""
+    sentence, mark, _ = first.partition("。")
+    return sentence + mark
+
+
+def main():
+    if len(sys.argv) < 5:
+        fail("使い方: replace-placeholders.py <ルート> <パスカル> <小文字> <表示名>")
+    root, pascal, lower, display = sys.argv[1:5]
+    names = [("__DisplayName__", display), ("__App__", pascal), ("__app__", lower)]
+    summary = replace(summary_of(os.path.join(root, "docs", "overview.md")), names)
+    tokens = [("__Summary__", summary or UNWRITTEN_SUMMARY), *names]
+
+    for directory, folders, files in os.walk(root, topdown=False):
+        for file in files:
+            path = os.path.join(directory, file)
+            try:
+                text = Path(path).read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            new = replace(text, tokens)
+            if new != text:
+                Path(path).write_text(new, encoding="utf-8")
+        for item in files + folders:
+            renamed = replace(item, tokens)
+            if renamed != item:
+                target = os.path.join(directory, renamed)
+                if os.path.lexists(target):
+                    raise Failure(f"置き換えた名前のファイルが既にある: {target}")
+                os.rename(os.path.join(directory, item), target)
+
+
+if __name__ == "__main__":
+    run_main(main)

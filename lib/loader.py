@@ -2,6 +2,7 @@ import importlib.util
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DOTCLAUDE = os.path.join(ROOT, "dotclaude")
 
 
 def load_module(path):
@@ -13,4 +14,4 @@ def load_module(path):
 
 
 def load_hook(name):
-    return load_module(os.path.join(ROOT, "hooks", f"{name}.py"))
+    return load_module(os.path.join(DOTCLAUDE, "hooks", f"{name}.py"))
