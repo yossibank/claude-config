@@ -126,15 +126,15 @@
 ```mermaid
 flowchart TD
     start["足すもの"] --> home{"~/.claude に配るか"}
-    home -->|配る| dotclaude["dotclaude/"]
+    home -->|配る| owner{"スキル 1 つだけが呼ぶスクリプトか"}
+    owner -->|そう| skill["dotclaude/skills/ のそのスキルの scripts/"]
+    owner -->|違う| dotclaude["dotclaude/"]
     home -->|配らない| kind{"何を足すか"}
     kind -->|文書| docs["docs/"]
     kind -->|テスト| tests["tests/"]
-    kind -->|処理| entry{"人やフックが直接呼ぶか"}
+    kind -->|処理| entry{"人・フック・複数のスキルが直接呼ぶか"}
     entry -->|呼ぶ| scripts["scripts/"]
-    entry -->|読まれるだけ| owner{"スキル 1 つだけが使うか"}
-    owner -->|そう| skill["そのスキルの scripts/"]
-    owner -->|違う| lib["lib/"]
+    entry -->|読まれるだけ| lib["lib/"]
 ```
 
 | 決まり | 中身 |

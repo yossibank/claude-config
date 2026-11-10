@@ -325,9 +325,9 @@ d=$(copy ledger-path-later)
 add_ledger_row "$d/docs/config/improvements.md" '| 🟡 低 | 前置きの文 `dotclaude/skills/pr-create/scripts/hash-state.sh` | 中身 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きの文" "台帳の場所のパスが先頭に無い行"
 
-d=$(copy ledger-docs-missing-path)
+d=$(copy ledger-root-missing-path)
 add_ledger_row "$d/docs/config/improvements.md" '| 🟡 低 | `README.nothing` | 中身 |'
-expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "文書の台帳の場所のパスが無い行"
+expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "台帳の場所の、根に置く文書のパスが無い行"
 
 d=$(copy ledger-missing-path)
 add_ledger_row "$d/docs/config/improvements.md" '| 🟡 低 | `hooks/nothing.sh` | 中身 |'
