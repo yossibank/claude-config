@@ -9,7 +9,7 @@ from md_blocks import heading_of
 from md_doc import body_emojis, heading_emojis, readme_order
 
 
-LEDGERS = [os.path.join(ROOT, "docs", "config", name) for name in ("improvements-code.md", "improvements-docs.md")]
+LEDGERS = [os.path.join(ROOT, "docs", "config", "improvements.md")]
 COMPONENT_DOCS = ["components.md", "skills.md"]
 LEDGER_SECTION = "## 📝 残っている改善"
 BACKTICKED = re.compile(r"`([^`]+)`")
