@@ -33,7 +33,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr
 
 2. 変更を commit する。
 3. `classify-diff.sh` で、差分の重さと、通す確認とレビューを決める。
-4. 確認を `run-check.sh` で通す。NG なら直して通し直す。
+4. 確認を `run-check.sh` で通す。ワークツリーに cd し、コマンドは `pr-required` と同じ文字列で渡す。NG なら直して通し直す。
 5. レビューを、3 の結果に合わせて行う。指摘は直すか、直さない理由を本文に書く。直したら 4 を通し直す。
 6. `write-body.sh` で本文の枠を作る。出たファイルに、「write-body.sh の出力」の「書き足すこと」を埋める。
 7. 人の承認を得る。人が「確認なしで出して」と頼んだ時は省く。示すものは次のとおりである。
