@@ -192,10 +192,12 @@ def main_guard_calls(tree):
 
 
 def check_entry_wrappers():
-    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py"):
+    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py", "lib/*.py"):
         try:
             tree = ast.parse(read(path))
         except SyntaxError:
+            continue
+        if os.path.relpath(path, ROOT).startswith("lib/") and not any(is_main_guard(node) for node in tree.body):
             continue
         top = "hooks" if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/") else "scripts"
         wanted = ENTRY_CALLS[top]
@@ -208,7 +210,8 @@ def check_script_entries():
     for path in tracked("scripts/*"):
         groups.setdefault(os.path.splitext(os.path.basename(path))[0], []).append(path)
     for stem, paths in sorted(groups.items()):
-        for path in sorted(paths)[1:]:
+        entries = [path for path in paths if path.endswith(".sh")] or sorted(paths)[:1]
+        for path in sorted(set(paths) - set(entries[:1])):
             yield path, 1, f"scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: {stem}"
 
 

@@ -247,9 +247,13 @@ d=$(copy script-unwrapped)
 replace "$d/scripts/docs-tech-icons.py" 'run_main(main)' 'main()'
 expect_audit "$d" "scripts/docs-tech-icons.py:1 main を run_main で包む" "run_main で包まない .py"
 
+d=$(copy lib-unwrapped)
+replace "$d/lib/docs_section.py" 'run_main(main)' 'main()'
+expect_audit "$d" "lib/docs_section.py:1 main を run_main で包む" "run_main で包まない lib の .py"
+
 d=$(copy script-body)
 printf "." >"$d/scripts/docs-section.jq"
-expect_audit "$d" "scripts/docs-section.sh:1 scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: docs-section" "scripts に置いた中身"
+expect_audit "$d" "scripts/docs-section.jq:1 scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: docs-section" "scripts に置いた中身"
 
 d=$(copy test-inline-python)
 printf "python3 -I -c 'print(1)'\n" >>"$d/tests/ctx-limit-read.sh"
