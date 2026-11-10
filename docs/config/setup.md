@@ -25,7 +25,7 @@ flowchart LR
 | 比べる | キーと配列の並びをそろえてから、今の settings.json と案を比べる。並びだけの違いは、変わらないとする |
 | 置き換える | 表示された `mv` のコマンドで、2 つの `.new` を置き換える。変わらない時は、許可の一覧だけをその場で置き換える |
 
-## 🪝 settings.json の混ぜ方
+## 🔧 settings.json の混ぜ方
 
 [dotclaude/settings.json](../../dotclaude/settings.json) は、混ぜるフックと許可の元である。`~/.claude/settings.json` へは、次のように混ぜる。
 
@@ -38,7 +38,7 @@ flowchart LR
 > [!IMPORTANT]
 > claude-config は `~/Applications/AI/claude-config` に置く。決まりとスキルはこの場所のスクリプトを指すので、ほかの場所から実行すると `NG` を出して止まる。
 
-## 🔧 積んだ PR のための設定
+## 🌿 積んだ PR のための設定
 
 PR を積んで出す時だけ入れる。squash でマージしても積んだ PR がぶつからないように、使う環境で次を入れる。付け替えそのものは [pr-prune](../../dotclaude/skills/pr-prune/SKILL.md) が行う。
 

@@ -318,23 +318,23 @@ printf '\n`tests/nothing.sh` を読む。\n' >>"$d/docs/app/ios-architecture.md"
 expect_audit "$d" "参照先が無い: tests/nothing.sh" "tests/ に無いファイルへのパス"
 
 d=$(copy ledger-no-path)
-add_ledger_row "$d/docs/config/improvements-code.md" '| 🟡 低 | 前置きだけの文 | 中身 |'
+add_ledger_row "$d/docs/config/improvements.md" '| 🟡 低 | 前置きだけの文 | 中身 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きだけの文" "台帳の場所にパスが無い行"
 
 d=$(copy ledger-path-later)
-add_ledger_row "$d/docs/config/improvements-code.md" '| 🟡 低 | 前置きの文 `dotclaude/skills/pr-create/scripts/hash-state.sh` | 中身 |'
+add_ledger_row "$d/docs/config/improvements.md" '| 🟡 低 | 前置きの文 `dotclaude/skills/pr-create/scripts/hash-state.sh` | 中身 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きの文" "台帳の場所のパスが先頭に無い行"
 
-d=$(copy ledger-docs-missing-path)
-add_ledger_row "$d/docs/config/improvements-docs.md" '| 🟡 低 | `README.nothing` | 中身 |'
-expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "文書の台帳の場所のパスが無い行"
+d=$(copy ledger-root-missing-path)
+add_ledger_row "$d/docs/config/improvements.md" '| 🟡 低 | `README.nothing` | 中身 |'
+expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "台帳の場所の、根に置く文書のパスが無い行"
 
 d=$(copy ledger-missing-path)
-add_ledger_row "$d/docs/config/improvements-code.md" '| 🟡 低 | `hooks/nothing.sh` | 中身 |'
+add_ledger_row "$d/docs/config/improvements.md" '| 🟡 低 | `hooks/nothing.sh` | 中身 |'
 expect_audit "$d" "台帳の場所のパスが無い: hooks/nothing.sh" "台帳の場所のパスが無い行"
 
 d=$(copy ledger-missing)
-rm "$d/docs/config/improvements-docs.md"
+rm "$d/docs/config/improvements.md"
 expect_audit "$d" "台帳が無い" "台帳のファイルが無い時に NG を出す"
 
 d=$(copy template-script-ng)

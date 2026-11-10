@@ -6,38 +6,20 @@
 
 ## 📏 決まり
 
-CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを読み書きする時だけ読み込まれる。
+CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを読み書きする時だけ読み込まれる。足して読む元がある rules は、元の rules と一緒に読み込まれる。
 
-矢印の先の rules は、元の rules に足して読み込まれる。図の並びは、表の並びと同じにする。
-
-```mermaid
-flowchart LR
-    docsApp["docs-app"]
-    docsClaude["docs-claude"]
-    docsCore["docs-core"]
-    docsHuman["docs-human"]
-    swiftCore["swift-core"]
-    swiftTest["swift-test"]
-    swiftUi["swift-ui"]
-    docsCore --> docsApp
-    docsCore --> docsClaude
-    docsCore --> docsHuman
-    swiftCore --> swiftTest
-    swiftCore --> swiftUi
-```
-
-| ファイル | 読み込まれる時 | 決めること |
-| --- | --- | --- |
-| [CLAUDE.md](../../dotclaude/CLAUDE.md) | いつも | 言語、進め方、使う量、報告、ブランチ・commit・PR |
-| [dotclaude/output-styles/report.md](../../dotclaude/output-styles/report.md) | いつも。config-install.sh が `outputStyle` に入れる | 結論を先に書き、表と状態の印で組む日本語の報告の形 |
-| [dotclaude/rules/code-comments.md](../../dotclaude/rules/code-comments.md) | Swift・Kotlin・設定・シェル | コメントを書かない |
-| [dotclaude/rules/docs-app.md](../../dotclaude/rules/docs-app.md) | `docs/`・`spec/`・README・CLAUDE.md | アプリの文書ごとの役割と、足す条件 |
-| [dotclaude/rules/docs-claude.md](../../dotclaude/rules/docs-claude.md) | CLAUDE.md・rules・SKILL.md・agents | 飾らない形と、節の並び |
-| [dotclaude/rules/docs-core.md](../../dotclaude/rules/docs-core.md) | `.md` | 運用、文、表現、守らせる仕組み |
-| [dotclaude/rules/docs-human.md](../../dotclaude/rules/docs-human.md) | README・`docs/`・`spec/` | 冒頭、見出しの絵文字、技術のアイコン、README の形 |
-| [dotclaude/rules/swift-core.md](../../dotclaude/rules/swift-core.md) | Swift | 宣言の置き方、改行、空行、ファイル |
-| [dotclaude/rules/swift-test.md](../../dotclaude/rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | テストの空行と型の置き方 |
-| [dotclaude/rules/swift-ui.md](../../dotclaude/rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | `View` の分け方、ビューの並べ方 |
+| ファイル | 読み込まれる時 | 足して読む元 | 決めること |
+| --- | --- | --- | --- |
+| [CLAUDE.md](../../dotclaude/CLAUDE.md) | いつも | | 言語、進め方、使う量、報告、ブランチ・commit・PR |
+| [dotclaude/output-styles/report.md](../../dotclaude/output-styles/report.md) | いつも。config-install.sh が `outputStyle` に入れる | | 結論を先に書き、表と状態の印で組む日本語の報告の形 |
+| [dotclaude/rules/code-comments.md](../../dotclaude/rules/code-comments.md) | Swift・Kotlin・設定・シェル | | コメントを書かない |
+| [dotclaude/rules/docs-app.md](../../dotclaude/rules/docs-app.md) | `docs/`・`spec/`・README・CLAUDE.md | docs-core | アプリの文書ごとの役割と、足す条件 |
+| [dotclaude/rules/docs-claude.md](../../dotclaude/rules/docs-claude.md) | CLAUDE.md・rules・SKILL.md・agents | docs-core | 飾らない形と、節の並び |
+| [dotclaude/rules/docs-core.md](../../dotclaude/rules/docs-core.md) | `.md` | | 運用、文、表現、守らせる仕組み |
+| [dotclaude/rules/docs-human.md](../../dotclaude/rules/docs-human.md) | README・`docs/`・`spec/` | docs-core | 冒頭、見出しの絵文字、技術のアイコン、README の形 |
+| [dotclaude/rules/swift-core.md](../../dotclaude/rules/swift-core.md) | Swift | | 宣言の置き方、改行、空行、ファイル |
+| [dotclaude/rules/swift-test.md](../../dotclaude/rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | swift-core | テストの空行と型の置き方 |
+| [dotclaude/rules/swift-ui.md](../../dotclaude/rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | swift-core | `View` の分け方、ビューの並べ方 |
 
 ## 🪝 フック
 
