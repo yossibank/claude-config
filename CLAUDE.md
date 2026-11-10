@@ -17,7 +17,7 @@ Claude Code の全リポジトリに共通の決まりを、`~/.claude` に配�
 | --- | --- |
 | `~/.claude` に配るもの | `dotclaude/`。中の形は `~/.claude` と同じにする |
 | 入口から読まれる中身 | `lib/` |
-| 人が打つスクリプト | `scripts/` |
+| 人やフックが呼ぶスクリプトの入口 | `scripts/` |
 | テスト | `tests/` |
 | 文書 | アプリの文書は `docs/app/`、claude-config の文書は `docs/config/` |
 

@@ -3,7 +3,7 @@ import functools
 import os
 import re
 
-from audit_files import fields_of, headings, read, tracked
+from config_audit_files import fields_of, headings, read, tracked
 from hook_io import EDIT_TOOLS
 from loader import DOTCLAUDE
 from md_doc import rule_table

@@ -4,7 +4,7 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from audit_files import read, tracked
+from config_audit_files import read, tracked
 from hook_io import FILE_EDIT_TOOLS
 from loader import DOTCLAUDE, ROOT, load_hook
 
@@ -192,10 +192,12 @@ def main_guard_calls(tree):
 
 
 def check_entry_wrappers():
-    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py"):
+    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py", "lib/*.py"):
         try:
             tree = ast.parse(read(path))
         except SyntaxError:
+            continue
+        if os.path.relpath(path, ROOT).startswith("lib/") and not any(is_main_guard(node) for node in tree.body):
             continue
         top = "hooks" if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/") else "scripts"
         wanted = ENTRY_CALLS[top]
@@ -203,22 +205,14 @@ def check_entry_wrappers():
             yield path, 1, f"main を {' か '.join(wanted)} で包む。例外で落ちた時に、NG の行か止める文を出すため"
 
 
-def check_script_pairs():
+def check_script_entries():
     groups = {}
     for path in tracked("scripts/*"):
-        stem, extension = os.path.splitext(os.path.basename(path))
-        groups.setdefault(stem, {})[extension] = path
-    for stem, files in sorted(groups.items()):
-        if len(files) < 2:
-            continue
-        entry = files.get(".sh")
-        if entry is None:
-            yield next(iter(files.values())), 1, f"拡張子違いの組は、.sh を入口にする: {stem}"
-            continue
-        text = read(entry)
-        for extension, path in files.items():
-            if extension != ".sh" and os.path.basename(path) not in text:
-                yield path, 1, f"入口の {stem}.sh から呼ばれていない"
+        groups.setdefault(os.path.splitext(os.path.basename(path))[0], []).append(path)
+    for stem, paths in sorted(groups.items()):
+        entries = [path for path in paths if path.endswith(".sh")] or sorted(paths)[:1]
+        for path in sorted(set(paths) - set(entries[:1])):
+            yield path, 1, f"scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: {stem}"
 
 
 def check_test_inline_python():

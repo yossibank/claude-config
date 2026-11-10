@@ -118,9 +118,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | スクリプト | 呼ぶ時 | すること |
 | --- | --- | --- |
 | [scripts/config-audit.py](../../scripts/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
-| [scripts/config-install.jq](../../scripts/config-install.jq) | config-install.sh から | settings.json の案を混ぜる |
 | [scripts/config-install.sh](../../scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
-| [scripts/docs-section.py](../../scripts/docs-section.py) | docs-section.sh から | docs-section.sh の中身。見出しを読み、節を切り出す |
 | [scripts/docs-section.sh](../../scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
 | [scripts/docs-tech-icons.py](../../scripts/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
 

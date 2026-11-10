@@ -2,8 +2,8 @@ import functools
 import os
 import re
 
-from audit_files import outside_code, read, tracked
-from audit_skills import skill_names
+from config_audit_files import outside_code, read, tracked
+from config_audit_skills import skill_names
 from loader import DOTCLAUDE, ROOT, load_hook
 from md_blocks import heading_of
 from md_doc import body_emojis, heading_emojis, readme_order
