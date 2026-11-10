@@ -61,6 +61,8 @@ def check_limits():
         for path in tracked_files():
             if place_matches(path, pattern):
                 groups[head_of(counted_name(path, pattern)) if counted == COUNT_HEAD else ""] += 1
+        if not groups:
+            yield NAMING, 1, f"分ける合図の表の場所に、当たるファイルが無い: {pattern}"
         for head, count in sorted(groups.items()):
             if count > int(limit):
                 what = f"頭が {head} のファイル" if head else "ファイル"

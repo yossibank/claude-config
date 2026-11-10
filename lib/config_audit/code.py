@@ -129,7 +129,7 @@ def main_guard_calls(tree):
 
 
 def check_entry_wrappers():
-    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py", "lib/*.py"):
+    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py", "lib/*.py", "lib/*/*.py"):
         try:
             tree = ast.parse(read(path))
         except SyntaxError:

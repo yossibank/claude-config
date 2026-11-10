@@ -9,7 +9,7 @@ from loader import DOTCLAUDE
 SETTINGS = os.path.join(DOTCLAUDE, "settings.json")
 HOOK_NAME = re.compile(r"\.claude/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 EVENT_ORDER = ["PreToolUse", "PostToolUse"]
-PERMISSION = re.compile(r"^\w+\((.*)\)$")
+PERMISSION = re.compile(r"^(\w+)(?:\((.*)\))?$")
 
 
 def hook_groups():
@@ -47,14 +47,15 @@ def first_unsorted(items, key=None):
 
 
 def permission_key(permission):
-    return PERMISSION.sub(r"\1", permission), permission
+    found = PERMISSION.match(permission)
+    return (found.group(1), found.group(2) or "") if found else (permission, "")
 
 
 def check_settings_order():
     data = json.loads(read(SETTINGS))
     allow = first_unsorted(data.get("permissions", {}).get("allow", []), permission_key)
     if allow:
-        yield SETTINGS, 1, f"許可はコマンドの名前の順、同じコマンドは引数の順に並べる: {allow}"
+        yield SETTINGS, 1, f"許可は道具の名前の順、同じ道具はコマンドと引数の順に並べる: {allow}"
     events = [event for event in data.get("hooks", {}) if event in EVENT_ORDER]
     if events != [event for event in EVENT_ORDER if event in events]:
         yield SETTINGS, 1, f"フックのイベントは {' → '.join(EVENT_ORDER)} の順に並べる"

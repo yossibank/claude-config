@@ -507,6 +507,14 @@ d=$(copy limit-row)
 replace "$d/docs/config/development.md" '| `tests/*.sh` | 全部 | 50 |' '| `tests/*.sh` | 全部 | 多い |'
 expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部 か 同じ頭、上限を数字にする: tests/*.sh' "上限が数字でない行"
 
+d=$(copy limit-stale)
+replace "$d/docs/config/development.md" '| `scripts/*` | 全部 | 10 |' '| `script/*` | 全部 | 10 |'
+expect_check "$d" limits '分ける合図の表の場所に、当たるファイルが無い: script/*' "当たるファイルの無い上限の行"
+
+d=$(copy lib-folder-entry)
+printf 'def main():\n    pass\n\n\nif __name__ == "__main__":\n    main()\n' >"$d/lib/config_audit/extra.py"
+expect_check "$d" entry-wrappers "lib/config_audit/extra.py:1 main を run_main で包む" "run_main で包まない、lib の子フォルダの .py"
+
 d=$(copy install-target)
 mkdir -p "$d/dotclaude/commands"
 printf 'x\n' >"$d/dotclaude/commands/extra.md"
@@ -556,7 +564,11 @@ rewrite_settings() {
 
 d=$(copy order-allow)
 rewrite_settings "$d" '.permissions.allow |= reverse'
-expect_check "$d" settings-order "許可はコマンドの名前の順、同じコマンドは引数の順に並べる" "名前の順でない許可"
+expect_check "$d" settings-order "許可は道具の名前の順、同じ道具はコマンドと引数の順に並べる" "名前の順でない許可"
+
+d=$(copy order-allow-tools)
+rewrite_settings "$d" '.permissions.allow += ["Read(//a/**)", "WebSearch"]'
+expect_check "$d" settings-order OK "道具ごとにまとめた許可"
 
 d=$(copy order-event)
 rewrite_settings "$d" '.hooks |= {PostToolUse, PreToolUse}'
