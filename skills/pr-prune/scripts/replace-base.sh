@@ -2,7 +2,6 @@
 set -euo pipefail
 
 source "$(dirname "$0")/../../../lib/git.sh"
-source "$(dirname "$0")/../../../lib/worktree.sh"
 
 stacked_on() {
     local tip=$1 main=$2 base_ref=$3

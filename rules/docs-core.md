@@ -120,7 +120,7 @@ paths:
 | 冒頭 | タイトルの直後の 1 文か `[!NOTE]`、冒頭の `[!NOTE]` の行数 | |
 | 見出し | 見出しと小見出しの間の本文、同じ親の下の同じ名前の見出し | |
 | 目次 | 手で書いた目次、節の名前を並べた 2 列の表と文 | |
-| 用語 | | `docs/development.md` のそろえる語の表の、使わない語 |
+| 用語 | | `docs/config-development.md` のそろえる語の表の、使わない語 |
 | 箇条書き | 1〜2 項目の箇条書き。チェックリストと番号付きの手順を除く | |
 | 表 | 2 列の表の、1 列目の同じ値の繰り返し。理由と却下の行を重ねる `docs/decisions/` は除く | |
 | 太字・アラート・斜体 | 1 節の太字とアラートの数、アラートの種類、斜体 | |
@@ -141,12 +141,12 @@ paths:
 - ひな形の `__<名前>__` の印が、`replace-placeholders.py` の tokens にあるか
 - `replace-placeholders.py` が、`__<名前>__` のほかを置き換えていないか
 - skills・agents・rules・hooks・scripts が部品の文書の表にあるか
-- 部品の文書は、`docs/components.md` と `docs/skills.md` を見る
+- 部品の文書は、`docs/config-components.md`・`config-skills.md` を見る
 - フック・scripts・スクリプトを持つスキルと `tests/` のテストが 1 対 1 か
-- スキルが `docs/skills.md` の使う順の図にあるか
+- スキルが `docs/config-skills.md` の使う順の図にあるか
 - 文書のパスは、`hooks/`・`rules/`・`scripts/`・`lib/`・`skills/` で始まるものを見る
 - 同じく `tests/`・`agents/`・`settings/`・`output-styles/` で始まるものも見る
 - 台帳の「残っている改善」で、「場所」列のパスがあるか
-- 名前の接頭語とスキルのスクリプトの頭の動詞が、`docs/development.md` の表にあるか
+- 名前の接頭語とスキルのスクリプトの頭の動詞が、`docs/config-development.md` の表にあるか
 - `.sh` の頭の `set`、`.sh` の中の Python、`assert`、ワークツリーの置き場所の直書き
 - 編集を受けるフックの matcher

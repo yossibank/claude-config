@@ -12,7 +12,7 @@ LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:py|sh)")
 TEST_LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.sh")
 AGENT_NAME = re.compile(r"[a-z]+er\.md")
 HOOK_RUNNER = "run.sh"
-NAMING = os.path.join(ROOT, "docs", "development.md")
+NAMING = os.path.join(ROOT, "docs", "config-development.md")
 
 
 def test_targets():
@@ -71,12 +71,15 @@ def check_prefixes():
     names = {
         "skills": [(os.path.join(ROOT, "skills", name, "SKILL.md"), name) for name in skill_names()],
         "hooks": [(path, os.path.basename(path)) for path in tracked("hooks/*.py")],
+        "docs": [(path, os.path.basename(path)) for path in tracked("docs/*.md")],
         "rules": [(path, os.path.basename(path)) for path in tracked("rules/*.md")],
         "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*")],
+        "lib": [(path, os.path.basename(path)) for path in tracked("lib/*_*")],
     }
     for place, items in names.items():
         for path, name in items:
-            prefix = next((p for p in table if name.startswith(p)), None)
+            key = name.replace("_", "-") if place == "lib" else name
+            prefix = next((p for p in table if key.startswith(p)), None)
             if prefix is None:
                 yield path, 1, f"名前の接頭語が接頭語の表に無い: {name}"
             elif place not in table[prefix]:

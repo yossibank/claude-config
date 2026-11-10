@@ -238,13 +238,13 @@ import sys
 import urllib.error
 sys.path.insert(0, sys.argv[1] + "/lib")
 exec(os.environ["HTTP_FAKE_PY"])
-import app_store
+import store_api
 
 install(lambda method, url, body: (409, json.dumps({"errors": [{"detail": "返信が長すぎる"}]})))
 try:
-    app_store.asc_request("/v1/x")
+    store_api.asc_request("/v1/x")
 except urllib.error.HTTPError as error:
-    print(app_store.asc_reason(error))
+    print(store_api.asc_reason(error))
 EOF
 )
 check "asc_reason: HTTPError の本文の detail を理由に入れる" test "$reason" == "409: 返信が長すぎる"
@@ -261,31 +261,31 @@ EOF
 )
 check "write_json: 書いたファイルは 0644 にする" test "$mode" == 0o644
 
-# 署名の DER を読む処理（lib/app_store.py）
+# 署名の DER を読む処理（lib/store_api.py）
 der=$(python3 -I - "$root" 2>&1 <<'EOF'
 import base64
 import os
 import sys
 exec(os.environ["PY_PRELUDE"])
-import app_store
+import store_api
 
 r = bytes([0x00, 0x80] + [1] * 31)
 s = bytes([2] * 32)
 body = bytes([0x02, len(r)]) + r + bytes([0x02, len(s)]) + s
 short = bytes([0x30, len(body)]) + body
-raw = app_store.raw_signature(short)
+raw = store_api.raw_signature(short)
 print(len(raw), raw[:32] == r[1:], raw[32:] == s)
 short_r = bytes([0x02, 1, 7]) + bytes([0x02, len(s)]) + s
-raw = app_store.raw_signature(bytes([0x30, len(short_r)]) + short_r)
+raw = store_api.raw_signature(bytes([0x30, len(short_r)]) + short_r)
 print(raw[:32] == bytes(31) + bytes([7]))
 long_body = bytes([0x30, 0x81, len(body)]) + body
-print(len(app_store.raw_signature(long_body)))
+print(len(store_api.raw_signature(long_body)))
 for bad in (b"", b"\x30", bytes([0x30, 3, 0x04, 1, 0])):
     try:
-        app_store.raw_signature(bad)
+        store_api.raw_signature(bad)
     except ValueError as error:
         print("ValueError", error)
-header, payload, signature = app_store.token().split(".")
+header, payload, signature = store_api.token().split(".")
 print(len(base64.urlsafe_b64decode(signature + "==")))
 EOF
 )

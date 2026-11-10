@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > claude-config の部品が、それぞれいつ動き、何をするかが分かる。
-> スキルは [skills.md](skills.md)、入れ方は [setup.md](setup.md) にある。
+> スキルは [config-skills.md](config-skills.md)、入れ方は [config-setup.md](config-setup.md) にある。
 
 ## 📏 決まり
 

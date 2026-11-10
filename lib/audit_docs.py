@@ -9,8 +9,8 @@ from md_blocks import heading_of
 from md_doc import body_emojis, heading_emojis, readme_order
 
 
-LEDGERS = [os.path.join(ROOT, "docs", name) for name in ("improvements.md", "improvements-docs.md")]
-COMPONENT_DOCS = ["components.md", "skills.md"]
+LEDGERS = [os.path.join(ROOT, "docs", name) for name in ("config-ledger-code.md", "config-ledger-docs.md")]
+COMPONENT_DOCS = ["config-components.md", "config-skills.md"]
 LEDGER_SECTION = "## 📝 残っている改善"
 BACKTICKED = re.compile(r"`([^`]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
@@ -31,7 +31,7 @@ def check_readme():
 
 
 def check_readme_flow():
-    skills = os.path.join(ROOT, "docs", "skills.md")
+    skills = os.path.join(ROOT, "docs", "config-skills.md")
     flow = "".join(re.findall(r"```mermaid\n(.*?)```", read(skills), re.S))
     if not flow:
         yield skills, 1, "スキルを使う順の Mermaid の図が無い"

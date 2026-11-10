@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > 文書の読みやすさと、名前と並びで、まだ直していない改善が分かる。
-> 書き方と、バグ・処理・テストの改善は [improvements](improvements.md) にある。
+> 書き方と、バグ・処理・テストの改善は [config-ledger-code](config-ledger-code.md) にある。
 
 ## 📝 残っている改善
 

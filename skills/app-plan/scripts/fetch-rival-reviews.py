@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import EmptyReviewFeed, ReviewPageError, clean, reason, review_pages  # noqa: E402
+from store_api import EmptyReviewFeed, ReviewPageError, clean, reason, review_pages  # noqa: E402
 from script_io import fail, run_main  # noqa: E402
 
 WIDTH = 200

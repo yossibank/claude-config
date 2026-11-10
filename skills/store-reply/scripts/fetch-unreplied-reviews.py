@@ -5,7 +5,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import ASC_ERRORS, ASC_KEYS, apps_dir, asc_pages, asc_reason, listed_apps, read_drafts, require_app_id, require_keys  # noqa: E402
+from store_api import ASC_ERRORS, ASC_KEYS, apps_dir, asc_pages, asc_reason, listed_apps, read_drafts, require_app_id, require_keys  # noqa: E402
 from dates import JST, to_jst  # noqa: E402
 from script_io import Failure, fail, run_main, write_json  # noqa: E402
 

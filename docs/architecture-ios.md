@@ -325,7 +325,7 @@ sequenceDiagram
 | AppFeature | AppModel と通知の予約。通知の予約係だけテスト用に差し替える |
 | 見た目 | プレビューと ui-snapshot で描いた PNG を目で確かめる。XCUITest の UI テストは書かない |
 
-PR ごとに手元で回す。CI の扱いは、[testing](testing.md#-動かし方) にある。
+PR ごとに手元で回す。CI の扱いは、[config-testing](config-testing.md#-動かし方) にある。
 
 > [!IMPORTANT]
 > パッケージは、プロジェクトのフォルダとしても登録する。こうしないと、スキームからパッケージのテストターゲットが見えない。

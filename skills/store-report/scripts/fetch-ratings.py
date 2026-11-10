@@ -4,7 +4,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "lib"))
 
-from app_store import PAGES, EmptyReviewFeed, ReviewPageError, clean, itunes_json, reason, require_app_id, review_pages  # noqa: E402
+from store_api import PAGES, EmptyReviewFeed, ReviewPageError, clean, itunes_json, reason, require_app_id, review_pages  # noqa: E402
 from dates import month_of  # noqa: E402
 from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
