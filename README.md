@@ -59,7 +59,7 @@ claude-config/
 | [dotclaude/output-styles/](dotclaude/output-styles/) | 報告の形 | Claude |
 | [dotclaude/settings.json](dotclaude/settings.json) | フックと許可の登録 | 仕組み |
 | [dotclaude/skills/](dotclaude/skills/) | 手順と、手順が走らせるスクリプト | Claude |
-| [docs/app/](docs/app/) | アプリの共通の構成 | 人・Claude |
+| [docs/app/](docs/app/) | アプリの共通の構成。アプリのリポジトリから名前で指される | 人・Claude |
 | [docs/config/](docs/config/) | claude-config を直す時の決まり | 人・Claude |
 | [lib/](lib/) | フック・スクリプト・スキルの入口から読まれる中身 | 仕組み |
 | [scripts/](scripts/) | 入れる、検査する、文書を読むスクリプトの入口 | 人・仕組み |
@@ -88,11 +88,11 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/app/ios-naming.md](docs/app/ios-naming.md) | ファイルを足す・名前を付ける時 | iOS アプリのフォルダとファイルの名前、迷いやすい置き場所 |
 | [docs/app/ios-architecture.md](docs/app/ios-architecture.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
 | [docs/config/components.md](docs/config/components.md) | 部品を知る時 | 決まり・フック・エージェント・スクリプト・環境変数 |
-| [docs/config/development.md](docs/config/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・足し方 |
+| [docs/config/development.md](docs/config/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・置ける場所・足し方 |
 | [docs/config/improvements.md](docs/config/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
 | [docs/config/setup.md](docs/config/setup.md) | 入れる時 | config-install.sh がすること、settings.json の混ぜ方 |
 | [docs/config/skills.md](docs/config/skills.md) | スキルを選ぶ時 | スキルを使う順と一覧 |
 | [docs/config/testing.md](docs/config/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方 |
-| [lib/README.md](lib/README.md) | 共通の処理を探す時 | lib の名前の頭のまとまりとファイルの一覧 |
+| [lib/README.md](lib/README.md) | 共通の処理を探す時 | lib の名前の頭と子フォルダのまとまり、ファイルの一覧 |
 | [tests/README.md](tests/README.md) | テストを探す時 | テストと、テストの共通の処理の一覧 |
 | [dotclaude/rules/docs-core.md](dotclaude/rules/docs-core.md)・[dotclaude/rules/docs-human.md](dotclaude/rules/docs-human.md)・[dotclaude/rules/docs-app.md](dotclaude/rules/docs-app.md) | 文書を書く時 | 文書の運用・文・表現、人が読む文書の形、アプリの文書の役割 |

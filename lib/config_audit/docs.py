@@ -2,11 +2,10 @@ import functools
 import os
 import re
 
-from config_audit_files import outside_code, read, tracked
-from config_audit_skills import skill_names
+from config_audit.files import NAMING, naming_table, outside_code, read, skill_names, tracked, tracked_files
 from loader import DOTCLAUDE, ROOT, load_hook
 from md_blocks import heading_of
-from md_doc import body_emojis, heading_emojis, readme_order
+from md_doc import body_emojis, heading_emojis, read_doc, readme_order
 
 
 LEDGERS = [os.path.join(ROOT, "docs", "config", "improvements.md")]
@@ -16,7 +15,7 @@ BACKTICKED = re.compile(r"`([^`]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 ANCHOR_LINK = re.compile(r"\]\(([^)#\s]*)#([^)\s]+)\)")
 INLINE_CODE = re.compile(r"`[^`]*`")
-PATH_REF = re.compile(r"(?<![\w./~-])((?:dotclaude|hooks|rules|scripts|lib|skills|tests|agents|output-styles)/[A-Za-z0-9_./-]*)(.?)")
+UNCHECKED_ROOTS = {"docs"}
 APP_TEMPLATE = os.path.join(DOTCLAUDE, "skills", "app-init", "templates", "ios-app")
 
 
@@ -96,10 +95,18 @@ def path_bases(path):
     return bases
 
 
+@functools.cache
+def path_ref():
+    folders = {path.split("/")[0] for path in tracked_files() if "/" in path} - UNCHECKED_ROOTS
+    folders |= {path.split("/")[1] for path in tracked_files() if path.startswith("dotclaude/") and path.count("/") > 1}
+    names = "|".join(re.escape(name) for name in sorted(folders))
+    return re.compile(rf"(?<![\w./~-])((?:{names})/[A-Za-z0-9_./-]*)(.?)")
+
+
 def check_paths():
     for path in tracked("*.md"):
         for number, line in outside_code(path):
-            for reference, after in PATH_REF.findall(line):
+            for reference, after in path_ref().findall(line):
                 reference = reference.rstrip(".")
                 if after in ("<", "*") or any(os.path.exists(os.path.join(base, reference)) for base in path_bases(path)):
                     continue
@@ -134,3 +141,23 @@ def check_docs():
     for path in tracked("*.md"):
         for number, message in docs.check(path):
             yield path, number, message
+
+
+def term_pattern(word):
+    edge = r"[A-Za-z0-9_./-]"
+    return re.compile(rf"(?<!{edge}){re.escape(word)}(?!{edge})" if word.isascii() else re.escape(word))
+
+
+def check_terms():
+    table = naming_table("### そろえる語", "使う語")
+    if not table:
+        yield NAMING, 1, "名前の付け方のそろえる語の表が読めない"
+        return
+    patterns = [(use, avoid, term_pattern(avoid)) for use, avoid in table]
+    for path in tracked("*.md"):
+        for row in read_doc(path).rows:
+            for use, avoid, pattern in patterns:
+                if path == NAMING and row.text.strip().startswith(f"| {use} |"):
+                    continue
+                if pattern.search(row.text):
+                    yield path, row.number, f"「{avoid}」ではなく「{use}」と書く（そろえる語の表）"

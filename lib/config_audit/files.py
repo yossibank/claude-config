@@ -4,9 +4,11 @@ import os
 import subprocess
 from pathlib import Path
 
-from loader import ROOT
-from md_blocks import fence_marks, front_matter, heading_of
+from loader import DOTCLAUDE, ROOT
+from md_blocks import fence_marks, front_matter, heading_of, table_under
 from script_io import fail
+
+NAMING = os.path.join(ROOT, "docs", "config", "development.md")
 
 
 @functools.cache
@@ -18,14 +20,18 @@ def tracked_files():
     return tuple(path for path in out.split("\0") if path)
 
 
-def path_matches(path, pattern):
-    if "/" not in pattern:
-        return fnmatch.fnmatchcase(os.path.basename(path), pattern)
+def place_matches(path, pattern):
     parts, wants = path.split("/"), pattern.split("/")
     if wants[-1] == "**":
         wants = wants[:-1]
         parts = parts[: len(wants)] if len(parts) > len(wants) else []
     return len(parts) == len(wants) and all(fnmatch.fnmatchcase(part, want) for part, want in zip(parts, wants))
+
+
+def path_matches(path, pattern):
+    if "/" not in pattern:
+        return fnmatch.fnmatchcase(os.path.basename(path), pattern)
+    return place_matches(path, pattern)
 
 
 @functools.cache
@@ -53,3 +59,29 @@ def outside_code(path):
 
 def headings(path):
     return [(number, heading[1]) for number, line in outside_code(path) if (heading := heading_of(line)) and heading[0] == 2]
+
+
+def rel(path):
+    return os.path.relpath(path, ROOT)
+
+
+def is_hook(path):
+    return rel(path).startswith("dotclaude/hooks/")
+
+
+def skill_names():
+    return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("dotclaude/skills/*/SKILL.md"))
+
+
+def entry_targets():
+    targets = {}
+    for path in tracked("dotclaude/hooks/*.py", "scripts/*"):
+        targets.setdefault(os.path.splitext(os.path.basename(path))[0], path)
+    for path in tracked("dotclaude/skills/*/scripts/*"):
+        skill = os.path.relpath(path, DOTCLAUDE).split(os.sep)[1]
+        targets.setdefault(skill, os.path.join(DOTCLAUDE, "skills", skill, "SKILL.md"))
+    return targets
+
+
+def naming_table(heading, first_column):
+    return table_under(read(NAMING).split("\n"), heading, first_column)

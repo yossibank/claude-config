@@ -5,7 +5,7 @@ from itertools import takewhile
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "lib"))
 
-from docs_check_headings import (  # noqa: E402
+from docs_check.headings import (  # noqa: E402
     check_heading_emoji_repeats,
     check_heading_names,
     check_headings,
@@ -15,7 +15,7 @@ from docs_check_headings import (  # noqa: E402
     heading_level,
     section_titles,
 )
-from docs_check_rows import BOLD, check_list_endings, check_rows, check_short_lists  # noqa: E402
+from docs_check.rows import BOLD, check_list_endings, check_rows, check_short_lists  # noqa: E402
 from hook_io import block_on_findings, notify, run_hook, target_paths  # noqa: E402
 from md_blocks import fence_marks  # noqa: E402
 from md_doc import CODE, LINK, body_start, read_doc, rule_problems, without_links  # noqa: E402

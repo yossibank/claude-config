@@ -1,0 +1,75 @@
+import collections
+import os
+import re
+
+from config_audit.files import NAMING, naming_table, place_matches, read, tracked_files
+from loader import ROOT
+
+PLACES_HEADING = "### 置ける場所の表"
+LIMITS_HEADING = "### 分ける合図の表"
+COUNT_ALL = "全部"
+COUNT_HEAD = "同じ頭"
+INSTALL = os.path.join(ROOT, "scripts", "config-install.sh")
+DELIVERED = "dotclaude/"
+
+
+def cell_patterns(cell):
+    return [pattern.strip("` ") for pattern in cell.split("・")]
+
+
+def places():
+    return [pattern for row in naming_table(PLACES_HEADING, "場所") for pattern in cell_patterns(row[0])]
+
+
+def check_places():
+    patterns = places()
+    if not patterns:
+        yield NAMING, 1, "フォルダの分け方の置ける場所の表が読めない"
+        return
+    used = set()
+    for path in tracked_files():
+        found = [pattern for pattern in patterns if place_matches(path, pattern)]
+        used.update(found)
+        if not found:
+            yield os.path.join(ROOT, path), 1, "置ける場所の表に無い場所にある。置き場所を直すか、表に行を足す"
+    for pattern in patterns:
+        if pattern not in used:
+            yield NAMING, 1, f"置ける場所の表の場所に、当たるファイルが無い: {pattern}"
+
+
+def head_of(name):
+    return re.split(r"[-_.]", name, maxsplit=1)[0]
+
+
+def counted_name(path, pattern):
+    wants = pattern.split("/")
+    index = next((index for index, want in enumerate(wants) if "*" in want), len(wants) - 1)
+    return path.split("/")[index]
+
+
+def check_limits():
+    rows = naming_table(LIMITS_HEADING, "場所")
+    if not rows:
+        yield NAMING, 1, "フォルダの分け方の分ける合図の表が読めない"
+        return
+    for row in rows:
+        pattern, counted, limit, how = (row + [""] * 4)[:4]
+        if counted not in (COUNT_ALL, COUNT_HEAD) or not limit.isdigit():
+            yield NAMING, 1, f"分ける合図の表の行は、数えるものを {COUNT_ALL} か {COUNT_HEAD}、上限を数字にする: {pattern}"
+            continue
+        groups = collections.Counter()
+        for path in tracked_files():
+            if place_matches(path, pattern):
+                groups[head_of(counted_name(path, pattern)) if counted == COUNT_HEAD else ""] += 1
+        for head, count in sorted(groups.items()):
+            if count > int(limit):
+                what = f"頭が {head} のファイル" if head else "ファイル"
+                yield NAMING, 1, f"{pattern} の{what}が {count} 本で、上限の {limit} 本を超えた。{how}"
+
+
+def check_install_targets():
+    script = read(INSTALL)
+    names = sorted({path.split("/")[1] for path in tracked_files() if path.startswith(DELIVERED)})
+    for name in names:
+        if not re.search(rf'dotclaude"?/{re.escape(name)}(?![A-Za-z0-9_-])', script):
+            yield INSTALL, 1, f"dotclaude/{name} を入れる処理が config-install.sh に無い"

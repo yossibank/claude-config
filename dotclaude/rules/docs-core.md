@@ -144,10 +144,16 @@ paths:
 - 部品の文書は、`docs/config/` の `components.md` と `skills.md` を見る
 - フック・scripts・スクリプトを持つスキルと `tests/` のテストが 1 対 1 か
 - スキルが `docs/config/skills.md` の使う順の図にあるか
-- 文書のパスは、`dotclaude/`・`scripts/`・`lib/`・`tests/` で始まるものを見る
-- 同じく `hooks/`・`rules/`・`skills/`・`agents/`・`output-styles/` で始まるものも見る
+- 文書のパスは、`docs/` を除く最上位のフォルダの名前で始まるものを見る
+- 同じく、`dotclaude/` の中のフォルダの名前で始まるものも見る
 - `dotclaude/` の中の文書のパスは、`dotclaude/` からのパスとしても探す
 - 台帳の「残っている改善」で、「場所」列のパスがあるか
 - 名前の接頭語とスキルのスクリプトの頭の動詞が、`docs/config/development.md` の表にあるか
+- 追跡するファイルが、同じ文書の置ける場所の表にあるか
+- ファイルの数が、同じ文書の分ける合図の表の上限を超えていないか
+- `dotclaude/` の最上位の種類を入れる処理が、`config-install.sh` にあるか
+- lib の子フォルダが持ち主の名前か、持ち主が 1 つの中身が平らに 2 本以上無いか
+- `CC_` の環境変数が、`docs/config/components.md` の表と合うか
 - `.sh` の頭の `set`、`.sh` の中の Python、`assert`、ワークツリーの置き場所の直書き
-- 編集を受けるフックの matcher
+- `.py` が lib を読む行の形
+- 編集を受けるフックの matcher、フックの登録、許可とフックの並び

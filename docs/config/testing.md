@@ -11,7 +11,7 @@ claude-config を変えたら、`make verify` を通す。
 | コマンド | 確かめること |
 | --- | --- |
 | `make verify` | `make audit` と `make test` を順に走らせる |
-| `make audit` | config-audit.py で、文書と名前と書き方の決まり |
+| `make audit` | config-audit.py で、文書と名前と置き場所と書き方の決まり |
 | `make test` | `tests/*.sh` の全部で、フックとスクリプトの振る舞い |
 | `make test-<対象>` | `tests/<対象>.sh` の 1 本だけ |
 

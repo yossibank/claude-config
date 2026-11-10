@@ -3,17 +3,14 @@ import functools
 import os
 import re
 
-from config_audit_files import fields_of, headings, read, tracked
-from hook_io import EDIT_TOOLS
+from config_audit.files import fields_of, headings, read, skill_names, tracked
 from loader import DOTCLAUDE
-from md_doc import rule_table
 
 
 SKILL_DIR = "${CLAUDE_SKILL_DIR}"
 SKILL_PATH = re.compile(r"((?:python3 -I |python3 |bash )?)\$\{CLAUDE_SKILL_DIR\}/((?:\.\./[a-z-]+/)?(?:scripts|templates)/[A-Za-z0-9_.-]+)")
 ALIAS = re.compile(r"`(<[A-Z]+>)` は `\$\{CLAUDE_SKILL_DIR\}/([a-z/]+)`")
 SKILL_REF = re.compile(r"\$\{CLAUDE_SKILL_DIR\}/([A-Za-z0-9_./-]*)(.?)")
-WRITE_TOOLS = re.compile(rf"\b(?:{'|'.join(EDIT_TOOLS)})\b")
 SKILL_SECTIONS = ["起動条件", "入力", "手順", "報告", "制約"]
 DESCRIPTION_LIMIT = 120
 # 外に出す操作は、走らせるたびに人の許可を求めるよう allowed-tools に入れない
@@ -50,10 +47,6 @@ def expand_aliases(text):
 def covered(prefix, reference, patterns):
     command = f"{prefix}{SKILL_DIR}/{reference} x"
     return any(fnmatch.fnmatchcase(command, pattern) for pattern in patterns)
-
-
-def skill_names():
-    return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("dotclaude/skills/*/SKILL.md"))
 
 
 @functools.cache
@@ -120,43 +113,6 @@ def unused_scripts(skill_dir):
         )
         if not (in_own_skill or in_other_skill or in_sibling):
             yield path, 1, "どこからも使われていない"
-
-
-def check_agents():
-    for path in tracked("dotclaude/agents/*.md"):
-        fields = fields_of(path)
-        name = os.path.splitext(os.path.basename(path))[0]
-        if fields.get("name") != name:
-            yield path, 2, f"name がファイル名 {name} と違う: {fields.get('name')}"
-        if not fields.get("model"):
-            yield path, 1, "model が無い"
-        found = headings(path)
-        if not found or found[-1][1] != "返す形":
-            yield path, found[-1][0] if found else 1, "agents の最後の ## は「返す形」にする"
-        body = read(path).split("\n---\n", 1)[-1]
-        tools = fields.get("tools")
-        if "書き換えない" in body and (tools is None or WRITE_TOOLS.search(tools)):
-            yield path, 1, f"書き換えないエージェントは tools を書き、{'・'.join(EDIT_TOOLS)} を入れない"
-
-
-def check_claude_templates():
-    order = [row[1] for row in rule_table("## CLAUDE.md の形", "順")][1:-1]
-    if not order:
-        yield os.path.join(DOTCLAUDE, "rules", "docs-claude.md"), 1, "CLAUDE.md の形の表が読めない"
-        return
-    for path in tracked("dotclaude/skills/*/templates/*/CLAUDE.md"):
-        top = 0
-        for number, name in headings(path):
-            rank = order.index(name) if name in order else len(order)
-            if rank < top:
-                yield path, number, f"CLAUDE.md の ## は {'・'.join(order)}・ほかの節の順に並べる"
-            top = max(top, rank)
-
-
-def check_rules():
-    for path in tracked("dotclaude/rules/*.md"):
-        if "paths" not in fields_of(path):
-            yield path, 1, "frontmatter に paths が無い"
 
 
 def check_skill_steps():

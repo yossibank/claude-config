@@ -1,93 +1,21 @@
 import ast
-import json
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from config_audit_files import read, tracked
-from hook_io import FILE_EDIT_TOOLS
-from loader import DOTCLAUDE, ROOT, load_hook
+from config_audit.files import is_hook, read, rel, tracked
+from loader import load_hook
 
 
 NG_TO_STDERR = re.compile(r"""(echo|printf)\s+["']?NG\b.*>&2""")
 EXIT_FAIL = re.compile(r"\s*exit [1-9]")
 RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
-HOOK_NAME = re.compile(r"\.claude/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
 INLINE_PYTHON = re.compile(r"\bpython3?(?: -I)? -c\b")
 TEST_INLINE_PYTHON = re.compile(r"(?:^|[\s$(|;&`])python3?(?: -I)? -c\b")
 ENTRY_CALLS = {"hooks": ("run_gate", "run_hook"), "scripts": ("run_main",)}
 SCRIPT_HEADER = "set -euo pipefail"
 WORKTREES_LITERAL = ".claude/worktrees"
-CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:(?:dotclaude/)?(?:skills/[a-z0-9-]+/scripts|hooks)|lib)/[A-Za-z0-9_.-]+)")
-TEMPLATE_TOKEN = re.compile(r"__[A-Za-z]+__")
-REPLACER = os.path.join(DOTCLAUDE, "skills", "app-init", "scripts", "replace-placeholders.py")
-
-
-def check_template_scripts():
-    files = [path for path in tracked("dotclaude/skills/*/templates/**") if path.endswith((".sh", "/Makefile"))]
-    for path in files:
-        for number, line in enumerate(read(path).split("\n"), 1):
-            for reference in CONFIG_REF.findall(line):
-                if not os.path.exists(os.path.join(ROOT, reference)):
-                    yield path, number, f"claude-config の参照先が無い: {reference}"
-
-
-def replacer_tokens(tree):
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.List):
-            continue
-        for item in node.elts:
-            if isinstance(item, ast.Tuple) and len(item.elts) == 2 and isinstance(item.elts[0], ast.Constant):
-                yield item.lineno, item.elts[0].value
-
-
-def literal_replaces(tree):
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "replace":
-            if node.args and isinstance(node.args[0], ast.Constant):
-                yield node.lineno, node.args[0].value
-
-
-def template_tokens(path):
-    yield 1, os.path.relpath(path, ROOT)
-    try:
-        yield from enumerate(read(path).split("\n"), 1)
-    except UnicodeDecodeError:
-        return
-
-
-def check_template_tokens():
-    tree = ast.parse(read(REPLACER))
-    tokens = set()
-    for number, token in replacer_tokens(tree):
-        if isinstance(token, str) and TEMPLATE_TOKEN.fullmatch(token):
-            tokens.add(token)
-        else:
-            yield REPLACER, number, f"tokens に __<名前>__ でない文字列がある: {token}"
-    for number, text in literal_replaces(tree):
-        yield REPLACER, number, f"tokens を通さずに文字列を置き換えている: {text}"
-    for path in tracked("dotclaude/skills/app-init/templates/**"):
-        for number, line in template_tokens(path):
-            for token in sorted(set(TEMPLATE_TOKEN.findall(line)) - tokens):
-                yield path, number, f"replace-placeholders.py の tokens に無い印: {token}"
-
-
-def check_settings():
-    path = os.path.join(DOTCLAUDE, "settings.json")
-    for group in json.loads(read(path)).get("hooks", {}).values():
-        for entry in group:
-            for hook in entry.get("hooks", []):
-                command = hook.get("command", "")
-                names = HOOK_NAME.findall(command)
-                if not names:
-                    yield path, 1, f"フックを hooks/run.sh で呼んでいない: {command[:60]}"
-                for name in names:
-                    if not os.path.isfile(os.path.join(DOTCLAUDE, "hooks", f"{name}.py")):
-                        yield path, 1, f"フックのファイルが無い: hooks/{name}.py"
-            tools = set((entry.get("matcher") or "").split("|"))
-            if tools & set(FILE_EDIT_TOOLS) and tools != set(FILE_EDIT_TOOLS):
-                yield path, 1, f"編集の matcher は hook_io の FILE_EDIT_TOOLS と同じ {'|'.join(FILE_EDIT_TOOLS)} にする: {entry.get('matcher')}"
 
 
 def check_worktree_literals():
@@ -108,7 +36,7 @@ def check_shell_scripts():
     for path, problems in zip(paths, found):
         for number, message in problems:
             yield path, number, message
-        if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/"):
+        if is_hook(path):
             continue
         lines = read(path).split("\n")
         if path in strict and lines[1:2] != [SCRIPT_HEADER]:
@@ -156,6 +84,13 @@ def is_path_insert(node):
     return isinstance(node, ast.Expr) and ast.unparse(node.value).startswith("sys.path.insert(")
 
 
+def lib_path_line(path):
+    here = "os.path.dirname(os.path.realpath(__file__))"
+    ups = ", ".join(['".."'] * (len(rel(path).split("/")) - 1))
+    folder = here if os.path.dirname(rel(path)) == "lib" else f'os.path.join({here}, {ups}, "lib")'
+    return ast.unparse(ast.parse(f"sys.path.insert(0, {folder})"))
+
+
 def runs_on_import(node):
     if isinstance(node, (ast.Import, ast.ImportFrom, ast.FunctionDef, ast.ClassDef)) or is_main_guard(node):
         return False
@@ -174,10 +109,12 @@ def python_problems(path, tree):
     for node in tree.body:
         if runs_on_import(node):
             yield path, node.lineno, "読み込んだだけで処理が走る。main() に入れる"
+        if is_path_insert(node) and ast.unparse(node) != lib_path_line(path):
+            yield path, node.lineno, f"lib を読む行は、この形にそろえる: {lib_path_line(path)}"
     for node in ast.walk(tree):
         if isinstance(node, ast.Assert):
             yield path, node.lineno, "assert は python -O で消え、トレースバックで落ちる。if で確かめて NG か例外にする"
-    if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/"):
+    if is_hook(path):
         return
     for node in ast.walk(tree):
         if is_exit_with_text(node):
@@ -197,9 +134,9 @@ def check_entry_wrappers():
             tree = ast.parse(read(path))
         except SyntaxError:
             continue
-        if os.path.relpath(path, ROOT).startswith("lib/") and not any(is_main_guard(node) for node in tree.body):
+        if rel(path).startswith("lib/") and not any(is_main_guard(node) for node in tree.body):
             continue
-        top = "hooks" if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/") else "scripts"
+        top = "hooks" if is_hook(path) else "scripts"
         wanted = ENTRY_CALLS[top]
         if not main_guard_calls(tree) & set(wanted):
             yield path, 1, f"main を {' か '.join(wanted)} で包む。例外で落ちた時に、NG の行か止める文を出すため"

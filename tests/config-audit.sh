@@ -45,9 +45,18 @@ audit_matches() {
 }
 
 expect_audit() {
+    expect_checks "$1" "$2" "$3"
+}
+
+expect_check() {
+    expect_checks "$1" "$3" "$4" "$2"
+}
+
+expect_checks() {
     local dir=$1 want=$2 label=$3 out status=0
+    shift 3
     git -C "$dir" add -A
-    out=$(python3 -I "$dir/scripts/config-audit.py") || status=$?
+    out=$(python3 -I "$dir/scripts/config-audit.py" "$@") || status=$?
     if [[ $want == OK && $status != 0 ]] || [[ $want != OK && $status != 1 ]]; then
         ng "config-audit: ${label}: 終了コードが ${status}（OK は 0、NG は 1）" "$out"
     elif audit_matches "$want" "$out"; then
@@ -422,5 +431,157 @@ expect_audit "$d" "dotclaude/agents/search.md:1 エージェントの名前は" 
 d=$(copy hook-extra)
 printf 'x\n' >"$d/dotclaude/hooks/notes.txt"
 expect_audit "$d" "dotclaude/hooks/notes.txt:1 hooks/ に置く .py 以外のファイルは run.sh だけ" "hooks/ の run.sh 以外の .py でないファイル"
+
+d=$(copy check-unknown)
+expect_check "$d" nothing "検査の名前が無い: nothing" "無い検査の名前"
+
+d=$(copy check-added)
+printf 'def check_extra():\n    yield __file__, 1, "足した検査が走った"\n' >"$d/lib/config_audit/extra.py"
+expect_check "$d" extra "lib/config_audit/extra.py:1 足した検査が走った" "置いただけの検査が走る"
+expect_audit "$d" "lib/config_audit/extra.py:1 足した検査が走った" "置いただけの検査が、全部の検査に入る"
+
+d=$(copy place-root)
+mkdir -p "$d/tools"
+printf '#!/bin/bash\n' >"$d/tools/extra.sh"
+expect_check "$d" places "tools/extra.sh:1 置ける場所の表に無い場所にある" "表に無い最上位のフォルダ"
+
+d=$(copy place-dotclaude)
+printf 'x\n' >"$d/dotclaude/notes.txt"
+expect_check "$d" places "dotclaude/notes.txt:1 置ける場所の表に無い場所にある" "dotclaude/ の直下の見知らぬファイル"
+
+d=$(copy place-deep)
+mkdir -p "$d/scripts/extra"
+printf '#!/bin/bash\n' >"$d/scripts/extra/docs-extra.sh"
+expect_check "$d" places "scripts/extra/docs-extra.sh:1 置ける場所の表に無い場所にある" "平らに並べる所の子フォルダ"
+
+d=$(copy place-added)
+mkdir -p "$d/tools"
+printf '#!/bin/bash\n' >"$d/tools/extra.sh"
+replace "$d/docs/config/development.md" '| `tests/support/*.sh` | テストの共通の処理 |' '| `tests/support/*.sh` | テストの共通の処理 |
+| `tools/*.sh` | 道具 |'
+expect_check "$d" places OK "表に行を足した場所"
+
+d=$(copy place-stale)
+git -C "$d" rm -q docs/images/tech.svg
+expect_check "$d" places '置ける場所の表の場所に、当たるファイルが無い: docs/images/*.svg' "当たるファイルの無い行"
+
+d=$(copy place-table)
+replace "$d/docs/config/development.md" '### 置ける場所の表' '### 置き場所'
+expect_check "$d" places "置ける場所の表が読めない" "置ける場所の表が無い"
+
+add_tests() {
+    local dir=$1 count=$2 index
+    for index in $(seq "$count"); do
+        printf '#!/bin/bash\n' >"$dir/tests/docs-extra-$index.sh"
+    done
+}
+
+tests_now=$(git -C "$base" ls-files 'tests/*.sh' | grep -c -v '/support/')
+
+d=$(copy limit-all-ok)
+add_tests "$d" $((50 - tests_now))
+expect_check "$d" limits OK "テストが上限ちょうどの 50 本"
+
+d=$(copy limit-all-ng)
+add_tests "$d" $((51 - tests_now))
+expect_check "$d" limits 'tests/*.sh のファイルが 51 本で、上限の 50 本を超えた' "テストが上限を超えた"
+
+add_skills() {
+    local dir=$1 name
+    shift
+    for name in "$@"; do
+        mkdir -p "$dir/dotclaude/skills/$name"
+        cp "$dir/dotclaude/skills/pr-prune/SKILL.md" "$dir/dotclaude/skills/$name/SKILL.md"
+    done
+}
+
+d=$(copy limit-head-ok)
+add_skills "$d" pr-a pr-b pr-c
+expect_check "$d" limits OK "同じ接頭語のスキルが上限ちょうどの 6 個"
+
+d=$(copy limit-head-ng)
+add_skills "$d" pr-a pr-b pr-c pr-d
+expect_check "$d" limits '頭が pr のファイルが 7 本で、上限の 6 本を超えた' "同じ接頭語のスキルが上限を超えた"
+
+d=$(copy limit-row)
+replace "$d/docs/config/development.md" '| `tests/*.sh` | 全部 | 50 |' '| `tests/*.sh` | 全部 | 多い |'
+expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部 か 同じ頭、上限を数字にする: tests/*.sh' "上限が数字でない行"
+
+d=$(copy install-target)
+mkdir -p "$d/dotclaude/commands"
+printf 'x\n' >"$d/dotclaude/commands/extra.md"
+expect_check "$d" install-targets "dotclaude/commands を入れる処理が config-install.sh に無い" "入れる処理の無い種類"
+
+d=$(copy lib-owner-flat)
+printf 'value = 1\n' >"$d/lib/config_install_extra.py"
+expect_check "$d" lib-owners "持ち主が 1 つの中身が 2 本以上ある。lib/config_install/ にまとめる" "持ち主が 1 つの中身を平らに 2 本置く"
+
+d=$(copy lib-owner-folder-name)
+mkdir -p "$d/lib/misc"
+printf 'value = 1\n' >"$d/lib/misc/one.py"
+printf 'value = 1\n' >"$d/lib/misc/two.py"
+expect_check "$d" lib-owners "lib の子フォルダの名前は、持ち主（フック・scripts・スキル）の名前を snake_case にする: misc" "持ち主でない名前の子フォルダ"
+
+d=$(copy lib-owner-folder-single)
+mkdir -p "$d/lib/pr_gate"
+printf 'value = 1\n' >"$d/lib/pr_gate/one.py"
+expect_check "$d" lib-owners "lib の子フォルダは、持ち主が 1 つの中身が 2 本以上ある時だけ作る: pr_gate" "1 本だけの子フォルダ"
+
+d=$(copy lib-folder-unlisted)
+printf 'value = 1\n' >"$d/lib/config_audit/extra.py"
+expect_check "$d" names "lib/config_audit/extra.py:1 lib/README.md の表に載っていない" "lib/README.md に無い、子フォルダの中身"
+
+d=$(copy doc-name)
+cp "$d/docs/config/testing.md" "$d/docs/config/Test_Notes.md"
+expect_check "$d" names "docs/config/Test_Notes.md:1 docs/ の文書の名前は" "kebab-case でない docs の文書"
+
+d=$(copy env-unlisted)
+printf 'echo "${CC_UI_EXTRA:-}"\n' >>"$d/dotclaude/skills/ui-record/scripts/tile-frames.sh"
+expect_check "$d" env-names "環境変数が components.md の環境変数の表に無い: CC_UI_EXTRA" "表に無い環境変数"
+
+d=$(copy env-unused)
+replace "$d/docs/config/components.md" '| `CC_UI_DEVICE` |' '| `CC_UI_GHOST` | ui-snapshot | 無い変数 |
+| `CC_UI_DEVICE` |'
+expect_check "$d" env-names "環境変数の表にあるが、どのフックもスクリプトも読んでいない: CC_UI_GHOST" "どこも読まない環境変数の行"
+
+d=$(copy hook-unregistered)
+cp "$d/dotclaude/hooks/shell-check.py" "$d/dotclaude/hooks/shell-extra.py"
+expect_check "$d" hook-registered "dotclaude/hooks/shell-extra.py:1 settings.json に登録が無いフック: shell-extra" "登録の無いフック"
+
+rewrite_settings() {
+    local file=$1/dotclaude/settings.json tmp
+    tmp=$(mktemp)
+    jq "$2" "$file" >|"$tmp" && mv "$tmp" "$file"
+}
+
+d=$(copy order-allow)
+rewrite_settings "$d" '.permissions.allow |= reverse'
+expect_check "$d" settings-order "許可はコマンドの名前の順、同じコマンドは引数の順に並べる" "名前の順でない許可"
+
+d=$(copy order-event)
+rewrite_settings "$d" '.hooks |= {PostToolUse, PreToolUse}'
+expect_check "$d" settings-order "フックのイベントは PreToolUse → PostToolUse の順に並べる" "Post が先のイベント"
+
+d=$(copy order-matcher)
+rewrite_settings "$d" '.hooks.PreToolUse |= reverse'
+expect_check "$d" settings-order "PreToolUse の matcher は名前の順に並べる" "名前の順でない matcher"
+
+d=$(copy order-hook)
+rewrite_settings "$d" '.hooks.PreToolUse[0].hooks |= reverse'
+expect_check "$d" settings-order "PreToolUse の Bash のフックは名前の順に並べる" "名前の順でないフック"
+
+d=$(copy lib-path-form)
+replace "$d/scripts/docs-tech-icons.py" 'os.path.realpath(__file__)' 'os.path.abspath(__file__)'
+expect_check "$d" python-scripts "scripts/docs-tech-icons.py:9 lib を読む行は、この形にそろえる" "lib を読む行の別の書き方"
+
+d=$(copy lib-path-depth)
+replace "$d/dotclaude/hooks/shell-check.py" '"..", "..", "lib"' '"..", "lib"'
+expect_check "$d" python-scripts "dotclaude/hooks/shell-check.py:7 lib を読む行は、この形にそろえる" "lib を読む行の深さの違い"
+
+d=$(copy path-new-root)
+mkdir -p "$d/tools"
+printf '#!/bin/bash\n' >"$d/tools/extra.sh"
+printf '\n`tools/nothing.sh` を読む。\n' >>"$d/docs/app/ios-architecture.md"
+expect_check "$d" paths "参照先が無い: tools/nothing.sh" "足した最上位のフォルダへのパスも見る"
 
 finish
