@@ -73,11 +73,11 @@ printf 'echo "x $name%s"\n' '。' >>"$d/skills/ui-record/scripts/record-video.sh
 expect_audit "$d" "変数の直後に全角" "変数の直後の全角"
 
 d=$(copy fenced-link)
-printf '\n```text\n[x](nothing.md)\n```\n' >>"$d/docs/testing.md"
+printf '\n```text\n[x](nothing.md)\n```\n' >>"$d/docs/config-testing.md"
 expect_audit "$d" OK "コードの囲みの中のリンクは見ない"
 
 d=$(copy broken-link)
-printf '\n[x](nothing.md)\n' >>"$d/docs/testing.md"
+printf '\n[x](nothing.md)\n' >>"$d/docs/config-testing.md"
 expect_audit "$d" "リンク先が無い: nothing.md" "文中のリンク先が無い"
 
 d=$(copy missing)
@@ -93,12 +93,12 @@ printf '\n[x](nowhere.md)\n' >>"$d/skills/ui-record/SKILL.md"
 expect_audit "$d" "リンク先が無い: nowhere.md" "壊れたリンク"
 
 d=$(copy anchor)
-replace "$d/docs/development.md" '[接頭語の表](#接頭語の表)' '[接頭語の表](#無い表)'
+replace "$d/docs/config-development.md" '[接頭語の表](#接頭語の表)' '[接頭語の表](#無い表)'
 expect_audit "$d" "リンク先の見出しが無い: #無い表" "壊れた見出しへのリンク"
 
 d=$(copy flow)
-replace "$d/docs/skills.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
-expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "skills.md のスキルの図に無いスキル"
+replace "$d/docs/config-skills.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
+expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "config-skills.md のスキルの図に無いスキル"
 
 d=$(copy terms)
 printf '\n作業場所で確かめる。\n' >>"$d/skills/ui-record/SKILL.md"
@@ -296,8 +296,12 @@ d=$(copy prefix-place)
 mv "$d/scripts/docs-section.sh" "$d/scripts/pr-section.sh"
 expect_audit "$d" "接頭語 pr- は scripts に使わない" "使う所の違う接頭語"
 
+d=$(copy prefix-docs)
+git -C "$d" mv docs/config-setup.md docs/setup.md
+expect_audit "$d" "名前の接頭語が接頭語の表に無い: setup.md" "表に無い接頭語の文書"
+
 d=$(copy verb-ok)
-replace "$d/docs/development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
+replace "$d/docs/config-development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
 mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/glue-frames.sh"
 replace "$d/skills/ui-record/SKILL.md" 'tile-frames.sh' 'glue-frames.sh'
 expect_audit "$d" OK "動詞の表にある動詞で始まるスクリプト"
@@ -319,23 +323,23 @@ printf '\n`tests/nothing.sh` を読む。\n' >>"$d/docs/architecture-ios.md"
 expect_audit "$d" "参照先が無い: tests/nothing.sh" "tests/ に無いファイルへのパス"
 
 d=$(copy ledger-no-path)
-add_ledger_row "$d/docs/improvements.md" '| 🟡 低 | 前置きだけの文 | 中身 |'
+add_ledger_row "$d/docs/config-ledger-code.md" '| 🟡 低 | 前置きだけの文 | 中身 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きだけの文" "台帳の場所にパスが無い行"
 
 d=$(copy ledger-path-later)
-add_ledger_row "$d/docs/improvements.md" '| 🟡 低 | 前置きの文 `skills/pr-create/scripts/hash-state.sh` | 中身 |'
+add_ledger_row "$d/docs/config-ledger-code.md" '| 🟡 低 | 前置きの文 `skills/pr-create/scripts/hash-state.sh` | 中身 |'
 expect_audit "$d" "台帳の場所の先頭にパスが無い: 前置きの文" "台帳の場所のパスが先頭に無い行"
 
 d=$(copy ledger-docs-missing-path)
-add_ledger_row "$d/docs/improvements-docs.md" '| 🟡 低 | `README.nothing` | 中身 |'
+add_ledger_row "$d/docs/config-ledger-docs.md" '| 🟡 低 | `README.nothing` | 中身 |'
 expect_audit "$d" "台帳の場所のパスが無い: README.nothing" "文書の台帳の場所のパスが無い行"
 
 d=$(copy ledger-missing-path)
-add_ledger_row "$d/docs/improvements.md" '| 🟡 低 | `hooks/nothing.sh` | 中身 |'
+add_ledger_row "$d/docs/config-ledger-code.md" '| 🟡 低 | `hooks/nothing.sh` | 中身 |'
 expect_audit "$d" "台帳の場所のパスが無い: hooks/nothing.sh" "台帳の場所のパスが無い行"
 
 d=$(copy ledger-missing)
-rm "$d/docs/improvements-docs.md"
+rm "$d/docs/config-ledger-docs.md"
 expect_audit "$d" "台帳が無い" "台帳のファイルが無い時に NG を出す"
 
 d=$(copy template-script-ng)

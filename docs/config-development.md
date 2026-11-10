@@ -2,11 +2,11 @@
 
 > [!NOTE]
 > claude-config のフック・スクリプト・スキルを足したり直したりする時の決まりが分かる。
-> 確かめ方とテストは [testing.md](testing.md)、部品の一覧は [components.md](components.md) にある。
+> 確かめ方とテストは [config-testing.md](config-testing.md)、部品の一覧は [config-components.md](config-components.md) にある。
 
 ## 🏷️ 名前の付け方
 
-名前は、頭に `<分類>-` を付けてそろえる。スキル・フック・rules・scripts は、フォルダの中を名前の順に並べると分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
+名前は、頭に `<分類>-` を付けてそろえる。スキル・フック・rules・scripts・docs は、フォルダの中を名前の順に並べると分類ごとにまとまる。分類は、フォルダをまたいで同じ接頭語を使う。
 
 | 対象 | 形 | 例 |
 | --- | --- | --- |
@@ -19,7 +19,7 @@
 | scripts の拡張子違いの組 | `.sh` が入口で、同じ名前の `.py`・`.jq` はその中身 | `docs-section.sh` と `docs-section.py` |
 | スクリプトの置き場所 | そのスキルだけが呼ぶものは `skills/<名前>/scripts/` に置く。人・フック・複数のスキルが呼ぶ共通の道具は `scripts/` に置く | `scripts/docs-section.sh` |
 | ひな形のフォルダ | `skills/<名前>/templates/<単位>/`。単位は、アプリ 1 本・言語・セットのどれか | `templates/ios-app/`、`templates/ja/` |
-| docs/ の文書 | 名詞の kebab-case の `.md`。主題を分ける時は `<主題>-<分類>.md` | `setup.md`、`architecture-ios-naming.md` |
+| docs/ の文書 | `<分類>-<主題>.md`。主題は名詞の kebab-case | `config-setup.md`、`architecture-ios-naming.md` |
 | lib | 中身の名詞を `snake_case` にする。Python の import で読める形に、`.sh` もそろえる | `hook_io.py`、`build_log.sh` |
 | tests/lib | 中身の名詞を `snake_case` の `.sh` にする | `assert.sh`、`fixtures.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
@@ -46,8 +46,9 @@
 | 接頭語 | 分類 | 使う所 |
 | --- | --- | --- |
 | `app-` | 企画・立ち上げ | skills |
+| `architecture-` | アプリの共通の構成 | docs |
 | `code-` | コード全般 | rules、skills |
-| `config-` | claude-config 自体の手入れ | skills、scripts |
+| `config-` | claude-config 自体の手入れ | docs、skills、scripts |
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
 | `docs-` | 文書 | rules、skills、hooks、scripts |
 | `pr-` | PR | skills、hooks |
@@ -145,7 +146,7 @@
 1. 名前の頭を [接頭語の表](#接頭語の表) で確かめる。スキルのスクリプトは、頭の動詞を [動詞の表](#動詞の表) で確かめる。
 2. 本体を置く。スキルは `skills/<名前>/SKILL.md`、フックは `hooks/<名前>.py`、スクリプトは `scripts/` に置く。
 3. フックは、`settings/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。
-4. `tests/<名前>.sh` を足し、[testing.md のテスト](testing.md#-テスト) の表に行を足す。
-5. [components.md](components.md) か [skills.md](skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
+4. `tests/<名前>.sh` を足し、[config-testing.md のテスト](config-testing.md#-テスト) の表に行を足す。
+5. [config-components.md](config-components.md) か [config-skills.md](config-skills.md) の表に行を足す。スキルは、config-skills.md の使う順の図にも足す。
 6. 文書を足したり書き換えたりする時は、[docs-core](../rules/docs-core.md)・[docs-human](../rules/docs-human.md)・[docs-app](../rules/docs-app.md) の決まりに従う。
-7. [testing.md](testing.md#-動かし方) の `make verify` を通す。
+7. [config-testing.md](config-testing.md#-動かし方) の `make verify` を通す。

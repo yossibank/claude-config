@@ -1,12 +1,12 @@
-# 台帳
+# 台帳（コード）
 
 > [!NOTE]
-> claude-config の調べ直しで見つけて、まだ直していない改善と、直さないと決めたことが分かる。文書の改善は [improvements-docs](improvements-docs.md) にある。
+> claude-config の調べ直しで見つけて、まだ直していない改善と、直さないと決めたことが分かる。文書の改善は [config-ledger-docs](config-ledger-docs.md) にある。
 > 調べ方は [config-review](../skills/config-review/SKILL.md) にある。
 
 ## 📏 台帳の書き方
 
-台帳は、残っている改善と見送ったことだけを持つ。文書と名前の改善は [improvements-docs](improvements-docs.md) に置く。直した改善は行を消し、経緯は git の履歴に任せる。
+台帳は、残っている改善と見送ったことだけを持つ。文書と名前の改善は [config-ledger-docs](config-ledger-docs.md) に置く。直した改善は行を消し、経緯は git の履歴に任せる。
 
 | 場面 | すること |
 | --- | --- |

@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > claude-config を変えた時に通すコマンドと、テストの置き方が分かる。
-> 名前とスクリプトの書き方は [development.md](development.md) にある。
+> 名前とスクリプトの書き方は [config-development.md](config-development.md) にある。
 
 ## 🚀 動かし方
 

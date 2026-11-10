@@ -12,7 +12,7 @@ LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:py|sh)")
 TEST_LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.sh")
 AGENT_NAME = re.compile(r"[a-z]+er\.md")
 HOOK_RUNNER = "run.sh"
-NAMING = os.path.join(ROOT, "docs", "development.md")
+NAMING = os.path.join(ROOT, "docs", "config-development.md")
 
 
 def test_targets():
@@ -71,6 +71,7 @@ def check_prefixes():
     names = {
         "skills": [(os.path.join(ROOT, "skills", name, "SKILL.md"), name) for name in skill_names()],
         "hooks": [(path, os.path.basename(path)) for path in tracked("hooks/*.py")],
+        "docs": [(path, os.path.basename(path)) for path in tracked("docs/*.md")],
         "rules": [(path, os.path.basename(path)) for path in tracked("rules/*.md")],
         "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*")],
     }

@@ -5,7 +5,7 @@ description: claude-config の全体を観点ごとに調べ、台帳に無い�
 
 # claude-config を調べ直す
 
-claude-config の全体を観点ごとに調べ、台帳に無い改善だけを出す手順。台帳は `docs/improvements.md` と `docs/improvements-docs.md` にある。台帳と機械の検査で、同じ指摘を繰り返さない。
+claude-config の全体を観点ごとに調べ、台帳に無い改善だけを出す手順。台帳は `docs/config-ledger-*.md` の 2 本にある。台帳と機械の検査で、同じ指摘を繰り返さない。
 
 ## 起動条件
 
@@ -31,7 +31,7 @@ claude-config の改善点や直せる所を聞かれた時に使う。1 つの 
 | --- | --- | --- |
 | 人が読む文書 | `README.md`、`docs/`、ひな形の `.md` | 文書の構成、区切れる長い文、表・図・アラートにできる所 |
 | Claude が読む文書 | `CLAUDE.md`、`rules/`、`skills/*/SKILL.md`、`agents/`、`output-styles/` | 読み違える文、決まりどうしやコードとの食い違い |
-| 名前と並び | 全部のファイルの名前、`settings/`、`docs/components.md` と `docs/skills.md` の表 | 接頭語と動詞、並べる順、同じ中身の重なり |
+| 名前と並び | 全部のファイルの名前と `settings/`。`docs/` の部品とスキルの表 | 接頭語と動詞、並べる順、同じ中身の重なり |
 | 処理 | `hooks/`、`lib/`、`scripts/`、`skills/*/scripts/` | バグ、黙って落ちる所、重なった処理、遅い所 |
 | テスト | `tests/` | 分岐の抜け、利用者の環境に左右される所 |
 
@@ -42,7 +42,7 @@ claude-config の改善点や直せる所を聞かれた時に使う。1 つの 
 | 渡すもの | 中身 |
 | --- | --- |
 | 読むファイル | その観点のファイルの一覧。全部を読ませ、読んだファイルの一覧を返させる |
-| 先に読む決まり | `docs/development.md`・`docs/testing.md` と、観点に当たる `rules/` |
+| 先に読む決まり | `docs/config-development.md`・`config-testing.md`。観点に当たる `rules/` |
 | 外すもの | 台帳の項目と、`rules/docs-core.md` の「守らせる仕組み」の検査が見ていること |
 | 件数 | 上限を付けない。重さの低いものも返させる |
 | 返す形 | 1 件ごとに、重さ・`ファイル:行`・今の形・直す案 |
