@@ -74,13 +74,22 @@ def skill_names():
     return sorted(os.path.basename(os.path.dirname(path)) for path in tracked("dotclaude/skills/*/SKILL.md"))
 
 
-def entry_targets():
-    targets = {}
-    for path in tracked("dotclaude/hooks/*.py", "scripts/*"):
-        targets.setdefault(os.path.splitext(os.path.basename(path))[0], path)
+def entry_kinds():
+    found = {}
+    for path in tracked("dotclaude/hooks/*.py"):
+        found.setdefault(("hooks", os.path.splitext(os.path.basename(path))[0]), path)
+    for path in tracked("scripts/*"):
+        found.setdefault(("scripts", os.path.splitext(os.path.basename(path))[0]), path)
     for path in tracked("dotclaude/skills/*/scripts/*"):
         skill = os.path.relpath(path, DOTCLAUDE).split(os.sep)[1]
-        targets.setdefault(skill, os.path.join(DOTCLAUDE, "skills", skill, "SKILL.md"))
+        found.setdefault(("skills", skill), os.path.join(DOTCLAUDE, "skills", skill, "SKILL.md"))
+    return found
+
+
+def entry_targets():
+    targets = {}
+    for (_, name), path in entry_kinds().items():
+        targets.setdefault(name, path)
     return targets
 
 

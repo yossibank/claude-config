@@ -36,6 +36,7 @@ flowchart LR
 claude-config/
 ├── dotclaude/
 │   ├── CLAUDE.md
+│   ├── README.md
 │   ├── agents/
 │   ├── hooks/
 │   ├── output-styles/
@@ -48,6 +49,10 @@ claude-config/
 ├── lib/
 ├── scripts/
 └── tests/
+    ├── hooks/
+    ├── scripts/
+    ├── skills/
+    └── support/
 ```
 
 | フォルダ | 役割 | 読み手 |

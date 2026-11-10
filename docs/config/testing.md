@@ -13,7 +13,7 @@ claude-config を変えたら、`make verify` を通す。
 | `make verify` | `make audit` と `make test` を順に走らせる |
 | `make audit` | config-audit.py で、文書と名前と置き場所と書き方の決まり |
 | `make test` | `tests/` の種類のフォルダの全部で、フックとスクリプトの振る舞い |
-| `make test-<対象>` | `tests/<種類>/<対象>.sh` の 1 本だけ |
+| `make test-<対象>` | 名前が `<対象>.sh` のテストだけ |
 
 > [!IMPORTANT]
 > CI は、claude-config もアプリも置かない。PR は、手元の確認を通してから作る。

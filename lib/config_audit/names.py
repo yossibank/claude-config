@@ -1,7 +1,7 @@
 import os
 import re
 
-from config_audit.files import NAMING, entry_targets, naming_table, read, rel, skill_names, tracked
+from config_audit.files import NAMING, entry_kinds, entry_targets, naming_table, read, rel, skill_names, tracked
 from loader import DOTCLAUDE, ROOT
 from md_blocks import table_under
 
@@ -18,15 +18,7 @@ ENV_HEADING = "## 🔧 環境変数"
 
 
 def test_targets():
-    targets = {}
-    for path in tracked("dotclaude/hooks/*.py"):
-        targets[f"tests/hooks/{stem_of(path)}.sh"] = path
-    for path in tracked("scripts/*"):
-        targets.setdefault(f"tests/scripts/{stem_of(path)}.sh", path)
-    for path in tracked("dotclaude/skills/*/scripts/*"):
-        skill = os.path.relpath(path, DOTCLAUDE).split(os.sep)[1]
-        targets.setdefault(f"tests/skills/{skill}.sh", os.path.join(DOTCLAUDE, "skills", skill, "SKILL.md"))
-    return targets
+    return {f"tests/{kind}/{name}.sh": path for (kind, name), path in entry_kinds().items()}
 
 
 def stem_of(path):
