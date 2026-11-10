@@ -1,7 +1,7 @@
 import os
 import re
 
-from config_audit.files import NAMING, entry_kinds, entry_targets, naming_table, read, rel, skill_names, tracked
+from config_audit.files import NAMING, bin_files, entry_kinds, entry_targets, naming_table, read, rel, skill_names, tracked
 from loader import DOTCLAUDE, ROOT
 from md_blocks import table_under
 
@@ -27,11 +27,11 @@ def stem_of(path):
 
 def check_test_pairs():
     targets = test_targets()
-    tests = {rel(path): path for path in tracked("tests/hooks/*.sh", "tests/scripts/*.sh", "tests/skills/*.sh")}
+    tests = {rel(path): path for path in tracked("tests/hooks/*.sh", "tests/bin/*.sh", "tests/skills/*.sh")}
     for name in sorted(targets.keys() - tests.keys()):
         yield targets[name], 1, f"テストが無い: {name}"
     for name in sorted(tests.keys() - targets.keys()):
-        yield tests[name], 1, "テストの対象が無い。フォルダに合う hooks/<名前>.py・scripts/<名前>・scripts/ を持つスキルの名前にする"
+        yield tests[name], 1, "テストの対象が無い。フォルダに合う hooks/<名前>.py・bin/<名前>・scripts/ を持つスキルの名前にする"
 
 
 def prefixes():
@@ -48,7 +48,7 @@ def check_prefixes():
         "skills": [(os.path.join(DOTCLAUDE, "skills", name, "SKILL.md"), name) for name in skill_names()],
         "hooks": [(path, os.path.basename(path)) for path in tracked("dotclaude/hooks/*.py")],
         "rules": [(path, os.path.basename(path)) for path in tracked("dotclaude/rules/*.md")],
-        "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*")],
+        "bin": [(path, os.path.basename(path)) for path in bin_files()],
     }
     for place, items in names.items():
         for path, name in items:
@@ -110,7 +110,7 @@ def check_lib_owners():
         folders.setdefault(rel(path).split("/")[1], []).append(path)
     for folder, paths in sorted(folders.items()):
         if folder not in known:
-            yield paths[0], 1, f"lib の子フォルダの名前は、持ち主（フック・scripts・スキル）の名前を snake_case にする: {folder}"
+            yield paths[0], 1, f"lib の子フォルダの名前は、持ち主（フック・bin・スキル）の名前を snake_case にする: {folder}"
     for path in tracked("lib/*"):
         stem = stem_of(path)
         owner = next((name for name in sorted(known) if stem == name or stem.startswith(f"{name}_")), None)
@@ -120,7 +120,7 @@ def check_lib_owners():
 
 def env_uses():
     uses = {}
-    for path in tracked("dotclaude/hooks/*", "scripts/*", "dotclaude/skills/*/scripts/*", "lib/*", "lib/*/*"):
+    for path in tracked("dotclaude/hooks/*", "bin/*", "dotclaude/skills/*/scripts/*", "lib/*", "lib/*/*"):
         if path.endswith(".md"):
             continue
         for number, line in enumerate(read(path).split("\n"), 1):

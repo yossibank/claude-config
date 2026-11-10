@@ -20,20 +20,21 @@ flowchart TD
     kind -->|文書| docs["docs/"]
     kind -->|テスト| tests["tests/ の、対象の種類のフォルダ"]
     kind -->|処理| entry{"人・フック・複数のスキルが直接呼ぶか"}
-    entry -->|呼ぶ| scripts["scripts/"]
+    entry -->|呼ぶ| bin["bin/"]
     entry -->|読まれるだけ| lib["lib/"]
 ```
 
 | 決まり | 中身 |
 | --- | --- |
-| 最上位は行き先で分ける | 配るものは `dotclaude/`、読むものは `docs/` に置く。支える仕組みは `lib/`・`scripts/`・`tests/` に置く |
+| 最上位は行き先で分ける | 配るものは `dotclaude/`、読むものは `docs/` に置く。支える仕組みは `bin/`・`lib/`・`tests/` に置く |
 | `dotclaude/` は配る形のまま置く | 中の形は `~/.claude` と同じにする。配る種類が増えたら、`dotclaude/` に足す |
 | フォルダの中は平らに並べる | 子フォルダで分けず、[接頭語の表](development.md#接頭語の表) の分類でまとめる。`lib/` の持ち主の子フォルダと、`tests/` の種類の子フォルダだけを除く |
 | 置ける場所は表で決める | 追跡するファイルは、[置ける場所の表](#置ける場所の表) のどれかの行に当てる |
 | 持ち主が 1 つのものは持ち主の下に置く | そのスキルだけが呼ぶスクリプトは `dotclaude/skills/<名前>/scripts/` に置く |
 | ひな形は単位で分ける | `dotclaude/skills/<名前>/templates/<単位>/` に置く。単位は、アプリ 1 本・言語・セットのどれか |
-| `scripts/` には入口だけを置く | 人・フック・複数のスキルが呼ぶ共通の道具の入口を置く。入口が読む `.py`・`.jq` は、`lib/` に置く |
+| `bin/` には入口だけを置く | 人・フック・複数のスキルが呼ぶ共通の道具の入口を置く。入口が読む `.py`・`.jq` は、`lib/` に置く |
 | `dotclaude/hooks/` は `.py` と `run.sh` だけにする | `.py` 以外は `run.sh` だけを置く。イベントは `dotclaude/settings.json` に書く |
+| 最上位のフォルダには `README.md` を置く | GitHub でフォルダを開いた時に、役割と、一覧のある文書が出る。一覧は 1 か所に置き、ほかの README からはリンクで指す |
 | 文書は読む時で分ける | アプリの文書は `docs/app/`、claude-config の文書は `docs/config/` に置く |
 
 ### 置ける場所の表
@@ -42,7 +43,10 @@ flowchart TD
 
 | 場所 | 置くもの |
 | --- | --- |
-| `.gitignore`・`CLAUDE.md`・`Makefile`・`README.md` | リポジトリの根のファイル |
+| `.gitattributes`・`.gitignore`・`CLAUDE.md`・`Makefile`・`README.md` | リポジトリの根のファイル |
+| `bin/README.md` | 入口のスクリプトの案内 |
+| `bin/*.py`・`bin/*.sh` | スクリプトの入口 |
+| `docs/README.md` | 文書のフォルダの案内と、読む順 |
 | `docs/app/*.md` | アプリの共通の文書 |
 | `docs/config/*.md` | claude-config の文書 |
 | `docs/images/*.svg` | 文書の画像 |
@@ -57,14 +61,13 @@ flowchart TD
 | `dotclaude/skills/*/templates/**` | スキルのひな形 |
 | `lib/README.md`・`lib/*.py`・`lib/*.sh` | 持ち主が複数の共通の処理と、その一覧 |
 | `lib/*/*.jq`・`lib/*/*.py` | 持ち主が 1 つの中身 |
-| `scripts/*.py`・`scripts/*.sh` | スクリプトの入口 |
 | `tests/README.md` | テストの一覧 |
-| `tests/hooks/*.sh`・`tests/scripts/*.sh`・`tests/skills/*.sh` | フック・scripts・スキルのテスト |
+| `tests/bin/*.sh`・`tests/hooks/*.sh`・`tests/skills/*.sh` | bin・フック・スキルのテスト |
 | `tests/support/*.sh` | テストの共通の処理 |
 
 場所は、`/` で区切った段ごとに照らす。`*` は 1 段の中の文字に当たり、末尾の `**` はその下の全部に当たる。
 
-`dotclaude/` の最上位に種類を足す時は、`scripts/config-install.sh` に入れる処理も足す。入れる処理の無い種類は、config-audit が `NG` にする。`dotclaude/README.md` は入れないので、数えない。
+`dotclaude/` の最上位に種類を足す時は、`bin/config-install.sh` に入れる処理も足す。入れる処理の無い種類は、config-audit が `NG` にする。`dotclaude/README.md` は入れないので、数えない。
 
 ### 分ける合図の表
 
@@ -72,13 +75,14 @@ flowchart TD
 
 | 場所 | 数えるもの | 上限 | 超えた時の分け方 |
 | --- | --- | --- | --- |
+| `bin/*` | 全部 | 10 | 接頭語ごとの子フォルダにする |
+| `docs/config/*.md` | 全部 | 10 | 使う時の文書と直す時の文書を、子フォルダに分ける |
 | `dotclaude/hooks/*.py` | 同じ頭 | 6 | 接頭語を割り、接頭語の表に行を足す |
 | `dotclaude/rules/*.md` | 同じ頭 | 6 | 接頭語を割り、接頭語の表に行を足す |
 | `dotclaude/skills/*/SKILL.md` | 同じ頭 | 6 | 接頭語を割り、接頭語の表に行を足す |
 | `lib/*` | 同じ頭 | 8 | 中身を分類で割り、頭を分ける |
-| `scripts/*` | 全部 | 10 | 接頭語ごとの子フォルダにする |
+| `tests/bin/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 | `tests/hooks/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
-| `tests/scripts/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 | `tests/skills/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 
 「同じ頭」は、名前の最初の `-`・`_`・`.` より前が同じものをまとめて数える。スキルは、フォルダの名前で数える。

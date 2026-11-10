@@ -175,7 +175,7 @@ def check_tree(block):
 
 
 def check_shields(doc):
-    message = "shields.io のバッジは使わない。技術は scripts/docs-tech-icons.py の SVG にする"
+    message = "shields.io のバッジは使わない。技術は bin/docs-tech-icons.py の SVG にする"
     return [(number, message) for number, _, _, what in doc.rows if what != "code" and SHIELDS in doc.lines[number - 1]]
 
 

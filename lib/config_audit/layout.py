@@ -9,7 +9,7 @@ PLACES_HEADING = "### 置ける場所の表"
 LIMITS_HEADING = "### 分ける合図の表"
 COUNT_ALL = "全部"
 COUNT_HEAD = "同じ頭"
-INSTALL = os.path.join(ROOT, "scripts", "config-install.sh")
+INSTALL = os.path.join(ROOT, "bin", "config-install.sh")
 DELIVERED = "dotclaude/"
 NOT_INSTALLED = {"README.md"}
 

@@ -1,13 +1,13 @@
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-TESTS := $(wildcard $(ROOT)tests/hooks/*.sh $(ROOT)tests/scripts/*.sh $(ROOT)tests/skills/*.sh)
+TESTS := $(wildcard $(ROOT)tests/bin/*.sh $(ROOT)tests/hooks/*.sh $(ROOT)tests/skills/*.sh)
 
 .PHONY: verify audit test
 
 verify: audit test
 
 audit:
-	python3 -I $(ROOT)scripts/config-audit.py
+	python3 -I $(ROOT)bin/config-audit.py
 
 test:
 	@failed=0; \

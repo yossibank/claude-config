@@ -135,14 +135,14 @@ paths:
 
 ### config-audit が見るほかのこと
 
-`scripts/config-audit.py` は、文書の検査のほかに次を見る。
+`bin/config-audit.py` は、文書の検査のほかに次を見る。
 
 - ひな形の Makefile と `.sh` が呼ぶ claude-config のファイルがあるか
 - ひな形の `__<名前>__` の印が、`replace-placeholders.py` の tokens にあるか
 - `replace-placeholders.py` が、`__<名前>__` のほかを置き換えていないか
-- skills・agents・rules・hooks・scripts が部品の文書の表にあるか
+- skills・agents・rules・hooks・bin が部品の文書の表にあるか
 - 部品の文書は、`docs/config/` の `components.md` と `skills.md` を見る
-- フック・scripts・スクリプトを持つスキルと `tests/` のテストが 1 対 1 か
+- フック・bin・スクリプトを持つスキルと `tests/` のテストが 1 対 1 か
 - スキルが `docs/config/skills.md` の使う順の図にあるか
 - 文書のパスは、`docs/` を除く最上位のフォルダの名前で始まるものを見る
 - 同じく、`dotclaude/` の中のフォルダの名前で始まるものも見る

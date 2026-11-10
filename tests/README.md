@@ -19,14 +19,14 @@
 | [swift-format.sh](hooks/swift-format.sh) | Mintfile に swiftformat がある時だけ走らせ、失敗で止めずに知らせるか |
 | [swift-style-check.sh](hooks/swift-style-check.sh) | 整形で直らない改行と空行の外れで止め、文字列とコメントの中は見ないか |
 
-### scripts のテスト
+### bin のテスト
 
 | テスト | 確かめること |
 | --- | --- |
-| [config-audit.sh](scripts/config-audit.sh) | わざと壊した写しで、config-audit が違反を見逃さないか |
-| [config-install.sh](scripts/config-install.sh) | 一時の HOME で、ほかのフックと実体を残して入れられるか |
-| [docs-section.sh](scripts/docs-section.sh) | 見出しの一覧と節を出せるか |
-| [docs-tech-icons.sh](scripts/docs-tech-icons.sh) | 引数の形を確かめ、アイコンを並べた SVG を書くか |
+| [config-audit.sh](bin/config-audit.sh) | わざと壊した写しで、config-audit が違反を見逃さないか |
+| [config-install.sh](bin/config-install.sh) | 一時の HOME で、ほかのフックと実体を残して入れられるか |
+| [docs-section.sh](bin/docs-section.sh) | 見出しの一覧と節を出せるか |
+| [docs-tech-icons.sh](bin/docs-tech-icons.sh) | 引数の形を確かめ、アイコンを並べた SVG を書くか |
 
 ### スキルのテスト
 

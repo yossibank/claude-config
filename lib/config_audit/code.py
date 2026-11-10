@@ -3,7 +3,7 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from config_audit.files import is_hook, read, rel, tracked
+from config_audit.files import bin_files, is_hook, read, rel, tracked
 from loader import load_hook
 
 
@@ -19,7 +19,7 @@ WORKTREES_LITERAL = ".claude/worktrees"
 
 
 def check_worktree_literals():
-    for path in tracked("dotclaude/hooks/*", "scripts/*", "dotclaude/skills/*/scripts/*"):
+    for path in tracked("dotclaude/hooks/*", "bin/*", "dotclaude/skills/*/scripts/*"):
         if path == os.path.abspath(__file__):
             continue
         for number, line in enumerate(read(path).split("\n"), 1):
@@ -29,7 +29,7 @@ def check_worktree_literals():
 
 def check_shell_scripts():
     shell = load_hook("shell-check")
-    strict = set(tracked("dotclaude/skills/*/scripts/*.sh", "scripts/*.sh"))
+    strict = set(tracked("dotclaude/skills/*/scripts/*.sh", "bin/*.sh"))
     paths = tracked("*.sh")
     with ThreadPoolExecutor() as pool:
         found = list(pool.map(shell.check, paths))
@@ -129,7 +129,7 @@ def main_guard_calls(tree):
 
 
 def check_entry_wrappers():
-    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py", "lib/*.py", "lib/*/*.py"):
+    for path in tracked("dotclaude/hooks/*.py", "bin/*.py", "dotclaude/skills/*/scripts/*.py", "lib/*.py", "lib/*/*.py"):
         try:
             tree = ast.parse(read(path))
         except SyntaxError:
@@ -144,12 +144,12 @@ def check_entry_wrappers():
 
 def check_script_entries():
     groups = {}
-    for path in tracked("scripts/*"):
+    for path in bin_files():
         groups.setdefault(os.path.splitext(os.path.basename(path))[0], []).append(path)
     for stem, paths in sorted(groups.items()):
         entries = [path for path in paths if path.endswith(".sh")] or sorted(paths)[:1]
         for path in sorted(set(paths) - set(entries[:1])):
-            yield path, 1, f"scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: {stem}"
+            yield path, 1, f"bin/ には入口だけを置く。同じ名前の中身は lib/ に移す: {stem}"
 
 
 def check_test_inline_python():

@@ -74,7 +74,7 @@ doc_case 0 "「」の中の句点は文の中の句点に数えない" README.md
 doc_case 2 "中に句点がある項目は末尾も句点で終える" README.md $'# t\n\nあ。\n\n- 一つ目。二つ目' "末尾も「。」"
 doc_case 2 "1 つの一覧の中で文末をそろえる" README.md $'# t\n\nあ。\n\n- 文である。\n- 語句' "文末をそろえる"
 doc_case 0 "入れ子の一覧は親と別に文末をそろえる" README.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n   - 語句\n   - 語句\n2. 次の手順である。'
-doc_case 2 "パスで始まる長いコマンドは止める" rules/x.md $'# t\n\nあ。\n\n- `~/Applications/AI/claude-config/scripts/docs-section.sh <file>` を使う。' "長いコマンドを書かない"
+doc_case 2 "パスで始まる長いコマンドは止める" rules/x.md $'# t\n\nあ。\n\n- `~/Applications/AI/claude-config/bin/docs-section.sh <file>` を使う。' "長いコマンドを書かない"
 doc_case 0 "README と docs の外は ## の絵文字を表から選ばせない" .github/pull_request_template.md $'## 👀 見どころ\n\nあ。\n\n## 🔗 関連\n\nい。'
 doc_case 2 "タイトルの直後が画像だけなら 1 文と数えない" README.md $'# t\n\n'"$icons"$'\n\nあ。' "タイトルの直後に、何があるかを 1 文"
 doc_case 0 "空白を含むファイル名は木の説明にしない" docs/x.md "$note"$'\n```text\nApp/\n├── My File.swift\n└── b.swift\n```'

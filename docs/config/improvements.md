@@ -24,7 +24,7 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟡 低 | `tests/scripts/config-audit.sh` | expect_audit が、呼ぶたびに全部の検査を走らせるので遅い。docs-check・pr-gate も同じ |
+| 🟡 低 | `tests/bin/config-audit.sh` | expect_audit が、呼ぶたびに全部の検査を走らせるので遅い。docs-check・pr-gate も同じ |
 
 ### 文書の読みやすさ
 

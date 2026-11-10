@@ -50,7 +50,7 @@
 | 画像 | 確かめたい場面だけを切り出して読む。多くのコマを並べた大きな画像を何度も読まない |
 
 ```sh
-~/Applications/AI/claude-config/scripts/docs-section.sh <ファイル> [見出し]
+~/Applications/AI/claude-config/bin/docs-section.sh <ファイル> [見出し]
 ```
 
 ### 任せる
