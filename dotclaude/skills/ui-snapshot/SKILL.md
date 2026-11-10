@@ -44,7 +44,7 @@ ${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ>
 | `targets.txt` | いつも | テストが依存するターゲットを、1 行に 1 つ書く。ほかのパッケージの製品は `<製品>:<パッケージ>` |
 | `patch.py` | 外から渡せない値を差し替える時 | 引数の写しのパッケージのフォルダの中を書き換える。`@Environment(\.widgetFamily)` を引数に変えるなど |
 
-新しいセットは、`${CLAUDE_SKILL_DIR}/templates/set/` を写して作る。`templates/` の子フォルダは、セット 1 つ分のひな形の単位である。画面の大きさと、ライト・ダークの 2 つを描く形になっている。
+新しいセットは `${CLAUDE_SKILL_DIR}/templates/snapshot-tests/` から写す。`templates/` の子フォルダは、セット 1 つ分のひな形の単位である。画面の大きさと、ライト・ダークの 2 つを描く形になっている。
 
 ## 描いた見た目の限り
 

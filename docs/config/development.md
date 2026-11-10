@@ -126,8 +126,8 @@
 2. 名前の頭を [接頭語の表](#接頭語の表) で確かめる。スキルのスクリプトは、頭の動詞を [動詞の表](#動詞の表) で確かめる。
 3. 本体を置く。スキルは `dotclaude/skills/<名前>/SKILL.md` に置く。フックは `dotclaude/hooks/<名前>.py`、スクリプトは `bin/` に置く。
 4. lib に足した時は、[lib/README.md](../../lib/README.md) の表に行を足す。
-5. フックは、`dotclaude/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。環境変数を足した時は、[components.md](components.md#-環境変数) の表に行を足す。
+5. フックは、`dotclaude/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。環境変数を足した時は、[components.md](../usage/components.md#-環境変数) の表に行を足す。
 6. `tests/<種類>/<名前>.sh` を足し、[tests/README.md](../../tests/README.md) の表に行を足す。
-7. [components.md](components.md) か [skills.md](skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
+7. [components.md](../usage/components.md) か [skills.md](../usage/skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
 8. 文書を足したり書き換えたりする時は、[docs-core](../../dotclaude/rules/docs-core.md)・[docs-human](../../dotclaude/rules/docs-human.md)・[docs-app](../../dotclaude/rules/docs-app.md) の決まりに従う。
 9. [testing.md](testing.md#-動かし方) の `make verify` を通す。

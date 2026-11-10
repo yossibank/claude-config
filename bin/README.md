@@ -8,8 +8,8 @@
 
 | 名前の頭 | まとまり | 一覧のある文書 |
 | --- | --- | --- |
-| `config-` | claude-config を入れる、検査する | [components.md](../docs/config/components.md#-スクリプト) |
-| `docs-` | 文書の節を読む、技術のアイコンを作る | [components.md](../docs/config/components.md#-スクリプト) |
+| `config-` | claude-config を入れる、検査する | [components.md](../docs/usage/components.md#-スクリプト) |
+| `docs-` | 文書の節を読む、技術のアイコンを作る | [components.md](../docs/usage/components.md#-スクリプト) |
 
 ## 🪜 足し方
 

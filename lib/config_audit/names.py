@@ -13,7 +13,7 @@ HOOK_RUNNER = "run.sh"
 LIB_README = os.path.join(ROOT, "lib", "README.md")
 DOC_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\.md")
 ENV_NAME = re.compile(r"\bCC_[A-Z][A-Z0-9_]*\b")
-COMPONENTS = os.path.join(ROOT, "docs", "config", "components.md")
+COMPONENTS = os.path.join(ROOT, "docs", "usage", "components.md")
 ENV_HEADING = "## 🔧 環境変数"
 
 

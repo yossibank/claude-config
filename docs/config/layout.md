@@ -31,12 +31,12 @@ flowchart TD
 | フォルダの中は平らに並べる | 子フォルダで分けず、[接頭語の表](development.md#接頭語の表) の分類でまとめる。`lib/` の持ち主の子フォルダと、`tests/` の種類の子フォルダだけを除く |
 | 置ける場所は表で決める | 追跡するファイルは、[置ける場所の表](#置ける場所の表) のどれかの行に当てる |
 | 持ち主が 1 つのものは持ち主の下に置く | そのスキルだけが呼ぶスクリプトは `dotclaude/skills/<名前>/scripts/` に置く |
-| ひな形は単位で分ける | `dotclaude/skills/<名前>/templates/<単位>/` に置く。単位は、アプリ 1 本・言語・セットのどれか |
+| ひな形は単位で分ける | `dotclaude/skills/<名前>/templates/<単位>/` に置く。単位は、アプリ 1 本・言語・中身の名詞のどれか |
 | `bin/` には入口だけを置く | 人・フック・複数のスキルが呼ぶ共通の道具の入口を置く。入口が読む `.py`・`.jq` は、`lib/` に置く |
 | `dotclaude/hooks/` は `.py` と `run.sh` だけにする | `.py` 以外は `run.sh` だけを置く。イベントは `dotclaude/settings.json` に書く |
 | 最上位のフォルダには `README.md` を置く | GitHub でフォルダを開いた時に、役割と、一覧のある文書が出る。一覧は 1 か所に置き、ほかの README からはリンクで指す |
 | 機体の違いは名前に出さない | スキルの名前は機体を問わない形にし、機体ごとの中身は `templates/<単位>/` と `scripts/` の中で分ける。言語が増えたら、[接頭語の表](development.md#接頭語の表) に言語の行を足す |
-| 文書は読む時で分ける | アプリの文書は `docs/app/`、claude-config の文書は `docs/config/` に置く |
+| 文書は読む時で分ける | アプリの文書は `docs/app/` に置く。claude-config の文書は、直す時と使う時で `docs/config/` と `docs/usage/` に分ける |
 
 ### 置ける場所の表
 
@@ -49,8 +49,9 @@ flowchart TD
 | `bin/*.py`・`bin/*.sh` | スクリプトの入口 |
 | `docs/README.md` | 文書のフォルダの案内と、読む順 |
 | `docs/app/*.md` | アプリの共通の文書 |
-| `docs/config/*.md` | claude-config の文書 |
+| `docs/config/*.md` | claude-config を直す時の文書 |
 | `docs/images/*.svg` | 文書の画像 |
+| `docs/usage/*.md` | claude-config を使う時の文書 |
 | `dotclaude/CLAUDE.md`・`dotclaude/settings.json` | 共通の決まりと、フックと許可の登録 |
 | `dotclaude/README.md` | 配るものの案内。`~/.claude` には入れない |
 | `dotclaude/agents/*.md` | エージェント |
@@ -77,15 +78,17 @@ flowchart TD
 | 場所 | 数えるもの | 上限 | 超えた時の分け方 |
 | --- | --- | --- | --- |
 | `bin/*` | 全部 | 10 | 接頭語ごとの子フォルダにする |
-| `docs/config/*.md` | 全部 | 10 | 使う時の文書と直す時の文書を、子フォルダに分ける |
+| `docs/config/*.md` | 全部 | 10 | 主題ごとの子フォルダに分ける |
+| `docs/usage/*.md` | 全部 | 10 | 主題ごとの子フォルダに分ける |
 | `dotclaude/hooks/*.py` | 同じ頭 | 6 | 接頭語を割り、接頭語の表に行を足す |
 | `dotclaude/rules/*.md` | 同じ頭 | 6 | 接頭語を割り、接頭語の表に行を足す |
 | `dotclaude/skills/*/SKILL.md` | 同じ頭 | 6 | 接頭語を割り、接頭語の表に行を足す |
 | `lib/*` | 同じ頭 | 8 | 中身を分類で割り、頭を分ける |
+| `lib/*/*` | 子フォルダ | 8 | 持ち主の種類（bin・フック・スキル）の子フォルダに分ける |
 | `tests/bin/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 | `tests/hooks/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 | `tests/skills/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 
-「同じ頭」は、名前の最初の `-`・`_`・`.` より前が同じものをまとめて数える。スキルは、フォルダの名前で数える。
+「同じ頭」は、名前の最初の `-`・`_`・`.` より前が同じものをまとめて数える。スキルは、フォルダの名前で数える。「子フォルダ」は、その場所の子フォルダの数を数える。
 
 `docs/app/` に iOS のほかのアプリの文書が加わる時は、`<機体>-<主題>.md` の名前で並べる。

@@ -106,7 +106,7 @@ replace "$d/docs/config/development.md" '[接頭語の表](#接頭語の表)' '[
 expect_audit "$d" "リンク先の見出しが無い: #無い表" "壊れた見出しへのリンク"
 
 d=$(copy flow)
-replace "$d/docs/config/skills.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
+replace "$d/docs/usage/skills.md" 'docsPolish["docs-polish"]' 'polish["文書の手入れ"]'
 expect_audit "$d" "スキルを使う順の図に載っていない: docs-polish" "skills.md のスキルの図に無いスキル"
 
 d=$(copy terms)
@@ -507,9 +507,26 @@ d=$(copy limit-head-ng)
 add_skills "$d" pr-a pr-b pr-c pr-d
 expect_check "$d" limits '頭が pr のファイルが 7 本で、上限の 6 本を超えた' "同じ接頭語のスキルが上限を超えた"
 
+add_lib_folders() {
+    local dir=$1 name
+    shift
+    for name in "$@"; do
+        mkdir -p "$dir/lib/$name"
+        printf 'value = 1\n' >"$dir/lib/$name/extra.py"
+    done
+}
+
+d=$(copy limit-folder-ok)
+add_lib_folders "$d" pr_gate shell_check swift_format ctx_limit_read
+expect_check "$d" limits OK "lib の子フォルダが上限ちょうどの 8 個"
+
+d=$(copy limit-folder-ng)
+add_lib_folders "$d" pr_gate shell_check swift_format ctx_limit_read app_init
+expect_check "$d" limits 'lib/*/* の子フォルダが 9 個で、上限の 8 個を超えた' "lib の子フォルダが上限を超えた"
+
 d=$(copy limit-row)
 replace "$d/docs/config/layout.md" '| `tests/skills/*.sh` | 全部 | 30 |' '| `tests/skills/*.sh` | 全部 | 多い |'
-expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部 か 同じ頭、上限を数字にする: tests/skills/*.sh' "上限が数字でない行"
+expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部・同じ頭・子フォルダ のどれか、上限を数字にする: tests/skills/*.sh' "上限が数字でない行"
 
 d=$(copy limit-stale)
 replace "$d/docs/config/layout.md" '| `bin/*` | 全部 | 10 |' '| `bins/*` | 全部 | 10 |'
@@ -556,7 +573,7 @@ printf 'echo "${CC_UI_EXTRA:-}"\n' >>"$d/dotclaude/skills/ui-record/scripts/tile
 expect_check "$d" env-names "環境変数が components.md の環境変数の表に無い: CC_UI_EXTRA" "表に無い環境変数"
 
 d=$(copy env-unused)
-replace "$d/docs/config/components.md" '| `CC_UI_DEVICE` |' '| `CC_UI_GHOST` | ui-snapshot | 無い変数 |
+replace "$d/docs/usage/components.md" '| `CC_UI_DEVICE` |' '| `CC_UI_GHOST` | ui-snapshot | 無い変数 |
 | `CC_UI_DEVICE` |'
 expect_check "$d" env-names "環境変数の表にあるが、どのフックもスクリプトも読んでいない: CC_UI_GHOST" "どこも読まない環境変数の行"
 
