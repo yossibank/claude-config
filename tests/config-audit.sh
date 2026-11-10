@@ -177,7 +177,7 @@ expect_audit "$d" "dotclaude/hooks/swift-format.py:1 テストが無い: tests/s
 
 d=$(copy test-missing-script)
 rm -f "$d/tests/config-install.sh"
-expect_audit "$d" "scripts/config-install.jq:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
+expect_audit "$d" "scripts/config-install.sh:1 テストが無い: tests/config-install.sh" "テストの無い scripts のファイル"
 
 d=$(copy test-missing-skill)
 rm -f "$d/tests/ui-record.sh"
@@ -244,17 +244,12 @@ replace "$d/dotclaude/hooks/ctx-limit-read.py" 'run_hook("ctx-limit-read", main)
 expect_audit "$d" "dotclaude/hooks/ctx-limit-read.py:1 main を run_gate か run_hook で包む" "run_hook で包まないフック"
 
 d=$(copy script-unwrapped)
-replace "$d/scripts/docs-section.py" 'run_main(main)' 'main()'
-expect_audit "$d" "scripts/docs-section.py:1 main を run_main で包む" "run_main で包まない .py"
+replace "$d/scripts/docs-tech-icons.py" 'run_main(main)' 'main()'
+expect_audit "$d" "scripts/docs-tech-icons.py:1 main を run_main で包む" "run_main で包まない .py"
 
-d=$(copy script-pair-no-entry)
-rm "$d/scripts/docs-section.sh"
+d=$(copy script-body)
 printf "." >"$d/scripts/docs-section.jq"
-expect_audit "$d" "拡張子違いの組は、.sh を入口にする: docs-section" "入口の .sh が無い組"
-
-d=$(copy script-pair-unused)
-printf '#!/bin/bash\nset -euo pipefail\n' >"$d/scripts/docs-section.sh"
-expect_audit "$d" "scripts/docs-section.py:1 入口の docs-section.sh から呼ばれていない" "入口が中身を呼ばない組"
+expect_audit "$d" "scripts/docs-section.sh:1 scripts/ には入口だけを置く。同じ名前の中身は lib/ に移す: docs-section" "scripts に置いた中身"
 
 d=$(copy test-inline-python)
 printf "python3 -I -c 'print(1)'\n" >>"$d/tests/ctx-limit-read.sh"
@@ -407,6 +402,10 @@ expect_audit "$d" "リンク先が無い: docs/nothing.md" "ひな形の中の�
 d=$(copy lib-name)
 printf 'value = 1\n' >"$d/lib/hookIO.py"
 expect_audit "$d" "lib/hookIO.py:1 lib の名前は" "snake_case でない lib"
+
+d=$(copy lib-unlisted)
+printf 'value = 1\n' >"$d/lib/hook_extra.py"
+expect_audit "$d" "lib/hook_extra.py:1 lib/README.md の表に載っていない" "lib/README.md に無い lib"
 
 d=$(copy test-lib-name)
 printf 'helper() { :; }\n' >"$d/tests/support/test-helpers.sh"

@@ -64,7 +64,7 @@ if [[ ! -f $installed ]]; then
     echo '[]' >|"$installed"
 fi
 
-jq -s -f "$root/scripts/config-install.jq" "$settings" "$dotclaude/settings.json" "$installed" >|"$settings.tmp"
+jq -s -f "$root/lib/config_install.jq" "$settings" "$dotclaude/settings.json" "$installed" >|"$settings.tmp"
 mv -f "$settings.tmp" "$settings.new"
 jq '.permissions.allow' "$dotclaude/settings.json" >|"$installed.new"
 

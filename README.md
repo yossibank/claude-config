@@ -41,7 +41,7 @@ flowchart LR
 | 配るもの | `dotclaude/settings.json` | フックと許可の登録 | 仕組み |
 | 配るもの | `dotclaude/skills/` | 手順と、手順が走らせるスクリプト | Claude |
 | 仕組み | `lib/` | フック・スクリプト・スキルの入口から読まれる中身 | 仕組み |
-| 仕組み | `scripts/` | 入れる、検査する、文書を読むスクリプト | 人・仕組み |
+| 仕組み | `scripts/` | 入れる、検査する、文書を読むスクリプトの入口 | 人・仕組み |
 | 仕組み | `tests/` | フックとスクリプトのテスト | 人・仕組み |
 | 文書 | `docs/app/` | アプリの共通の構成 | 人・Claude |
 | 文書 | `docs/config/` | claude-config を直す時の決まり | 人・Claude |
@@ -75,4 +75,5 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/config/setup.md](docs/config/setup.md) | 入れる時 | config-install.sh がすること、settings.json の混ぜ方 |
 | [docs/config/skills.md](docs/config/skills.md) | スキルを選ぶ時 | スキルを使う順と一覧 |
 | [docs/config/testing.md](docs/config/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方 |
+| [lib/README.md](lib/README.md) | 共通の処理を探す時 | lib の名前の頭のまとまりとファイルの一覧 |
 | [dotclaude/rules/docs-core.md](dotclaude/rules/docs-core.md)・[dotclaude/rules/docs-human.md](dotclaude/rules/docs-human.md)・[dotclaude/rules/docs-app.md](dotclaude/rules/docs-app.md) | 文書を書く時 | 文書の運用・文・表現、人が読む文書の形、アプリの文書の役割 |

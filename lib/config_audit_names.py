@@ -1,18 +1,19 @@
 import os
 import re
 
-from audit_files import read, tracked
-from audit_skills import skill_names
+from config_audit_files import read, tracked
+from config_audit_skills import skill_names
 from loader import DOTCLAUDE, ROOT
 from md_blocks import table_under
 from md_doc import read_doc
 
 
-LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:py|sh)")
+LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:jq|py|sh)")
 TEST_LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.sh")
 AGENT_NAME = re.compile(r"[a-z]+er\.md")
 HOOK_RUNNER = "run.sh"
 NAMING = os.path.join(ROOT, "docs", "config", "development.md")
+LIB_README = os.path.join(ROOT, "lib", "README.md")
 
 
 def test_targets():
@@ -99,9 +100,15 @@ def check_script_verbs():
 
 
 def check_names():
+    listed = read(LIB_README) if os.path.exists(LIB_README) else ""
     for path in tracked("lib/*"):
-        if not LIB_NAME.fullmatch(os.path.basename(path)):
-            yield path, 1, "lib の名前は、中身の名詞を snake_case の .py か .sh にする"
+        name = os.path.basename(path)
+        if path == LIB_README:
+            continue
+        if not LIB_NAME.fullmatch(name):
+            yield path, 1, "lib の名前は、中身の名詞を snake_case の .jq・.py・.sh にする"
+        elif f"]({name})" not in listed:
+            yield path, 1, "lib/README.md の表に載っていない"
     for path in tracked("tests/support/*"):
         if not TEST_LIB_NAME.fullmatch(os.path.basename(path)):
             yield path, 1, "tests/support の名前は、中身の名詞を snake_case の .sh にする"

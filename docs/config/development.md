@@ -14,13 +14,13 @@
 | フック | `<分類>-<すること、または名詞>.py` | `docs-check.py`、`pr-gate.py` |
 | フックのフォルダ | `.py` 以外は `run.sh` だけを置く。イベントは `dotclaude/settings.json` に書く | `dotclaude/hooks/run.sh` |
 | rules | `<分類>-<範囲>.md`。範囲は、言語・読み手・主題のどれか | `swift-core.md`、`code-comments.md` |
-| scripts | `<分類>-<すること、または名詞>.sh`・`.py`・`.jq` | `docs-section.sh`、`config-audit.py` |
+| scripts | `<分類>-<すること、または名詞>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
-| scripts の拡張子違いの組 | `.sh` が入口で、同じ名前の `.py`・`.jq` はその中身 | `docs-section.sh` と `docs-section.py` |
+| scripts の中身 | `scripts/` には入口だけを置く。入口が読む中身は、入口の名前を `snake_case` にして `lib/` に置く | `scripts/docs-section.sh` と `lib/docs_section.py` |
 | スクリプトの置き場所 | そのスキルだけが呼ぶものは `dotclaude/skills/<名前>/scripts/` に置く。人・フック・複数のスキルが呼ぶ共通の道具は `scripts/` に置く | `scripts/docs-section.sh` |
 | ひな形のフォルダ | `dotclaude/skills/<名前>/templates/<単位>/`。単位は、アプリ 1 本・言語・セットのどれか | `templates/ios-app/`、`templates/ja/` |
 | docs/ の文書 | 名詞の kebab-case の `.md`。主題を分ける時は、分けた文書のどれも `<主題>-<分類>.md` にする | `setup.md`、`ios-naming.md`、`improvements-code.md` |
-| lib | 中身の名詞を `snake_case` にし、`.sh` も Python の import で読める形にそろえる。頭は、持ち主か分類の名前にする | `hook_io.py`、`store_api.py`、`build_log.sh` |
+| lib | 中身の名詞を `snake_case` にし、`.sh` も Python の import で読める形にそろえる。頭は、持ち主が 1 つなら持ち主の名前、複数なら分類の名前にする | `hook_io.py`、`config_audit_names.py`、`build_log.sh` |
 | tests/support | 中身の名詞を `snake_case` の `.sh` にする | `assert.sh`、`fixtures.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
@@ -106,40 +106,14 @@
 
 ## 📦 共通の処理
 
-フック・スクリプト・スキルの入口から読まれる中身は、`lib/` に置く。子フォルダは作らず、名前の頭でまとめる。使う所は、モジュールの名前を `git grep` で探す。
+フック・スクリプト・スキルの入口から読まれる中身は、`lib/` に置く。名前の頭のまとまりとファイルの一覧は、[lib/README.md](../../lib/README.md) にある。
 
-| 名前の頭 | まとまり |
+| 決まり | 中身 |
 | --- | --- |
-| `audit_` | config-audit だけが読む中身 |
-| `docs_check_` | docs-check だけが読む中身 |
-| `hook_` | フックの共通の処理 |
-| `md_` | Markdown の読み方 |
-| `store_`・`swift_` | その分類の共通の処理 |
-| 無し | 分類をまたぐ共通の処理 |
-
-| ファイル | 中身 |
-| --- | --- |
-| [lib/audit_code.py](../../lib/audit_code.py) | config-audit の、シェルと Python の書き方、settings、ひな形、ワークツリーの置き場所の検査 |
-| [lib/audit_docs.py](../../lib/audit_docs.py) | config-audit の、README の形、リンク、見出しの参照先、パス、台帳、文書の決まりの検査 |
-| [lib/audit_files.py](../../lib/audit_files.py) | config-audit が使う、追跡しているファイルの一覧、読み込み、コードの囲みの外の行、## の見出し |
-| [lib/audit_names.py](../../lib/audit_names.py) | config-audit の、名前の頭と動詞、語の使い方、テストと対象の対応の検査 |
-| [lib/audit_skills.py](../../lib/audit_skills.py) | config-audit の、スキル、エージェント、rules、ひな形の CLAUDE.md の検査 |
-| [lib/build_log.sh](../../lib/build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す `show_errors` |
-| [lib/dates.py](../../lib/dates.py) | 日本時間、月の形、記録の日時の月 |
-| [lib/docs_check_headings.py](../../lib/docs_check_headings.py) | docs-check の、見出しと目次の検査 |
-| [lib/docs_check_rows.py](../../lib/docs_check_rows.py) | docs-check の、文・箇条書き・表の行ごとの検査 |
-| [lib/git.py](../../lib/git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所（`WORKTREES` など）。根は、まだ無いフォルダからも在る親をたどって探す |
-| [lib/git.sh](../../lib/git.sh) | 根（`use_repo`）、git のフォルダの中のパス（`git_file`）、ワークツリーの置き場所。分かれ目・変えたファイル・既定のブランチ・書き込みの権限・ブランチのワークツリー（`worktree_of`） |
-| [lib/hook_io.py](../../lib/hook_io.py) | 入力の JSON と対象のパス、コマンドの区切り、止める時と知らせ（`notify`）の出し方、編集する道具の名前。入口は、例外でも止める `run_gate` と、知らせて通す `run_hook` |
-| [lib/hook_messages.py](../../lib/hook_messages.py) | フックが止める時の文の書き出し。config-learn が止めた回数を数える時の目印にもなる |
-| [lib/hook_state.py](../../lib/hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除。掃除は 1 時間に 1 回で、フォルダの中の新しいファイルは残す |
-| [lib/loader.py](../../lib/loader.py) | claude-config の根（`ROOT`）と、場所を指して .py を読む処理 |
-| [lib/md_blocks.py](../../lib/md_blocks.py) | Markdown の frontmatter、見出し（`heading_of`）、見出しの下の表、コードの囲み |
-| [lib/md_doc.py](../../lib/md_doc.py) | 文書を行と種類に分けた形と、rules の表の絵文字・README の順（読めない表は `rule_problems`）。`md_blocks` の上に作る |
-| [lib/script_io.py](../../lib/script_io.py) | `NG` で止める `fail`・`run_main` と、結果の行を出す `finish`。引数を読む `require_month`・`split_dry_run`、JSON を書く `write_json` |
-| [lib/store_api.py](../../lib/store_api.py) | App Store の検索とレビュー、失敗の理由、ページ送りの `asc_pages`。App Store Connect API のキーと署名、アプリの ID と一覧、返信案のファイルも扱う |
-| [lib/swift_source.py](../../lib/swift_source.py) | Swift のコードから、コメントと文字列（補間の中の入れ子も）の中身を空白にする `mask` |
-| [lib/transcripts.py](../../lib/transcripts.py) | 会話の記録の読み方とリポジトリの名前（`repo_of`）。ある日時より後の記録の一覧（`sessions_since` など）、続きだけを読む `lines_after` |
+| 持ち主が 1 つの中身 | 持ち主の名前を `snake_case` にして頭に付ける。`config-audit` の中身は `config_audit_*.py` になる |
+| 持ち主が複数の中身 | 分類の名前を頭に付ける。分類をまたぐものは、頭を付けない |
+| `scripts/` の中身 | `scripts/` には入口だけを置く。入口が読む `.py`・`.jq` は、`lib/` に置く |
+| 一覧 | ファイルを足したら、[lib/README.md](../../lib/README.md) の表に行を足す。載っていないファイルは、config-audit が `NG` にする |
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま、呼ぶ所に合わせた書き方で使う。
 
@@ -164,7 +138,7 @@
 
 | 場所 | 合図 | 分け方 |
 | --- | --- | --- |
-| `lib/` | 同じ頭のファイルが 8 本を超える | その頭だけを子フォルダにする |
+| `lib/` | 同じ持ち主か、同じ分類の頭のファイルが 8 本を超える | その頭だけを子フォルダにする |
 | `tests/` | テストが 50 本を超える | 接頭語ごとの子フォルダにする |
 | `docs/app/` | iOS のほかのアプリの文書が加わる | `<機体>-<主題>.md` の名前で並べる |
 
@@ -172,8 +146,9 @@
 
 1. 名前の頭を [接頭語の表](#接頭語の表) で確かめる。スキルのスクリプトは、頭の動詞を [動詞の表](#動詞の表) で確かめる。
 2. 本体を置く。スキルは `dotclaude/skills/<名前>/SKILL.md` に置く。フックは `dotclaude/hooks/<名前>.py`、スクリプトは `scripts/` に置く。
-3. フックは、`dotclaude/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。
-4. `tests/<名前>.sh` を足し、[testing.md のテスト](testing.md#-テスト) の表に行を足す。
-5. [components.md](components.md) か [skills.md](skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
-6. 文書を足したり書き換えたりする時は、[docs-core](../../dotclaude/rules/docs-core.md)・[docs-human](../../dotclaude/rules/docs-human.md)・[docs-app](../../dotclaude/rules/docs-app.md) の決まりに従う。
-7. [testing.md](testing.md#-動かし方) の `make verify` を通す。
+3. lib に足した時は、[lib/README.md](../../lib/README.md) の表に行を足す。
+4. フックは、`dotclaude/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。
+5. `tests/<名前>.sh` を足し、[testing.md のテスト](testing.md#-テスト) の表に行を足す。
+6. [components.md](components.md) か [skills.md](skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
+7. 文書を足したり書き換えたりする時は、[docs-core](../../dotclaude/rules/docs-core.md)・[docs-human](../../dotclaude/rules/docs-human.md)・[docs-app](../../dotclaude/rules/docs-app.md) の決まりに従う。
+8. [testing.md](testing.md#-動かし方) の `make verify` を通す。
