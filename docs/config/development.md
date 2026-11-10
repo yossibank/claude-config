@@ -11,7 +11,7 @@
 | 対象 | 形 | 例 |
 | --- | --- | --- |
 | スキル | `<分類>-<すること>` | `pr-create`、`ctx-report` |
-| フック | `<分類>-<すること、または名詞>.py` | `docs-check.py`、`pr-gate.py` |
+| フック | `<分類>-<すること>[-<対象>].py`、または `<分類>-<名詞>.py`。新しく足す時は、動詞を対象より先に置く | `docs-check.py`、`rules-require-read.py`、`pr-gate.py` |
 | rules | `<分類>-<範囲>.md`。範囲は、言語・読み手・主題のどれか | `swift-core.md`、`code-comments.md` |
 | bin | `<分類>-<すること、または名詞>.sh`・`.py` | `docs-section.sh`、`config-audit.py` |
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |

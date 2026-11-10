@@ -34,6 +34,11 @@ flowchart LR
 
 ```text
 claude-config/
+├── bin/
+├── docs/
+│   ├── app/
+│   ├── config/
+│   └── images/
 ├── dotclaude/
 │   ├── CLAUDE.md
 │   ├── README.md
@@ -43,11 +48,6 @@ claude-config/
 │   ├── rules/
 │   ├── settings.json
 │   └── skills/
-├── bin/
-├── docs/
-│   ├── app/
-│   ├── config/
-│   └── images/
 ├── lib/
 └── tests/
     ├── bin/
@@ -58,6 +58,10 @@ claude-config/
 
 | フォルダ | 役割 | 読み手 |
 | --- | --- | --- |
+| [bin/](bin/) | 入れる、検査する、文書を読むスクリプトの入口 | 人・仕組み |
+| [docs/app/](docs/app/) | アプリの共通の構成。アプリのリポジトリから名前で指される | 人・Claude |
+| [docs/config/](docs/config/) | claude-config を直す時の決まり | 人・Claude |
+| [docs/images/](docs/images/) | 文書の画像 | 人 |
 | [dotclaude/](dotclaude/) | `~/.claude` に配るもの。中の形は `~/.claude` と同じにする | |
 | [dotclaude/CLAUDE.md](dotclaude/CLAUDE.md)・[dotclaude/rules/](dotclaude/rules/) | いつも、または当たるファイルを触る時に読み込まれる決まり | Claude（一部は人） |
 | [dotclaude/agents/](dotclaude/agents/) | 任せる相手 | Claude |
@@ -65,10 +69,6 @@ claude-config/
 | [dotclaude/output-styles/](dotclaude/output-styles/) | 報告の形 | Claude |
 | [dotclaude/settings.json](dotclaude/settings.json) | フックと許可の登録 | 仕組み |
 | [dotclaude/skills/](dotclaude/skills/) | 手順と、手順が走らせるスクリプト | Claude |
-| [bin/](bin/) | 入れる、検査する、文書を読むスクリプトの入口 | 人・仕組み |
-| [docs/app/](docs/app/) | アプリの共通の構成。アプリのリポジトリから名前で指される | 人・Claude |
-| [docs/config/](docs/config/) | claude-config を直す時の決まり | 人・Claude |
-| [docs/images/](docs/images/) | 文書の画像 | 人 |
 | [lib/](lib/) | フック・スクリプト・スキルの入口から読まれる中身 | 仕組み |
 | [tests/](tests/) | フックとスクリプトのテスト | 人・仕組み |
 | [CLAUDE.md](CLAUDE.md) | このリポジトリだけの決まり | Claude |

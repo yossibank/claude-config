@@ -35,6 +35,7 @@ flowchart TD
 | `bin/` には入口だけを置く | 人・フック・複数のスキルが呼ぶ共通の道具の入口を置く。入口が読む `.py`・`.jq` は、`lib/` に置く |
 | `dotclaude/hooks/` は `.py` と `run.sh` だけにする | `.py` 以外は `run.sh` だけを置く。イベントは `dotclaude/settings.json` に書く |
 | 最上位のフォルダには `README.md` を置く | GitHub でフォルダを開いた時に、役割と、一覧のある文書が出る。一覧は 1 か所に置き、ほかの README からはリンクで指す |
+| 機体の違いは名前に出さない | スキルの名前は機体を問わない形にし、機体ごとの中身は `templates/<単位>/` と `scripts/` の中で分ける。言語が増えたら、[接頭語の表](development.md#接頭語の表) に言語の行を足す |
 | 文書は読む時で分ける | アプリの文書は `docs/app/`、claude-config の文書は `docs/config/` に置く |
 
 ### 置ける場所の表
