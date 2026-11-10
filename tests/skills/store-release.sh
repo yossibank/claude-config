@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
-source "$(dirname "$0")/support/http_fake.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
+source "$(dirname "$0")/../support/http_fake.sh"
 
 listing="$root/dotclaude/skills/store-release/scripts/check-listing.py"
 archive="$root/dotclaude/skills/store-release/scripts/archive-app.sh"

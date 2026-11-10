@@ -19,9 +19,9 @@ flowchart LR
 
 | 段 | 動き |
 | --- | --- |
-| リンクする | `dotclaude/` の中身を、settings.json を除いてリンクする。リンクでない同じ名前のファイルがあれば、`NG` を出して止まる |
+| リンクする | `dotclaude/` の中身を、settings.json と README.md を除いてリンクする。リンクでない同じ名前のファイルがあれば、`NG` を出して止まる |
 | 壊れたリンクを消す | 壊れたスキルと output style のリンクを消す |
-| settings.json.new を作る | [config_install.jq](../../lib/config_install.jq) で `~/.claude/settings.json` の案を作る。入れる許可の一覧は `claude-config-allow.json.new` に書く |
+| settings.json.new を作る | [settings.jq](../../lib/config_install/settings.jq) で `~/.claude/settings.json` の案を作る。入れる許可の一覧は `claude-config-allow.json.new` に書く |
 | 比べる | キーと配列の並びをそろえてから、今の settings.json と案を比べる。並びだけの違いは、変わらないとする |
 | 置き換える | 表示された `mv` のコマンドで、2 つの `.new` を置き換える。変わらない時は、許可の一覧だけをその場で置き換える |
 

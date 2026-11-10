@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/../support/assert.sh"
 
 export HOME="$work/home"
 config="$HOME/Applications/AI/claude-config"
@@ -39,7 +39,7 @@ check "config-install: 今のフックを run.sh で入れる" jq -e '[.. | .com
 check "config-install: output style をリンクする" test -L "$claude/output-styles/report.md"
 check "config-install: 自分で決めた outputStyle を残す" jq -e '.outputStyle == "mine"' "$settings.new"
 echo '{}' >"$work/own.json"
-check "config-install: 無い outputStyle を入れる" jq -e '.outputStyle == "report"' <(jq -s -f "$config/lib/config_install.jq" "$work/own.json" "$config/dotclaude/settings.json" <(echo '[]'))
+check "config-install: 無い outputStyle を入れる" jq -e '.outputStyle == "report"' <(jq -s -f "$config/lib/config_install/settings.jq" "$work/own.json" "$config/dotclaude/settings.json" <(echo '[]'))
 check "config-install: 今の許可を前に残す" jq -e '.permissions.allow[0] == "Bash(ls *)"' "$settings.new"
 check "config-install: claude-config から消えた許可を外す" jq -e '.permissions.allow | index("Bash(retired *)") | not' "$settings.new"
 check "config-install: 入れた許可の一覧は、置き換えるまで前のものを残す" jq -e 'index("Bash(retired *)")' "$claude/claude-config-allow.json"

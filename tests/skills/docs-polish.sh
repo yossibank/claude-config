@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/../support/assert.sh"
 
 layout="$root/dotclaude/skills/docs-polish/scripts/check-layout.py"
 mkdir -p "$work/repo/docs"

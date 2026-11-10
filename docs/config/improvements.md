@@ -24,7 +24,7 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟡 低 | `tests/config-audit.sh` | expect_audit が、呼ぶたびに全部の検査を走らせるので遅い。docs-check・pr-gate も同じ |
+| 🟡 低 | `tests/scripts/config-audit.sh` | expect_audit が、呼ぶたびに全部の検査を走らせるので遅い。docs-check・pr-gate も同じ |
 
 ### 文書の読みやすさ
 
@@ -38,7 +38,7 @@
 | --- | --- | --- |
 | 🟡 低 | `README.md` | 技術のアイコン（Bash、Git）と実行環境の表（jq）で、道具が合わない |
 | 🟡 低 | `dotclaude/skills/app-init/templates/ios-app/ios/Packages/__App__App/Package.swift` | `AppFeature/` と `Features/`、`__App__App` の名前が紛らわしい |
-| 🟡 低 | `lib/config_install.jq` | `claude-config-allow.json` の名前が役目を表さない。入れた先のファイル名なので、改名は移行が要る |
+| 🟡 低 | `lib/config_install/settings.jq` | `claude-config-allow.json` の名前が役目を表さない。入れた先のファイル名なので、改名は移行が要る |
 | 🟡 低 | `dotclaude/skills/app-init/templates/ios-app/docs/images/tech.svg` | docs/images/tech.svg と同じ名前で中身が違う |
 | 🟡 低 | `dotclaude/output-styles/report.md`・`dotclaude/skills/store-report/`・`dotclaude/skills/ctx-report/` | `report` の名前が 3 つの物を指す |
 | 🟡 低 | `dotclaude/settings.json` | swift の 2 段のフックの長い行を Edit と Write で 2 回書く |

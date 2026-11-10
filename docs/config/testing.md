@@ -12,8 +12,8 @@ claude-config を変えたら、`make verify` を通す。
 | --- | --- |
 | `make verify` | `make audit` と `make test` を順に走らせる |
 | `make audit` | config-audit.py で、文書と名前と置き場所と書き方の決まり |
-| `make test` | `tests/*.sh` の全部で、フックとスクリプトの振る舞い |
-| `make test-<対象>` | `tests/<対象>.sh` の 1 本だけ |
+| `make test` | `tests/` の種類のフォルダの全部で、フックとスクリプトの振る舞い |
+| `make test-<対象>` | 名前が `<対象>.sh` のテストだけ |
 
 > [!IMPORTANT]
 > CI は、claude-config もアプリも置かない。PR は、手元の確認を通してから作る。
@@ -25,7 +25,8 @@ claude-config を変えたら、`make verify` を通す。
 | 決まり | 中身 |
 | --- | --- |
 | 対象 | フックの `.py`、`scripts/` のファイル、`scripts/` を持つスキル |
-| 置き場所と名前 | `tests/<対象>.sh` に置く。名前は、対象の拡張子を除いた名前にする |
+| 置き場所と名前 | `tests/<種類>/<対象>.sh` に置く。名前は、対象の拡張子を除いた名前にする |
+| 種類 | 対象の置き場所に合わせて、`hooks`・`scripts`・`skills` のどれかにする |
 | 対応 | テストと対象が 1 対 1 でないと、config-audit が `NG` にする |
 | 道具 | `rsync` と `jq` が要る |
 | 上限 | 上限のあるものは、上限ちょうどが通るテストも置く |

@@ -11,6 +11,7 @@ COUNT_ALL = "全部"
 COUNT_HEAD = "同じ頭"
 INSTALL = os.path.join(ROOT, "scripts", "config-install.sh")
 DELIVERED = "dotclaude/"
+NOT_INSTALLED = {"README.md"}
 
 
 def cell_patterns(cell):
@@ -71,7 +72,7 @@ def check_limits():
 
 def check_install_targets():
     script = read(INSTALL)
-    names = sorted({path.split("/")[1] for path in tracked_files() if path.startswith(DELIVERED)})
+    names = sorted({path.split("/")[1] for path in tracked_files() if path.startswith(DELIVERED)} - NOT_INSTALLED)
     for name in names:
         if not re.search(rf'dotclaude"?/{re.escape(name)}(?![A-Za-z0-9_-])', script):
             yield INSTALL, 1, f"dotclaude/{name} を入れる処理が config-install.sh に無い"

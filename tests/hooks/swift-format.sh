@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
-source "$(dirname "$0")/support/hook_fixtures.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
+source "$(dirname "$0")/../support/hook_fixtures.sh"
 
 payload="$(file_call "$swift")"
 calls="$work/swiftformat-calls"

@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/support/assert.sh"
-source "$(dirname "$0")/support/fixtures.sh"
-source "$(dirname "$0")/support/hook_fixtures.sh"
+source "$(dirname "$0")/../support/assert.sh"
+source "$(dirname "$0")/../support/fixtures.sh"
+source "$(dirname "$0")/../support/hook_fixtures.sh"
 
 doc_case() {
     local expect=$1 label=$2 name=$3 text=$4 want=${5:-}

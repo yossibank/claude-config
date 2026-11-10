@@ -1,7 +1,7 @@
 import os
 import re
 
-from config_audit.files import NAMING, entry_targets, naming_table, read, rel, skill_names, tracked
+from config_audit.files import NAMING, entry_kinds, entry_targets, naming_table, read, rel, skill_names, tracked
 from loader import DOTCLAUDE, ROOT
 from md_blocks import table_under
 
@@ -15,16 +15,23 @@ DOC_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\.md")
 ENV_NAME = re.compile(r"\bCC_[A-Z][A-Z0-9_]*\b")
 COMPONENTS = os.path.join(ROOT, "docs", "config", "components.md")
 ENV_HEADING = "## 🔧 環境変数"
-OWNED_MINIMUM = 2
+
+
+def test_targets():
+    return {f"tests/{kind}/{name}.sh": path for (kind, name), path in entry_kinds().items()}
+
+
+def stem_of(path):
+    return os.path.splitext(os.path.basename(path))[0]
 
 
 def check_test_pairs():
-    targets = entry_targets()
-    tests = {os.path.splitext(os.path.basename(path))[0]: path for path in tracked("tests/*.sh")}
+    targets = test_targets()
+    tests = {rel(path): path for path in tracked("tests/hooks/*.sh", "tests/scripts/*.sh", "tests/skills/*.sh")}
     for name in sorted(targets.keys() - tests.keys()):
-        yield targets[name], 1, f"テストが無い: tests/{name}.sh"
+        yield targets[name], 1, f"テストが無い: {name}"
     for name in sorted(tests.keys() - targets.keys()):
-        yield tests[name], 1, "テストの対象が無い。hooks/<名前>.py・scripts/<名前>・scripts/ を持つスキルの名前にする"
+        yield tests[name], 1, "テストの対象が無い。フォルダに合う hooks/<名前>.py・scripts/<名前>・scripts/ を持つスキルの名前にする"
 
 
 def prefixes():
@@ -104,17 +111,11 @@ def check_lib_owners():
     for folder, paths in sorted(folders.items()):
         if folder not in known:
             yield paths[0], 1, f"lib の子フォルダの名前は、持ち主（フック・scripts・スキル）の名前を snake_case にする: {folder}"
-        elif len(paths) < OWNED_MINIMUM:
-            yield paths[0], 1, f"lib の子フォルダは、持ち主が 1 つの中身が {OWNED_MINIMUM} 本以上ある時だけ作る: {folder}"
-    flat = {}
     for path in tracked("lib/*"):
-        stem = os.path.splitext(os.path.basename(path))[0]
-        owner = next((name for name in known if stem == name or stem.startswith(f"{name}_")), None)
+        stem = stem_of(path)
+        owner = next((name for name in sorted(known) if stem == name or stem.startswith(f"{name}_")), None)
         if owner:
-            flat.setdefault(owner, []).append(path)
-    for owner, paths in sorted(flat.items()):
-        if len(paths) >= OWNED_MINIMUM or owner in folders:
-            yield paths[0], 1, f"持ち主が 1 つの中身が {OWNED_MINIMUM} 本以上ある。lib/{owner}/ にまとめる"
+            yield path, 1, f"持ち主が 1 つの中身は、lib の直下に置かない。lib/{owner}/ に置く"
 
 
 def env_uses():
