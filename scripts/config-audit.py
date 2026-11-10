@@ -1,50 +1,40 @@
+import importlib
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
 
-from config_audit_code import check_entry_wrappers, check_python_scripts, check_script_entries, check_test_inline_python, check_settings, check_shell_scripts, check_template_scripts, check_template_tokens, check_worktree_literals  # noqa: E402
-from config_audit_docs import check_anchors, check_docs, check_ledger, check_links, check_paths, check_readme, check_readme_flow  # noqa: E402
-from config_audit_names import check_names, check_prefixes, check_script_verbs, check_terms, check_test_pairs  # noqa: E402
-from config_audit_skills import check_agents, check_claude_templates, check_rules, check_skill_fields, check_skill_references, check_skill_steps, check_skill_unused  # noqa: E402
 from loader import ROOT  # noqa: E402
-from script_io import run_main  # noqa: E402
+from script_io import fail, run_main  # noqa: E402
+
+CHECKS_DIR = os.path.join(ROOT, "lib", "config_audit")
+CHECK_PREFIX = "check_"
 
 
-CHECKS = [
-    check_skill_fields,
-    check_skill_steps,
-    check_skill_references,
-    check_skill_unused,
-    check_claude_templates,
-    check_template_scripts,
-    check_template_tokens,
-    check_agents,
-    check_rules,
-    check_settings,
-    check_prefixes,
-    check_script_verbs,
-    check_names,
-    check_test_pairs,
-    check_shell_scripts,
-    check_python_scripts,
-    check_entry_wrappers,
-    check_script_entries,
-    check_test_inline_python,
-    check_worktree_literals,
-    check_readme,
-    check_readme_flow,
-    check_terms,
-    check_links,
-    check_anchors,
-    check_paths,
-    check_ledger,
-    check_docs,
-]
+def checks():
+    found = {}
+    for file in sorted(os.listdir(CHECKS_DIR)):
+        stem, extension = os.path.splitext(file)
+        if extension != ".py":
+            continue
+        module = importlib.import_module(f"config_audit.{stem}")
+        for name, value in vars(module).items():
+            if not name.startswith(CHECK_PREFIX) or not callable(value) or value.__module__ != module.__name__:
+                continue
+            label = name[len(CHECK_PREFIX) :].replace("_", "-")
+            if label in found:
+                fail(f"検査の名前が重なっている: {name}（lib/config_audit/{file}）")
+            found[label] = value
+    return found
 
 
 def main():
-    problems = [f"NG {os.path.relpath(path, ROOT)}:{line} {message}" for check in CHECKS for path, line, message in check()]
+    available = checks()
+    wanted = sys.argv[1:] or list(available)
+    unknown = [name for name in wanted if name not in available]
+    if unknown:
+        fail(f"検査の名前が無い: {'、'.join(unknown)}。ある名前は {'、'.join(available)}")
+    problems = [f"NG {os.path.relpath(path, ROOT)}:{line} {message}" for name in wanted for path, line, message in available[name]()]
     if problems:
         print("\n".join(problems))
         print(f"NG config-audit: {len(problems)} 件")

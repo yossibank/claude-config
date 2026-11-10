@@ -99,14 +99,14 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 
 | スクリプト | 呼ぶ時 | すること |
 | --- | --- | --- |
-| [scripts/config-audit.py](../../scripts/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、文書とスクリプトの書き方の違反を見る |
+| [scripts/config-audit.py](../../scripts/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、置き場所、文書とスクリプトの書き方の違反を見る。引数に検査の名前を並べると、その検査だけを走らせる |
 | [scripts/config-install.sh](../../scripts/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [scripts/docs-section.sh](../../scripts/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
 | [scripts/docs-tech-icons.py](../../scripts/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
 
 ## 🔧 環境変数
 
-フックとスクリプトの動きは、次の環境変数で変えられる。claude-config だけの変数は、`CC_` と分類で始める。
+フックとスクリプトの動きは、次の環境変数で変えられる。claude-config だけの変数は、`CC_` と分類で始める。表に無い `CC_` の変数と、どこも読まない行は、config-audit が `NG` にする。
 
 | 変数 | 使う所 | 中身 |
 | --- | --- | --- |
@@ -115,6 +115,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | `CC_REPORTS_DIR` | store-report | 月ごとの表の置き場所 |
 | `CC_HOOKS_OFF` | dotclaude/hooks/run.sh、rules-detect-bash-edits | 空白・改行・タブ・カンマで区切った名前のフックを動かさない。dotclaude/hooks/ に無い名前は stderr に出す（デバッグのログでだけ見える） |
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
+| `CC_STORE_ARCHIVE_ONLY`・`CC_STORE_EXPORT` | store-release | 前の変数。付いていれば、送らずに `NG` で止まる |
 | `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
 | `CC_UI_WORK_DIR` | ui-snapshot | 描く時の写しを置くフォルダ。既定は `~/Library/Caches/ui-snapshot` |

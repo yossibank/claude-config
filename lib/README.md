@@ -4,13 +4,13 @@
 
 ## 🏷️ 名前の頭
 
-子フォルダは作らず、名前の頭でまとめる。持ち主が 1 つの中身は、持ち主の名前を `snake_case` にして頭に付ける。
+名前の頭でまとめる。持ち主が 1 つの中身は、持ち主の名前を `snake_case` にして頭に付ける。2 本以上ある時は、持ち主の名前の子フォルダにまとめる。
 
 | 名前の頭 | まとまり |
 | --- | --- |
-| `config_audit_` | [config-audit.py](../scripts/config-audit.py) だけが読む中身 |
+| `config_audit/` | [config-audit.py](../scripts/config-audit.py) だけが読む中身。`check_` で始まる関数が、検査として走る |
 | `config_install` | [config-install.sh](../scripts/config-install.sh) だけが読む中身 |
-| `docs_check_` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
+| `docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
 | `docs_section` | [docs-section.sh](../scripts/docs-section.sh) だけが読む中身 |
 | `hook_` | フックの共通の処理 |
 | `md_` | Markdown の読み方 |
@@ -24,15 +24,19 @@
 | ファイル | 中身 |
 | --- | --- |
 | [build_log.sh](build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す |
-| [config_audit_code.py](config_audit_code.py) | シェルと Python の書き方、settings、ひな形の検査 |
-| [config_audit_docs.py](config_audit_docs.py) | README の形、リンク、パス、台帳、文書の決まりの検査 |
-| [config_audit_files.py](config_audit_files.py) | 追跡しているファイルの一覧と読み込み |
-| [config_audit_names.py](config_audit_names.py) | 名前の頭と動詞、語の使い方、テストと対象の対応の検査 |
-| [config_audit_skills.py](config_audit_skills.py) | スキル、エージェント、rules、ひな形の CLAUDE.md の検査 |
+| [config_audit/agents.py](config_audit/agents.py) | エージェントと rules の検査 |
+| [config_audit/code.py](config_audit/code.py) | シェルと Python の書き方、lib を読む行、scripts の入口の検査 |
+| [config_audit/docs.py](config_audit/docs.py) | README の形、リンク、パス、台帳、語の使い方、文書の決まりの検査 |
+| [config_audit/files.py](config_audit/files.py) | 追跡しているファイルの一覧と読み込み、名前の付け方の表の読み方 |
+| [config_audit/layout.py](config_audit/layout.py) | 置ける場所、分ける合図の上限、入れる処理の検査 |
+| [config_audit/names.py](config_audit/names.py) | 名前の頭と動詞、lib の持ち主、環境変数、テストと対象の対応の検査 |
+| [config_audit/settings.py](config_audit/settings.py) | settings のフックの呼び方と登録、許可とフックの並びの検査 |
+| [config_audit/skills.py](config_audit/skills.py) | スキルの項目、節、参照先、許可、使われていないスクリプトの検査 |
+| [config_audit/templates.py](config_audit/templates.py) | ひな形が呼ぶファイル、置き換える印、ひな形の CLAUDE.md の検査 |
 | [config_install.jq](config_install.jq) | 今の settings.json に、入れるフックと許可を混ぜた案を作る |
 | [dates.py](dates.py) | 日本時間、月の形、記録の日時の月 |
-| [docs_check_headings.py](docs_check_headings.py) | 見出しと目次の検査 |
-| [docs_check_rows.py](docs_check_rows.py) | 文・箇条書き・表の行ごとの検査 |
+| [docs_check/headings.py](docs_check/headings.py) | 見出しと目次の検査 |
+| [docs_check/rows.py](docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
 | [docs_section.py](docs_section.py) | 見出しを読み、節を切り出す |
 | [git.py](git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所 |
 | [git.sh](git.sh) | リポジトリの根、ワークツリーの置き場所、ブランチと変えたファイルの調べ方 |

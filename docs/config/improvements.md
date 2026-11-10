@@ -1,4 +1,4 @@
-# 台帳
+# 改善の台帳
 
 > [!NOTE]
 > claude-config の調べ直しで見つけて、まだ直していない改善と、直さないと決めたことが分かる。
@@ -24,7 +24,7 @@
 
 | 重さ | 場所 | 中身 |
 | --- | --- | --- |
-| 🟡 低 | `tests/config-audit.sh` | expect_audit が、呼ぶたびにリポジトリ全体を検査するので遅い。docs-check・pr-gate も同じ |
+| 🟡 低 | `tests/config-audit.sh` | expect_audit が、呼ぶたびに全部の検査を走らせるので遅い。docs-check・pr-gate も同じ |
 
 ### 文書の読みやすさ
 

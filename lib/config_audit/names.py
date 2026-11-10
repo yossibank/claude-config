@@ -1,62 +1,30 @@
 import os
 import re
 
-from config_audit_files import read, tracked
-from config_audit_skills import skill_names
+from config_audit.files import NAMING, entry_targets, naming_table, read, rel, skill_names, tracked
 from loader import DOTCLAUDE, ROOT
 from md_blocks import table_under
-from md_doc import read_doc
 
 
 LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.(?:jq|py|sh)")
 TEST_LIB_NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.sh")
 AGENT_NAME = re.compile(r"[a-z]+er\.md")
 HOOK_RUNNER = "run.sh"
-NAMING = os.path.join(ROOT, "docs", "config", "development.md")
 LIB_README = os.path.join(ROOT, "lib", "README.md")
-
-
-def test_targets():
-    targets = {}
-    for path in tracked("dotclaude/hooks/*.py", "scripts/*"):
-        targets.setdefault(os.path.splitext(os.path.basename(path))[0], path)
-    for path in tracked("dotclaude/skills/*/scripts/*"):
-        skill = os.path.relpath(path, DOTCLAUDE).split(os.sep)[1]
-        targets.setdefault(skill, os.path.join(DOTCLAUDE, "skills", skill, "SKILL.md"))
-    return targets
+DOC_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\.md")
+ENV_NAME = re.compile(r"\bCC_[A-Z][A-Z0-9_]*\b")
+COMPONENTS = os.path.join(ROOT, "docs", "config", "components.md")
+ENV_HEADING = "## 🔧 環境変数"
+OWNED_MINIMUM = 2
 
 
 def check_test_pairs():
-    targets = test_targets()
+    targets = entry_targets()
     tests = {os.path.splitext(os.path.basename(path))[0]: path for path in tracked("tests/*.sh")}
     for name in sorted(targets.keys() - tests.keys()):
         yield targets[name], 1, f"テストが無い: tests/{name}.sh"
     for name in sorted(tests.keys() - targets.keys()):
         yield tests[name], 1, "テストの対象が無い。hooks/<名前>.py・scripts/<名前>・scripts/ を持つスキルの名前にする"
-
-
-def naming_table(heading, first_column):
-    return table_under(read(NAMING).split("\n"), heading, first_column)
-
-
-def term_pattern(word):
-    edge = r"[A-Za-z0-9_./-]"
-    return re.compile(rf"(?<!{edge}){re.escape(word)}(?!{edge})" if word.isascii() else re.escape(word))
-
-
-def check_terms():
-    table = naming_table("### そろえる語", "使う語")
-    if not table:
-        yield NAMING, 1, "名前の付け方のそろえる語の表が読めない"
-        return
-    patterns = [(use, avoid, term_pattern(avoid)) for use, avoid in table]
-    for path in tracked("*.md"):
-        for row in read_doc(path).rows:
-            for use, avoid, pattern in patterns:
-                if path == NAMING and row.text.strip().startswith(f"| {use} |"):
-                    continue
-                if pattern.search(row.text):
-                    yield path, row.number, f"「{avoid}」ではなく「{use}」と書く（そろえる語の表）"
 
 
 def prefixes():
@@ -101,13 +69,13 @@ def check_script_verbs():
 
 def check_names():
     listed = read(LIB_README) if os.path.exists(LIB_README) else ""
-    for path in tracked("lib/*"):
+    for path in tracked("lib/*", "lib/*/*"):
         name = os.path.basename(path)
         if path == LIB_README:
             continue
         if not LIB_NAME.fullmatch(name):
             yield path, 1, "lib の名前は、中身の名詞を snake_case の .jq・.py・.sh にする"
-        elif f"]({name})" not in listed:
+        elif f"]({os.path.relpath(path, os.path.dirname(LIB_README))})" not in listed:
             yield path, 1, "lib/README.md の表に載っていない"
     for path in tracked("tests/support/*"):
         if not TEST_LIB_NAME.fullmatch(os.path.basename(path)):
@@ -119,3 +87,56 @@ def check_names():
         name = os.path.basename(path)
         if not name.endswith(".py") and name != HOOK_RUNNER:
             yield path, 1, f"hooks/ に置く .py 以外のファイルは {HOOK_RUNNER} だけにする"
+    for path in tracked("docs/*/*.md"):
+        if not DOC_NAME.fullmatch(os.path.basename(path)):
+            yield path, 1, "docs/ の文書の名前は、名詞の kebab-case の .md にする"
+
+
+def owners():
+    return {name.replace("-", "_") for name in entry_targets()}
+
+
+def check_lib_owners():
+    known = owners()
+    folders = {}
+    for path in tracked("lib/*/*"):
+        folders.setdefault(rel(path).split("/")[1], []).append(path)
+    for folder, paths in sorted(folders.items()):
+        if folder not in known:
+            yield paths[0], 1, f"lib の子フォルダの名前は、持ち主（フック・scripts・スキル）の名前を snake_case にする: {folder}"
+        elif len(paths) < OWNED_MINIMUM:
+            yield paths[0], 1, f"lib の子フォルダは、持ち主が 1 つの中身が {OWNED_MINIMUM} 本以上ある時だけ作る: {folder}"
+    flat = {}
+    for path in tracked("lib/*"):
+        stem = os.path.splitext(os.path.basename(path))[0]
+        owner = next((name for name in known if stem == name or stem.startswith(f"{name}_")), None)
+        if owner:
+            flat.setdefault(owner, []).append(path)
+    for owner, paths in sorted(flat.items()):
+        if len(paths) >= OWNED_MINIMUM or owner in folders:
+            yield paths[0], 1, f"持ち主が 1 つの中身が {OWNED_MINIMUM} 本以上ある。lib/{owner}/ にまとめる"
+
+
+def env_uses():
+    uses = {}
+    for path in tracked("dotclaude/hooks/*", "scripts/*", "dotclaude/skills/*/scripts/*", "lib/*", "lib/*/*"):
+        if path.endswith(".md"):
+            continue
+        for number, line in enumerate(read(path).split("\n"), 1):
+            for name in ENV_NAME.findall(line):
+                uses.setdefault(name, (path, number))
+    return uses
+
+
+def check_env_names():
+    rows = table_under(read(COMPONENTS).split("\n"), ENV_HEADING, "変数")
+    if not rows:
+        yield COMPONENTS, 1, "環境変数の表が読めない"
+        return
+    listed = {name for row in rows for name in ENV_NAME.findall(row[0])}
+    uses = env_uses()
+    for name in sorted(uses.keys() - listed):
+        path, number = uses[name]
+        yield path, number, f"環境変数が components.md の環境変数の表に無い: {name}"
+    for name in sorted(listed - uses.keys()):
+        yield COMPONENTS, 1, f"環境変数の表にあるが、どのフックもスクリプトも読んでいない: {name}"

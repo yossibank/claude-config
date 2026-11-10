@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 from md_blocks import fence_marks, heading_of  # noqa: E402
 from md_doc import title_of  # noqa: E402

@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "..", "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "..", "lib"))
 
 from store_api import apps_dir, listed_apps  # noqa: E402
 from loader import load_module  # noqa: E402
