@@ -74,10 +74,12 @@ def check_prefixes():
         "docs": [(path, os.path.basename(path)) for path in tracked("docs/*.md")],
         "rules": [(path, os.path.basename(path)) for path in tracked("rules/*.md")],
         "scripts": [(path, os.path.basename(path)) for path in tracked("scripts/*")],
+        "lib": [(path, os.path.basename(path)) for path in tracked("lib/*_*")],
     }
     for place, items in names.items():
         for path, name in items:
-            prefix = next((p for p in table if name.startswith(p)), None)
+            key = name.replace("_", "-") if place == "lib" else name
+            prefix = next((p for p in table if key.startswith(p)), None)
             if prefix is None:
                 yield path, 1, f"名前の接頭語が接頭語の表に無い: {name}"
             elif place not in table[prefix]:

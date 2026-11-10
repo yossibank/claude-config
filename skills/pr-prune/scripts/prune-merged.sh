@@ -2,7 +2,6 @@
 set -euo pipefail
 
 source "$(dirname "$0")/../../../lib/git.sh"
-source "$(dirname "$0")/../../../lib/worktree.sh"
 
 fail() {
     echo "NG $name: $1"

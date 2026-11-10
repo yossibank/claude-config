@@ -300,6 +300,10 @@ d=$(copy prefix-docs)
 git -C "$d" mv docs/config-setup.md docs/setup.md
 expect_audit "$d" "名前の接頭語が接頭語の表に無い: setup.md" "表に無い接頭語の文書"
 
+d=$(copy prefix-lib)
+printf 'X = 1\n' >"$d/lib/foo_bar.py"
+expect_audit "$d" "名前の接頭語が接頭語の表に無い: foo_bar.py" "表に無い接頭語の lib"
+
 d=$(copy verb-ok)
 replace "$d/docs/config-development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'
 mv "$d/skills/ui-record/scripts/tile-frames.sh" "$d/skills/ui-record/scripts/glue-frames.sh"
