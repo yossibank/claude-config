@@ -15,4 +15,4 @@ Claude Code の全リポジトリに共通の決まりを、`~/.claude` に配�
 
 `docs/app/` の文書と `dotclaude/` の中は、アプリのリポジトリから名前で指される。名前を変えたら、app-init のひな形を同じ commit で直す。作り済みのアプリには、直す PR を同時に出す。
 
-名前の付け方・フォルダの分け方・足し方は、`docs/config/development.md` に従う。
+名前の付け方・足し方は、`docs/config/development.md` に従う。フォルダの分け方は、`docs/config/layout.md` に従う。

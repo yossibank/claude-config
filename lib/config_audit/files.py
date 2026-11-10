@@ -9,6 +9,7 @@ from md_blocks import fence_marks, front_matter, heading_of, table_under
 from script_io import fail
 
 NAMING = os.path.join(ROOT, "docs", "config", "development.md")
+LAYOUT = os.path.join(ROOT, "docs", "config", "layout.md")
 
 
 @functools.cache
@@ -85,3 +86,7 @@ def entry_targets():
 
 def naming_table(heading, first_column):
     return table_under(read(NAMING).split("\n"), heading, first_column)
+
+
+def layout_table(heading, first_column):
+    return table_under(read(LAYOUT).split("\n"), heading, first_column) if os.path.exists(LAYOUT) else []

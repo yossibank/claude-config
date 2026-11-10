@@ -2,7 +2,7 @@ import collections
 import os
 import re
 
-from config_audit.files import NAMING, naming_table, place_matches, read, tracked_files
+from config_audit.files import LAYOUT, layout_table, place_matches, read, tracked_files
 from loader import ROOT
 
 PLACES_HEADING = "### 置ける場所の表"
@@ -18,13 +18,13 @@ def cell_patterns(cell):
 
 
 def places():
-    return [pattern for row in naming_table(PLACES_HEADING, "場所") for pattern in cell_patterns(row[0])]
+    return [pattern for row in layout_table(PLACES_HEADING, "場所") for pattern in cell_patterns(row[0])]
 
 
 def check_places():
     patterns = places()
     if not patterns:
-        yield NAMING, 1, "フォルダの分け方の置ける場所の表が読めない"
+        yield LAYOUT, 1, "フォルダの分け方の置ける場所の表が読めない"
         return
     used = set()
     for path in tracked_files():
@@ -34,7 +34,7 @@ def check_places():
             yield os.path.join(ROOT, path), 1, "置ける場所の表に無い場所にある。置き場所を直すか、表に行を足す"
     for pattern in patterns:
         if pattern not in used:
-            yield NAMING, 1, f"置ける場所の表の場所に、当たるファイルが無い: {pattern}"
+            yield LAYOUT, 1, f"置ける場所の表の場所に、当たるファイルが無い: {pattern}"
 
 
 def head_of(name):
@@ -48,25 +48,25 @@ def counted_name(path, pattern):
 
 
 def check_limits():
-    rows = naming_table(LIMITS_HEADING, "場所")
+    rows = layout_table(LIMITS_HEADING, "場所")
     if not rows:
-        yield NAMING, 1, "フォルダの分け方の分ける合図の表が読めない"
+        yield LAYOUT, 1, "フォルダの分け方の分ける合図の表が読めない"
         return
     for row in rows:
         pattern, counted, limit, how = (row + [""] * 4)[:4]
         if counted not in (COUNT_ALL, COUNT_HEAD) or not limit.isdigit():
-            yield NAMING, 1, f"分ける合図の表の行は、数えるものを {COUNT_ALL} か {COUNT_HEAD}、上限を数字にする: {pattern}"
+            yield LAYOUT, 1, f"分ける合図の表の行は、数えるものを {COUNT_ALL} か {COUNT_HEAD}、上限を数字にする: {pattern}"
             continue
         groups = collections.Counter()
         for path in tracked_files():
             if place_matches(path, pattern):
                 groups[head_of(counted_name(path, pattern)) if counted == COUNT_HEAD else ""] += 1
         if not groups:
-            yield NAMING, 1, f"分ける合図の表の場所に、当たるファイルが無い: {pattern}"
+            yield LAYOUT, 1, f"分ける合図の表の場所に、当たるファイルが無い: {pattern}"
         for head, count in sorted(groups.items()):
             if count > int(limit):
                 what = f"頭が {head} のファイル" if head else "ファイル"
-                yield NAMING, 1, f"{pattern} の{what}が {count} 本で、上限の {limit} 本を超えた。{how}"
+                yield LAYOUT, 1, f"{pattern} の{what}が {count} 本で、上限の {limit} 本を超えた。{how}"
 
 
 def check_install_targets():

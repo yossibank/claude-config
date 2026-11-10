@@ -457,7 +457,7 @@ expect_check "$d" places "scripts/extra/docs-extra.sh:1 置ける場所の表に
 d=$(copy place-added)
 mkdir -p "$d/tools"
 printf '#!/bin/bash\n' >"$d/tools/extra.sh"
-replace "$d/docs/config/development.md" '| `tests/support/*.sh` | テストの共通の処理 |' '| `tests/support/*.sh` | テストの共通の処理 |
+replace "$d/docs/config/layout.md" '| `tests/support/*.sh` | テストの共通の処理 |' '| `tests/support/*.sh` | テストの共通の処理 |
 | `tools/*.sh` | 道具 |'
 expect_check "$d" places OK "表に行を足した場所"
 
@@ -466,7 +466,7 @@ git -C "$d" rm -q docs/images/tech.svg
 expect_check "$d" places '置ける場所の表の場所に、当たるファイルが無い: docs/images/*.svg' "当たるファイルの無い行"
 
 d=$(copy place-table)
-replace "$d/docs/config/development.md" '### 置ける場所の表' '### 置き場所'
+replace "$d/docs/config/layout.md" '### 置ける場所の表' '### 置き場所'
 expect_check "$d" places "置ける場所の表が読めない" "置ける場所の表が無い"
 
 add_tests() {
@@ -504,11 +504,11 @@ add_skills "$d" pr-a pr-b pr-c pr-d
 expect_check "$d" limits '頭が pr のファイルが 7 本で、上限の 6 本を超えた' "同じ接頭語のスキルが上限を超えた"
 
 d=$(copy limit-row)
-replace "$d/docs/config/development.md" '| `tests/*.sh` | 全部 | 50 |' '| `tests/*.sh` | 全部 | 多い |'
+replace "$d/docs/config/layout.md" '| `tests/*.sh` | 全部 | 50 |' '| `tests/*.sh` | 全部 | 多い |'
 expect_check "$d" limits '分ける合図の表の行は、数えるものを 全部 か 同じ頭、上限を数字にする: tests/*.sh' "上限が数字でない行"
 
 d=$(copy limit-stale)
-replace "$d/docs/config/development.md" '| `scripts/*` | 全部 | 10 |' '| `script/*` | 全部 | 10 |'
+replace "$d/docs/config/layout.md" '| `scripts/*` | 全部 | 10 |' '| `script/*` | 全部 | 10 |'
 expect_check "$d" limits '分ける合図の表の場所に、当たるファイルが無い: script/*' "当たるファイルの無い上限の行"
 
 d=$(copy lib-folder-entry)
