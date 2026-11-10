@@ -1,0 +1,135 @@
+#!/bin/bash
+set -euo pipefail
+
+source "$(dirname "$0")/../../../../lib/git.sh"
+
+stacked_on() {
+    local tip=$1 main=$2 base_ref=$3
+    local child
+
+    git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads | while IFS= read -r child; do
+        [[ $child != "$main" && $child != "$base_ref" ]] || continue
+        git -C "$repo" merge-base --is-ancestor "$tip" "refs/heads/$child" || continue
+        [[ $(git -C "$repo" rev-parse "refs/heads/$child") != "$tip" ]] || continue
+        printf '%s\t%s\n' "$(git -C "$repo" rev-list --count "$tip..refs/heads/$child")" "$child"
+    done | sort -n | cut -f2-
+}
+
+in_progress() {
+    local state
+    for state in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD; do
+        [[ ! -e $(git_file "$1" "$state") ]] || return 0
+    done
+    return 1
+}
+
+# 付け替えられない理由は stdout に出す
+rebase_onto() (
+    local child=$1 old_base=$2 new_base=$3
+    local worktree temp_tree=""
+
+    worktree=$(worktree_of "$repo" "$child")
+    if [[ -z $worktree ]]; then
+        temp_tree=$(mktemp -d)
+        trap 'git -C "$repo" worktree remove --force "$temp_tree" 2>/dev/null || true; rm -rf "$temp_tree"' EXIT
+        git -C "$repo" worktree add -q "$temp_tree" "$child" 2>/dev/null || { echo "一時のワークツリーを作れない"; exit 1; }
+        worktree=$temp_tree
+    fi
+    if in_progress "$worktree"; then
+        echo "rebase か merge の途中である: $worktree"
+        exit 1
+    elif [[ -n $(git -C "$worktree" status --porcelain) ]]; then
+        echo "未 commit の変更がある: $worktree"
+        exit 1
+    elif ! git -c rebase.updateRefs=false -C "$worktree" rebase -q --onto "$new_base" "$old_base" >/dev/null 2>&1; then
+        git -C "$worktree" rebase --abort 2>/dev/null || true
+        echo "コンフリクトした"
+        exit 1
+    fi
+)
+
+remote_tip_of() {
+    git -C "$repo" ls-remote origin "refs/heads/$1" | cut -f1
+}
+
+behind_origin() {
+    local remote_tip=$1 local_tip=$2
+
+    [[ -n $remote_tip ]] || return 1
+    git -C "$repo" cat-file -e "$remote_tip^{commit}" 2>/dev/null || return 0
+    ! git -C "$repo" merge-base --is-ancestor "$remote_tip" "$local_tip"
+}
+
+# 失敗したら、git の stderr の最後の行を stdout に出す
+push_restacked() {
+    local child=$1 remote_tip=$2
+    local errors
+
+    [[ -n $remote_tip ]] || { echo "origin に無いので push していない"; return 0; }
+    errors=$(git -C "$repo" push -q --force-with-lease="refs/heads/$child:$remote_tip" origin "refs/heads/$child" 2>&1 >/dev/null) \
+        || { tail -n 1 <<< "$errors"; return 1; }
+    echo "push した"
+}
+
+best_parent() {
+    local tip=$1 old=$2
+    local index=0 best=0 best_count=-1 parent count
+    shift 2
+
+    for parent in "$@"; do
+        if git -C "$repo" merge-base --is-ancestor "$parent" "$old"; then
+            count=$(git -C "$repo" rev-list --count "$tip..$parent")
+            if (( count > best_count )); then
+                best=$index
+                best_count=$count
+            fi
+        fi
+        index=$((index + 1))
+    done
+    echo "$best"
+}
+
+restack() {
+    local tip=$1 main=$2 base_ref=$3
+    local olds=("$tip") news=("$(git -C "$repo" rev-parse "origin/$base_ref")")
+    local child old best pushed remote_tip ready reason note failed=0
+
+    while IFS= read -r child; do
+        [[ -n $child ]] || continue
+        old=$(git -C "$repo" rev-parse "refs/heads/$child")
+        best=$(best_parent "$tip" "$old" "${olds[@]}")
+        olds+=("$old")
+        reason="下のブランチを付け替えられなかった"
+        ready=${news[$best]:+1}
+        if ! remote_tip=$(remote_tip_of "$child"); then
+            reason="origin のブランチを確かめられない"
+            ready=""
+        elif [[ -n $ready ]] && behind_origin "$remote_tip" "$old"; then
+            reason="origin が手元より先に進んでいる。pull してからやり直す"
+            ready=""
+        fi
+        if [[ -n $ready ]] && ! note=$(rebase_onto "$child" "${olds[$best]}" "${news[$best]}"); then
+            reason=${note:-$reason}
+            ready=""
+        fi
+        if [[ -n $ready ]]; then
+            news+=("$(git -C "$repo" rev-parse "refs/heads/$child")")
+            if pushed=$(push_restacked "$child" "$remote_tip"); then
+                echo "OK 付け替えた: ${child}（${pushed}）"
+            else
+                echo "NG 付け替えたが push できない: ${child}（${pushed}）。origin が先に進んでいないかを確かめる。付け替える前の先頭: $old"
+                failed=1
+            fi
+        else
+            news+=("")
+            echo "NG 付け替えなかった: ${child}（${reason}）。元のまま残した"
+            failed=1
+        fi
+    done < <(stacked_on "$tip" "$main" "$base_ref")
+    return "$failed"
+}
+
+[[ $# -ge 4 ]] || { echo "NG 使い方: $(basename "$0") <リポジトリのパス> <マージしたブランチの先頭> <マージ先のブランチ> <本流のブランチ>"; exit 1; }
+
+use_repo "$1"
+restack "$2" "$4" "$3"

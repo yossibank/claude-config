@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/support/assert.sh"
 
 section="$root/scripts/docs-section.sh"
 printf '# t\n\n## a\n\nx\n\n```sh\n## not\n```\n\n## b\n\ny\n' >"$work/section.md"

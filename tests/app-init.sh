@@ -1,11 +1,11 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
+source "$(dirname "$0")/support/assert.sh"
 
-replace="$root/skills/app-init/scripts/replace-placeholders.py"
-overview="$root/skills/app-init/templates/ios-app/docs/overview.md"
-readme="$root/skills/app-init/templates/ios-app/README.md"
+replace="$root/dotclaude/skills/app-init/scripts/replace-placeholders.py"
+overview="$root/dotclaude/skills/app-init/templates/ios-app/docs/overview.md"
+readme="$root/dotclaude/skills/app-init/templates/ios-app/README.md"
 placeholder='<何のアプリかを 1 文で。誰の、どの不満を解くか>'
 
 make_app() {
@@ -30,14 +30,14 @@ make_app "$draft" "$placeholder"
 python3 -I "$replace" "$draft" Draft draft "下書き" >/dev/null
 check "replace-placeholders: overview が書きかけなら README の印を残す" grep -q '<何のアプリかを 1 文で>' "$draft/README.md"
 
-verify="$root/skills/app-init/templates/ios-app/scripts/verify.sh"
+verify="$root/dotclaude/skills/app-init/templates/ios-app/scripts/verify.sh"
 mkdir "$work/verify"
 failing='printf "b.swift:1: error: x\n** BUILD FAILED **\na.swift:2: error: y\n** BUILD FAILED **\n"; exit 65'
 out=$(cd "$work/verify" && bash "$verify" app-build bash -c "$failing")
 match "verify: 大文字の ** BUILD FAILED ** も、順を保って重ねずに出す" "$out" $'b.swift:1: error: x\n** BUILD FAILED **\na.swift:2: error: y\nNG app-build（ログ: .build/verify/app-build.log）'
 expect "NG app-build" "verify: 失敗したら NG と終了コードで返す" bash -c "cd '$work/verify' && bash '$verify' app-build bash -c '$failing'"
 
-create="$root/skills/app-init/scripts/create-app.sh"
+create="$root/dotclaude/skills/app-init/scripts/create-app.sh"
 export CC_APPS_DIR="$work/apps"
 export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
 expect "NG 使い方" "create-app: 引数が足りなければ NG" bash "$create" demo

@@ -1,10 +1,10 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/http_fake.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/http_fake.sh"
 
-scripts="$root/skills/app-plan/scripts"
+scripts="$root/dotclaude/skills/app-plan/scripts"
 offline
 
 expect "NG 使い方" "fetch-rival-reviews: 引数が無ければ NG" python3 -I "$scripts/fetch-rival-reviews.py"

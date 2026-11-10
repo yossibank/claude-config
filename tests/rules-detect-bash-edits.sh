@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/hook_fixtures.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/fixtures.sh"
+source "$(dirname "$0")/support/hook_fixtures.sh"
 STOP="Bash でファイルを書き換えた"
 
 run rules-detect-bash-edits 1 "bash: 知らないモードは止めずに知らせる" "$(bash_call t0 'ls')" before

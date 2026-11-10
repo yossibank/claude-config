@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
 
-from loader import ROOT
+from loader import DOTCLAUDE
 from md_blocks import fence_marks, front_matter_end, heading_of, table_under
 
-RULES = [os.path.join(ROOT, "rules", name) for name in ("docs-core.md", "docs-claude.md", "docs-human.md")]
+RULES = [os.path.join(DOTCLAUDE, "rules", name) for name in ("docs-core.md", "docs-claude.md", "docs-human.md")]
 
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⬀-⯿]️?")
 CODE = re.compile(r"`([^`]*)`")

@@ -1,13 +1,13 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/fixtures.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/fixtures.sh"
 source "$root/lib/git.sh"
 
 export HOME="$work/home"
 mkdir -p "$HOME"
-scripts="$root/skills/pr-create/scripts"
+scripts="$root/dotclaude/skills/pr-create/scripts"
 repo="$work/repo"
 clone_with_origin "$repo"
 

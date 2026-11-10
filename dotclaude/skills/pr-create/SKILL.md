@@ -1,0 +1,133 @@
+---
+name: pr-create
+description: 変更をブランチに切り出し、差分の大きさに合わせた確認とレビューを通して PR を作る。人が「PR にして」「出して」など PR を作るよう頼んだ時だけ使う。自分の判断では使わない。
+argument-hint: "[<type>/<summary>]"
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*), Bash(git push *), Bash(gh pr create *), Bash(gh pr checks *)
+---
+
+# PR を作る
+
+変更をブランチに切り出し、確認とレビューを通して PR を作る手順。ブランチ名と commit の形は、共通の CLAUDE.md に従う。本文の形は「write-body.sh の出力」にある。
+
+## 起動条件
+
+人が PR を作るよう頼んだ時だけ使う。CI やレビューの指摘を直す時は `pr-fix`、マージの後は `pr-prune` を使う。
+
+## 入力
+
+| 入力 | 中身 |
+| --- | --- |
+| `$ARGUMENTS` | ブランチ名 `<type>/<summary>`。省いたら変更から決める |
+| base | リポジトリの既定のブランチ（`origin/HEAD`） |
+
+## 手順
+
+以下の `<S>` は `${CLAUDE_SKILL_DIR}/scripts` を指す。
+
+1. ワークツリーを作る。作り方は、場面で次のとおり変える。
+
+   | 場面 | ワークツリーの作り方 |
+   | --- | --- |
+   | 今のセッションのリポジトリ | `EnterWorktree` の後に、`git branch -m <type>/<summary>` で名前を変える |
+   | ほかのリポジトリ | `create-worktree.sh` を使い、出たパスで作業する |
+
+2. 変更を commit する。
+3. `classify-diff.sh` で、差分の重さと、通す確認とレビューを決める。
+4. 確認を `run-check.sh` で通す。NG なら直して通し直す。
+5. レビューを、3 の結果に合わせて行う。指摘は直すか、直さない理由を本文に書く。直したら 4 を通し直す。
+6. `write-body.sh` で本文の枠を作る。出たファイルに、「write-body.sh の出力」の「書き足すこと」を埋める。
+7. 人の承認を得る。人が「確認なしで出して」と頼んだ時は省く。示すものは次のとおりである。
+   - ブランチ名
+   - commit の 1 行目
+   - 本文
+   - 確認の結果
+8. `git push -u origin <ブランチ>` の後に、`route-pr.sh` で出し方を決める。
+9. CI があれば、`gh pr checks <番号> --watch` をバックグラウンドで走らせて待つ。落ちたら `pr-fix` で直す。
+
+スクリプトは、次の形で呼ぶ。
+
+```sh
+<S>/create-worktree.sh <リポジトリ> <type>/<summary>
+<S>/classify-diff.sh <ワークツリー> origin/<base>
+<S>/run-check.sh <ワークツリー> <名前> <コマンド…>
+<S>/write-body.sh <ワークツリー> origin/<base> [未検証…]
+<S>/route-pr.sh <ワークツリー> <base> <タイトル> <本文のファイル>
+```
+
+## classify-diff.sh がすること
+
+`classify-diff.sh` は、変えた行の数と、変えた場所で重さを決める。
+
+| 重さ | 条件 | 確認 | レビュー |
+| --- | --- | --- | --- |
+| `docs` | `.md` と `docs/` の下だけ | Makefile に `verify-docs` があれば `make verify-docs`。無ければ、変えた `.md` への `docs-check.py` | 自分で差分を読む |
+| `small` | 200 行まで | Makefile に `verify` があれば `make verify`。無ければ CLAUDE.md の確認のコマンド | `reviewer` を呼ぶ時に、Agent の `model` に `sonnet` を指定する |
+| `large` | 200 行を超える。または移行・スキーマ・fixtures・プロジェクトの設定・フック・settings に触れる | `small` と同じ | `reviewer`（opus）に頼む |
+
+`pr-required` には、確認のコマンドを書く。書くのは、`make verify` か `make verify-docs` の時だけである。
+それ以外の時は、`pr-required` を消す。
+`pr-required` は、git のフォルダの中に置く。
+
+変えた `.md` への `docs-check.py` は、次の形で呼ぶ。
+
+```sh
+python3 -I ~/.claude/hooks/docs-check.py <変えた .md…>
+```
+
+reviewer には、ワークツリーのパスと base のブランチ名だけを渡す。
+
+## run-check.sh がすること
+
+`run-check.sh` は、確認の結果を記録に残す。push と PR の作成は、その記録で止める。
+
+| 場面 | すること |
+| --- | --- |
+| 確認を通す | 結果を、git のフォルダの `pr-checks` に、ファイルの中身の指紋と通したコマンド（4 列目）と一緒に残す。確認の間に中身が変わったら NG にする |
+| 記録を見る | `run-check.sh <ワークツリー> --status` が、NG の確認と、確認の後の変更を `NG` の行で出す |
+| 要る確認を見る | `pr-required` がある時、`--status` はそのコマンドを今の状態で通した行を探す。無ければ `NG 要る確認を通していない` を出す |
+| 古い記録 | 4 列目の無い古い行は読むが、要る確認を通した行とは数えない |
+| 本文を作る | `write-body.sh` が `--status` で確かめ、通った確認を本文の表に入れる |
+| 記録を外す | 要らなくなった確認は、`run-check.sh <ワークツリー> --drop <名前>` で外す |
+| push と PR | `hooks/pr-gate.py` が `--status` を見て、満たさなければ止める |
+
+## write-body.sh の出力
+
+`write-body.sh` は、人が目で追える本文の枠を、絵文字の見出しと表で作る。枠の節は、次のとおりである。
+
+| 節 | 枠に入るもの | 書き足すこと |
+| --- | --- | --- |
+| `## 🎯 目的` | 書く場所の印 | 何がなぜ変わるかを 1〜2 文。関係する PR は `owner/repo#番号` |
+| `## 📝 変更` | 変えたファイルごとの表の行 | 各行の「変えたこと」。同じ変更のファイルは 1 行にまとめ、10 行を超えたらフォルダでまとめる |
+| `## 🧪 確認` | 差分の重さの行（`🔴` large・`🟡` small・`⚪` docs）。通った確認は `✅ 通った`、未検証は `⬜ 未検証` の行 | レビューの行。結果には、直した指摘の数を書く |
+
+重さの絵文字は、docs-human の重さの表に当たる。large が高、small が低、docs が無しである。
+
+次の節は、当たる時だけ書き足す。置く場所は表の順で、中身の無い節は作らない。
+
+| 節 | 置く場所 | 書く時 | 中身 |
+| --- | --- | --- | --- |
+| `## 🗺️ 全体像` | 目的の後 | 処理の流れや依存の向きが変わる時 | Mermaid の図 |
+| `## ⚠️ 注意` | 最後 | マージの後に人がする作業や、壊れる変更がある時 | `[!WARNING]` のアラート |
+
+## route-pr.sh の出力
+
+`route-pr.sh` は、gh でログインしている人の、そのリポジトリへの権限で出し方を決める。push は gh の権限と関係なく、リポジトリの git の設定で通す。
+
+| 出力 | すること |
+| --- | --- |
+| `gh` | 下のコマンドで PR を作る |
+| `compare <URL>` | gh のアカウントに書き込みの権限が無い。題と本文の入った URL を人に渡し、ブラウザで PR を作ってもらう |
+
+```sh
+gh pr create --base <base> --title <タイトル> --body-file <本文のファイル>
+```
+
+## 報告
+
+PR の URL か、`compare` の URL を返す。あわせて、通した確認と、未検証の項目を書く。
+
+## 制約
+
+- マージはしない。
+- pre-commit で commit が止まったら、差分を確かめてステージし直す。`--no-verify` は使わない。
+- クラウドのセッションでは `gh pr` が使えないので、組み込みの GitHub の道具を使う。

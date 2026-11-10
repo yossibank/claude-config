@@ -4,9 +4,10 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 expected="$HOME/Applications/AI/claude-config"
 claude="$HOME/.claude"
+dotclaude="$root/dotclaude"
 
 if [[ $root != "$expected" ]]; then
-    echo "NG claude-config が $root にある。フックは $expected を読むので、そこに置いてから実行する"
+    echo "NG claude-config が $root にある。決まりとスキルは $expected のスクリプトを指すので、そこに置いてから実行する"
     exit 1
 fi
 if ! command -v jq >/dev/null; then
@@ -35,15 +36,16 @@ link() {
 
 mkdir -p "$claude/skills" "$claude/output-styles"
 
-link "$root/CLAUDE.md" "$claude/CLAUDE.md"
-link "$root/rules" "$claude/rules"
-link "$root/agents" "$claude/agents"
+link "$dotclaude/CLAUDE.md" "$claude/CLAUDE.md"
+link "$dotclaude/rules" "$claude/rules"
+link "$dotclaude/agents" "$claude/agents"
+link "$dotclaude/hooks" "$claude/hooks"
 
-for skill in "$root"/skills/*/; do
+for skill in "$dotclaude"/skills/*/; do
     link "${skill%/}" "$claude/skills/$(basename "$skill")"
 done
 
-for style in "$root"/output-styles/*.md; do
+for style in "$dotclaude"/output-styles/*.md; do
     link "$style" "$claude/output-styles/$(basename "$style")"
 done
 
@@ -62,9 +64,9 @@ if [[ ! -f $installed ]]; then
     echo '[]' >|"$installed"
 fi
 
-jq -s -f "$root/scripts/config-install.jq" "$settings" "$root/settings/settings.json" "$installed" >|"$settings.tmp"
+jq -s -f "$root/scripts/config-install.jq" "$settings" "$dotclaude/settings.json" "$installed" >|"$settings.tmp"
 mv -f "$settings.tmp" "$settings.new"
-jq '.permissions.allow' "$root/settings/settings.json" >|"$installed.new"
+jq '.permissions.allow' "$dotclaude/settings.json" >|"$installed.new"
 
 # キーと配列の並びをそろえてから比べる。並びだけの違いでは置き換えを勧めない
 canonical='def canon: if type == "object" then to_entries | sort_by(.key) | map(.value |= canon) | from_entries elif type == "array" then map(canon) | sort_by(tojson) else . end; canon'

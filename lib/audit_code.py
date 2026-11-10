@@ -6,26 +6,26 @@ from concurrent.futures import ThreadPoolExecutor
 
 from audit_files import read, tracked
 from hook_io import FILE_EDIT_TOOLS
-from loader import ROOT, load_hook
+from loader import DOTCLAUDE, ROOT, load_hook
 
 
 NG_TO_STDERR = re.compile(r"""(echo|printf)\s+["']?NG\b.*>&2""")
 EXIT_FAIL = re.compile(r"\s*exit [1-9]")
 RUNTIME_INPUT = re.compile(r"\bsys\.argv\b|\bopen\(|\binput\(|\bsys\.stdin\b|\bsubprocess\.")
-HOOK_NAME = re.compile(r"claude-config/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
+HOOK_NAME = re.compile(r"\.claude/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
 REQUIRED_ARG = re.compile(r"\$\{[0-9]:\?")
 INLINE_PYTHON = re.compile(r"\bpython3?(?: -I)? -c\b")
 TEST_INLINE_PYTHON = re.compile(r"(?:^|[\s$(|;&`])python3?(?: -I)? -c\b")
 ENTRY_CALLS = {"hooks": ("run_gate", "run_hook"), "scripts": ("run_main",)}
 SCRIPT_HEADER = "set -euo pipefail"
 WORKTREES_LITERAL = ".claude/worktrees"
-CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:skills/[a-z0-9-]+/scripts|hooks|lib)/[A-Za-z0-9_.-]+)")
+CONFIG_REF = re.compile(r"(?:claude-config|CLAUDE_CONFIG\)?\}?)/((?:(?:dotclaude/)?(?:skills/[a-z0-9-]+/scripts|hooks)|lib)/[A-Za-z0-9_.-]+)")
 TEMPLATE_TOKEN = re.compile(r"__[A-Za-z]+__")
-REPLACER = os.path.join(ROOT, "skills", "app-init", "scripts", "replace-placeholders.py")
+REPLACER = os.path.join(DOTCLAUDE, "skills", "app-init", "scripts", "replace-placeholders.py")
 
 
 def check_template_scripts():
-    files = [path for path in tracked("skills/*/templates/**") if path.endswith((".sh", "/Makefile"))]
+    files = [path for path in tracked("dotclaude/skills/*/templates/**") if path.endswith((".sh", "/Makefile"))]
     for path in files:
         for number, line in enumerate(read(path).split("\n"), 1):
             for reference in CONFIG_REF.findall(line):
@@ -67,14 +67,14 @@ def check_template_tokens():
             yield REPLACER, number, f"tokens に __<名前>__ でない文字列がある: {token}"
     for number, text in literal_replaces(tree):
         yield REPLACER, number, f"tokens を通さずに文字列を置き換えている: {text}"
-    for path in tracked("skills/app-init/templates/**"):
+    for path in tracked("dotclaude/skills/app-init/templates/**"):
         for number, line in template_tokens(path):
             for token in sorted(set(TEMPLATE_TOKEN.findall(line)) - tokens):
                 yield path, number, f"replace-placeholders.py の tokens に無い印: {token}"
 
 
 def check_settings():
-    path = os.path.join(ROOT, "settings", "settings.json")
+    path = os.path.join(DOTCLAUDE, "settings.json")
     for group in json.loads(read(path)).get("hooks", {}).values():
         for entry in group:
             for hook in entry.get("hooks", []):
@@ -83,7 +83,7 @@ def check_settings():
                 if not names:
                     yield path, 1, f"フックを hooks/run.sh で呼んでいない: {command[:60]}"
                 for name in names:
-                    if not os.path.isfile(os.path.join(ROOT, "hooks", f"{name}.py")):
+                    if not os.path.isfile(os.path.join(DOTCLAUDE, "hooks", f"{name}.py")):
                         yield path, 1, f"フックのファイルが無い: hooks/{name}.py"
             tools = set((entry.get("matcher") or "").split("|"))
             if tools & set(FILE_EDIT_TOOLS) and tools != set(FILE_EDIT_TOOLS):
@@ -91,7 +91,7 @@ def check_settings():
 
 
 def check_worktree_literals():
-    for path in tracked("hooks/*", "scripts/*", "skills/*/scripts/*"):
+    for path in tracked("dotclaude/hooks/*", "scripts/*", "dotclaude/skills/*/scripts/*"):
         if path == os.path.abspath(__file__):
             continue
         for number, line in enumerate(read(path).split("\n"), 1):
@@ -101,14 +101,14 @@ def check_worktree_literals():
 
 def check_shell_scripts():
     shell = load_hook("shell-check")
-    strict = set(tracked("skills/*/scripts/*.sh", "scripts/*.sh"))
+    strict = set(tracked("dotclaude/skills/*/scripts/*.sh", "scripts/*.sh"))
     paths = tracked("*.sh")
     with ThreadPoolExecutor() as pool:
         found = list(pool.map(shell.check, paths))
     for path, problems in zip(paths, found):
         for number, message in problems:
             yield path, number, message
-        if os.path.relpath(path, ROOT).startswith("hooks/"):
+        if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/"):
             continue
         lines = read(path).split("\n")
         if path in strict and lines[1:2] != [SCRIPT_HEADER]:
@@ -177,7 +177,7 @@ def python_problems(path, tree):
     for node in ast.walk(tree):
         if isinstance(node, ast.Assert):
             yield path, node.lineno, "assert は python -O で消え、トレースバックで落ちる。if で確かめて NG か例外にする"
-    if os.path.relpath(path, ROOT).startswith("hooks/"):
+    if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/"):
         return
     for node in ast.walk(tree):
         if is_exit_with_text(node):
@@ -192,12 +192,12 @@ def main_guard_calls(tree):
 
 
 def check_entry_wrappers():
-    for path in tracked("hooks/*.py", "scripts/*.py", "skills/*/scripts/*.py"):
+    for path in tracked("dotclaude/hooks/*.py", "scripts/*.py", "dotclaude/skills/*/scripts/*.py"):
         try:
             tree = ast.parse(read(path))
         except SyntaxError:
             continue
-        top = "hooks" if os.path.relpath(path, ROOT).startswith("hooks/") else "scripts"
+        top = "hooks" if os.path.relpath(path, ROOT).startswith("dotclaude/hooks/") else "scripts"
         wanted = ENTRY_CALLS[top]
         if not main_guard_calls(tree) & set(wanted):
             yield path, 1, f"main を {' か '.join(wanted)} で包む。例外で落ちた時に、NG の行か止める文を出すため"
@@ -222,7 +222,7 @@ def check_script_pairs():
 
 
 def check_test_inline_python():
-    for path in tracked("tests/*.sh", "tests/lib/*.sh"):
+    for path in tracked("tests/*.sh", "tests/support/*.sh"):
         for number, line in enumerate(read(path).split("\n"), 1):
             if TEST_INLINE_PYTHON.search(line):
                 yield path, number, "テストの中に python3 -c を書かない。jq・bash で書くか、.py に分ける"

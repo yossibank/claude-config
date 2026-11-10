@@ -1,12 +1,12 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(dirname "$0")/lib/assert.sh"
-source "$(dirname "$0")/lib/fixtures.sh"
-source "$(dirname "$0")/lib/http_fake.sh"
+source "$(dirname "$0")/support/assert.sh"
+source "$(dirname "$0")/support/fixtures.sh"
+source "$(dirname "$0")/support/http_fake.sh"
 
-listing="$root/skills/store-release/scripts/check-listing.py"
-archive="$root/skills/store-release/scripts/archive-app.sh"
+listing="$root/dotclaude/skills/store-release/scripts/check-listing.py"
+archive="$root/dotclaude/skills/store-release/scripts/archive-app.sh"
 
 expect "NG 使い方" "archive-app: 引数が足りなければ NG" bash "$archive" a b
 CC_STORE_EXPORT=export expect "NG CC_STORE_EXPORT と CC_STORE_ARCHIVE_ONLY は読まない" "archive-app: 前の変数が付いていれば、送らずに NG" bash "$archive" a b "$work/out"
@@ -34,7 +34,7 @@ check "show_errors: 既定は最後の行まで出し、大文字の FAILED も�
 check "show_errors: ファイル名の Error には当たらない" test -z "$(show_errors "$work/many.log" | grep ErrorView)"
 fake_command xcodebuild 'exit 65'
 expect "NG DEVELOPMENT_TEAM が見つからない" "archive-app: 設定を読めなければ黙って落ちずに NG" bash "$archive" a b "$work/out"
-screenshot="$root/skills/store-release/scripts/take-screenshot.sh"
+screenshot="$root/dotclaude/skills/store-release/scripts/take-screenshot.sh"
 fake_command xcrun 'exit 1'
 expect "NG シミュレーターが起動しない: udid" "take-screenshot: 起動を待てなければ黙って落ちずに NG" bash "$screenshot" udid "$work/shot.png"
 fake_command xcrun 'exit 0'
@@ -75,7 +75,7 @@ printf '家計簿,節約\n' >"$folder/keywords.txt"
 rm -f "$folder/subtitle.txt"
 expect "subtitle.txt が無い" "check-listing: 要るファイルが無ければ NG" python3 -I "$listing" "$folder"
 
-privacy="$root/skills/store-release/scripts/check-privacy.py"
+privacy="$root/dotclaude/skills/store-release/scripts/check-privacy.py"
 write_manifest() {
     printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict><key>NSPrivacyAccessedAPITypes</key><array>%s</array></dict></plist>\n' "$2" >"$1/PrivacyInfo.xcprivacy"
 }
@@ -98,7 +98,7 @@ match "check-privacy: 壊れた申告のファイルは stdout に NG" "$(python
 printf '<?xml version="1.0"?>\n<plist version="1.0"><dict>\n' >"$work/priv/PrivacyInfo.xcprivacy"
 match "check-privacy: 途中で切れた XML の申告のファイルも stdout に NG" "$(python3 -I "$privacy" "$work/priv" 2>/dev/null)" "NG*"
 
-pages="$root/skills/store-release/scripts/create-custom-pages.py"
+pages="$root/dotclaude/skills/store-release/scripts/create-custom-pages.py"
 offline
 unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
 
