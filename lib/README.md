@@ -10,9 +10,9 @@
 | --- | --- |
 | `bin/config_audit/` | [config-audit.py](../bin/config-audit.py) だけが読む中身。`check_` で始まる関数が、検査として走る |
 | `bin/config_install/` | [config-install.sh](../bin/config-install.sh) だけが読む中身 |
-| `hooks/docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
 | `bin/docs_section/` | [docs-section.sh](../bin/docs-section.sh) だけが読む中身 |
 | `hook_` | フックの共通の処理 |
+| `hooks/docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
 | `md_` | Markdown の読み方 |
 | `store_`・`swift_` | その分類の共通の処理 |
 | 無し | 分類をまたぐ共通の処理 |
@@ -23,7 +23,6 @@
 
 | ファイル | 中身 |
 | --- | --- |
-| [build_log.sh](build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す |
 | [bin/config_audit/agents.py](bin/config_audit/agents.py) | エージェントと rules の検査 |
 | [bin/config_audit/code.py](bin/config_audit/code.py) | シェルと Python の書き方、lib を読む行、bin の入口の検査 |
 | [bin/config_audit/docs.py](bin/config_audit/docs.py) | README の形、リンク、パス、台帳、語の使い方、文書の決まりの検査 |
@@ -34,15 +33,16 @@
 | [bin/config_audit/skills.py](bin/config_audit/skills.py) | スキルの項目、節、参照先、許可、使われていないスクリプトの検査 |
 | [bin/config_audit/templates.py](bin/config_audit/templates.py) | ひな形が呼ぶファイル、置き換える印、ひな形の CLAUDE.md の検査 |
 | [bin/config_install/settings.jq](bin/config_install/settings.jq) | 今の settings.json に、入れるフックと許可を混ぜた案を作る |
-| [dates.py](dates.py) | 日本時間、月の形、記録の日時の月 |
-| [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
-| [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
 | [bin/docs_section/sections.py](bin/docs_section/sections.py) | 見出しを読み、節を切り出す |
+| [build_log.sh](build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す |
+| [dates.py](dates.py) | 日本時間、月の形、記録の日時の月 |
 | [git.py](git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所 |
 | [git.sh](git.sh) | リポジトリの根、ワークツリーの置き場所、ブランチと変えたファイルの調べ方 |
 | [hook_io.py](hook_io.py) | フックの入力の読み方、止め方と知らせ方、例外を受ける入口 |
 | [hook_messages.py](hook_messages.py) | フックが止める時の文の書き出し |
 | [hook_state.py](hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除 |
+| [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
+| [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
 | [loader.py](loader.py) | claude-config の根と、場所を指して `.py` を読む処理 |
 | [md_blocks.py](md_blocks.py) | Markdown の frontmatter、見出し、表、コードの囲み |
 | [md_doc.py](md_doc.py) | 文書を行と種類に分けた形と、rules の表の読み方 |
