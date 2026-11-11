@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-from config_audit.files import read, tracked
+from bin.config_audit.files import read, tracked
 from hook_io import FILE_EDIT_TOOLS
 from loader import DOTCLAUDE
 

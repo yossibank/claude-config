@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 from loader import ROOT  # noqa: E402
 from script_io import fail, run_main  # noqa: E402
 
-CHECKS_DIR = os.path.join(ROOT, "lib", "config_audit")
+CHECKS_DIR = os.path.join(ROOT, "lib", "bin", "config_audit")
 CHECK_PREFIX = "check_"
 
 
@@ -17,13 +17,13 @@ def checks():
         stem, extension = os.path.splitext(file)
         if extension != ".py":
             continue
-        module = importlib.import_module(f"config_audit.{stem}")
+        module = importlib.import_module(f"bin.config_audit.{stem}")
         for name, value in vars(module).items():
             if not name.startswith(CHECK_PREFIX) or not callable(value) or value.__module__ != module.__name__:
                 continue
             label = name[len(CHECK_PREFIX) :].replace("_", "-")
             if label in found:
-                fail(f"検査の名前が重なっている: {name}（lib/config_audit/{file}）")
+                fail(f"検査の名前が重なっている: {name}（lib/bin/config_audit/{file}）")
             found[label] = value
     return found
 

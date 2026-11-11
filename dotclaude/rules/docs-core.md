@@ -152,7 +152,7 @@ paths:
 - 追跡するファイルが、`docs/config/layout.md` の置ける場所の表にあるか
 - ファイルの数が、`docs/config/layout.md` の分ける合図の表の上限を超えていないか
 - `dotclaude/` の最上位の種類を入れる処理が、`config-install.sh` にあるか
-- lib の子フォルダが持ち主の名前か、持ち主が 1 つの中身が lib の直下に無いか
+- lib の子フォルダが持ち主の種類と名前か、持ち主が 1 つの中身が lib の直下に無いか
 - `CC_` の環境変数が、`docs/usage/components.md` の表と合うか
 - `.sh` の頭の `set`、`.sh` の中の Python、`assert`、ワークツリーの置き場所の直書き
 - `.py` が lib を読む行の形

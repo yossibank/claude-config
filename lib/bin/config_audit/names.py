@@ -1,7 +1,7 @@
 import os
 import re
 
-from config_audit.files import NAMING, bin_files, entry_kinds, entry_targets, naming_table, read, rel, skill_names, tracked
+from bin.config_audit.files import NAMING, bin_files, entry_kinds, entry_targets, naming_table, read, rel, skill_names, tracked
 from loader import DOTCLAUDE, ROOT
 from md_blocks import table_under
 
@@ -76,7 +76,7 @@ def check_script_verbs():
 
 def check_names():
     listed = read(LIB_README) if os.path.exists(LIB_README) else ""
-    for path in tracked("lib/*", "lib/*/*"):
+    for path in tracked("lib/*", "lib/*/*/*"):
         name = os.path.basename(path)
         if path == LIB_README:
             continue
@@ -100,27 +100,27 @@ def check_names():
 
 
 def owners():
-    return {name.replace("-", "_") for name in entry_targets()}
+    return sorted({(name.replace("-", "_"), kind) for kind, name in entry_kinds()})
 
 
 def check_lib_owners():
     known = owners()
     folders = {}
-    for path in tracked("lib/*/*"):
-        folders.setdefault(rel(path).split("/")[1], []).append(path)
+    for path in tracked("lib/*/*", "lib/*/*/*"):
+        folders.setdefault("/".join(rel(path).split("/")[1:-1]), []).append(path)
     for folder, paths in sorted(folders.items()):
-        if folder not in known:
-            yield paths[0], 1, f"lib の子フォルダの名前は、持ち主（フック・bin・スキル）の名前を snake_case にする: {folder}"
+        if tuple(reversed(folder.split("/"))) not in known:
+            yield paths[0], 1, f"lib の子フォルダは、<種類>/<持ち主> にする。種類は bin・hooks・skills、持ち主はその名前を snake_case にする: {folder}"
     for path in tracked("lib/*"):
         stem = stem_of(path)
-        owner = next((name for name in sorted(known) if stem == name or stem.startswith(f"{name}_")), None)
+        owner = next(((name, kind) for name, kind in known if stem == name or stem.startswith(f"{name}_")), None)
         if owner:
-            yield path, 1, f"持ち主が 1 つの中身は、lib の直下に置かない。lib/{owner}/ に置く"
+            yield path, 1, f"持ち主が 1 つの中身は、lib の直下に置かない。lib/{owner[1]}/{owner[0]}/ に置く"
 
 
 def env_uses():
     uses = {}
-    for path in tracked("dotclaude/hooks/*", "bin/*", "dotclaude/skills/*/scripts/*", "lib/*", "lib/*/*"):
+    for path in tracked("dotclaude/hooks/*", "bin/*", "dotclaude/skills/*/scripts/*", "lib/*", "lib/*/*/*"):
         if path.endswith(".md"):
             continue
         for number, line in enumerate(read(path).split("\n"), 1):

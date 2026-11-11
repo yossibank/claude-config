@@ -1,7 +1,7 @@
 import os
 import re
 
-from config_audit.files import fields_of, headings, read, tracked
+from bin.config_audit.files import fields_of, headings, read, tracked
 from hook_io import EDIT_TOOLS
 
 WRITE_TOOLS = re.compile(rf"\b(?:{'|'.join(EDIT_TOOLS)})\b")

@@ -2,7 +2,7 @@ import functools
 import os
 import re
 
-from config_audit.files import NAMING, bin_files, naming_table, outside_code, read, skill_names, tracked, tracked_files
+from bin.config_audit.files import NAMING, bin_files, naming_table, outside_code, read, skill_names, tracked, tracked_files
 from loader import DOTCLAUDE, ROOT, load_hook
 from md_blocks import heading_of
 from md_doc import body_emojis, heading_emojis, read_doc, readme_order
