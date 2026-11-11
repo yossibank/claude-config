@@ -20,8 +20,8 @@ APP_TEMPLATE = os.path.join(DOTCLAUDE, "skills", "app-init", "templates", "ios-a
 
 
 def check_readme():
-    docs = [os.path.join(ROOT, "docs", "config", name) for name in COMPONENT_DOCS]
-    links = {os.path.normpath(os.path.join("docs", "config", target.rstrip("/"))) for path in docs for target in LINK.findall(read(path))}
+    docs = [os.path.join(ROOT, "docs", "usage", name) for name in COMPONENT_DOCS]
+    links = {os.path.normpath(os.path.join("docs", "usage", target.rstrip("/"))) for path in docs for target in LINK.findall(read(path))}
     entries = [f"dotclaude/skills/{name}/SKILL.md" for name in skill_names()]
     entries += [os.path.relpath(path, ROOT) for path in tracked("dotclaude/agents/*.md", "dotclaude/output-styles/*.md", "dotclaude/rules/*.md", "dotclaude/hooks/*.py", "dotclaude/hooks/*.sh")]
     entries += [os.path.relpath(path, ROOT) for path in bin_files()]
@@ -31,7 +31,7 @@ def check_readme():
 
 
 def check_readme_flow():
-    skills = os.path.join(ROOT, "docs", "config", "skills.md")
+    skills = os.path.join(ROOT, "docs", "usage", "skills.md")
     flow = "".join(re.findall(r"```mermaid\n(.*?)```", read(skills), re.S))
     if not flow:
         yield skills, 1, "スキルを使う順の Mermaid の図が無い"

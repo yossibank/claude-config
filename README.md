@@ -8,10 +8,10 @@ Claude Code の全リポジトリに共通の決まりを、`~/.claude` から�
 
 | 部品 | できること | 一覧 |
 | --- | --- | --- |
-| 決まり | 文書・Swift・報告の書き方を、当たるファイルを触る時に読み込ませる | [components.md](docs/config/components.md#-決まり) |
-| フック | 決まりを読まずに進めた時や、確認の前に出そうとした時に止める、または書き方の外れを知らせる | [components.md](docs/config/components.md#-フック) |
-| スキル | 企画・PR・App Store・手入れを、決まった手順で進める | [skills.md](docs/config/skills.md) |
-| エージェント | 探す・作る・確かめる仕事を、重さに合うモデルに任せる | [components.md](docs/config/components.md#-エージェント) |
+| 決まり | 文書・Swift・報告の書き方を、当たるファイルを触る時に読み込ませる | [components.md](docs/usage/components.md#-決まり) |
+| フック | 決まりを読まずに進めた時や、確認の前に出そうとした時に止める、または書き方の外れを知らせる | [components.md](docs/usage/components.md#-フック) |
+| スキル | 企画・PR・App Store・手入れを、決まった手順で進める | [skills.md](docs/usage/skills.md) |
+| エージェント | 探す・作る・確かめる仕事を、重さに合うモデルに任せる | [components.md](docs/usage/components.md#-エージェント) |
 | ひな形 | ビルドとテストが通る iOS アプリのリポジトリを作る | [ios-app](dotclaude/skills/app-init/templates/ios-app/) |
 
 ## 🗺️ 全体像
@@ -38,7 +38,8 @@ claude-config/
 ├── docs/
 │   ├── app/
 │   ├── config/
-│   └── images/
+│   ├── images/
+│   └── usage/
 ├── dotclaude/
 │   ├── CLAUDE.md
 │   ├── README.md
@@ -62,6 +63,7 @@ claude-config/
 | [docs/app/](docs/app/) | アプリの共通の構成。アプリのリポジトリから名前で指される | 人・Claude |
 | [docs/config/](docs/config/) | claude-config を直す時の決まり | 人・Claude |
 | [docs/images/](docs/images/) | 文書の画像 | 人 |
+| [docs/usage/](docs/usage/) | claude-config の部品と、入れ方 | 人・Claude |
 | [dotclaude/](dotclaude/) | `~/.claude` に配るもの。中の形は `~/.claude` と同じにする | |
 | [dotclaude/CLAUDE.md](dotclaude/CLAUDE.md)・[dotclaude/rules/](dotclaude/rules/) | いつも、または当たるファイルを触る時に読み込まれる決まり | Claude（一部は人） |
 | [dotclaude/agents/](dotclaude/agents/) | 任せる相手 | Claude |
@@ -96,13 +98,13 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/README.md](docs/README.md) | 文書を探す時 | フォルダの役割と、claude-config の文書を読む順 |
 | [docs/app/ios-naming.md](docs/app/ios-naming.md) | ファイルを足す・名前を付ける時 | iOS アプリのフォルダとファイルの名前、迷いやすい置き場所 |
 | [docs/app/ios-architecture.md](docs/app/ios-architecture.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
-| [docs/config/components.md](docs/config/components.md) | 部品を知る時 | 決まり・フック・エージェント・スクリプト・環境変数 |
 | [docs/config/development.md](docs/config/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・足し方 |
 | [docs/config/improvements.md](docs/config/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
 | [docs/config/layout.md](docs/config/layout.md) | ファイルを置く・分ける時 | フォルダの分け方、置ける場所、数が増えた時に分ける合図 |
-| [docs/config/setup.md](docs/config/setup.md) | 入れる時 | config-install.sh がすること、settings.json の混ぜ方 |
-| [docs/config/skills.md](docs/config/skills.md) | スキルを選ぶ時 | スキルを使う順と一覧 |
 | [docs/config/testing.md](docs/config/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方 |
+| [docs/usage/components.md](docs/usage/components.md) | 部品を知る時 | 決まり・フック・エージェント・スクリプト・環境変数 |
+| [docs/usage/setup.md](docs/usage/setup.md) | 入れる時 | config-install.sh がすること、settings.json の混ぜ方 |
+| [docs/usage/skills.md](docs/usage/skills.md) | スキルを選ぶ時 | スキルを使う順と一覧 |
 | [dotclaude/README.md](dotclaude/README.md) | 配るものを探す時 | 配るものの種類と、一覧のある文書 |
 | [lib/README.md](lib/README.md) | 共通の処理を探す時 | lib の名前の頭と持ち主の子フォルダ、ファイルの一覧 |
 | [tests/README.md](tests/README.md) | テストを探す時 | テストと、テストの共通の処理の一覧 |

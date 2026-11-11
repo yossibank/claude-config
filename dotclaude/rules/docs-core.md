@@ -141,9 +141,9 @@ paths:
 - ひな形の `__<名前>__` の印が、`replace-placeholders.py` の tokens にあるか
 - `replace-placeholders.py` が、`__<名前>__` のほかを置き換えていないか
 - skills・agents・rules・hooks・bin が部品の文書の表にあるか
-- 部品の文書は、`docs/config/` の `components.md` と `skills.md` を見る
+- 部品の文書は、`docs/usage/` の `components.md` と `skills.md` を見る
 - フック・bin・スクリプトを持つスキルと `tests/` のテストが 1 対 1 か
-- スキルが `docs/config/skills.md` の使う順の図にあるか
+- スキルが `docs/usage/skills.md` の使う順の図にあるか
 - 文書のパスは、`docs/` を除く最上位のフォルダの名前で始まるものを見る
 - 同じく、`dotclaude/` の中のフォルダの名前で始まるものも見る
 - `dotclaude/` の中の文書のパスは、`dotclaude/` からのパスとしても探す
@@ -153,7 +153,7 @@ paths:
 - ファイルの数が、`docs/config/layout.md` の分ける合図の表の上限を超えていないか
 - `dotclaude/` の最上位の種類を入れる処理が、`config-install.sh` にあるか
 - lib の子フォルダが持ち主の名前か、持ち主が 1 つの中身が lib の直下に無いか
-- `CC_` の環境変数が、`docs/config/components.md` の表と合うか
+- `CC_` の環境変数が、`docs/usage/components.md` の表と合うか
 - `.sh` の頭の `set`、`.sh` の中の Python、`assert`、ワークツリーの置き場所の直書き
 - `.py` が lib を読む行の形
 - 編集を受けるフックの matcher、フックの登録、許可とフックの並び

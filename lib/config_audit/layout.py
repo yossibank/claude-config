@@ -9,6 +9,8 @@ PLACES_HEADING = "### 置ける場所の表"
 LIMITS_HEADING = "### 分ける合図の表"
 COUNT_ALL = "全部"
 COUNT_HEAD = "同じ頭"
+COUNT_FOLDER = "子フォルダ"
+COUNTS = (COUNT_ALL, COUNT_HEAD, COUNT_FOLDER)
 INSTALL = os.path.join(ROOT, "bin", "config-install.sh")
 DELIVERED = "dotclaude/"
 NOT_INSTALLED = {"README.md"}
@@ -55,15 +57,17 @@ def check_limits():
         return
     for row in rows:
         pattern, counted, limit, how = (row + [""] * 4)[:4]
-        if counted not in (COUNT_ALL, COUNT_HEAD) or not limit.isdigit():
-            yield LAYOUT, 1, f"分ける合図の表の行は、数えるものを {COUNT_ALL} か {COUNT_HEAD}、上限を数字にする: {pattern}"
+        if counted not in COUNTS or not limit.isdigit():
+            yield LAYOUT, 1, f"分ける合図の表の行は、数えるものを {'・'.join(COUNTS)} のどれか、上限を数字にする: {pattern}"
             continue
-        groups = collections.Counter()
-        for path in tracked_files():
-            if place_matches(path, pattern):
-                groups[head_of(counted_name(path, pattern)) if counted == COUNT_HEAD else ""] += 1
-        if not groups:
+        names = [counted_name(path, pattern) for path in tracked_files() if place_matches(path, pattern)]
+        if not names:
             yield LAYOUT, 1, f"分ける合図の表の場所に、当たるファイルが無い: {pattern}"
+        if counted == COUNT_FOLDER:
+            if len(set(names)) > int(limit):
+                yield LAYOUT, 1, f"{pattern} の子フォルダが {len(set(names))} 個で、上限の {limit} 個を超えた。{how}"
+            continue
+        groups = collections.Counter(head_of(name) if counted == COUNT_HEAD else "" for name in names)
         for head, count in sorted(groups.items()):
             if count > int(limit):
                 what = f"頭が {head} のファイル" if head else "ファイル"
