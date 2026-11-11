@@ -50,6 +50,8 @@ claude-config/
 │   ├── settings.json
 │   └── skills/
 ├── lib/
+│   ├── bin/
+│   └── hooks/
 └── tests/
     ├── bin/
     ├── hooks/

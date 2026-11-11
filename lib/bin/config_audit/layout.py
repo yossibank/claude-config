@@ -2,7 +2,7 @@ import collections
 import os
 import re
 
-from config_audit.files import LAYOUT, layout_table, place_matches, read, tracked_files
+from bin.config_audit.files import LAYOUT, layout_table, place_matches, read, tracked_files
 from loader import ROOT
 
 PLACES_HEADING = "### 置ける場所の表"

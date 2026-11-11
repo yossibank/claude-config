@@ -261,8 +261,8 @@ replace "$d/bin/docs-tech-icons.py" 'run_main(main)' 'main()'
 expect_audit "$d" "bin/docs-tech-icons.py:1 main を run_main で包む" "run_main で包まない .py"
 
 d=$(copy lib-unwrapped)
-replace "$d/lib/docs_section/sections.py" 'run_main(main)' 'main()'
-expect_audit "$d" "lib/docs_section/sections.py:1 main を run_main で包む" "run_main で包まない lib の .py"
+replace "$d/lib/bin/docs_section/sections.py" 'run_main(main)' 'main()'
+expect_audit "$d" "lib/bin/docs_section/sections.py:1 main を run_main で包む" "run_main で包まない lib の .py"
 
 d=$(copy script-body)
 printf "." >"$d/bin/docs-section.jq"
@@ -440,9 +440,9 @@ d=$(copy check-unknown)
 expect_check "$d" nothing "検査の名前が無い: nothing" "無い検査の名前"
 
 d=$(copy check-added)
-printf 'def check_extra():\n    yield __file__, 1, "足した検査が走った"\n' >"$d/lib/config_audit/extra.py"
-expect_check "$d" extra "lib/config_audit/extra.py:1 足した検査が走った" "置いただけの検査が走る"
-expect_audit "$d" "lib/config_audit/extra.py:1 足した検査が走った" "置いただけの検査が、全部の検査に入る"
+printf 'def check_extra():\n    yield __file__, 1, "足した検査が走った"\n' >"$d/lib/bin/config_audit/extra.py"
+expect_check "$d" extra "lib/bin/config_audit/extra.py:1 足した検査が走った" "置いただけの検査が走る"
+expect_audit "$d" "lib/bin/config_audit/extra.py:1 足した検査が走った" "置いただけの検査が、全部の検査に入る"
 
 d=$(copy place-root)
 mkdir -p "$d/tools"
@@ -508,21 +508,21 @@ add_skills "$d" pr-a pr-b pr-c pr-d
 expect_check "$d" limits '頭が pr のファイルが 7 本で、上限の 6 本を超えた' "同じ接頭語のスキルが上限を超えた"
 
 add_lib_folders() {
-    local dir=$1 name
-    shift
+    local dir=$1 kind=$2 name
+    shift 2
     for name in "$@"; do
-        mkdir -p "$dir/lib/$name"
-        printf 'value = 1\n' >"$dir/lib/$name/extra.py"
+        mkdir -p "$dir/lib/$kind/$name"
+        printf 'value = 1\n' >"$dir/lib/$kind/$name/extra.py"
     done
 }
 
 d=$(copy limit-folder-ok)
-add_lib_folders "$d" pr_gate shell_check swift_format ctx_limit_read
+add_lib_folders "$d" hooks pr_gate shell_check swift_format swift_style_check ctx_limit_read rules_require_read rules_detect_bash_edits
 expect_check "$d" limits OK "lib の子フォルダが上限ちょうどの 8 個"
 
 d=$(copy limit-folder-ng)
-add_lib_folders "$d" pr_gate shell_check swift_format ctx_limit_read app_init
-expect_check "$d" limits 'lib/*/* の子フォルダが 9 個で、上限の 8 個を超えた' "lib の子フォルダが上限を超えた"
+add_lib_folders "$d" hooks pr_gate shell_check swift_format swift_style_check ctx_limit_read rules_require_read rules_detect_bash_edits extra
+expect_check "$d" limits 'lib/hooks/*/* の子フォルダが 9 個で、上限の 8 個を超えた' "lib の子フォルダが上限を超えた"
 
 d=$(copy limit-row)
 replace "$d/docs/config/layout.md" '| `tests/skills/*.sh` | 全部 | 30 |' '| `tests/skills/*.sh` | 全部 | 多い |'
@@ -533,8 +533,8 @@ replace "$d/docs/config/layout.md" '| `bin/*` | 全部 | 10 |' '| `bins/*` | 全
 expect_check "$d" limits '分ける合図の表の場所に、当たるファイルが無い: bins/*' "当たるファイルの無い上限の行"
 
 d=$(copy lib-folder-entry)
-printf 'def main():\n    pass\n\n\nif __name__ == "__main__":\n    main()\n' >"$d/lib/config_audit/extra.py"
-expect_check "$d" entry-wrappers "lib/config_audit/extra.py:1 main を run_main で包む" "run_main で包まない、lib の子フォルダの .py"
+printf 'def main():\n    pass\n\n\nif __name__ == "__main__":\n    main()\n' >"$d/lib/bin/config_audit/extra.py"
+expect_check "$d" entry-wrappers "lib/bin/config_audit/extra.py:1 main を run_main で包む" "run_main で包まない、lib の子フォルダの .py"
 
 d=$(copy install-target)
 mkdir -p "$d/dotclaude/commands"
@@ -543,26 +543,36 @@ expect_check "$d" install-targets "dotclaude/commands を入れる処理が conf
 
 d=$(copy lib-owner-flat)
 printf 'value = 1\n' >"$d/lib/pr_gate.py"
-expect_check "$d" lib-owners "lib/pr_gate.py:1 持ち主が 1 つの中身は、lib の直下に置かない。lib/pr_gate/ に置く" "持ち主が 1 つの中身を lib の直下に置く"
+expect_check "$d" lib-owners "lib/pr_gate.py:1 持ち主が 1 つの中身は、lib の直下に置かない。lib/hooks/pr_gate/ に置く" "持ち主が 1 つの中身を lib の直下に置く"
 
 d=$(copy lib-owner-flat-head)
 printf 'value = 1\n' >"$d/lib/config_install_extra.py"
-expect_check "$d" lib-owners "lib/config_install_extra.py:1 持ち主が 1 つの中身は、lib の直下に置かない。lib/config_install/ に置く" "持ち主の名前で始まる中身を lib の直下に置く"
+expect_check "$d" lib-owners "lib/config_install_extra.py:1 持ち主が 1 つの中身は、lib の直下に置かない。lib/bin/config_install/ に置く" "持ち主の名前で始まる中身を lib の直下に置く"
 
 d=$(copy lib-owner-folder-name)
-mkdir -p "$d/lib/misc"
-printf 'value = 1\n' >"$d/lib/misc/one.py"
-printf 'value = 1\n' >"$d/lib/misc/two.py"
-expect_check "$d" lib-owners "lib の子フォルダの名前は、持ち主（フック・bin・スキル）の名前を snake_case にする: misc" "持ち主でない名前の子フォルダ"
+mkdir -p "$d/lib/hooks/misc"
+printf 'value = 1\n' >"$d/lib/hooks/misc/one.py"
+printf 'value = 1\n' >"$d/lib/hooks/misc/two.py"
+expect_check "$d" lib-owners "lib の子フォルダは、<種類>/<持ち主> にする。種類は bin・hooks・skills、持ち主はその名前を snake_case にする: hooks/misc" "持ち主でない名前の子フォルダ"
 
-d=$(copy lib-owner-folder-single)
+d=$(copy lib-owner-folder-kind)
+mkdir -p "$d/lib/bin/pr_gate"
+printf 'value = 1\n' >"$d/lib/bin/pr_gate/one.py"
+expect_check "$d" lib-owners "lib の子フォルダは、<種類>/<持ち主> にする。種類は bin・hooks・skills、持ち主はその名前を snake_case にする: bin/pr_gate" "持ち主の種類と合わない子フォルダ"
+
+d=$(copy lib-owner-folder-flat)
 mkdir -p "$d/lib/pr_gate"
 printf 'value = 1\n' >"$d/lib/pr_gate/one.py"
+expect_check "$d" lib-owners "lib の子フォルダは、<種類>/<持ち主> にする。種類は bin・hooks・skills、持ち主はその名前を snake_case にする: pr_gate" "種類のフォルダに入れない子フォルダ"
+
+d=$(copy lib-owner-folder-single)
+mkdir -p "$d/lib/hooks/pr_gate"
+printf 'value = 1\n' >"$d/lib/hooks/pr_gate/one.py"
 expect_check "$d" lib-owners OK "1 本だけの子フォルダ"
 
 d=$(copy lib-folder-unlisted)
-printf 'value = 1\n' >"$d/lib/config_audit/extra.py"
-expect_check "$d" names "lib/config_audit/extra.py:1 lib/README.md の表に載っていない" "lib/README.md に無い、子フォルダの中身"
+printf 'value = 1\n' >"$d/lib/bin/config_audit/extra.py"
+expect_check "$d" names "lib/bin/config_audit/extra.py:1 lib/README.md の表に載っていない" "lib/README.md に無い、子フォルダの中身"
 
 d=$(copy doc-name)
 cp "$d/docs/config/testing.md" "$d/docs/config/Test_Notes.md"

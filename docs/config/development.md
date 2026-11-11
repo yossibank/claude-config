@@ -17,7 +17,7 @@
 | スキルのスクリプト | 動詞を先に、`<すること>[-<対象>]` | `check-listing.py`、`create-worktree.sh` |
 | docs/ の文書 | 名詞の kebab-case の `.md`。主題を分ける時は、分けた文書のどれも `<主題>-<分類>.md` にする | `setup.md`、`ios-naming.md`、`ios-architecture.md` |
 | lib | 中身の名詞を `snake_case` にし、`.sh` も Python の import で読める形にそろえる。頭は分類の名前にし、分類をまたぐものには付けない | `hook_io.py`、`md_doc.py`、`build_log.sh` |
-| lib の子フォルダ | 持ち主の名前を `snake_case` にする。中のファイルは、頭を付けずに中身の名詞にする | `config_audit/names.py`、`docs_section/sections.py` |
+| lib の子フォルダ | `<種類>/<持ち主>` にし、持ち主の名前を `snake_case` にする。中のファイルは、頭を付けずに中身の名詞にする | `lib/bin/config_audit/names.py`、`lib/hooks/docs_check/rows.py` |
 | tests/support | 中身の名詞を `snake_case` の `.sh` にする | `assert.sh`、`fixtures.sh` |
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
@@ -108,9 +108,9 @@
 
 | 決まり | 中身 |
 | --- | --- |
-| 持ち主が 1 つの中身 | 1 本でも、持ち主の名前の子フォルダに置く。`docs-section.sh` の中身は `lib/docs_section/sections.py` になる |
+| 持ち主が 1 つの中身 | 1 本でも、`lib/<種類>/<持ち主>/` に置く。`docs-section.sh` の中身は `lib/bin/docs_section/sections.py` になる |
 | `lib/` の直下 | 持ち主が複数の中身だけを置く。持ち主の名前で始まるファイルは、config-audit が `NG` にする |
-| 子フォルダの名前 | フック・bin・スキルのどれかの名前にする。持ち主でない名前の子フォルダは、config-audit が `NG` にする |
+| 子フォルダの名前 | 種類は `bin`・`hooks`・`skills` のどれか、持ち主はその種類の名前にする。合わない子フォルダは、config-audit が `NG` にする |
 | 一覧 | ファイルを足したら、[lib/README.md](../../lib/README.md) の表に行を足す。載っていないファイルは、config-audit が `NG` にする |
 
 ほかのスキルのスクリプトは、持ち主のスキルに置いたまま、呼ぶ所に合わせた書き方で使う。

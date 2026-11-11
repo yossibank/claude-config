@@ -3,7 +3,7 @@ import functools
 import os
 import re
 
-from config_audit.files import fields_of, headings, read, skill_names, tracked
+from bin.config_audit.files import fields_of, headings, read, skill_names, tracked
 from loader import DOTCLAUDE
 
 

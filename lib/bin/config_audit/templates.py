@@ -2,7 +2,7 @@ import ast
 import os
 import re
 
-from config_audit.files import headings, read, tracked
+from bin.config_audit.files import headings, read, tracked
 from loader import DOTCLAUDE, ROOT
 from md_doc import rule_table
 
