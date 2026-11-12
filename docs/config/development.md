@@ -48,6 +48,7 @@
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
 | `docs-` | 文書 | rules、skills、hooks、bin |
 | `pr-` | PR | skills、hooks |
+| `reply-` | 人への返事の言葉と形 | hooks |
 | `rules-` | rules を読ませる、rules を避けた書き換えを見つける | hooks |
 | `shell-` | シェルスクリプト | hooks |
 | `store-` | App Store への公開と数字 | skills |

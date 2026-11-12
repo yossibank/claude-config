@@ -108,6 +108,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" reply-require-japanese"
+          }
+        ]
+      }
     ]
   },
   "outputStyle": "report"
