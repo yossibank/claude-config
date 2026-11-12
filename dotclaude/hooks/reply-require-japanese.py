@@ -62,14 +62,18 @@ def is_prompt(content):
     return isinstance(content, list) and not any(isinstance(block, dict) and block.get("type") == "tool_result" for block in content)
 
 
+def prose_of(text):
+    return URL.sub("", INLINE.sub("", FENCE.sub("", text)))
+
+
 def is_english(text):
-    prose = URL.sub("", INLINE.sub("", FENCE.sub("", text)))
+    prose = prose_of(text)
     words = len(WORD.findall(prose))
     return words >= MIN_WORDS and len(JAPANESE.findall(prose)) < words
 
 
 def excerpt(text):
-    line = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    line = next((line.strip() for line in prose_of(text).splitlines() if line.strip()), "")
     return line if len(line) <= EXCERPT else line[:EXCERPT] + "…"
 
 
