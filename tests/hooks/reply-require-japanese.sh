@@ -31,6 +31,11 @@ transcript="$work/transcript.jsonl"
     jq -nc '{type: "assistant", message: {content: [{type: "tool_use", name: "Bash"}]}}'
 } >"$transcript"
 run reply-require-japanese 2 "ja: 記録から最後の文の返事を読んで止める" "$(jq -nc --arg path "$transcript" '{transcript_path: $path}')"
+jq -nc '{type: "user", message: {content: [{type: "tool_result", content: "ok"}]}}' >>"$transcript"
+run reply-require-japanese 2 "ja: 道具の結果を挟んでも、同じターンの英語の返事は止める" "$(jq -nc --arg path "$transcript" '{transcript_path: $path}')"
+jq -nc '{type: "user", message: {content: "続けて"}}' >>"$transcript"
+jq -nc '{type: "assistant", message: {content: [{type: "tool_use", name: "Bash"}]}}' >>"$transcript"
+run reply-require-japanese 0 "ja: 今のターンに文の返事が無ければ、前のターンの英語は見ない" "$(jq -nc --arg path "$transcript" '{transcript_path: $path}')"
 run reply-require-japanese 0 "ja: 記録が無ければ通す" "$(jq -nc --arg path "$work/none.jsonl" '{transcript_path: $path}')"
 
 finish

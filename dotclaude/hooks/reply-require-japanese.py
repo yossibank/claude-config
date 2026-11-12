@@ -29,15 +29,23 @@ def last_reply(data):
                 entry = json.loads(line)
             except ValueError:
                 continue
-            if not isinstance(entry, dict) or entry.get("type") != "assistant":
+            if not isinstance(entry, dict):
                 continue
             content = (entry.get("message") or {}).get("content")
-            if not isinstance(content, list):
+            if entry.get("type") == "user" and is_prompt(content):
+                reply = ""
+            if entry.get("type") != "assistant" or not isinstance(content, list):
                 continue
             texts = [block.get("text", "") for block in content if isinstance(block, dict) and block.get("type") == "text"]
             if any(text.strip() for text in texts):
                 reply = "\n".join(texts)
     return reply
+
+
+def is_prompt(content):
+    if isinstance(content, str):
+        return True
+    return isinstance(content, list) and not any(isinstance(block, dict) and block.get("type") == "tool_result" for block in content)
 
 
 def is_english(text):
