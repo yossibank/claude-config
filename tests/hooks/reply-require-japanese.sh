@@ -54,6 +54,7 @@ STOP="日本語で書き直してから"
 run reply-require-japanese 2 "ja pre: 大きい記録の末尾から、途中の英語の一言を見つけて次の道具を止める" "$(call s1)" pre
 run reply-require-japanese 0 "ja pre: 一度止めた一言では、二度は止めない" "$(call s1)" pre
 run reply-require-japanese 2 "ja pre: 別の会話では、同じ一言でも止める" "$(call s2)" pre
+run reply-require-japanese 0 "ja pre: サブエージェントの道具は、親の一言で止めない" "$(call s4 | jq -c '.agent_id = "a1"')" pre
 jq -nc --arg text "$japanese" '{type: "assistant", uuid: "u3", message: {content: [{type: "text", text: $text}]}}' >>"$turn"
 run reply-require-japanese 0 "ja pre: 書き直した日本語の一言は通す" "$(call s1)" pre
 jq -nc --arg text "$english" '{type: "assistant", uuid: "u4", message: {content: [{type: "text", text: $text}]}}' >>"$turn"

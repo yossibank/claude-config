@@ -87,7 +87,7 @@ def main():
     if not is_english(reply):
         return
     if mode == "pre":
-        if not key or is_flagged(data, key):
+        if not key or data.get("agent_id") or is_flagged(data, key):
             return
         print(
             "直前の一言が英語になっている。途中経過も日本語で書く決まりなので、この道具は止めた。日本語で書き直してから、同じ道具を呼び直す。",

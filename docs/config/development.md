@@ -34,7 +34,7 @@
 | --- | --- |
 | docs の表と一覧 | 名前の順。手順・段階・重さのように順に意味がある時は、その順 |
 | `dotclaude/settings.json` の許可 | 道具の名前の順。同じ道具は、コマンドの名前と引数の順 |
-| `dotclaude/settings.json` のフック | イベントは処理の順（Pre → Post）、matcher と、その中のフックは名前の順 |
+| `dotclaude/settings.json` のフック | イベントは処理の順（Pre → Post → Stop）、matcher と、その中のフックは名前の順。matcher の無い項目は先頭に置く |
 
 ### 接頭語の表
 

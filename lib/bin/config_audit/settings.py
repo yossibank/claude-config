@@ -8,7 +8,7 @@ from loader import DOTCLAUDE
 
 SETTINGS = os.path.join(DOTCLAUDE, "settings.json")
 HOOK_NAME = re.compile(r"\.claude/hooks/run\.sh\\?\"? ([A-Za-z0-9_-]+)")
-EVENT_ORDER = ["PreToolUse", "PostToolUse"]
+EVENT_ORDER = ["PreToolUse", "PostToolUse", "Stop"]
 PERMISSION = re.compile(r"^(\w+)(?:\((.*)\))?$")
 
 

@@ -607,7 +607,7 @@ expect_check "$d" settings-order OK "道具ごとにまとめた許可"
 
 d=$(copy order-event)
 rewrite_settings "$d" '.hooks |= {PostToolUse, PreToolUse}'
-expect_check "$d" settings-order "フックのイベントは PreToolUse → PostToolUse の順に並べる" "Post が先のイベント"
+expect_check "$d" settings-order "フックのイベントは PreToolUse → PostToolUse → Stop の順に並べる" "Post が先のイベント"
 
 d=$(copy order-matcher)
 rewrite_settings "$d" '.hooks.PreToolUse |= reverse'
