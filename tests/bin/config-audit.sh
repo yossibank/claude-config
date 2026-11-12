@@ -607,14 +607,14 @@ expect_check "$d" settings-order OK "道具ごとにまとめた許可"
 
 d=$(copy order-event)
 rewrite_settings "$d" '.hooks |= {PostToolUse, PreToolUse}'
-expect_check "$d" settings-order "フックのイベントは PreToolUse → PostToolUse の順に並べる" "Post が先のイベント"
+expect_check "$d" settings-order "フックのイベントは PreToolUse → PostToolUse → Stop の順に並べる" "Post が先のイベント"
 
 d=$(copy order-matcher)
 rewrite_settings "$d" '.hooks.PreToolUse |= reverse'
 expect_check "$d" settings-order "PreToolUse の matcher は名前の順に並べる" "名前の順でない matcher"
 
 d=$(copy order-hook)
-rewrite_settings "$d" '.hooks.PreToolUse[0].hooks |= reverse'
+rewrite_settings "$d" '(.hooks.PreToolUse[] | select(.matcher == "Bash") | .hooks) |= reverse'
 expect_check "$d" settings-order "PreToolUse の Bash のフックは名前の順に並べる" "名前の順でないフック"
 
 d=$(copy lib-path-form)

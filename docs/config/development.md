@@ -34,7 +34,7 @@
 | --- | --- |
 | docs の表と一覧 | 名前の順。手順・段階・重さのように順に意味がある時は、その順 |
 | `dotclaude/settings.json` の許可 | 道具の名前の順。同じ道具は、コマンドの名前と引数の順 |
-| `dotclaude/settings.json` のフック | イベントは処理の順（Pre → Post）、matcher と、その中のフックは名前の順 |
+| `dotclaude/settings.json` のフック | イベントは処理の順（Pre → Post → Stop）、matcher と、その中のフックは名前の順。matcher の無い項目は先頭に置く |
 
 ### 接頭語の表
 
@@ -48,6 +48,7 @@
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
 | `docs-` | 文書 | rules、skills、hooks、bin |
 | `pr-` | PR | skills、hooks |
+| `reply-` | 人への返事の言葉と形 | hooks |
 | `rules-` | rules を読ませる、rules を避けた書き換えを見つける | hooks |
 | `shell-` | シェルスクリプト | hooks |
 | `store-` | App Store への公開と数字 | skills |

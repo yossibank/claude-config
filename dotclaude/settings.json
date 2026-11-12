@@ -19,6 +19,14 @@
   "hooks": {
     "PreToolUse": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" reply-require-japanese pre"
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -105,6 +113,16 @@
             "type": "command",
             "if": "Write(//**/*.swift)",
             "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-style-check"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" reply-require-japanese stop"
           }
         ]
       }
