@@ -64,6 +64,10 @@ flowchart LR
 | [swift-format](../../dotclaude/hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
 | [swift-style-check](../../dotclaude/hooks/swift-style-check.py) | 💬 知らせる | `.swift` を Edit・Write した後。swift-format の後に順に走る | `.swift` が、整形で直らない `dotclaude/rules/swift-*.md` の改行と空行に合わない時 |
 
+### 返事の言葉を見る範囲
+
+reply-require-japanese は、会話の記録に残った一言だけを見る。道具の前に書いた一言は記録に残らないことがあり、その一言は止められない。道具の前の判定は一歩遅れるので、止めた時の文に、止めた一言の書き出しを引く。
+
 ### 例外で落ちた時
 
 pr-gate と rules-require-read は、フック自体が落ちた時の動きが決まっている。

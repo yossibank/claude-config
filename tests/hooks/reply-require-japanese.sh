@@ -50,10 +50,14 @@ call() {
     jq -nc '{type: "assistant", uuid: "u2", message: {content: [{type: "tool_use", name: "Bash"}]}}'
     jq -nc '{type: "user", message: {content: [{type: "tool_result", content: "ok"}]}}'
 } >"$turn"
-STOP="日本語で書き直してから"
+STOP="「The fixes are done and make verify passed"
 run reply-require-japanese 2 "ja pre: 大きい記録の末尾から、途中の英語の一言を見つけて次の道具を止める" "$(call s1)" pre
 run reply-require-japanese 0 "ja pre: 一度止めた一言では、二度は止めない" "$(call s1)" pre
 run reply-require-japanese 2 "ja pre: 別の会話では、同じ一言でも止める" "$(call s2)" pre
+fenced="$work/fenced.jsonl"
+jq -nc --arg text $'```bash\nmake verify\n```\n'"$english" '{type: "assistant", uuid: "f1", message: {content: [{type: "text", text: $text}]}}' >"$fenced"
+run reply-require-japanese 2 "ja pre: コードのブロックから始まる一言は、地の文の書き出しを引く" \
+    "$(jq -nc --arg path "$fenced" '{transcript_path: $path, session_id: "s5"}')" pre
 run reply-require-japanese 0 "ja pre: サブエージェントの道具は、親の一言で止めない" "$(call s4 | jq -c '.agent_id = "a1"')" pre
 jq -nc --arg text "$japanese" '{type: "assistant", uuid: "u3", message: {content: [{type: "text", text: $text}]}}' >>"$turn"
 run reply-require-japanese 0 "ja pre: 書き直した日本語の一言は通す" "$(call s1)" pre
