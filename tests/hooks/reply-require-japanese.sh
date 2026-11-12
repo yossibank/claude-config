@@ -38,4 +38,26 @@ jq -nc '{type: "assistant", message: {content: [{type: "tool_use", name: "Bash"}
 run reply-require-japanese 0 "ja: 今のターンに文の返事が無ければ、前のターンの英語は見ない" "$(jq -nc --arg path "$transcript" '{transcript_path: $path}')"
 run reply-require-japanese 0 "ja: 記録が無ければ通す" "$(jq -nc --arg path "$work/none.jsonl" '{transcript_path: $path}')"
 
+turn="$work/turn.jsonl"
+call() {
+    jq -nc --arg path "$turn" --arg id "$1" '{transcript_path: $path, session_id: $id, tool_name: "Bash"}'
+}
+{
+    head -c 70000 /dev/zero | tr '\0' a
+    echo
+    jq -nc '{type: "user", message: {content: "PR を作って"}}'
+    jq -nc --arg text "$english" '{type: "assistant", uuid: "u1", message: {content: [{type: "text", text: $text}]}}'
+    jq -nc '{type: "assistant", uuid: "u2", message: {content: [{type: "tool_use", name: "Bash"}]}}'
+    jq -nc '{type: "user", message: {content: [{type: "tool_result", content: "ok"}]}}'
+} >"$turn"
+STOP="日本語で書き直してから"
+run reply-require-japanese 2 "ja pre: 大きい記録の末尾から、途中の英語の一言を見つけて次の道具を止める" "$(call s1)" pre
+run reply-require-japanese 0 "ja pre: 一度止めた一言では、二度は止めない" "$(call s1)" pre
+run reply-require-japanese 2 "ja pre: 別の会話では、同じ一言でも止める" "$(call s2)" pre
+jq -nc --arg text "$japanese" '{type: "assistant", uuid: "u3", message: {content: [{type: "text", text: $text}]}}' >>"$turn"
+run reply-require-japanese 0 "ja pre: 書き直した日本語の一言は通す" "$(call s1)" pre
+jq -nc --arg text "$english" '{type: "assistant", uuid: "u4", message: {content: [{type: "text", text: $text}]}}' >>"$turn"
+jq -nc '{type: "user", message: {content: "続けて"}}' >>"$turn"
+run reply-require-japanese 0 "ja pre: 人の文の後に一言が無ければ、前のターンの英語は見ない" "$(call s3)" pre
+
 finish

@@ -614,7 +614,7 @@ rewrite_settings "$d" '.hooks.PreToolUse |= reverse'
 expect_check "$d" settings-order "PreToolUse の matcher は名前の順に並べる" "名前の順でない matcher"
 
 d=$(copy order-hook)
-rewrite_settings "$d" '.hooks.PreToolUse[0].hooks |= reverse'
+rewrite_settings "$d" '(.hooks.PreToolUse[] | select(.matcher == "Bash") | .hooks) |= reverse'
 expect_check "$d" settings-order "PreToolUse の Bash のフックは名前の順に並べる" "名前の順でないフック"
 
 d=$(copy lib-path-form)

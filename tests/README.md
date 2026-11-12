@@ -13,7 +13,7 @@
 | [ctx-limit-read.sh](hooks/ctx-limit-read.sh) | 大きいファイルを範囲なしで読む時だけ止めるか |
 | [docs-check.sh](hooks/docs-check.sh) | 文書の決まりに外れた時に止め、合う時は通すか |
 | [pr-gate.sh](hooks/pr-gate.sh) | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
-| [reply-require-japanese.sh](hooks/reply-require-japanese.sh) | 今のターンの英語の返事だけを止め、コード・短い英語・止めた後の 2 回目は通すか |
+| [reply-require-japanese.sh](hooks/reply-require-japanese.sh) | 今のターンの英語の返事と途中の一言だけを止め、コード・短い英語・止めた後の 2 回目は通すか |
 | [rules-detect-bash-edits.sh](hooks/rules-detect-bash-edits.sh) | Bash と git checkout での書き換えを見つけ、Edit・Write で変えたファイルを数えないか |
 | [rules-require-read.sh](hooks/rules-require-read.sh) | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
 | [shell-check.sh](hooks/shell-check.sh) | `.sh` の構文と、変数の直後の全角で止めるか |
