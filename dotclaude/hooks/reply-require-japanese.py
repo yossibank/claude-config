@@ -12,6 +12,7 @@ from hook_state import prepare_state, safe_name, state_folder  # noqa: E402
 
 MIN_WORDS = 8
 TAIL = 64 * 1024
+EXCERPT = 50
 STATE = state_folder("reply-japanese")
 STALE = 7 * 24 * 60 * 60
 FENCE = re.compile(r"```.*?(```|$)", re.S)
@@ -67,6 +68,11 @@ def is_english(text):
     return words >= MIN_WORDS and len(JAPANESE.findall(prose)) < words
 
 
+def excerpt(text):
+    line = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    return line if len(line) <= EXCERPT else line[:EXCERPT] + "…"
+
+
 def is_flagged(data, key):
     prepare_state(STATE, STALE)
     path = Path(STATE, safe_name(f"{data.get('session_id', '')}-{data.get('agent_id', 'main')}"))
@@ -90,7 +96,8 @@ def main():
         if not key or data.get("agent_id") or is_flagged(data, key):
             return
         print(
-            "直前の一言が英語になっている。途中経過も日本語で書く決まりなので、この道具は止めた。日本語で書き直してから、同じ道具を呼び直す。",
+            f"「{excerpt(reply)}」が英語になっている。この判定は一歩遅れて、前に書いた一言を見ている。"
+            "途中経過も日本語で書く決まりなので、この道具は止めた。日本語に戻したら、同じ道具をそのまま呼び直してよい。",
             file=sys.stderr,
         )
         sys.exit(2)

@@ -50,7 +50,7 @@ call() {
     jq -nc '{type: "assistant", uuid: "u2", message: {content: [{type: "tool_use", name: "Bash"}]}}'
     jq -nc '{type: "user", message: {content: [{type: "tool_result", content: "ok"}]}}'
 } >"$turn"
-STOP="日本語で書き直してから"
+STOP="「The fixes are done and make verify passed"
 run reply-require-japanese 2 "ja pre: 大きい記録の末尾から、途中の英語の一言を見つけて次の道具を止める" "$(call s1)" pre
 run reply-require-japanese 0 "ja pre: 一度止めた一言では、二度は止めない" "$(call s1)" pre
 run reply-require-japanese 2 "ja pre: 別の会話では、同じ一言でも止める" "$(call s2)" pre
