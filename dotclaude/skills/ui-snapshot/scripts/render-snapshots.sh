@@ -46,6 +46,7 @@ stage="$out/.rendering"
 trap 'rm -rf "$lock" "$stage"' EXIT
 echo $$ >"$lock/pid"
 mkdir -p "$copy"
+printf '%s\n' "$root" >"$copy.origin"
 rsync -a --delete --exclude .git --exclude .build --exclude DerivedData --filter=':- .gitignore' "$root/" "$copy/"
 
 python3 -I "$skill/scripts/add-target.py" "$work/Package.swift" "$set_dir/targets.txt"

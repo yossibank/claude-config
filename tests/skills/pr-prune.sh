@@ -5,9 +5,12 @@ source "$(dirname "$0")/../support/assert.sh"
 source "$(dirname "$0")/../support/fixtures.sh"
 
 export HOME="$work/home"
+export CC_UI_WORK_DIR="$work/snap"
+export CC_PRUNE_MIN_FREE_GB=0
 mkdir -p "$HOME"
 prune="$root/dotclaude/skills/pr-prune/scripts/prune-merged.sh"
 fake_gh 'echo "${GH_PR:-MERGED x x}"'
+fake_command xcrun "echo \"\$*\" >>\"$work/xcrun.log\""
 repo="$work/repo"
 clone_with_origin "$repo"
 
@@ -216,5 +219,56 @@ chmod +x "$work/lsfail/git"
 out=$(PATH="$work/lsfail:$PATH" GH_PR="MERGED $base5_head feat/base5" bash "$prune" "$repo" feat/base5 13 2>&1)
 check "restack: ls-remote が落ちたら付け替えを見送って NG を出す" grep -qF "NG 付け替えなかった: feat/offline-kid（origin のブランチを確かめられない）" <<<"$out"
 check "restack: 見送った子のブランチは元のまま" test "$(git -C "$repo" rev-parse feat/offline-kid)" == "$offline_head"
+
+derived_data() {
+    mkdir -p "$HOME/Library/Developer/Xcode/DerivedData/$1"
+    printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict><key>WorkspacePath</key><string>%s</string></dict></plist>\n' "$2" \
+        >"$HOME/Library/Developer/Xcode/DerivedData/$1/info.plist"
+}
+
+snapshot_copy() {
+    mkdir -p "$work/snap/$1"
+    printf '%s\n' "$2" >"$work/snap/$1.origin"
+}
+
+derived_dir="$HOME/Library/Developer/Xcode/DerivedData"
+real_repo=$(cd "$repo" && pwd -P)
+derived_data gone "$real_repo/.claude/worktrees/gone/App.xcworkspace"
+derived_data main "$real_repo/a.md"
+derived_data other "$work/elsewhere/App.xcworkspace"
+derived_data snap "$work/snap/gone-abc/Package.swift"
+derived_data othersnap "$work/snap/other-zzz/Package.swift"
+derived_data live "$real_repo/.claude/worktrees/live"
+snapshot_copy live-jkl "$real_repo/.claude/worktrees/live"
+snapshot_copy gone-abc "$real_repo/.claude/worktrees/gone"
+snapshot_copy main-def "$real_repo"
+snapshot_copy busy-ghi "$real_repo/.claude/worktrees/busy"
+mkdir -p "$work/snap/busy-ghi.lock" "$repo/pkg/.build" "$repo/.claude/worktrees/live/.build"
+rm -f "$work/xcrun.log"
+git -C "$repo" checkout -q main
+out=$(GH_PR="MERGED x feat/none" bash "$prune" "$repo" feat/none 14 2>&1)
+match "clean: 掃除の行を出す" "$out" "*OK 掃除: DerivedData と写しは、ワークツリーの分だけ消した*"
+check "clean: 無くなったワークツリーの DerivedData を消す" test ! -d "$derived_dir/gone"
+check "clean: 消した写しの DerivedData を消す" test ! -d "$derived_dir/snap"
+check "clean: 空きがあれば本体の DerivedData は残す" test -d "$derived_dir/main"
+check "clean: ほかのリポジトリの DerivedData は残す" test -d "$derived_dir/other"
+check "clean: 無くなったワークツリーの写しを消す" test ! -d "$work/snap/gone-abc"
+check "clean: 空きがあれば本体の写しは残す" test -d "$work/snap/main-def"
+check "clean: 描いている途中の写しは残す" test -d "$work/snap/busy-ghi"
+check "clean: リポジトリの .build を消す" test ! -d "$repo/pkg/.build"
+check "clean: ほかのワークツリーの .build は残す" test -d "$repo/.claude/worktrees/live/.build"
+check "clean: 使えないシミュレーターを消す" grep -qF "simctl delete unavailable" "$work/xcrun.log"
+
+out=$(CC_PRUNE_MIN_FREE_GB=999999999 GH_PR="MERGED x feat/none" bash "$prune" "$repo" feat/none 14 2>&1)
+match "clean: 空きが少なければ、本体の分も消すと出す" "$out" "*OK 掃除: 空きが少ないので*"
+check "clean: 空きが少なければ本体の DerivedData も消す" test ! -d "$derived_dir/main"
+check "clean: 空きが少なければ本体の写しも消す" test ! -d "$work/snap/main-def"
+check "clean: 空きが少なくても、ほかのリポジトリの DerivedData は残す" test -d "$derived_dir/other"
+check "clean: 空きが少なくても、描いている途中の写しは残す" test -d "$work/snap/busy-ghi"
+check "clean: 空きが少なくても、使っているワークツリーの DerivedData は残す" test -d "$derived_dir/live"
+check "clean: 空きが少なくても、使っているワークツリーの写しは残す" test -d "$work/snap/live-jkl"
+check "clean: 持ち主の分からない写しの DerivedData は残す" test -d "$derived_dir/othersnap"
+out=$(CC_PRUNE_MIN_FREE_GB=20GB GH_PR="MERGED x feat/none" bash "$prune" "$repo" feat/none 14 2>&1)
+match "clean: 空きの GB が整数でなくても、既定で掃除を終える" "$out" "*OK 掃除:*"
 
 finish
