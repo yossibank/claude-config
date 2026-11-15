@@ -79,7 +79,9 @@ check "render-snapshots: 写しがある" test -n "$(find "$work/copies" -name P
 check "render-snapshots: .gitignore で外すものを写さない" test -z "$(find "$work/copies" -name big)"
 check "render-snapshots: 終わったら .lock を消す" test -z "$(find "$work/copies" -name '*.lock')"
 
-mkdir "$(echo "$work"/copies/pkg-*).lock"
+copy=$(echo "$work"/copies/pkg-*/)
+check "render-snapshots: 写しの横に元のフォルダを書く" test -s "${copy%/}.origin"
+mkdir "${copy%/}.lock"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG 同じリポジトリを描いている途中" "render-snapshots: 描いている途中なら NG" bash "$render" "$package" "$set_dir" "$work/out"
 
 printf 'Co"re\nSnap:pk\\g\n' >"$work/escape.txt"

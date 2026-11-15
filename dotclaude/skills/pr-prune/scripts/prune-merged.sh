@@ -8,33 +8,120 @@ fail() {
     exit 1
 }
 
-clean_derived_data() {
-    local plist path volume
-    local count=0
+owned() {
+    case $1 in
+        "$repo" | "$repo"/* | "$(worktree_root "$name")"/*) return 0 ;;
+    esac
+    return 1
+}
+
+in_main() {
+    case $1 in
+        "$repo/.claude" | "$repo/.claude"/*) return 1 ;;
+        "$repo" | "$repo"/*) return 0 ;;
+    esac
+    return 1
+}
+
+expired() {
+    [[ ! -e $1 ]] || { [[ $low == 1 ]] && in_main "$1"; }
+}
+
+# 外付けのボリュームが外れている間は、フォルダが見えないだけで、消えたとは限らない
+mounted() {
+    local volume
+    case $1 in
+        /Volumes/*)
+            volume=${1#/Volumes/}
+            [[ -d /Volumes/${volume%%/*} ]]
+            return
+            ;;
+    esac
+    return 0
+}
+
+free_gb() {
+    df -Pk "$HOME" | awk 'NR == 2 { print int($4 / 1048576) }'
+}
+
+derived_plists() {
+    local plist path
 
     for plist in "$HOME"/Library/Developer/Xcode/DerivedData/*/info.plist; do
         path=$(plutil -extract WorkspacePath raw "$plist" 2>/dev/null) || continue
+        printf '%s\t%s\n' "$path" "$(dirname "$plist")"
+    done
+}
 
-        case $path in
-            "$repo"/* | "$(worktree_root "$name")"/*) ;;
-            *) continue ;;
-        esac
+remove_copy() {
+    local path dir
 
-        # 外付けのボリュームが外れている間は、フォルダが見えないだけで、消えたとは限らない
-        case $path in
-            /Volumes/*)
-                volume=${path#/Volumes/}
-                [[ -d /Volumes/${volume%%/*} ]] || continue
-                ;;
-        esac
+    while IFS=$'\t' read -r path dir; do
+        [[ $path == "$1"/* ]] && rm -rf "$dir"
+    done < <(derived_plists)
 
-        if [[ ! -e $path ]]; then
-            rm -rf "$(dirname "$plist")"
-            count=$((count + 1))
-        fi
+    rm -rf "$1" "$1.origin"
+}
+
+clean_snapshots() {
+    local origin_file copy origin legacy
+    local count=0
+
+    for origin_file in "$snapshots"/*.origin; do
+        [[ -f $origin_file ]] || continue
+        copy=${origin_file%.origin}
+        origin=$(<"$origin_file")
+        owned "$origin" && mounted "$origin" || continue
+        expired "$origin" && mkdir "$copy.lock" 2>/dev/null || continue
+        echo $$ >"$copy.lock/pid"
+        remove_copy "$copy"
+        rm -rf "$copy.lock"
+        count=$((count + 1))
     done
 
+    legacy="$snapshots/$(basename "$repo")-$(printf '%s' "$repo" | shasum | cut -c1-12)"
+    if [[ $low == 1 && -d $legacy ]] && mkdir "$legacy.lock" 2>/dev/null; then
+        echo $$ >"$legacy.lock/pid"
+        remove_copy "$legacy"
+        rm -rf "$legacy.lock"
+        count=$((count + 1))
+    fi
+
     echo "$count"
+}
+
+clean_derived_data() {
+    local path dir
+    local count=0
+
+    while IFS=$'\t' read -r path dir; do
+        owned "$path" && mounted "$path" && expired "$path" || continue
+        rm -rf "$dir"
+        count=$((count + 1))
+    done < <(derived_plists)
+
+    echo "$count"
+}
+
+clean_package_builds() {
+    local list build
+    local count=0
+
+    list=$(find "$repo" \( -name .git -o -name node_modules -o -name Pods -o -path "$repo/.claude" \) -prune \
+        -o -type d -name .build -prune -print) || { echo "確かめられなかった"; return; }
+
+    while IFS= read -r build; do
+        [[ -n $build ]] || continue
+        rm -rf "$build"
+        count=$((count + 1))
+    done <<<"$list"
+
+    echo "$count"
+}
+
+clean_simulators() {
+    command -v xcrun >/dev/null || { echo "確かめられなかった"; return; }
+    xcrun simctl delete unavailable >/dev/null 2>&1 && echo "消した" || echo "消せなかった"
 }
 
 merged() {
@@ -89,8 +176,19 @@ fi
 
 errors=$(git -C "$repo" fetch -q --prune origin 2>&1) || fail "fetch --prune が通らない（$(tail -n 1 <<< "$errors")）"
 remote=$(git -C "$repo" ls-remote origin "refs/heads/$branch") && { [[ -z $remote ]] && left="なし" || left="残っている"; } || left="確かめられなかった"
+snapshots=${CC_UI_WORK_DIR:-$HOME/Library/Caches/ui-snapshot}
+before=$(free_gb)
+min_free=${CC_PRUNE_MIN_FREE_GB:-20}
+[[ $min_free =~ ^[0-9]+$ ]] || min_free=20
+low=0
+[[ -n $before ]] && ((before < min_free)) && low=1
+copies=$(clean_snapshots)
 derived=$(clean_derived_data)
+builds=$(clean_package_builds)
+simulators=$(clean_simulators)
+[[ $low == 1 ]] && scope="空きが少ないので、本体の DerivedData と写しも消した" || scope="DerivedData と写しは、ワークツリーの分だけ消した"
 echo "OK $name: $(git -C "$repo" rev-parse --short HEAD) | 手元の $main は origin と一致 | GitHub 上のブランチ: $left | 消した DerivedData: $derived"
+echo "OK 掃除: $scope | 写し（中の DerivedData ごと）: $copies | .build: $builds | 使えないシミュレーター: $simulators | 空き: ${before:-?} GB → $(free_gb) GB"
 base_ref=${base_ref:-$main}
 if [[ -n $tip ]] && git -C "$repo" cat-file -e "$tip^{commit}" 2>/dev/null \
     && git -C "$repo" rev-parse -q --verify "origin/$base_ref" >/dev/null \

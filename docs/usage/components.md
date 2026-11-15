@@ -122,6 +122,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | `CC_REPORTS_DIR` | store-report | 月ごとの表の置き場所 |
 | `CC_HOOKS_OFF` | dotclaude/hooks/run.sh、rules-detect-bash-edits | 空白・改行・タブ・カンマで区切った名前のフックを動かさない。dotclaude/hooks/ に無い名前は stderr に出す（デバッグのログでだけ見える） |
 | `CC_PROJECTS_DIR` | config-learn、ctx-report | 会話の記録の置き場所 |
+| `CC_PRUNE_MIN_FREE_GB` | pr-prune | 空きがこの GB を切ったら、本体のリポジトリの DerivedData と写しも消す。既定は 20 |
 | `CC_STORE_ARCHIVE_ONLY`・`CC_STORE_EXPORT` | store-release | 前の変数。付いていれば、送らずに `NG` で止まる |
 | `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
