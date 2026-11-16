@@ -14,6 +14,7 @@ from script_io import Failure, fail, run_main, split_dry_run  # noqa: E402
 USAGE = "使い方: create-custom-pages.py <アプリのリポジトリ> [--dry-run]"
 PROMOTION_LIMIT = 170
 PAGE_LIMIT = 200
+SCREENSHOT_LIMIT = 10
 
 
 def read_json(path, label):
@@ -95,7 +96,7 @@ def read_plan(repo):
 
 
 def ordered(files, lead):
-    return lead + [file for file in files if file not in lead]
+    return (lead + [file for file in files if file not in lead])[:SCREENSHOT_LIMIT]
 
 
 def all_pages(url):
@@ -248,8 +249,9 @@ def differences(page, folders, keywords, counts):
     if missing:
         found.append(f"手元のキーワードがページに無い: {', '.join(missing)}")
     for kind, (_, files) in folders.items():
-        if counts.get(kind) != len(files):
-            found.append(f"{kind} の画像がページでは {counts.get(kind, 0)} 枚で、手元は {len(files)} 枚")
+        expected = len(ordered(files, page.get("lead", [])))
+        if counts.get(kind) != expected:
+            found.append(f"{kind} の画像がページでは {counts.get(kind, 0)} 枚で、手元は {expected} 枚")
     return found
 
 
