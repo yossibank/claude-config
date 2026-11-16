@@ -43,6 +43,7 @@
 | [hook_state.py](hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除 |
 | [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
 | [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
+| [kotlin_source.py](kotlin_source.py) | Kotlin のコードから、コメント・文字列・文字の中身を空白にする |
 | [loader.py](loader.py) | claude-config の根と、場所を指して `.py` を読む処理 |
 | [md_blocks.py](md_blocks.py) | Markdown の frontmatter、見出し、表、コードの囲み |
 | [md_doc.py](md_doc.py) | 文書を行と種類に分けた形と、rules の表の読み方 |

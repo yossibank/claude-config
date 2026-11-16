@@ -39,6 +39,7 @@ flowchart LR
     editAfter["Edit・Write の後"] -->|.md だけ| docs["docs-check"]
     editAfter -->|.swift だけ| swift["swift-format"]
     swift --> swiftStyle["swift-style-check"]
+    editAfter -->|.kt だけ| kotlinStyle["kotlin-style-check"]
     editAfter -->|.sh だけ| shell["shell-check"]
     editAfter --> detect
     bashBefore["Bash の前"] --> detect
@@ -51,7 +52,7 @@ flowchart LR
     classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
     classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
     class limit,require,gate,japanese block
-    class docs,swiftStyle,shell,detect inform
+    class docs,kotlinStyle,swiftStyle,shell,detect inform
     class swift tidy
 ```
 
@@ -59,6 +60,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | [ctx-limit-read](../../dotclaude/hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
 | [docs-check](../../dotclaude/hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `dotclaude/rules/docs-*.md` に合わない時 |
+| [kotlin-style-check](../../dotclaude/hooks/kotlin-style-check.py) | 💬 知らせる | `.kt` を Edit・Write した後 | `.kt` が、整形で直らない `dotclaude/rules/kotlin-*.md` の空行に合わない時 |
 | [pr-gate](../../dotclaude/hooks/pr-gate.py) | 🛑 止める | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時。cd と `git -C` の先が変数でも止める |
 | [reply-require-japanese](../../dotclaude/hooks/reply-require-japanese.py) | 🛑 止める | 返事を終える前（Stop）と、すべての道具の前 | 返事の地の文が、コードと URL を除いて英語の時。道具の前では今のターンの一つ前の一言を見て、同じ一言では二度止めない |
 | [rules-detect-bash-edits](../../dotclaude/hooks/rules-detect-bash-edits.py) | 💬 知らせる | Bash と Edit・Write の前と後 | Bash でファイルを書き換えた時。git は checkout など、gh・cd は出力の向け先だけを見て、make などの道具は NG の行だけ返す |

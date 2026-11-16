@@ -12,6 +12,7 @@
 | --- | --- |
 | [ctx-limit-read.sh](hooks/ctx-limit-read.sh) | 大きいファイルを範囲なしで読む時だけ止めるか |
 | [docs-check.sh](hooks/docs-check.sh) | 文書の決まりに外れた時に止め、合う時は通すか |
+| [kotlin-style-check.sh](hooks/kotlin-style-check.sh) | 整形で直らない空行の外れで止め、文字列・文字・コメントの中は見ないか |
 | [pr-gate.sh](hooks/pr-gate.sh) | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
 | [reply-require-japanese.sh](hooks/reply-require-japanese.sh) | 今のターンの英語の返事と途中の一言だけを止め、コード・短い英語・止めた後の 2 回目は通すか |
 | [rules-detect-bash-edits.sh](hooks/rules-detect-bash-edits.sh) | Bash と git checkout での書き換えを見つけ、Edit・Write で変えたファイルを数えないか |
