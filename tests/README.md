@@ -12,13 +12,13 @@
 | --- | --- |
 | [ctx-limit-read.sh](hooks/ctx-limit-read.sh) | 大きいファイルを範囲なしで読む時だけ止めるか |
 | [docs-check.sh](hooks/docs-check.sh) | 文書の決まりに外れた時に止め、合う時は通すか |
+| [kotlin-style-check.sh](hooks/kotlin-style-check.sh) | 整形で直らない空行の外れで止め、文字列・文字・コメントの中は見ないか |
 | [pr-gate.sh](hooks/pr-gate.sh) | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
 | [reply-require-japanese.sh](hooks/reply-require-japanese.sh) | 今のターンの英語の返事と途中の一言だけを止め、コード・短い英語・止めた後の 2 回目は通すか |
 | [rules-detect-bash-edits.sh](hooks/rules-detect-bash-edits.sh) | Bash と git checkout での書き換えを見つけ、Edit・Write で変えたファイルを数えないか |
 | [rules-require-read.sh](hooks/rules-require-read.sh) | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
 | [shell-check.sh](hooks/shell-check.sh) | `.sh` の構文と、変数の直後の全角で止めるか |
 | [swift-format.sh](hooks/swift-format.sh) | Mintfile に swiftformat がある時だけ走らせ、失敗で止めずに知らせるか |
-| [kotlin-style-check.sh](hooks/kotlin-style-check.sh) | 整形で直らない空行の外れで止め、文字列・文字・コメントの中は見ないか |
 | [swift-style-check.sh](hooks/swift-style-check.sh) | 整形で直らない改行と空行の外れで止め、文字列とコメントの中は見ないか |
 
 ### bin のテスト

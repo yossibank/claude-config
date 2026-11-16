@@ -19,6 +19,7 @@ style_case 2 "if で抜けた後に空行が無ければ止める" $'fun a() {\n
 style_case 0 "if で抜けた後に空行があれば通る" $'fun a() {\n    if (b) {\n        return\n    }\n\n    c()\n}'
 style_case 2 "長いブロックで ?: return の後に空行が無ければ止める" $'fun a() {\n    val b = c ?: return\n    d(b)\n    e()\n    f()\n}' "Case.kt:3: 早く抜ける行"
 style_case 0 "?: return の val が続き、処理の前に空行があれば通る" $'fun a() {\n    val b = c ?: return\n    val d = e ?: return\n\n    f(b, d)\n    g()\n}'
+style_case 0 "?: return の val の後に最後の return が続く長いブロックは通る" $'fun a(): Int {\n    val p = 1\n    val q = 2\n    val b = c ?: return 0\n    return p + q + b\n}'
 style_case 0 "1 行の文が 3 つまでのブロックの ?: return は見ない" $'fun a() {\n    val b = c ?: return\n    d(b)\n}'
 
 style_case 2 "同じ Composable の 1 行の呼び出しの間に空行があれば止める" $'fun A() {\n    Row {\n        Chip("a")\n\n        Chip("b")\n    }\n}' "Case.kt:5: 同じ Composable の 1 行"

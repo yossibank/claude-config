@@ -90,7 +90,7 @@ def exits(code, items):
     for position, (first, last) in enumerate(items):
         head = code[first].strip()
         following = code[items[position + 1][0]].strip() if position + 1 < len(items) else ""
-        if first == last and ELVIS_RETURN.search(head) and not short and not VAL.match(following):
+        if first == last and ELVIS_RETURN.search(head) and not short and not VAL.match(following) and not RETURN.match(following):
             yield position
         elif IF_OPEN.match(head) and last - first == 2 and RETURN.match(code[first + 1].strip()):
             yield position
