@@ -48,5 +48,6 @@
 | [md_doc.py](md_doc.py) | 文書を行と種類に分けた形と、rules の表の読み方 |
 | [script_io.py](script_io.py) | `NG` で止める入口、結果の行、引数の読み方、JSON の書き出し |
 | [store_api.py](store_api.py) | App Store の検索とレビュー、App Store Connect API のキーと署名 |
+| [kotlin_source.py](kotlin_source.py) | Kotlin のコードから、コメント・文字列・文字の中身を空白にする |
 | [swift_source.py](swift_source.py) | Swift のコードから、コメントと文字列の中身を空白にする |
 | [transcripts.py](transcripts.py) | 会話の記録の読み方と、ある日時より後の記録の一覧 |

@@ -47,7 +47,7 @@
 | `config-` | claude-config 自体の手入れ | skills、bin |
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
 | `docs-` | 文書 | rules、skills、hooks、bin |
-| `kotlin-` | Kotlin | rules |
+| `kotlin-` | Kotlin | rules、hooks |
 | `pr-` | PR | skills、hooks |
 | `reply-` | 人への返事の言葉と形 | hooks |
 | `rules-` | rules を読ませる、rules を避けた書き換えを見つける | hooks |

@@ -92,6 +92,16 @@
           },
           {
             "type": "command",
+            "if": "Edit(//**/*.kt)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" kotlin-style-check"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.kt)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" kotlin-style-check"
+          },
+          {
+            "type": "command",
             "command": "bash \"$HOME/.claude/hooks/run.sh\" rules-detect-bash-edits edit"
           },
           {
