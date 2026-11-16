@@ -17,6 +17,9 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 | [dotclaude/rules/docs-claude.md](../../dotclaude/rules/docs-claude.md) | CLAUDE.md・rules・SKILL.md・agents | docs-core | 飾らない形と、節の並び |
 | [dotclaude/rules/docs-core.md](../../dotclaude/rules/docs-core.md) | `.md` | | 運用、文、表現、守らせる仕組み |
 | [dotclaude/rules/docs-human.md](../../dotclaude/rules/docs-human.md) | README・`docs/`・`spec/` | docs-core | 冒頭、見出しの絵文字、技術のアイコン、README の形 |
+| [dotclaude/rules/kotlin-compose.md](../../dotclaude/rules/kotlin-compose.md) | 画面と部品のフォルダ、`*View.kt` | kotlin-core | Composable の分け方、要素の並べ方 |
+| [dotclaude/rules/kotlin-core.md](../../dotclaude/rules/kotlin-core.md) | Kotlin | | 宣言の置き方、改行、空行、ファイル、ktlint の設定 |
+| [dotclaude/rules/kotlin-test.md](../../dotclaude/rules/kotlin-test.md) | `src/test/`・`src/<対象>Test/` の Kotlin | kotlin-core | テストの名前と空行 |
 | [dotclaude/rules/swift-core.md](../../dotclaude/rules/swift-core.md) | Swift | | 宣言の置き方、改行、空行、ファイル |
 | [dotclaude/rules/swift-test.md](../../dotclaude/rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | swift-core | テストの空行と型の置き方 |
 | [dotclaude/rules/swift-ui.md](../../dotclaude/rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | swift-core | `View` の分け方、ビューの並べ方 |
