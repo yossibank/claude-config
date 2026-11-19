@@ -79,6 +79,13 @@ def funnel_data(funnel, labels):
     }
 
 
+def kept_next_steps(path):
+    if not Path(path).exists():
+        return []
+    match = re.search(r"^## 次の施策\s*$.*?(?=^## |\Z)", Path(path).read_text(encoding="utf-8"), re.M | re.S)
+    return ["", *match.group(0).rstrip().splitlines()] if match else []
+
+
 def previous_html(out_dir, month, fetch_analytics):
     previous = fetch_analytics.previous_month(month)
     return f"{previous}.html" if Path(out_dir, f"{previous}.html").exists() else None
@@ -155,6 +162,7 @@ def main():
 
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, f"{month}.md")
+    lines += kept_next_steps(path)
     Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
     report = {"month": month, "generated": date.today().isoformat(), "apps": report_apps, "notes": notes,
               "previous_html": previous_html(out_dir, month, fetch_analytics)}

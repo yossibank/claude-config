@@ -149,11 +149,10 @@ def funnel(app_id, month):
         request_ids, created = report_requests(app_id)
         windows = [(previous_first.isoformat(), (last + timedelta(days=7)).isoformat()), None]
         rows = merged_rows(request_ids, ENGAGEMENT, windows) + merged_rows(request_ids, DOWNLOADS, windows)
-    except (*ASC_ERRORS, EOFError, zlib.error) as error:
-        raise Failure(f"分析のレポートを読めなかった: {asc_reason(error)}") from error
-    try:
         current = summarize(rows, first, last)
         previous = summarize(rows, previous_first, previous_last)
+    except (*ASC_ERRORS, EOFError, zlib.error) as error:
+        raise Failure(f"分析のレポートを読めなかった: {asc_reason(error)}") from error
     except (KeyError, ValueError) as error:
         raise Failure(f"分析のレポートの中身が想定と違う（{type(error).__name__}: {error}）") from error
     notices = []

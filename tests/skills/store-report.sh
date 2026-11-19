@@ -219,6 +219,10 @@ check "write-report: 日ごとの数字を JSON に書く" test "$(jq -c '.apps[
 check "write-report: ソースを日本語の名前で JSON に書く" test "$(jq -r '.apps[0].funnel.sources[0][0]' "$ok_apps/reports/2026-09.json")" = "App Store の検索"
 check "write-report: HTML にデータを埋める" test -z "$(grep __REPORT__ "$ok_apps/reports/2026-09.html")"
 check "write-report: 通信できなくても HTML を書く" test -f "$apps/reports/2026-09.html"
+printf '\n## 次の施策\n\n- ⬜ 画像を差し替える：開いた割合を上げる\n' >>"$ok_apps/reports/2026-09.md"
+fake_report >/dev/null
+check "write-report: 作り直しても、書き足した次の施策を残す" grep -qx -- '- ⬜ 画像を差し替える：開いた割合を上げる' "$ok_apps/reports/2026-09.md"
+check "write-report: 作り直しても、次の施策をページに入れる" grep -q '"title": "画像を差し替える"' "$ok_apps/reports/2026-09.html"
 check "write-report: 掲載の数字が無いアプリは funnel を null にする" test "$(jq -r '.apps[0].funnel' "$apps/reports/2026-09.json")" = null
 
 expect "使い方" "render-report: 引数が無ければ NG" python3 -I "$scripts/render-report.py"
