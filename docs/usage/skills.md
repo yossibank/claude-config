@@ -67,7 +67,7 @@ flowchart LR
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
 | [store-release](../../dotclaude/skills/store-release/SKILL.md) | 🙋 人が頼んだ時だけ | 申告・掲載情報・スクリーンショットを確かめ、アーカイブを送る。カスタムプロダクトページを作る |
-| [store-report](../../dotclaude/skills/store-report/SKILL.md) | 🤝 人と Claude | 全アプリの月ごとのダウンロード・収益・評価を表にする |
+| [store-report](../../dotclaude/skills/store-report/SKILL.md) | 🤝 人と Claude | 全アプリの月ごとのダウンロード・収益・評価と、掲載から DL までの数字をグラフ付きの表とページにする。次の施策も出す |
 | [store-reply](../../dotclaude/skills/store-reply/SKILL.md) | 🙋 人が頼んだ時だけ | 返信していない低い評価のレビューに返信案を書き、承認された案を送る |
 
 ### 手入れ

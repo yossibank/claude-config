@@ -1,13 +1,13 @@
 ---
 name: store-report
-description: 公開している全アプリの、月ごとのダウンロード・収益・評価・レビューを 1 枚の表にする。月の初めに前の月の数字を見る時や、人がアプリの数字を聞いた時に使う。
+description: 公開している全アプリの、月ごとのダウンロード・収益・評価・レビューと、掲載から DL までの数字を、グラフ付きの表にし、次の施策を出す。月の初めに前の月の数字を見る時や、人がアプリの数字を聞いた時に使う。
 argument-hint: "<YYYY-MM>"
 allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/*)
 ---
 
 # アプリの数字をまとめる
 
-公開している全アプリの数字を、月ごとの表にまとめる手順。月の初めに、前の月の分を作る。月の途中なら、前の日までの分を作る。
+公開している全アプリの数字を、月ごとの表とグラフにまとめ、次の施策を出す手順。月の初めに、前の月の分を作る。月の途中なら、前の日までの分を作る。
 
 ## 入力
 
@@ -17,16 +17,24 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I $
 | --- | --- |
 | 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
 | 表 | `~/Applications/AppReport/<YYYY-MM>.md` |
+| グラフ | `~/Applications/AppReport/<YYYY-MM>/<アプリ>-funnel-*.svg`。表から指す |
+| 見返すページ | `~/Applications/AppReport/<YYYY-MM>.html`。ブラウザで開く |
+| ページのデータ | `~/Applications/AppReport/<YYYY-MM>.json` |
 
 ## 手順
 
-1. `write-report.py` で表を作る。
+1. `write-report.py` で、表・グラフ・見返すページを作る。
 2. 星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには、`app-plan` の `fetch-rival-reviews.py` に自分のアプリの ID を渡す。
 3. `store/custom-pages.json` を持つアプリがあれば、「カスタムプロダクトページの比べ方」で比べる。
-4. 表と、前の月から大きく変わった所と、2 の不満と、3 の比べた結果を報告する。
+4. 「掲載から DL まで」の 2 つの割合を前の月と比べ、「次の施策の選び方」から 1〜3 個を選ぶ。表の最後に `## 次の施策` として、「次の施策の書き方」の形で書き足す。
+5. `render-report.py` で、次の施策を見返すページに入れる。
+6. 「報告」の中身を返す。
 
 ```sh
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/render-report.py <YYYY-MM>
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-analytics.py <アプリの ID> <YYYY-MM>
+python3 -I ${CLAUDE_SKILL_DIR}/scripts/render-charts.py <fetch-analytics.py の JSON> <出力先のフォルダ> <名前の頭>
 python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <アプリの ID> [星の上限]
 ```
 
@@ -42,6 +50,27 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 | 収益 | 売上のレポートの手取り。通貨ごとに足す | API のキー |
 | 評価、評価の数 | 日本の App Store の公開の情報 | なし |
 | 今月のレビュー、星 2 以下 | 日本の App Store の公開のレビュー。新しい順に 500 件まで | なし |
+
+アプリごとに「掲載から DL まで」の節も書く。中身は次のとおりである。
+
+| 中身 | 出どころ |
+| --- | --- |
+| インプレッション・閲覧・初回 DL と、2 つの割合。今月と前の月 | 分析のレポート 2 つ（下の表） |
+| ソースごとの、インプレッション・閲覧・初回 DL | 同上の `Source Type` |
+| グラフ 4 枚 | 日ごとのインプレッション、日ごとの閲覧、日ごとの割合、ソース別の閲覧 |
+
+分析のレポートは、次のものを読む。
+
+| レポート | 読む値 |
+| --- | --- |
+| `App Store Discovery and Engagement Standard` | インプレッションと閲覧 |
+| `App Downloads Standard` | 初回 DL |
+
+取り方は、次のとおりである。
+
+- 依頼の無いアプリには、続けて取る依頼（`ONGOING`）と過去の分の依頼（`ONE_TIME_SNAPSHOT`）を作る。数字が届くのは 1〜2 日後で、それまでは節を書かずに WARNING に書く。
+- 数字は延べの数（`Counts`）を足す。App Analytics の画面のユニークデバイスの数とは合わない。
+- 件数の少ない行は、Apple が伏せる。
 
 取れなかった列は `—` にし、理由を表の下の WARNING に書く。
 
@@ -77,6 +106,46 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 
 初めてのダウンロードが 5 件に届かないページは、数字が出ない。その時は、比べずに見送ったと書く。
 
+## 次の施策の選び方
+
+一番低い段か、前の月から一番下がった段に効くものを選ぶ。
+
+| 段 | 打ち手 |
+| --- | --- |
+| インプレッションが少ない | キーワードの見直し、App 内イベント、評価の依頼、Search Ads |
+| 閲覧 ÷ インプレッションが低い | 検索結果の画像、アイコン、名前とサブタイトル。関係の薄いキーワードを外す |
+| 初回 DL ÷ 閲覧が低い | 最初の 3 枚のスクリーンショット、ヘッダー、宣伝文、カスタムプロダクトページ |
+| 検索の外が少ない | 記事・SNS からカスタムプロダクトページの URL へ流す |
+
+前の月に打った施策があれば、その段の割合が上がったかを先に書く。
+
+## 次の施策の書き方
+
+`## 次の施策` の下に、施策を 1 つずつ箇条書きの 1 項目で書く。`render-report.py` は、項目を次の形で読む。
+
+| 部分 | 書き方 |
+| --- | --- |
+| 印 | 項目の頭に、`✅` 済み・`🚧` 進行中・`⬜` これから のどれかを付ける。無ければ、これからとして出す |
+| 題 | 印の後から全角の `：` の前まで |
+| 中身 | `：` の後ろ。ねらう段と、前の月からの変わり方を書く |
+
+```markdown
+- ⬜ 検索結果の画像を差し替える：開いた割合 5.8% を上げる
+```
+
+## render-report.py がすること
+
+`render-report.py` は、`<YYYY-MM>.json` と `<YYYY-MM>.md` の次の施策から、見返すページを書く。ページの中身は、次のとおりである。
+
+| 節 | 中身 |
+| --- | --- |
+| 表紙 | アプリの切り替え、前の月のページへの移動、初回 DL・インプレッション・閲覧・収益 |
+| 掲載の節 | 要点・漏斗・日ごとの閲覧の予定表・日ごとのグラフ・ソースの割合。掲載の数字が無いアプリは、届いていない旨だけを出す |
+| 評価とレビュー | アプリごとの評価・評価の数・今月のレビュー・星 2 以下 |
+| 次の一手 | 次の施策と、WARNING に書いた数字の注意 |
+
+掲載を変えた日は、アプリのリポジトリで `store/` を変えた commit の日と題から作る。ページの型紙は `templates/report.html` にある。
+
 ## 報告
 
 人には、次のものを返す。
@@ -84,9 +153,12 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 - 表と、前の月から大きく変わった所
 - 星 2 以下のレビューから集めた不満
 - カスタムプロダクトページを比べた結果
+- 掲載から DL までの段と、次の施策
+- 見返すページのパス
 
 > [!WARNING]
-> 売上のレポートの中身を読めるかは、確かめていない。
+> - 売上のレポートの中身を読めるかは、確かめていない。
+> - 分析のレポートの列の名前と値は、Apple の文書に合わせただけで、届いた中身では確かめていない。
 
 ## 制約
 
