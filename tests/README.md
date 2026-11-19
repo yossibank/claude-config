@@ -44,7 +44,7 @@
 | [pr-prune.sh](skills/pr-prune.sh) | 偽の gh と作り物のリポジトリで、消してよいものだけを消し、ぶつかる時は残すか |
 | [store-release.sh](skills/store-release.sh) | 掲載情報・申告・カスタムプロダクトページの案の誤りを、送る前に止めるか |
 | [store-reply.sh](skills/store-reply.sh) | 通信せずに、返信済みの除外と `--dry-run` と送る JSON の形を確かめる |
-| [store-report.sh](skills/store-report.sh) | 通信せずに、売上の表の集計と、取れなかった数字の WARNING を出せるか |
+| [store-report.sh](skills/store-report.sh) | 通信せずに、売上の表の集計、掲載から DL までの集計とグラフ、取れなかった数字の WARNING を出せるか。見返すページを書けるか |
 | [ui-record.sh](skills/ui-record.sh) | 偽の ffmpeg と偽の xcrun で、コマ数と出力先を決められるか |
 | [ui-snapshot.sh](skills/ui-snapshot.sh) | テストのターゲットを足せ、引数や出力先が違う時は走らせる前に NG にするか |
 

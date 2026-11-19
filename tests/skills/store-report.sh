@@ -8,6 +8,59 @@ scripts="$root/dotclaude/skills/store-report/scripts"
 offline
 unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
 
+# 分析のレポートの API（依頼・レポート・インスタンス・区切り）を、決まった中身で返す
+read -r -d '' ANALYTICS_FAKE_PY <<'PY' || true
+import gzip
+
+ENGAGEMENT_TSV = "Date\tApp Apple Identifier\tEvent\tSource Type\tCounts\tUnique Counts\n" \
+    "{month}-01\t123\tImpression\tApp Store search\t100\t90\n" \
+    "{month}-01\t123\tPage view\tApp Store search\t10\t9\n" \
+    "{month}-02\t123\tImpression\tApp Store browse\t50\t40\n" \
+    "{month}-02\t123\tPage view\tApp referrer\t5\t5\n" \
+    "{month}-02\t123\tTap\tApp Store search\t7\t7\n" \
+    "{previous}-30\t123\tImpression\tApp Store search\t40\t40\n" \
+    "{previous}-30\t123\tPage view\tApp Store search\t2\t2\n"
+DOWNLOADS_TSV = "Date\tApp Apple Identifier\tDownload Type\tSource Type\tCounts\n" \
+    "{month}-01\t123\tFirst-time download\tApp Store search\t2\n" \
+    "{month}-02\t123\tRedownload\tApp Store search\t3\n" \
+    "{month}-02\t123\tFirst-time download\tApp referrer\t1\n"
+created = []
+
+
+def analytics_route(month, previous, existing=True, instances=True):
+    def route(method, url, body):
+        if url.startswith("/v1/apps/") and url.endswith("/analyticsReportRequests"):
+            data = [{"id": "on", "attributes": {"accessType": "ONGOING"}},
+                    {"id": "snap", "attributes": {"accessType": "ONE_TIME_SNAPSHOT"}}] if existing else []
+            return {"data": data, "links": {}}
+        if method == "POST" and url == "/v1/analyticsReportRequests":
+            access = body["data"]["attributes"]["accessType"]
+            created.append(access)
+            return {"data": {"id": access.lower(), "attributes": {"accessType": access}}}
+        if url.startswith("/v1/analyticsReportRequests/") and url.endswith("/reports"):
+            request = url.split("/")[3]
+            return {"data": [
+                {"id": f"eng-{request}", "attributes": {"name": "App Store Discovery and Engagement Standard"}},
+                {"id": f"dl-{request}", "attributes": {"name": "App Downloads Standard"}},
+            ], "links": {}}
+        if url.startswith("/v1/analyticsReports/") and "/instances" in url:
+            report = url.split("/")[3]
+            if not instances or not report.endswith("-on") and not report.endswith("-ongoing"):
+                return {"data": [], "links": {}}
+            return {"data": [{"id": f"i-{report}", "attributes": {"processingDate": f"{month}-02"}}], "links": {}}
+        if url.startswith("/v1/analyticsReportInstances/") and url.endswith("/segments"):
+            instance = url.split("/")[3]
+            return {"data": [{"attributes": {"url": f"https://segments.example/{instance}"}}], "links": {}}
+        if url.startswith("https://segments.example/i-eng"):
+            return gzip.compress(ENGAGEMENT_TSV.format(month=month, previous=previous).encode())
+        if url.startswith("https://segments.example/i-dl"):
+            return gzip.compress(DOWNLOADS_TSV.format(month=month, previous=previous).encode())
+        return None
+
+    return route
+PY
+export ANALYTICS_FAKE_PY
+
 expect "使い方" "fetch-ratings: 引数が足りなければ NG" python3 -I "$scripts/fetch-ratings.py" 123
 expect "アプリの ID は数字で書く: abc" "fetch-ratings: 数字でないアプリの ID は NG" python3 -I "$scripts/fetch-ratings.py" abc 2026-09
 expect "月は YYYY-MM で書く" "fetch-ratings: 月の形が違えば NG" python3 -I "$scripts/fetch-ratings.py" 123 2026-13
@@ -124,7 +177,9 @@ import os
 import sys
 exec(os.environ["PY_PRELUDE"])
 exec(os.environ["HTTP_FAKE_PY"])
+exec(os.environ["ANALYTICS_FAKE_PY"])
 
+analytics = analytics_route("2026-09", "2026-08")
 tsv = "SKU\tApple Identifier\tParent Identifier\tUnits\tDeveloper Proceeds\tProduct Type Identifier\tCurrency of Proceeds\n" \
     "app1\t123\t\t7\t0\t1F\tJPY\n" \
     "coin\t901\t123\t2\t150\t1F\tJPY\n"
@@ -140,7 +195,7 @@ def route(method, url, body):
         return {"feed": {"entry": [entry("10", "5"), entry("11", "1"), entry("12", "2")]}}
     if url.startswith("https://itunes.apple.com/jp/rss/customerreviews/page=2/"):
         return {"feed": {}}
-    return None
+    return analytics(method, url, body)
 
 
 module = load_module(sys.argv[2])
@@ -154,6 +209,62 @@ out=$(fake_report)
 check "write-report: 表の数字を、売上・評価・レビューから出す" grep -qx '| foo | 9 | 300.00 JPY | 4.5 | 20 | 3 | 2 |' <<<"$out"
 check "write-report: 全部取れた時は WARNING を出さない" test -z "$(grep WARNING <<<"$out")"
 check "write-report: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$out")"
+check "write-report: 掲載から DL までの段を、今月と前の月で並べる" grep -qx '| インプレッション | 150 | 40 |' <<<"$out"
+check "write-report: 段の割合を出す" grep -qx '| 閲覧 ÷ インプレッション | 10.0% | 5.0% |' <<<"$out"
+check "write-report: ソース別の行を出す" grep -qx '| App Store の検索 | 100 | 10 | 2 | 10.0% |' <<<"$out"
+check "write-report: グラフを月のフォルダに描いて、表から指す" grep -qx '!\[日ごとの割合\](2026-09/foo-funnel-rates.svg)' <<<"$out"
+check "write-report: グラフの SVG を書く" test -f "$ok_apps/reports/2026-09/foo-funnel-rates.svg"
+check "write-report: HTML のパスを出す" grep -qx "OK $ok_apps/reports/2026-09.html" <<<"$out"
+check "write-report: 日ごとの数字を JSON に書く" test "$(jq -c '.apps[0].funnel.impressions' "$ok_apps/reports/2026-09.json")" = "[100,50]"
+check "write-report: ソースを日本語の名前で JSON に書く" test "$(jq -r '.apps[0].funnel.sources[0][0]' "$ok_apps/reports/2026-09.json")" = "App Store の検索"
+check "write-report: HTML にデータを埋める" test -z "$(grep __REPORT__ "$ok_apps/reports/2026-09.html")"
+check "write-report: 通信できなくても HTML を書く" test -f "$apps/reports/2026-09.html"
+check "write-report: 掲載の数字が無いアプリは funnel を null にする" test "$(jq -r '.apps[0].funnel' "$apps/reports/2026-09.json")" = null
+
+expect "使い方" "render-report: 引数が無ければ NG" python3 -I "$scripts/render-report.py"
+CC_REPORTS_DIR="$work/none" expect "write-report.py を走らせる" "render-report: JSON が無ければ NG" python3 -I "$scripts/render-report.py" 2026-09
+reports="$work/render"
+mkdir -p "$reports"
+cat >"$reports/2026-09.json" <<'EOF'
+{"month": "2026-09", "generated": "2026-10-01", "previous_html": null, "notes": ["</script><b>x</b>"], "apps": []}
+EOF
+cat >"$reports/2026-09.md" <<'EOF'
+# 2026-09 のアプリの数字
+
+## 次の施策
+
+- ✅ 画像を差し替える：開いた割合を上げる
+- 名前を見直す
+EOF
+CC_REPORTS_DIR="$reports" python3 -I "$scripts/render-report.py" 2026-09 >/dev/null
+html="$reports/2026-09.html"
+check "render-report: 次の施策の印・題・中身を読む" grep -q '"status": "✅", "title": "画像を差し替える", "body": "開いた割合を上げる"' "$html"
+check "render-report: 印の無い施策は印を空にする" grep -q '"status": "", "title": "名前を見直す", "body": ""' "$html"
+check "render-report: データの中の </script> で埋め込みを閉じない" grep -q '<\\/script><b>x<\\/b>' "$html"
+
+events_repo="$work/events-repo"
+git init -q "$events_repo"
+mkdir -p "$events_repo/store"
+echo a >"$events_repo/store/a.txt"
+git -C "$events_repo" add store
+GIT_AUTHOR_DATE="2026-09-12T10:00:00" GIT_COMMITTER_DATE="2026-09-12T10:00:00" \
+    git -C "$events_repo" -c user.name=t -c user.email=t@example.com commit -qm "build: retake the screenshots (#12)"
+echo b >"$events_repo/b.txt"
+git -C "$events_repo" add b.txt
+GIT_AUTHOR_DATE="2026-09-13T10:00:00" GIT_COMMITTER_DATE="2026-09-13T10:00:00" \
+    git -C "$events_repo" -c user.name=t -c user.email=t@example.com commit -qm "feat: outside the store"
+events=$(python3 -I - "$root" "$scripts" "$events_repo" <<'EOF'
+import os
+import sys
+exec(os.environ["PY_PRELUDE"])
+write_report = load_module(os.path.join(sys.argv[2], "write-report.py"))
+fetch_analytics = load_module(os.path.join(sys.argv[2], "fetch-analytics.py"))
+print(write_report.store_events(sys.argv[3], "2026-09", fetch_analytics))
+print(write_report.store_events(sys.argv[3] + "-none", "2026-09", fetch_analytics))
+EOF
+)
+check "write-report: store/ を変えた日を、型と PR の番号を外した題で出す" grep -qx "\[{'day': '2026-09-12', 'label': 'retake the screenshots'}\]" <<<"$events"
+check "write-report: git のリポジトリでなければ掲載を変えた日を出さない" grep -qx '\[\]' <<<"$events"
 
 checked=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
 import gzip
@@ -218,5 +329,57 @@ empty_run=$(ratings_run empty)
 check "fetch-ratings: 1 ページ目から entry が無ければ、レビューの数を 0 にせず — にする" grep -qx 'A|3.5|8|—|—' <<<"$empty_run"
 check "fetch-ratings: 1 ページ目から entry が無ければ知らせる" grep -q 'レビューの RSS が 1 ページ目から空だった' <<<"$empty_run"
 check "fetch-ratings: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$pages$done_run$empty_run")"
+
+expect "使い方" "fetch-analytics: 引数が足りなければ NG" python3 -I "$scripts/fetch-analytics.py" 123
+expect "環境変数が無い" "fetch-analytics: キーが無ければ NG" env -u ASC_ISSUER_ID -u ASC_KEY_ID -u ASC_KEY_PATH python3 -I "$scripts/fetch-analytics.py" 123 2026-09
+
+asc_keys
+analytics_run() {
+    python3 -I - "$root" "$scripts/fetch-analytics.py" "$@" 2>&1 <<'EOF'
+import os
+import sys
+exec(os.environ["PY_PRELUDE"])
+exec(os.environ["HTTP_FAKE_PY"])
+exec(os.environ["ANALYTICS_FAKE_PY"])
+
+analytics = load_module(sys.argv[2])
+install(analytics_route("2026-11", "2026-10", existing=sys.argv[3] == "existing", instances=sys.argv[4] == "instances"))
+result, notices = analytics.funnel("123", "2026-11")
+print("created", ",".join(created))
+print("notices", " / ".join(notices))
+if result:
+    print("month", *(result["month"]["totals"][key] for key in analytics.STAGES))
+    print("previous", *(result["previous"]["totals"][key] for key in analytics.STAGES))
+    print("search", *(result["month"]["sources"]["App Store search"][key] for key in analytics.STAGES))
+    print("days", ",".join(result["month"]["days"]))
+else:
+    print("none")
+report_unknown()
+EOF
+}
+full=$(analytics_run existing instances)
+check "fetch-analytics: インプレッション・閲覧・初回 DL を月で足す" grep -qx 'month 150 15 3' <<<"$full"
+check "fetch-analytics: 前の月も同じ形で足す" grep -qx 'previous 40 2 0' <<<"$full"
+check "fetch-analytics: ソースごとに分ける" grep -qx 'search 100 10 2' <<<"$full"
+check "fetch-analytics: 日ごとに分け、月の外の日は入れない" grep -qx 'days 2026-11-01,2026-11-02' <<<"$full"
+check "fetch-analytics: 依頼があれば作らない" grep -qx 'created ' <<<"$full"
+check "fetch-analytics: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$full")"
+fresh=$(analytics_run missing none)
+check "fetch-analytics: 依頼が無ければ、続けて取る依頼と過去の分の依頼を作る" grep -qx 'created ONGOING,ONE_TIME_SNAPSHOT' <<<"$fresh"
+check "fetch-analytics: まだレポートが無ければ数字を返さず知らせる" grep -q '^notices .*作った / まだ分析のレポートが無い' <<<"$fresh"
+check "fetch-analytics: まだレポートが無ければ None にする" grep -qx 'none' <<<"$fresh"
+
+expect "使い方" "render-charts: 引数が足りなければ NG" python3 -I "$scripts/render-charts.py" a b
+cat >"$work/funnel.json" <<'EOF'
+{"month": {"totals": {"impressions": 150, "page_views": 15, "downloads": 3},
+ "days": {"2026-11-01": {"impressions": 100, "page_views": 10, "downloads": 2},
+          "2026-11-02": {"impressions": 0, "page_views": 5, "downloads": 1}},
+ "sources": {"App Store search": {"impressions": 100, "page_views": 10, "downloads": 2}}},
+ "previous": null}
+EOF
+charts=$(python3 -I "$scripts/render-charts.py" "$work/funnel.json" "$work/charts" foo)
+check "render-charts: 4 枚の SVG を書いてパスを出す" test "$(wc -l <<<"$charts" | tr -d ' ')" = 4
+check "render-charts: インプレッションが 0 の日は割合の点を打たない" test "$(grep -c '閲覧 ÷ インプレッション [0-9]' "$work/charts/foo-funnel-rates.svg")" = 1
+check "render-charts: ソースを日本語の名前で出す" grep -q 'App Store の検索' "$work/charts/foo-funnel-sources.svg"
 
 finish
