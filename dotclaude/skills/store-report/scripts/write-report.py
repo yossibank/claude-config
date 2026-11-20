@@ -13,6 +13,8 @@ from store_api import apps_dir, listed_apps  # noqa: E402
 from loader import load_module  # noqa: E402
 from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
+render_report = load_module(os.path.join(HERE, "render-report.py"))
+
 
 STAGE_ROWS = [("インプレッション", "impressions"), ("閲覧", "page_views"), ("初回 DL", "downloads")]
 RATE_ROWS = [("閲覧 ÷ インプレッション", "page_views", "impressions"), ("初回 DL ÷ 閲覧", "downloads", "page_views")]
@@ -26,17 +28,20 @@ def percent(totals, numerator, denominator):
     return f"{totals[numerator] / totals[denominator] * 100:.1f}%" if totals and totals[denominator] else "—"
 
 
-def funnel_lines(repo, funnel, charts, out_dir, labels):
+def funnel_lines(repo, funnel, labels):
     month = funnel["month"]["totals"]
     previous = funnel["previous"]["totals"] if funnel["previous"] else None
+    total = funnel["total"]["totals"]
     lines = [
         "",
         f"## {repo} の掲載から DL まで",
         "",
-        "| 段 | 今月 | 前の月 |",
-        "| --- | --- | --- |",
-        *[f"| {label} | {month[key]:,} | {f'{previous[key]:,}' if previous else '—'} |" for label, key in STAGE_ROWS],
-        *[f"| {label} | {percent(month, a, b)} | {percent(previous, a, b)} |" for label, a, b in RATE_ROWS],
+        "| 段 | 今月 | 前の月 | 累計 |",
+        "| --- | --- | --- | --- |",
+        *[f"| {label} | {month[key]:,} | {f'{previous[key]:,}' if previous else '—'} | {total[key]:,} |" for label, key in STAGE_ROWS],
+        *[f"| {label} | {percent(month, a, b)} | {percent(previous, a, b)} | {percent(total, a, b)} |" for label, a, b in RATE_ROWS],
+        "",
+        f"累計は {funnel['total']['since']} から数えた。",
         "",
         "| ソース | インプレッション | 閲覧 | 初回 DL | 閲覧 ÷ インプレッション |",
         "| --- | --- | --- | --- | --- |",
@@ -46,23 +51,45 @@ def funnel_lines(repo, funnel, charts, out_dir, labels):
         label = labels.get(name, name)
         lines.append(f"| {label} | {totals['impressions']:,} | {totals['page_views']:,} | {totals['downloads']:,} "
                      f"| {percent(totals, 'page_views', 'impressions')} |")
-    lines.append("")
-    lines += [f"![{alt}]({os.path.relpath(path, out_dir)})" for alt, path in charts]
     return lines
+
+
+STORE_PARTS = [
+    ("screenshots/", "スクリーンショット"),
+    ("name.txt", "名前"),
+    ("subtitle.txt", "サブタイトル"),
+    ("keywords.txt", "キーワード"),
+    ("description.txt", "説明文"),
+    ("promotional_text.txt", "宣伝文"),
+    ("release_notes.txt", "アップデートの説明"),
+    ("custom-pages.json", "カスタムプロダクトページ"),
+]
+
+
+def store_label(paths):
+    parts = [label for key, label in STORE_PARTS if any(key in path for path in paths)]
+    return f"{'・'.join(parts)}を変えた" if parts else None
 
 
 def store_events(repo_dir, month, fetch_analytics):
     first, last = fetch_analytics.month_range(month)
     command = ["git", "-C", repo_dir, "log", f"--since={first.isoformat()} 00:00", f"--until={last.isoformat()} 23:59",
-               "--date=short", "--format=%ad%x09%s", "--", "store/"]
+               "--date=short", "--format=@@%ad", "--name-only", "--", "store/"]
     result = subprocess.run(command, capture_output=True, text=True, check=False)
     if result.returncode != 0:
         return []
+    commits = []
+    for line in result.stdout.splitlines():
+        if line.startswith("@@"):
+            commits.append((line[2:], []))
+        elif line.strip() and commits:
+            commits[-1][1].append(line.strip())
     events = []
-    for line in reversed(result.stdout.splitlines()):
-        day, _, subject = line.partition("\t")
-        label = re.sub(r"\s*\(#\d+\)$", "", re.sub(r"^\w+(\(.+?\))?!?:\s*", "", subject))
-        events.append({"day": day, "label": label})
+    for day, paths in reversed(commits):
+        label = store_label(paths)
+        event = {"day": day, "label": label}
+        if label and event not in events:
+            events.append(event)
     return events
 
 
@@ -74,6 +101,8 @@ def funnel_data(funnel, labels):
         "days": days,
         **{stage: [current["days"][day][stage] for day in days] for _, stage in STAGE_ROWS},
         "previous": funnel["previous"]["totals"] if funnel["previous"] else None,
+        "total": funnel["total"]["totals"],
+        "since": funnel["total"]["since"],
         "sources": [[labels.get(name, name), value["impressions"], value["page_views"], value["downloads"]]
                     for name, value in sources],
     }
@@ -86,15 +115,19 @@ def kept_next_steps(path):
     return ["", *match.group(0).rstrip().splitlines()] if match else []
 
 
-def previous_html(out_dir, month, fetch_analytics):
-    previous = fetch_analytics.previous_month(month)
-    return f"{previous}.html" if Path(out_dir, f"{previous}.html").exists() else None
+def sales_entry(totals, app_id, fetch_sales):
+    if totals is None:
+        return None
+    downloads, proceeds = fetch_sales.formatted(totals.get(app_id, {"downloads": 0, "proceeds": {}}))
+    return {"downloads": int(downloads), "proceeds": proceeds}
 
 
 def main():
     month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: write-report.py <YYYY-MM>")
     root = apps_dir()
-    out_dir = os.environ.get("CC_REPORTS_DIR", os.path.expanduser("~/Applications/AppReport"))
+    out_dir = render_report.reports_dir()
+    data_dir = render_report.data_dir(out_dir)
+    render_report.move_legacy(out_dir)
 
     apps = listed_apps(root)
     if not apps:
@@ -103,19 +136,22 @@ def main():
     fetch_sales = load_module(os.path.join(HERE, "fetch-sales.py"))
     fetch_ratings = load_module(os.path.join(HERE, "fetch-ratings.py"))
     fetch_analytics = load_module(os.path.join(HERE, "fetch-analytics.py"))
-    render_charts = load_module(os.path.join(HERE, "render-charts.py"))
-    render_report = load_module(os.path.join(HERE, "render-report.py"))
-    sales = {}
+    current = previous = total = None
     notes = []
-    sales_ok = True
+    sales_source = None
     try:
-        sales, notice = fetch_sales.sales_by_app(month)
+        current, notice, sales_source = fetch_sales.month_totals(month)
     except Exception as error:
-        sales_ok = False
         notes.append(f"売上とダウンロードは取れなかった（{failure_of(error)}）")
     else:
         if notice:
             notes.append(f"売上とダウンロードは日ごとのレポートの合計（{notice}）")
+        try:
+            previous, before = fetch_sales.history_by_app(month)
+        except Exception as error:
+            notes.append(f"前の月と累計の売上は取れなかった（{failure_of(error)}）")
+        else:
+            total = fetch_sales.added(before, current)
 
     rows = []
     funnels = []
@@ -130,10 +166,14 @@ def main():
             rating = fields[1:]
             if notice:
                 notes.append(f"{repo} のレビューは途中までしか数えていない（{notice}）")
-        downloads, proceeds = sales.get(app_id, ("0", "0") if sales_ok else ("—", "—"))
-        rows.append(f"| {repo} | {downloads} | {proceeds} | {rating[0]} | {rating[1]} | {rating[2]} | {rating[3]} |")
+        sales = sales_entry(current, app_id, fetch_sales)
+        totals = sales_entry(total, app_id, fetch_sales)
+        downloads, proceeds = (str(sales["downloads"]), sales["proceeds"]) if sales else ("—", "—")
+        total_cells = f"{totals['downloads']} | {totals['proceeds']}" if totals else "— | —"
+        rows.append(f"| {repo} | {downloads} | {proceeds} | {total_cells} | {rating[0]} | {rating[1]} | {rating[2]} | {rating[3]} |")
         entry = {"repo": repo, "downloads": downloads, "proceeds": proceeds, "rating": rating[0],
                  "rating_count": rating[1], "reviews": rating[2], "low": rating[3], "funnel": None,
+                 "previous_sales": sales_entry(previous, app_id, fetch_sales), "total_sales": totals,
                  "events": store_events(os.path.join(root, repo), month, fetch_analytics)}
         report_apps.append(entry)
         try:
@@ -143,31 +183,31 @@ def main():
             continue
         notes += [f"{repo}: {notice}" for notice in notices]
         if funnel is not None:
-            charts = render_charts.write_charts(funnel, os.path.join(out_dir, month), repo)
-            funnels += funnel_lines(repo, funnel, charts, out_dir, render_charts.SOURCES)
-            entry["funnel"] = funnel_data(funnel, render_charts.SOURCES)
+            funnels += funnel_lines(repo, funnel, fetch_analytics.SOURCES)
+            entry["funnel"] = funnel_data(funnel, fetch_analytics.SOURCES)
 
     lines = [
         f"# {month} のアプリの数字",
         "",
-        "アプリごとのダウンロード・収益・評価・レビューである。評価とレビューは日本の App Store のものである。",
+        "アプリごとのダウンロード・収益・評価・レビューである。累計は公開からこの月までの合計である。評価とレビューは日本の App Store のものである。",
         "",
-        "| アプリ | ダウンロード | 収益 | 評価 | 評価の数 | 今月のレビュー | 星 2 以下 |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| アプリ | ダウンロード | 収益 | 累計の DL | 累計の収益 | 評価 | 評価の数 | 今月のレビュー | 星 2 以下 |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         *rows,
         *funnels,
     ]
     if notes:
         lines += ["", "> [!WARNING]", *[f"> - {note}" for note in notes]]
 
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, f"{month}.md")
+    os.makedirs(data_dir, exist_ok=True)
+    path = os.path.join(data_dir, f"{month}.md")
     lines += kept_next_steps(path)
     Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
     report = {"month": month, "generated": date.today().isoformat(), "apps": report_apps, "notes": notes,
-              "previous_html": previous_html(out_dir, month, fetch_analytics)}
-    Path(out_dir, f"{month}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+              "sales_source": sales_source}
+    Path(data_dir, f"{month}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     html = render_report.write_html(report, out_dir)
+    render_report.rerender(out_dir, fetch_analytics.previous_month(month))
     print("\n".join(lines))
     print(f"\nOK {path}")
     print(f"OK {html}")

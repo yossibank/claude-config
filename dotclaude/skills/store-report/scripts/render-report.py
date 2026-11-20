@@ -16,6 +16,42 @@ def reports_dir():
     return os.environ.get("CC_REPORTS_DIR", os.path.expanduser("~/Applications/AppReport"))
 
 
+def data_dir(out_dir):
+    return os.path.join(out_dir, ".data")
+
+
+def move_legacy(out_dir):
+    """前の版が表の置き場所に置いた表と JSON を .data/ に移し、グラフの SVG を消す。"""
+    folder = Path(out_dir)
+    if not folder.is_dir():
+        return
+    data = Path(data_dir(out_dir))
+    for path in sorted(folder.iterdir()):
+        if not re.fullmatch(r"\d{4}-\d{2}", path.stem if path.is_file() else path.name):
+            continue
+        if path.is_file() and path.suffix in (".md", ".json"):
+            data.mkdir(exist_ok=True)
+            target = data / path.name
+            if target.exists():
+                path.unlink()
+            else:
+                path.rename(target)
+        elif path.is_dir() and all(child.suffix == ".svg" for child in path.iterdir()):
+            for child in path.iterdir():
+                child.unlink()
+            path.rmdir()
+
+
+def shifted(month, step):
+    year, number = divmod(int(month[:4]) * 12 + int(month[5:]) - 1 + step, 12)
+    return f"{year:04d}-{number + 1:02d}"
+
+
+def neighbor_html(out_dir, month, step):
+    name = f"{shifted(month, step)}.html"
+    return name if Path(out_dir, name).exists() else None
+
+
 def next_steps(markdown):
     match = re.search(r"^## 次の施策\s*$(.*?)(?=^## |\Z)", markdown, re.M | re.S)
     if not match:
@@ -39,25 +75,36 @@ def render_html(report):
 
 def write_html(report, out_dir):
     month = report["month"]
-    markdown = Path(out_dir, f"{month}.md")
-    report = {**report, "next": next_steps(markdown.read_text(encoding="utf-8")) if markdown.exists() else []}
+    markdown = Path(data_dir(out_dir), f"{month}.md")
+    report = {**report, "next": next_steps(markdown.read_text(encoding="utf-8")) if markdown.exists() else [],
+              "previous_html": neighbor_html(out_dir, month, -1), "next_html": neighbor_html(out_dir, month, 1)}
     path = os.path.join(out_dir, f"{month}.html")
     Path(path).write_text(render_html(report), encoding="utf-8")
     return path
 
 
-def main():
-    month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: render-report.py <YYYY-MM>")
-    out_dir = reports_dir()
-    source = Path(out_dir, f"{month}.json")
+def load_report(out_dir, month):
+    source = Path(data_dir(out_dir), f"{month}.json")
     if not source.exists():
-        fail(f"{source} が無い。先に write-report.py を走らせる")
+        return None
     try:
-        report = json.loads(source.read_text(encoding="utf-8"))
+        return json.loads(source.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         fail(f"{source} を読めなかった（{error}）")
-    else:
-        print(f"OK {write_html(report, out_dir)}")
+
+
+def rerender(out_dir, month):
+    report = load_report(out_dir, month)
+    return write_html(report, out_dir) if report else None
+
+
+def main():
+    month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: render-report.py <YYYY-MM>")
+    move_legacy(reports_dir())
+    path = rerender(reports_dir(), month)
+    if path is None:
+        fail(f"{Path(data_dir(reports_dir()), f'{month}.json')} が無い。先に write-report.py を走らせる")
+    print(f"OK {path}")
 
 
 if __name__ == "__main__":
