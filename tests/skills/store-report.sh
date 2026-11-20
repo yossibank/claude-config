@@ -140,6 +140,14 @@ try:
 except Failure as error:
     print(f"none\t{error}")
 
+serve({
+    ("MONTHLY", "2026-01"): "app1\t111\t\t2\t0\t1F\tJPY\n",
+    ("MONTHLY", "2025-03"): "app1\t111\t\t4\t0\t1F\tJPY\n",
+    ("YEARLY", "2024"): "app1\t111\t\t10\t0\t1F\tJPY\n",
+})
+previous, before = sales.history_by_app("2026-02", date(2026, 2, 20))
+print(f"history\t{previous['111']['downloads']}\t{before['111']['downloads']}")
+
 print("days", *(len(sales.month_days(m, t)) for m, t in [
     ("2026-02", date(2026, 3, 10)),
     ("2026-12", date(2027, 1, 5)),
@@ -151,6 +159,7 @@ EOF
 check "fetch-sales: 月のレポートが無ければ、前の日までの日ごとのレポートを足す" \
     grep -qx $'daily\t5\t月のレポートがまだ無いので、2026-11-03 までの日ごとのレポートを足した。レポートのあった日は 2 日' <<<"$daily"
 check "fetch-sales: 月のレポートがあれば、それを使って断り書きを付けない" grep -qx $'monthly\t7\tNone' <<<"$daily"
+check "fetch-sales: 年のレポートが無い年は月のレポートで埋め、どちらも無い年で累計をやめる" grep -qx $'history\t2\t16' <<<"$daily"
 check "fetch-sales: 日ごとのレポートも無ければ NG" grep -qx $'none\t2026-11 のレポートがまだ無い' <<<"$daily"
 check "fetch-sales: 日ごとに読む日は、月の初めから前の日まで" grep -qx 'days 28 31 0 3' <<<"$daily"
 
@@ -257,6 +266,14 @@ html="$reports/2026-09.html"
 check "render-report: 次の施策の印・題・中身を読む" grep -q '"status": "✅", "title": "画像を差し替える", "body": "開いた割合を上げる"' "$html"
 check "render-report: 印の無い施策は印を空にする" grep -q '"status": "", "title": "名前を見直す", "body": ""' "$html"
 check "render-report: データの中の </script> で埋め込みを閉じない" grep -q '<\\/script><b>x<\\/b>' "$html"
+legacy="$work/legacy"
+mkdir -p "$legacy/2026-08"
+echo '{"month": "2026-08", "generated": "2026-09-01", "notes": [], "apps": []}' >"$legacy/2026-08.json"
+printf '# 2026-08\n\n## 次の施策\n\n- ⬜ 前の版の施策：残す\n' >"$legacy/2026-08.md"
+touch "$legacy/2026-08/foo-funnel-daily.svg"
+CC_REPORTS_DIR="$legacy" python3 -I "$scripts/render-report.py" 2026-08 >/dev/null
+check "render-report: 前の版の表と JSON を .data/ に移し、SVG のフォルダを消す" test "$(cd "$legacy" && find . -mindepth 1 | sort | tr '\n' ' ')" = "./.data ./.data/2026-08.json ./.data/2026-08.md ./2026-08.html "
+check "render-report: 前の版の表に書き足した次の施策をページに入れる" grep -q '"title": "前の版の施策"' "$legacy/2026-08.html"
 check "render-report: 前後の月のページが無ければ指さない" grep -q '"previous_html": null, "next_html": null' "$html"
 touch "$reports/2026-08.html" "$reports/2026-10.html"
 CC_REPORTS_DIR="$reports" python3 -I "$scripts/render-report.py" 2026-09 >/dev/null

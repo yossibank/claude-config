@@ -151,6 +151,10 @@ def merged_rows(request_ids, name, windows, delivered):
     return [row for rows in merged.values() for row in rows]
 
 
+def kind_of(row):
+    return "engagement" if "Event" in row else "downloads"
+
+
 def monthly_rows(request_ids, name):
     """月ごとの分を、月ごとに最初に届いた依頼のものだけ返す。"""
     merged = {}
@@ -167,15 +171,15 @@ def monthly_rows(request_ids, name):
 
 
 def cumulative(monthly, daily_rows, month, current):
-    """公開から今月までの累計。月ごとの分が無い月は、日ごとの分で埋める。"""
-    by_month = {key: rows for key, rows in monthly.items() if key < month}
+    """公開から今月までの累計。月ごとの分が無い月は、レポートの種類ごとに日ごとの分で埋める。"""
+    groups = {key: rows for key, rows in monthly.items() if key[1] < month}
     for row in daily_rows:
-        key = row["Date"][:7]
-        if key < month and key not in monthly:
-            by_month.setdefault(f"daily-{key}", []).append(row)
+        key = (kind_of(row), row["Date"][:7])
+        if key[1] < month and key not in monthly:
+            groups.setdefault(("daily", *key), []).append(row)
     totals = dict(current["totals"])
     starts = list(current["days"])[:1]
-    for key, rows in by_month.items():
+    for rows in groups.values():
         counted = False
         for row in rows:
             stage = stage_of(row)
@@ -207,9 +211,9 @@ def funnel(app_id, month, today=None):
         current = summarize(rows, first, last)
         previous = summarize(rows, previous_first, previous_last)
         monthly = {}
-        for name in (ENGAGEMENT, DOWNLOADS):
+        for name, kind in ((ENGAGEMENT, "engagement"), (DOWNLOADS, "downloads")):
             for key, month_rows in monthly_rows(request_ids, name).items():
-                monthly.setdefault(key, []).extend(month_rows)
+                monthly[(kind, key)] = month_rows
         total = cumulative(monthly, rows, month, current)
     except (*ASC_ERRORS, EOFError, zlib.error) as error:
         raise Failure(f"分析のレポートを読めなかった: {asc_reason(error)}") from error

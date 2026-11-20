@@ -140,6 +140,14 @@ def optional_text(frequency, day):
         return None
 
 
+def year_texts(year):
+    """年のレポートを返す。まだ無ければ、その年の月のレポートで埋める。どちらも無ければ空にする。"""
+    text = optional_text("YEARLY", str(year))
+    if text is not None:
+        return [text]
+    return [text for m in range(1, 13) if (text := optional_text("MONTHLY", f"{year}-{m:02d}")) is not None]
+
+
 def history_by_app(month, today=None):
     """前の月の合計と、前の月までの累計を返す。月の初めで前の月の月のレポートがまだ無ければ、日ごとのレポートを足す。"""
     require_keys(KEYS)
@@ -155,8 +163,11 @@ def history_by_app(month, today=None):
             previous_texts = daily_texts(month_days(previous, today))
         years = []
         year = first.year - 1
-        while year >= FIRST_YEAR and (text := optional_text("YEARLY", str(year))) is not None:
-            years.append(text)
+        while year >= FIRST_YEAR:
+            filled = year_texts(year)
+            if not filled:
+                break
+            years += filled
             year -= 1
     except (*ASC_ERRORS, EOFError, zlib.error) as error:
         raise Failure(f"レポートを読めなかった: {asc_reason(error)}") from error

@@ -20,6 +20,28 @@ def data_dir(out_dir):
     return os.path.join(out_dir, ".data")
 
 
+def move_legacy(out_dir):
+    """前の版が表の置き場所に置いた表と JSON を .data/ に移し、グラフの SVG を消す。"""
+    folder = Path(out_dir)
+    if not folder.is_dir():
+        return
+    data = Path(data_dir(out_dir))
+    for path in sorted(folder.iterdir()):
+        if not re.fullmatch(r"\d{4}-\d{2}", path.stem if path.is_file() else path.name):
+            continue
+        if path.is_file() and path.suffix in (".md", ".json"):
+            data.mkdir(exist_ok=True)
+            target = data / path.name
+            if target.exists():
+                path.unlink()
+            else:
+                path.rename(target)
+        elif path.is_dir() and all(child.suffix == ".svg" for child in path.iterdir()):
+            for child in path.iterdir():
+                child.unlink()
+            path.rmdir()
+
+
 def shifted(month, step):
     year, number = divmod(int(month[:4]) * 12 + int(month[5:]) - 1 + step, 12)
     return f"{year:04d}-{number + 1:02d}"
@@ -78,6 +100,7 @@ def rerender(out_dir, month):
 
 def main():
     month = require_month(sys.argv[1] if len(sys.argv) > 1 else None, "使い方: render-report.py <YYYY-MM>")
+    move_legacy(reports_dir())
     path = rerender(reports_dir(), month)
     if path is None:
         fail(f"{Path(data_dir(reports_dir()), f'{month}.json')} が無い。先に write-report.py を走らせる")

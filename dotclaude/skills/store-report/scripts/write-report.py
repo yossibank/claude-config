@@ -127,6 +127,7 @@ def main():
     root = apps_dir()
     out_dir = render_report.reports_dir()
     data_dir = render_report.data_dir(out_dir)
+    render_report.move_legacy(out_dir)
 
     apps = listed_apps(root)
     if not apps:
