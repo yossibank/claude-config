@@ -16,6 +16,7 @@ from script_io import Failure, fail, require_month, run_main  # noqa: E402
 
 DOWNLOADS = {"1", "1F", "1T", "F1"}
 KEYS = [*ASC_KEYS, "ASC_VENDOR_NUMBER"]
+FIRST_YEAR = 2008
 
 
 def fetch_report(frequency, day, version):
@@ -69,23 +70,29 @@ def load_texts(month, days):
         raise Failure(f"レポートを読めなかった: {asc_reason(error)}") from error
 
 
-def sales_by_app(month, today=None):
+def month_totals(month, today=None):
+    """月の合計と、知らせと、出どころの短い説明を返す。"""
     require_keys(KEYS)
     days = month_days(month, today or date.today())
     texts, monthly = load_texts(month, days)
     if not texts:
         raise Failure(f"{month} のレポートがまだ無い")
     try:
-        sales = summarize(*texts)
+        totals = totals_of(*texts)
     except (KeyError, ValueError, ArithmeticError) as error:
         raise Failure(f"レポートの中身が想定と違う（{type(error).__name__}: {error}）") from error
     if monthly:
-        return sales, None
+        return totals, None, "月のレポート"
     notice = f"月のレポートがまだ無いので、{days[-1].isoformat()} までの日ごとのレポートを足した。レポートのあった日は {len(texts)} 日"
-    return sales, notice
+    return totals, notice, f"日ごとのレポート {len(texts)} 日分"
 
 
-def summarize(*texts):
+def sales_by_app(month, today=None):
+    totals, notice, _ = month_totals(month, today)
+    return {app: formatted(total) for app, total in sorted(totals.items())}, notice
+
+
+def totals_of(*texts):
     rows = [row for text in texts for row in csv.DictReader(io.StringIO(text), delimiter="\t")]
     apps_by_sku = {row["SKU"]: row["Apple Identifier"] for row in rows if not row.get("Parent Identifier", "").strip()}
 
@@ -101,12 +108,65 @@ def summarize(*texts):
         if proceeds:
             currency = row["Currency of Proceeds"]
             total["proceeds"][currency] = total["proceeds"].get(currency, Decimal(0)) + proceeds
+    return totals
 
-    sales = {}
-    for app, total in sorted(totals.items()):
-        proceeds = " ".join(f"{value:.2f} {currency}" for currency, value in sorted(total["proceeds"].items())) or "0"
-        sales[app] = (str(total["downloads"]), proceeds)
-    return sales
+
+def added(*totals_list):
+    merged = {}
+    for totals in totals_list:
+        for app, total in totals.items():
+            into = merged.setdefault(app, {"downloads": 0, "proceeds": {}})
+            into["downloads"] += total["downloads"]
+            for currency, value in total["proceeds"].items():
+                into["proceeds"][currency] = into["proceeds"].get(currency, Decimal(0)) + value
+    return merged
+
+
+def formatted(total):
+    proceeds = " ".join(f"{value:.2f} {currency}" for currency, value in sorted(total["proceeds"].items())) or "0"
+    return str(total["downloads"]), proceeds
+
+
+def summarize(*texts):
+    return {app: formatted(total) for app, total in sorted(totals_of(*texts).items())}
+
+
+def optional_text(frequency, day):
+    try:
+        return fetch_text(frequency, day)
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
+        return None
+
+
+def history_by_app(month, today=None):
+    """前の月の合計と、前の月までの累計を返す。月の初めで前の月の月のレポートがまだ無ければ、日ごとのレポートを足す。"""
+    require_keys(KEYS)
+    today = today or date.today()
+    first = date.fromisoformat(f"{month}-01")
+    previous = (first - timedelta(days=1)).strftime("%Y-%m")
+    try:
+        texts = {f"{first.year}-{m:02d}": optional_text("MONTHLY", f"{first.year}-{m:02d}") for m in range(1, first.month)}
+        if previous not in texts:
+            texts[previous] = optional_text("MONTHLY", previous)
+        previous_texts = [texts[previous]] if texts[previous] else []
+        if not previous_texts and today < first + timedelta(days=10):
+            previous_texts = daily_texts(month_days(previous, today))
+        years = []
+        year = first.year - 1
+        while year >= FIRST_YEAR and (text := optional_text("YEARLY", str(year))) is not None:
+            years.append(text)
+            year -= 1
+    except (*ASC_ERRORS, EOFError, zlib.error) as error:
+        raise Failure(f"レポートを読めなかった: {asc_reason(error)}") from error
+    try:
+        previous_totals = totals_of(*previous_texts)
+        months = [totals_of(text) for key, text in texts.items() if text and key != previous and key[:4] == str(first.year)]
+        before = added(previous_totals if previous[:4] == str(first.year) else {}, *months, totals_of(*years))
+    except (KeyError, ValueError, ArithmeticError) as error:
+        raise Failure(f"レポートの中身が想定と違う（{type(error).__name__}: {error}）") from error
+    return previous_totals, before
 
 
 def main():

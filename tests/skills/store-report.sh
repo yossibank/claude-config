@@ -27,7 +27,7 @@ DOWNLOADS_TSV = "Date\tApp Apple Identifier\tDownload Type\tSource Type\tCounts\
 created = []
 
 
-def analytics_route(month, previous, existing=True, instances=True):
+def analytics_route(month, previous, existing=True, instances=True, snapshot=True):
     def route(method, url, body):
         if url.startswith("/v1/apps/") and url.endswith("/analyticsReportRequests"):
             data = [{"id": "on", "attributes": {"accessType": "ONGOING"}},
@@ -45,7 +45,9 @@ def analytics_route(month, previous, existing=True, instances=True):
             ], "links": {}}
         if url.startswith("/v1/analyticsReports/") and "/instances" in url:
             report = url.split("/")[3]
-            if not instances or not report.endswith("-on") and not report.endswith("-ongoing"):
+            ongoing = report.endswith("-on") or report.endswith("-ongoing")
+            past = snapshot and (report.endswith("-snap") or report.endswith("-one_time_snapshot"))
+            if not instances or not (ongoing or past):
                 return {"data": [], "links": {}}
             return {"data": [{"id": f"i-{report}", "attributes": {"processingDate": f"{month}-02"}}], "links": {}}
         if url.startswith("/v1/analyticsReportInstances/") and url.endswith("/segments"):
@@ -159,12 +161,12 @@ CC_APPS_DIR="$work/none" CC_REPORTS_DIR="$work/none/reports" expect "store/app-i
 apps="$work/apps"
 make_apps "$apps" foo=123 bar=abc
 out=$(CC_APPS_DIR="$apps" CC_REPORTS_DIR="$apps/reports" env -u ASC_ISSUER_ID -u ASC_KEY_ID -u ASC_KEY_PATH -u ASC_VENDOR_NUMBER python3 -I "$scripts/write-report.py" 2026-09)
-check "write-report: 通信できなくても表を書く" test -f "$apps/reports/2026-09.md"
+check "write-report: 通信できなくても表をデータのフォルダに書く" test -f "$apps/reports/.data/2026-09.md"
 check "write-report: 取れなかったものを WARNING にまとめる" grep -qx '> \[!WARNING\]' <<<"$out"
 check "write-report: 売上が取れなければ WARNING の行に書く" grep -q "売上とダウンロードは取れなかった（NG 環境変数が無い" <<<"$out"
 check "write-report: 評価が取れなければ WARNING の行に書く" grep -q "foo の評価は取れなかった（NG 評価を読めなかった" <<<"$out"
 check "write-report: 数字でないアプリの ID は通信せずに NG にする" grep -q "bar の評価は取れなかった（NG アプリの ID は数字で書く: abc）" <<<"$out"
-check "write-report: 取れなかった欄は — にする" grep -q '^| foo | — | — | — | — | — | — |$' <<<"$out"
+check "write-report: 取れなかった欄は — にする" grep -q '^| foo | — | — | — | — | — | — | — | — |$' <<<"$out"
 
 # 公開の境界（URL と応答）だけを差し替えて、表の数字まで通す
 ok_apps="$work/ok-apps"
@@ -175,6 +177,7 @@ import gzip
 import json
 import os
 import sys
+import urllib.parse
 exec(os.environ["PY_PRELUDE"])
 exec(os.environ["HTTP_FAKE_PY"])
 exec(os.environ["ANALYTICS_FAKE_PY"])
@@ -188,7 +191,12 @@ entry = lambda day, rating: {"updated": {"label": f"2026-09-{day}T00:00:00-07:00
 
 def route(method, url, body):
     if url.startswith("/v1/salesReports"):
-        return gzip.compress(tsv.encode())
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
+        key = (query["filter[frequency]"][0], query["filter[reportDate]"][0])
+        head = tsv.split("\n")[0]
+        sold = {("MONTHLY", "2026-09"): tsv, ("MONTHLY", "2026-08"): head + "\napp1\t123\t\t3\t0\t1F\tJPY\n",
+                ("YEARLY", "2025"): head + "\napp1\t123\t\t10\t0\t1F\tJPY\n"}.get(key)
+        return gzip.compress(sold.encode()) if sold else (404, "{}")
     if url.startswith("https://itunes.apple.com/lookup"):
         return {"results": [{"trackName": "Foo", "averageUserRating": 4.5, "userRatingCount": 20}]}
     if url.startswith("https://itunes.apple.com/jp/rss/customerreviews/page=1/"):
@@ -206,33 +214,37 @@ report_unknown()
 EOF
 }
 out=$(fake_report)
-check "write-report: 表の数字を、売上・評価・レビューから出す" grep -qx '| foo | 9 | 300.00 JPY | 4.5 | 20 | 3 | 2 |' <<<"$out"
-check "write-report: 全部取れた時は WARNING を出さない" test -z "$(grep WARNING <<<"$out")"
+check "write-report: 表の数字を、売上・累計・評価・レビューから出す" grep -qx '| foo | 9 | 300.00 JPY | 22 | 300.00 JPY | 4.5 | 20 | 3 | 2 |' <<<"$out"
+check "write-report: 全部取れた時は、届いた日の範囲のほかに WARNING を出さない" test "$(grep -c '^> - ' <<<"$out")" = 1
+check "write-report: 前の月の売上を JSON に書く" test "$(jq -c '.apps[0].previous_sales' "$ok_apps/reports/.data/2026-09.json")" = '{"downloads":3,"proceeds":"0"}'
+check "write-report: 累計の売上を JSON に書く" test "$(jq -c '.apps[0].total_sales' "$ok_apps/reports/.data/2026-09.json")" = '{"downloads":22,"proceeds":"300.00 JPY"}'
+check "write-report: 売上の出どころを JSON に書く" test "$(jq -r '.sales_source' "$ok_apps/reports/.data/2026-09.json")" = 月のレポート
 check "write-report: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$out")"
-check "write-report: 掲載から DL までの段を、今月と前の月で並べる" grep -qx '| インプレッション | 150 | 40 |' <<<"$out"
-check "write-report: 段の割合を出す" grep -qx '| 閲覧 ÷ インプレッション | 10.0% | 5.0% |' <<<"$out"
+check "write-report: 掲載から DL までの段を、今月と前の月で並べる" grep -qx '| インプレッション | 150 | 40 | 190 |' <<<"$out"
+check "write-report: 段の割合を出す" grep -qx '| 閲覧 ÷ インプレッション | 10.0% | 5.0% | 8.9% |' <<<"$out"
 check "write-report: ソース別の行を出す" grep -qx '| App Store の検索 | 100 | 10 | 2 | 10.0% |' <<<"$out"
-check "write-report: グラフを月のフォルダに描いて、表から指す" grep -qx '!\[日ごとの割合\](2026-09/foo-funnel-rates.svg)' <<<"$out"
-check "write-report: グラフの SVG を書く" test -f "$ok_apps/reports/2026-09/foo-funnel-rates.svg"
+check "write-report: 表のフォルダには HTML だけを置く" test "$(ls "$ok_apps/reports")" = 2026-09.html
 check "write-report: HTML のパスを出す" grep -qx "OK $ok_apps/reports/2026-09.html" <<<"$out"
-check "write-report: 日ごとの数字を JSON に書く" test "$(jq -c '.apps[0].funnel.impressions' "$ok_apps/reports/2026-09.json")" = "[100,50]"
-check "write-report: ソースを日本語の名前で JSON に書く" test "$(jq -r '.apps[0].funnel.sources[0][0]' "$ok_apps/reports/2026-09.json")" = "App Store の検索"
+check "write-report: 累計の数え始めを表に書く" grep -qx '累計は 2026-08-30 から数えた。' <<<"$out"
+check "write-report: 累計を JSON に書く" test "$(jq -c '.apps[0].funnel.total.impressions' "$ok_apps/reports/.data/2026-09.json")" = 190
+check "write-report: 日ごとの数字を JSON に書く" test "$(jq -c '.apps[0].funnel.impressions' "$ok_apps/reports/.data/2026-09.json")" = "[100,50]"
+check "write-report: ソースを日本語の名前で JSON に書く" test "$(jq -r '.apps[0].funnel.sources[0][0]' "$ok_apps/reports/.data/2026-09.json")" = "App Store の検索"
 check "write-report: HTML にデータを埋める" test -z "$(grep __REPORT__ "$ok_apps/reports/2026-09.html")"
 check "write-report: 通信できなくても HTML を書く" test -f "$apps/reports/2026-09.html"
-printf '\n## 次の施策\n\n- ⬜ 画像を差し替える：開いた割合を上げる\n' >>"$ok_apps/reports/2026-09.md"
+printf '\n## 次の施策\n\n- ⬜ 画像を差し替える：開いた割合を上げる\n' >>"$ok_apps/reports/.data/2026-09.md"
 fake_report >/dev/null
-check "write-report: 作り直しても、書き足した次の施策を残す" grep -qx -- '- ⬜ 画像を差し替える：開いた割合を上げる' "$ok_apps/reports/2026-09.md"
+check "write-report: 作り直しても、書き足した次の施策を残す" grep -qx -- '- ⬜ 画像を差し替える：開いた割合を上げる' "$ok_apps/reports/.data/2026-09.md"
 check "write-report: 作り直しても、次の施策をページに入れる" grep -q '"title": "画像を差し替える"' "$ok_apps/reports/2026-09.html"
-check "write-report: 掲載の数字が無いアプリは funnel を null にする" test "$(jq -r '.apps[0].funnel' "$apps/reports/2026-09.json")" = null
+check "write-report: 掲載の数字が無いアプリは funnel を null にする" test "$(jq -r '.apps[0].funnel' "$apps/reports/.data/2026-09.json")" = null
 
 expect "使い方" "render-report: 引数が無ければ NG" python3 -I "$scripts/render-report.py"
 CC_REPORTS_DIR="$work/none" expect "write-report.py を走らせる" "render-report: JSON が無ければ NG" python3 -I "$scripts/render-report.py" 2026-09
 reports="$work/render"
-mkdir -p "$reports"
-cat >"$reports/2026-09.json" <<'EOF'
-{"month": "2026-09", "generated": "2026-10-01", "previous_html": null, "notes": ["</script><b>x</b>"], "apps": []}
+mkdir -p "$reports/.data"
+cat >"$reports/.data/2026-09.json" <<'EOF'
+{"month": "2026-09", "generated": "2026-10-01", "notes": ["</script><b>x</b>"], "apps": []}
 EOF
-cat >"$reports/2026-09.md" <<'EOF'
+cat >"$reports/.data/2026-09.md" <<'EOF'
 # 2026-09 のアプリの数字
 
 ## 次の施策
@@ -245,14 +257,23 @@ html="$reports/2026-09.html"
 check "render-report: 次の施策の印・題・中身を読む" grep -q '"status": "✅", "title": "画像を差し替える", "body": "開いた割合を上げる"' "$html"
 check "render-report: 印の無い施策は印を空にする" grep -q '"status": "", "title": "名前を見直す", "body": ""' "$html"
 check "render-report: データの中の </script> で埋め込みを閉じない" grep -q '<\\/script><b>x<\\/b>' "$html"
+check "render-report: 前後の月のページが無ければ指さない" grep -q '"previous_html": null, "next_html": null' "$html"
+touch "$reports/2026-08.html" "$reports/2026-10.html"
+CC_REPORTS_DIR="$reports" python3 -I "$scripts/render-report.py" 2026-09 >/dev/null
+check "render-report: 前後の月のページがあれば指す" grep -q '"previous_html": "2026-08.html", "next_html": "2026-10.html"' "$html"
 
 events_repo="$work/events-repo"
 git init -q "$events_repo"
-mkdir -p "$events_repo/store"
-echo a >"$events_repo/store/a.txt"
+mkdir -p "$events_repo/store/screenshots/6.9" "$events_repo/store/ja"
+echo a >"$events_repo/store/screenshots/6.9/01.png"
+echo a >"$events_repo/store/ja/keywords.txt"
 git -C "$events_repo" add store
 GIT_AUTHOR_DATE="2026-09-12T10:00:00" GIT_COMMITTER_DATE="2026-09-12T10:00:00" \
     git -C "$events_repo" -c user.name=t -c user.email=t@example.com commit -qm "build: retake the screenshots (#12)"
+echo a >"$events_repo/store/ja/support_url.txt"
+git -C "$events_repo" add store
+GIT_AUTHOR_DATE="2026-09-14T10:00:00" GIT_COMMITTER_DATE="2026-09-14T10:00:00" \
+    git -C "$events_repo" -c user.name=t -c user.email=t@example.com commit -qm "build: change the support url"
 echo b >"$events_repo/b.txt"
 git -C "$events_repo" add b.txt
 GIT_AUTHOR_DATE="2026-09-13T10:00:00" GIT_COMMITTER_DATE="2026-09-13T10:00:00" \
@@ -267,7 +288,7 @@ print(write_report.store_events(sys.argv[3], "2026-09", fetch_analytics))
 print(write_report.store_events(sys.argv[3] + "-none", "2026-09", fetch_analytics))
 EOF
 )
-check "write-report: store/ を変えた日を、型と PR の番号を外した題で出す" grep -qx "\[{'day': '2026-09-12', 'label': 'retake the screenshots'}\]" <<<"$events"
+check "write-report: store/ を変えた日を、変えた掲載の部分の日本語の言葉で出す" grep -qx "\[{'day': '2026-09-12', 'label': 'スクリーンショット・キーワードを変えた'}\]" <<<"$events"
 check "write-report: git のリポジトリでなければ掲載を変えた日を出さない" grep -qx '\[\]' <<<"$events"
 
 checked=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
@@ -347,8 +368,10 @@ exec(os.environ["HTTP_FAKE_PY"])
 exec(os.environ["ANALYTICS_FAKE_PY"])
 
 analytics = load_module(sys.argv[2])
-install(analytics_route("2026-11", "2026-10", existing=sys.argv[3] == "existing", instances=sys.argv[4] == "instances"))
-result, notices = analytics.funnel("123", "2026-11")
+from datetime import date
+install(analytics_route("2026-11", "2026-10", existing=sys.argv[3] == "existing", instances=sys.argv[4] == "instances",
+                        snapshot=sys.argv[5] == "snapshot"))
+result, notices = analytics.funnel("123", "2026-11", date(2026, 11, int(sys.argv[6])))
 print("created", ",".join(created))
 print("notices", " / ".join(notices))
 if result:
@@ -356,34 +379,29 @@ if result:
     print("previous", *(result["previous"]["totals"][key] for key in analytics.STAGES))
     print("search", *(result["month"]["sources"]["App Store search"][key] for key in analytics.STAGES))
     print("days", ",".join(result["month"]["days"]))
+    print("total", *(result["total"]["totals"][key] for key in analytics.STAGES), result["total"]["since"])
 else:
     print("none")
 report_unknown()
 EOF
 }
-full=$(analytics_run existing instances)
+full=$(analytics_run existing instances snapshot 3)
 check "fetch-analytics: インプレッション・閲覧・初回 DL を月で足す" grep -qx 'month 150 15 3' <<<"$full"
 check "fetch-analytics: 前の月も同じ形で足す" grep -qx 'previous 40 2 0' <<<"$full"
 check "fetch-analytics: ソースごとに分ける" grep -qx 'search 100 10 2' <<<"$full"
 check "fetch-analytics: 日ごとに分け、月の外の日は入れない" grep -qx 'days 2026-11-01,2026-11-02' <<<"$full"
 check "fetch-analytics: 依頼があれば作らない" grep -qx 'created ' <<<"$full"
+check "fetch-analytics: 累計は、前の月までの月ごとの分に今月を足し、数え始めの日を出す" grep -qx 'total 190 17 3 2026-10-30' <<<"$full"
 check "fetch-analytics: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$full")"
-fresh=$(analytics_run missing none)
+fresh=$(analytics_run missing none snapshot 3)
 check "fetch-analytics: 依頼が無ければ、続けて取る依頼と過去の分の依頼を作る" grep -qx 'created ONGOING,ONE_TIME_SNAPSHOT' <<<"$fresh"
 check "fetch-analytics: まだレポートが無ければ数字を返さず知らせる" grep -q '^notices .*作った / まだ分析のレポートが無い' <<<"$fresh"
 check "fetch-analytics: まだレポートが無ければ None にする" grep -qx 'none' <<<"$fresh"
-
-expect "使い方" "render-charts: 引数が足りなければ NG" python3 -I "$scripts/render-charts.py" a b
-cat >"$work/funnel.json" <<'EOF'
-{"month": {"totals": {"impressions": 150, "page_views": 15, "downloads": 3},
- "days": {"2026-11-01": {"impressions": 100, "page_views": 10, "downloads": 2},
-          "2026-11-02": {"impressions": 0, "page_views": 5, "downloads": 1}},
- "sources": {"App Store search": {"impressions": 100, "page_views": 10, "downloads": 2}}},
- "previous": null}
-EOF
-charts=$(python3 -I "$scripts/render-charts.py" "$work/funnel.json" "$work/charts" foo)
-check "render-charts: 4 枚の SVG を書いてパスを出す" test "$(wc -l <<<"$charts" | tr -d ' ')" = 4
-check "render-charts: インプレッションが 0 の日は割合の点を打たない" test "$(grep -c '閲覧 ÷ インプレッション [0-9]' "$work/charts/foo-funnel-rates.svg")" = 1
-check "render-charts: ソースを日本語の名前で出す" grep -q 'App Store の検索' "$work/charts/foo-funnel-sources.svg"
+check "fetch-analytics: 前の日まで届いていて、過去の分もあれば知らせない" grep -qx 'notices ' <<<"$full"
+part=$(analytics_run existing instances nosnap 10)
+check "fetch-analytics: 届いた日が月の初めから前の日までに足りなければ、日の範囲を知らせる" \
+    grep -q '掲載の数字は 2026-11-01〜2026-11-02 の 2 日分だけ（2026-11-01〜2026-11-09 のうち）' <<<"$part"
+check "fetch-analytics: 過去の分の依頼が届いていなければ知らせる" grep -q '過去の分の依頼（ONE_TIME_SNAPSHOT）の数字は、まだ届いていない' <<<"$part"
+check "fetch-analytics: 依頼を作ったばかりなら、過去の分が未着とは知らせない" test -z "$(grep 過去の分の依頼 <<<"$fresh")"
 
 finish

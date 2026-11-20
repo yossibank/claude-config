@@ -17,6 +17,14 @@ ACCESS = ["ONGOING", "ONE_TIME_SNAPSHOT"]
 ENGAGEMENT = "App Store Discovery and Engagement Standard"
 DOWNLOADS = "App Downloads Standard"
 STAGES = ["impressions", "page_views", "downloads"]
+SOURCES = {
+    "App Store search": "App Store の検索",
+    "App Store browse": "App Store の閲覧",
+    "App referrer": "参照元アプリ",
+    "Web referrer": "参照元ウェブ",
+    "Institutional purchase": "法人購買",
+    "Unavailable": "参照元なし",
+}
 WAIT = "まだ分析のレポートが無い。依頼から 1〜2 日で届く"
 
 
@@ -61,9 +69,9 @@ def report_ids(request_id):
     }
 
 
-def instance_ids(report_id, window):
+def instance_ids(report_id, window, granularity="DAILY"):
     ids = []
-    for page in asc_pages(f"/v1/analyticsReports/{report_id}/instances?filter[granularity]=DAILY"):
+    for page in asc_pages(f"/v1/analyticsReports/{report_id}/instances?filter[granularity]={granularity}"):
         for item in page["data"]:
             day = item["attributes"].get("processingDate", "")
             if window is None or window[0] <= day <= window[1]:
@@ -82,9 +90,9 @@ def parse_rows(text):
     return list(csv.DictReader(io.StringIO(text), delimiter="\t" if "\t" in header else ","))
 
 
-def report_rows(report_id, window):
+def report_rows(report_id, window, granularity="DAILY"):
     rows = []
-    for instance in instance_ids(report_id, window):
+    for instance in instance_ids(report_id, window, granularity):
         for page in asc_pages(f"/v1/analyticsReportInstances/{instance}/segments"):
             for item in page["data"]:
                 rows += parse_rows(read_segment(item["attributes"]["url"]))
@@ -129,18 +137,64 @@ def summarize(rows, first, last):
     return {"totals": totals, "days": dict(sorted(days.items())), "sources": sources}
 
 
-def merged_rows(request_ids, name, windows):
+def merged_rows(request_ids, name, windows, delivered):
     merged = {}
     for request_id, window in zip(request_ids, windows):
         report = report_ids(request_id).get(name)
         if report is None:
             continue
-        for day, rows in rows_by_day(report_rows(report, window)).items():
-            merged.setdefault(day, rows)
+        rows = report_rows(report, window)
+        if rows:
+            delivered.add(request_id)
+        for day, day_rows in rows_by_day(rows).items():
+            merged.setdefault(day, day_rows)
     return [row for rows in merged.values() for row in rows]
 
 
-def funnel(app_id, month):
+def monthly_rows(request_ids, name):
+    """月ごとの分を、月ごとに最初に届いた依頼のものだけ返す。"""
+    merged = {}
+    for request_id in request_ids:
+        report = report_ids(request_id).get(name)
+        if report is None:
+            continue
+        by_month = {}
+        for row in report_rows(report, None, "MONTHLY"):
+            by_month.setdefault(row["Date"][:7], []).append(row)
+        for month, rows in by_month.items():
+            merged.setdefault(month, rows)
+    return merged
+
+
+def cumulative(monthly, daily_rows, month, current):
+    """公開から今月までの累計。月ごとの分が無い月は、日ごとの分で埋める。"""
+    by_month = {key: rows for key, rows in monthly.items() if key < month}
+    for row in daily_rows:
+        key = row["Date"][:7]
+        if key < month and key not in monthly:
+            by_month.setdefault(f"daily-{key}", []).append(row)
+    totals = dict(current["totals"])
+    starts = list(current["days"])[:1]
+    for key, rows in by_month.items():
+        counted = False
+        for row in rows:
+            stage = stage_of(row)
+            if stage is not None:
+                totals[stage] += count(row)
+                counted = True
+        if counted:
+            starts.append(min(row["Date"] for row in rows))
+    return {"totals": totals, "since": min(starts) if starts else None}
+
+
+def coverage_notices(days, first, last, today):
+    expected = min(last, today - timedelta(days=1))
+    if not days or (date.fromisoformat(days[0]) <= first and date.fromisoformat(days[-1]) >= expected):
+        return []
+    return [f"掲載の数字は {days[0]}〜{days[-1]} の {len(days)} 日分だけ（{first.isoformat()}〜{expected.isoformat()} のうち）"]
+
+
+def funnel(app_id, month, today=None):
     require_keys(ASC_KEYS)
     require_app_id(app_id)
     first, last = month_range(month)
@@ -148,9 +202,15 @@ def funnel(app_id, month):
     try:
         request_ids, created = report_requests(app_id)
         windows = [(previous_first.isoformat(), (last + timedelta(days=7)).isoformat()), None]
-        rows = merged_rows(request_ids, ENGAGEMENT, windows) + merged_rows(request_ids, DOWNLOADS, windows)
+        delivered = set()
+        rows = merged_rows(request_ids, ENGAGEMENT, windows, delivered) + merged_rows(request_ids, DOWNLOADS, windows, delivered)
         current = summarize(rows, first, last)
         previous = summarize(rows, previous_first, previous_last)
+        monthly = {}
+        for name in (ENGAGEMENT, DOWNLOADS):
+            for key, month_rows in monthly_rows(request_ids, name).items():
+                monthly.setdefault(key, []).extend(month_rows)
+        total = cumulative(monthly, rows, month, current)
     except (*ASC_ERRORS, EOFError, zlib.error) as error:
         raise Failure(f"分析のレポートを読めなかった: {asc_reason(error)}") from error
     except (KeyError, ValueError) as error:
@@ -158,10 +218,13 @@ def funnel(app_id, month):
     notices = []
     if created:
         notices.append(f"分析のレポートの依頼（{'・'.join(created)}）を作った")
+    if request_ids[1] not in delivered and "ONE_TIME_SNAPSHOT" not in created:
+        notices.append("過去の分の依頼（ONE_TIME_SNAPSHOT）の数字は、まだ届いていない")
     if not current["days"]:
         notices.append(WAIT)
         return None, notices
-    return {"month": current, "previous": previous if previous["days"] else None}, notices
+    notices += coverage_notices(list(current["days"]), first, last, today or date.today())
+    return {"month": current, "previous": previous if previous["days"] else None, "total": total}, notices
 
 
 def main():

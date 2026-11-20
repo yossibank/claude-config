@@ -1,13 +1,13 @@
 ---
 name: store-report
-description: 公開している全アプリの、月ごとのダウンロード・収益・評価・レビューと、掲載から DL までの数字を、グラフ付きの表にし、次の施策を出す。月の初めに前の月の数字を見る時や、人がアプリの数字を聞いた時に使う。
+description: 公開している全アプリの、月ごとのダウンロード・収益・評価・レビューと、掲載から DL までの数字を、グラフ付きのページにし、次の施策を出す。月の初めに前の月の数字を見る時や、人がアプリの数字を聞いた時に使う。
 argument-hint: "<YYYY-MM>"
 allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/*)
 ---
 
 # アプリの数字をまとめる
 
-公開している全アプリの数字を、月ごとの表とグラフにまとめ、次の施策を出す手順。月の初めに、前の月の分を作る。月の途中なら、前の日までの分を作る。
+公開している全アプリの数字を、月ごとのページにまとめ、次の施策を出す手順。月の初めに、前の月の分を作る。月の途中なら、前の日までの分を作る。
 
 ## 入力
 
@@ -16,14 +16,13 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I $
 | 読むもの・書くもの | 場所 |
 | --- | --- |
 | 集めるアプリ | `~/Applications/AppStore/*/store/app-id.txt` を持つもの。中身は App Store の ID（数字）だけ |
-| 表 | `~/Applications/AppReport/<YYYY-MM>.md` |
-| グラフ | `~/Applications/AppReport/<YYYY-MM>/<アプリ>-funnel-*.svg`。表から指す |
-| 見返すページ | `~/Applications/AppReport/<YYYY-MM>.html`。ブラウザで開く |
-| ページのデータ | `~/Applications/AppReport/<YYYY-MM>.json` |
+| 見返すページ | `~/Applications/AppReport/<YYYY-MM>.html`。ブラウザで開く。表の置き場所には、これだけを置く |
+| 表 | `~/Applications/AppReport/.data/<YYYY-MM>.md`。次の施策を書き足す |
+| ページのデータ | `~/Applications/AppReport/.data/<YYYY-MM>.json` |
 
 ## 手順
 
-1. `write-report.py` で、表・グラフ・見返すページを作る。
+1. `write-report.py` で、表と見返すページを作る。前の月のページも、次の月へ移れるように作り直す。
 2. 星 2 以下のレビューが増えたアプリは、中身を読んで不満を 3 つまでにまとめる。読むには、`app-plan` の `fetch-rival-reviews.py` に自分のアプリの ID を渡す。
 3. `store/custom-pages.json` を持つアプリがあれば、「カスタムプロダクトページの比べ方」で比べる。
 4. 「掲載から DL まで」の 2 つの割合を前の月と比べ、「次の施策の選び方」から 1〜3 個を選ぶ。表の最後に `## 次の施策` として、「次の施策の書き方」の形で書き足す。
@@ -34,7 +33,6 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*), Bash(python3 -I $
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/write-report.py <YYYY-MM>
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/render-report.py <YYYY-MM>
 python3 -I ${CLAUDE_SKILL_DIR}/scripts/fetch-analytics.py <アプリの ID> <YYYY-MM>
-python3 -I ${CLAUDE_SKILL_DIR}/scripts/render-charts.py <fetch-analytics.py の JSON> <出力先のフォルダ> <名前の頭>
 python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <アプリの ID> [星の上限]
 ```
 
@@ -48,6 +46,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 | --- | --- | --- |
 | ダウンロード | 売上のレポート。新規のダウンロードだけを数え、更新は数えない | API のキー |
 | 収益 | 売上のレポートの手取り。通貨ごとに足す | API のキー |
+| 累計の DL、累計の収益 | 年の売上のレポートと、その年の月の売上のレポートを、公開からこの月まで足す | API のキー |
 | 評価、評価の数 | 日本の App Store の公開の情報 | なし |
 | 今月のレビュー、星 2 以下 | 日本の App Store の公開のレビュー。新しい順に 500 件まで | なし |
 
@@ -55,9 +54,8 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 
 | 中身 | 出どころ |
 | --- | --- |
-| インプレッション・閲覧・初回 DL と、2 つの割合。今月と前の月 | 分析のレポート 2 つ（下の表） |
+| インプレッション・閲覧・初回 DL と、2 つの割合。今月・前の月・累計 | 分析のレポート 2 つ（下の表）。累計は月ごとの分を足し、無い月は日ごとの分で埋める |
 | ソースごとの、インプレッション・閲覧・初回 DL | 同上の `Source Type` |
-| グラフ 4 枚 | 日ごとのインプレッション、日ごとの閲覧、日ごとの割合、ソース別の閲覧 |
 
 分析のレポートは、次のものを読む。
 
@@ -71,6 +69,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 - 依頼の無いアプリには、続けて取る依頼（`ONGOING`）と過去の分の依頼（`ONE_TIME_SNAPSHOT`）を作る。数字が届くのは 1〜2 日後で、それまでは節を書かずに WARNING に書く。
 - 数字は延べの数（`Counts`）を足す。App Analytics の画面のユニークデバイスの数とは合わない。
 - 件数の少ない行は、Apple が伏せる。
+- 届いた日が月の初めから前の日までに足りない時は、届いた日の範囲を WARNING に書く。過去の分の依頼の数字がまだ届いていない時も、WARNING に書く。
 
 取れなかった列は `—` にし、理由を表の下の WARNING に書く。
 
@@ -135,16 +134,20 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 
 ## render-report.py がすること
 
-`render-report.py` は、`<YYYY-MM>.json` と `<YYYY-MM>.md` の次の施策から、見返すページを書く。ページの中身は、次のとおりである。
+`render-report.py` は、`.data/` の `<YYYY-MM>.json` と `<YYYY-MM>.md` の次の施策から、見返すページを書く。ページの中身は、次のとおりである。
 
 | 節 | 中身 |
 | --- | --- |
-| 表紙 | アプリの切り替え、前の月のページへの移動、初回 DL・インプレッション・閲覧・収益 |
+| 表紙 | アプリの切り替え、前の月のページへの移動、ダウンロード・インプレッション・閲覧・収益と、前の月との差の札 |
+| 前の月と比べる | 4 つの数字ごとに、今月と前の月の棒、累計と今月の割合の輪。開いた割合と、開いた後に入れた割合も前の月と比べる |
 | 掲載の節 | 要点・漏斗・日ごとの閲覧の予定表・日ごとのグラフ・ソースの割合。掲載の数字が無いアプリは、届いていない旨だけを出す |
 | 評価とレビュー | アプリごとの評価・評価の数・今月のレビュー・星 2 以下 |
 | 次の一手 | 次の施策と、WARNING に書いた数字の注意 |
+| フッター | 前後の月のページへの移動、作った日、売上と掲載の数字の出どころ |
 
-掲載を変えた日は、アプリのリポジトリで `store/` を変えた commit の日と題から作る。ページの型紙は `templates/report.html` にある。
+掲載を変えた日は、アプリのリポジトリで `store/` を変えた commit の日から作る。言葉は、変えたファイルの種類から日本語で作る。掲載に出ないファイルだけの commit は数えない。
+
+ページの型紙は `templates/report.html` にある。
 
 ## 報告
 
@@ -157,8 +160,8 @@ python3 -I ${CLAUDE_SKILL_DIR}/../app-plan/scripts/fetch-rival-reviews.py <ア�
 - 見返すページのパス
 
 > [!WARNING]
-> - 売上のレポートの中身を読めるかは、確かめていない。
-> - 分析のレポートの列の名前と値は、Apple の文書に合わせただけで、届いた中身では確かめていない。
+> - 分析のレポートの月ごとの分（`MONTHLY`）は、まだ届いた中身で確かめていない。累計はこれを足して作る。
+> - 売上の年ごとのレポート（`YEARLY`）は、まだ届いた中身で確かめていない。
 
 ## 制約
 
