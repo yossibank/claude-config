@@ -118,16 +118,22 @@ if let hoge,
 }
 ```
 
-`else if` の条件は、1 つにする。2 つ以上なら、前に `let` で名前を付けて渡す。swift-style-check が確かめる。
+`else if` の条件は、`,` で区切らず 1 つにする。swift-style-check が確かめる。
 
-束縛を含む時は、束縛する値を先に `let` で出す。
+| 条件 | 書き方 |
+| --- | --- |
+| 束縛の無い条件が 2 つ以上 | 前に `let` で、`&&` でつないだ名前を付ける |
+| 束縛と条件 | 前に `let` で値を出し、束縛の要らない 1 つの条件にする |
+| 前に出すと評価の回数や順番が変わる値 | `else if` に入れず、`else` の中に `if` を書く |
 
 ```swift
 let rests = next == current
     && count >= minimum
+let emoji = icon.emoji ?? ""
 
 if let item {
 } else if rests {
+} else if !emoji.isEmpty {
 }
 ```
 
