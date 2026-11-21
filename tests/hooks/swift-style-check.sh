@@ -18,6 +18,11 @@ style_case 0 "三項演算子の条件の外にある && は見ない" $'func a(
 style_case 2 "代入の後ろの条件にある && で止める" $'func a() {\n    b = c == d && e ? 1 : 2\n}' "Case.swift:2: 条件に && か ||"
 style_case 0 "文字列とコメントの中の && と ? は見ない" $'let a = "x && y ? 1 : 2" // b || c ? 1 : 2'
 
+style_case 2 "else if の条件を , で折り返せば止める" $'func a() {\n    if b {\n    } else if c,\n              d {\n    }\n}' "Case.swift:3: else if の条件は 1 つ"
+style_case 2 "else if の条件を , で 1 行に並べても止める" $'func a() {\n    if b {\n    } else if let c, d {\n    }\n}' "Case.swift:3: else if の条件は 1 つ"
+style_case 0 "else if の条件が 1 つなら通る" $'func a() {\n    if b, c {\n    } else if d {\n    }\n}'
+style_case 0 "else if の条件の括弧の中の , は見ない" $'func a() {\n    if b {\n    } else if f(c, d) {\n    }\n}'
+
 style_case 2 "引数が 1 つの宣言を、収まるのに折り返せば止める" $'func a(\n    b: Int\n) {}' "Case.swift:1: 引数が 1 つの宣言"
 style_case 0 "引数が 1 つの宣言を 1 行に書けば通る" $'func a(b: Int) {}'
 style_case 0 "引数が 2 つの宣言は折り返して通る" $'func a(\n    b: Int,\n    c: Int\n) {}'

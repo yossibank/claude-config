@@ -13,6 +13,7 @@ INDENT = 4
 LOGICAL = re.compile(r"&&|\|\|")
 ASSIGN = re.compile(r"(?<![=!<>])=(?!=)")
 RETURN = re.compile(r"^return\b")
+ELSE_IF = re.compile(r"\belse\s+if\b")
 DECLARATION = re.compile(r"^\s*(?:[@\w]+(?:\([^)]*\))?\s+)*(?:func\s+[^\s(]+|init[?!]?|subscript)(?:<[^>]*>)?\($")
 CONTAINER = re.compile(
     r"^\s*(?:"
@@ -51,6 +52,24 @@ def check_ternary(code):
         marks = [index for index in range(len(line)) if line.startswith(" ? ", index)]
         if any(line.find(" : ", mark) > 0 and LOGICAL.search(ternary_condition(line, mark)) for mark in marks):
             yield n, "条件に && か || がある三項演算子は、? と : の前で折り返す"
+
+
+def check_else_if(code):
+    for n, line in enumerate(code, 1):
+        found = ELSE_IF.search(line)
+        if not found:
+            continue
+        depth = 0
+        for c in line[found.end() :]:
+            if c in "([":
+                depth += 1
+            elif c in ")]":
+                depth -= 1
+            elif c == "{" and depth == 0:
+                break
+            elif c == "," and depth == 0:
+                yield n, "else if の条件は 1 つにする。2 つ以上なら、前に let で名前を付ける"
+                break
 
 
 def check_declarations(code, lines):
@@ -136,6 +155,7 @@ def check(path):
     code = mask(text)
     findings = [
         *check_ternary(code),
+        *check_else_if(code),
         *check_declarations(code, lines),
         *check_returns(code, lines),
         *check_views(code, lines),

@@ -19,7 +19,7 @@
 | [rules-require-read.sh](hooks/rules-require-read.sh) | 当たる rules を読む前の編集を止め、圧縮やサブエージェントでも数え違えないか |
 | [shell-check.sh](hooks/shell-check.sh) | `.sh` の構文と、変数の直後の全角で止めるか |
 | [swift-format.sh](hooks/swift-format.sh) | Mintfile に swiftformat がある時だけ走らせ、失敗で止めずに知らせるか |
-| [swift-style-check.sh](hooks/swift-style-check.sh) | 整形で直らない改行と空行の外れで止め、文字列とコメントの中は見ないか |
+| [swift-style-check.sh](hooks/swift-style-check.sh) | 整形で直らない改行・空行・`else if` の条件の数の外れで止め、文字列とコメントの中は見ないか |
 
 ### bin のテスト
 
