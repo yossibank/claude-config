@@ -118,6 +118,19 @@ if let hoge,
 }
 ```
 
+`else if` の条件は、1 つにする。2 つ以上なら、前に `let` で名前を付けて渡す。swift-style-check が確かめる。
+
+束縛を含む時は、束縛する値を先に `let` で出す。
+
+```swift
+let rests = next == current
+    && count >= minimum
+
+if let item {
+} else if rests {
+}
+```
+
 ## let で名前を付ける値
 
 `let` で名前を付けるかどうかは、次の決まりで決める。
