@@ -5,7 +5,7 @@ paths:
 
 # Swift の書き方
 
-Swift を読み書きする時に読み込まれる決まり。宣言の置き方・名前を付ける値・改行と空行・ファイルとフォルダを決める。
+Swift を読み書きする時に読み込まれる決まり。宣言の置き方・名前を付ける値・改行と空行・警告・ファイルとフォルダを決める。
 
 | ほかの決まり | 置き場所 |
 | --- | --- |
@@ -188,6 +188,21 @@ override func didMoveToWindow() {
     observeStyle()
     apply()
 }
+```
+
+## 警告
+
+コンパイラの警告を出さない実装にする。次の決まりで書いて確かめる。
+
+| 場面 | 決まり |
+| --- | --- |
+| 書く | 足した・変えたコードで警告が出たら、同じ変更の中で直す |
+| 隠さない | `@preconcurrency`・`nonisolated(unsafe)`・警告を切る設定で消さない。原因の型や呼び出しを直す |
+| 並行性 | `View` の型の中身は MainActor になる。MainActor でない所から呼ぶ static 関数には `nonisolated` を付ける |
+| 確かめる | 差分ビルドは、変えていないファイルの警告を出さない。変えたファイルを含めて組み直し、出力の `warning:` が 0 件かを見る |
+
+```sh
+xcodebuild build -workspace <workspace> -scheme <scheme> 2>&1 | grep 'warning:' | sort -u
 ```
 
 ## ファイルとフォルダ
