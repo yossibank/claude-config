@@ -143,4 +143,18 @@ printf 'struct Broken {}\n\xff\n' >"$work/Broken.swift"
 out=$(bash "$hooks" code-design-check "$work/Broken.swift" </dev/null 2>&1)
 match "verify から呼ぶ時は、想定外の失敗でも NG で止める" "$?:$out" "2:NG *"
 
+long="struct SnapshotTests {"$'\n'"$(repeat 399 '    // a')"$'\n}'
+design_case 0 "リポジトリの .claude の下は見ない" "$app/.claude/snapshots/home/SnapshotTests.swift" "$long"
+mkdir -p "$app/.claude/tools"
+body First 20 tool >"$app/.claude/tools/Tool.swift"
+git -C "$app" add .claude/tools/Tool.swift
+body Second 20 second >"$features/Second.swift"
+both=$(bash "$hooks" code-design-check "$features/Second.swift" </dev/null 2>&1)
+match "リポジトリの .claude の下は、同じ形の相手にもしない" "$(grep -c '\.claude/tools' <<<"$both")" 0
+design_case 2 "ルートの直下でない .claude は見る" "$app/ios/Features/.claude/Case.swift" "struct Case {"$'\n'"$(repeat 399 '    // a')"$'\n}' "Case.swift:401: 1 つのファイルは 400 行まで"
+nested="$work/home/.claude/worktrees/app"
+mkdir -p "$nested"
+git -C "$nested" init -q
+design_case 2 ".claude の下にできたワークツリーの中は見る" "$nested/Case.swift" "struct Case {"$'\n'"$(repeat 399 '    // a')"$'\n}' "Case.swift:401: 1 つのファイルは 400 行まで"
+
 finish

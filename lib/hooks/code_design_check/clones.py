@@ -6,12 +6,11 @@ import tempfile
 
 from git import git, git_root
 from hook_state import prepare_state, safe_name, state_folder
-from hooks.code_design_check.files import SERIAL, is_test, stem
+from hooks.code_design_check.files import SERIAL, is_test, is_tooling, stem
 
 WINDOW = 20
 VARIETY = 10
 STALE = 60 * 60 * 24 * 14
-# shape・KEYWORDS・TRIVIAL・mask を変えたら上げる。古いキャッシュは読まずに、STALE で消える
 VERSION = 1
 STATE = state_folder("code-design-check")
 
@@ -27,7 +26,7 @@ KEYWORDS = frozenset(
 
 
 def is_source(path):
-    return not is_test(path) and not SERIAL.search(stem(path))
+    return not is_test(path) and not is_tooling(path) and not SERIAL.search(stem(path))
 
 
 def shape(line):
