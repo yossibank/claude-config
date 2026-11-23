@@ -128,4 +128,32 @@ printf png >"$work/out/keep.png"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG PNG が描かれなかった" "render-snapshots: テストが通っても PNG が無ければ NG" bash "$render" "$package" "$set_dir" "$work/out"
 check "render-snapshots: PNG が描かれなかった時は、前の PNG を消さない" test -s "$work/out/keep.png"
 
+# PNG を書けずに落ちた時は 1 回だけ描き直す
+fake_command xcodebuild "
+if [[ \$1 == -list ]]; then
+    echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
+    exit 0
+fi
+n=\$(cat '$work/xcb.count' 2>/dev/null || echo 0)
+echo \$((n + 1)) >'$work/xcb.count'
+dir=\$(sed -n 's/^let directory = \"\\(.*\\)\"\$/\\1/p' Tests/UISnapshotTests/SnapshotTests.swift)
+printf png >\"\$dir/home-light.png\"
+if [[ \$n -eq 0 ]]; then echo 'handle_write_error:112: No IDATs written into file'; exit 65; fi
+exit 0"
+out=$(CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" bash "$render" "$package" "$set_dir" "$work/out" 2>&1)
+check "render-snapshots: PNG を書けずに落ちたら、描き直して通す" grep -qxF "$work/out/home-light.png" <<<"$out"
+match "render-snapshots: 描き直すのは 1 回だけ" "$(cat "$work/xcb.count")" "2"
+
+rm -f "$work/xcb.count"
+fake_command xcodebuild "
+if [[ \$1 == -list ]]; then
+    echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
+    exit 0
+fi
+n=\$(cat '$work/xcb.count' 2>/dev/null || echo 0)
+echo \$((n + 1)) >'$work/xcb.count'
+exit 65"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG テストが通らなかった" "render-snapshots: ほかの理由で落ちたら描き直さない" bash "$render" "$package" "$set_dir" "$work/out"
+match "render-snapshots: ほかの理由では 1 回だけ走らせる" "$(cat "$work/xcb.count")" "1"
+
 finish
