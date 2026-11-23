@@ -26,6 +26,8 @@ CONTAINER = re.compile(
 LEADING_NAME = re.compile(r"^#?[A-Za-z_][A-Za-z0-9_]*")
 NOT_VIEW = re.compile(r"^(?:let|var|@|if\b|switch\b|for\b|#if\b)")
 CONTINUATION = re.compile(r"^[.)\]}]")
+SPLIT_OPERAND = re.compile(r"(?:==|!=|<=|>=|&&|\|\||\?\?|\s[<>+\-*/%]\s)\s*[A-Za-z_][A-Za-z0-9_]*$")
+MEMBER = re.compile(r"^\.[A-Za-z_]")
 
 
 def indent_of(line):
@@ -52,6 +54,13 @@ def check_ternary(code):
         marks = [index for index in range(len(line)) if line.startswith(" ? ", index)]
         if any(line.find(" : ", mark) > 0 and LOGICAL.search(ternary_condition(line, mark)) for mark in marks):
             yield n, "条件に && か || がある三項演算子は、? と : の前で折り返す"
+
+
+def check_split_expressions(code):
+    for n in range(1, len(code)):
+        previous = code[n - 1].strip()
+        if not previous.startswith("#") and MEMBER.match(code[n].lstrip()) and SPLIT_OPERAND.search(previous):
+            yield n, "式の途中が整形で切れている。let で名前を付けて分ける"
 
 
 def check_else_if(code):
@@ -155,6 +164,7 @@ def check(path):
     code = mask(text)
     findings = [
         *check_ternary(code),
+        *check_split_expressions(code),
         *check_else_if(code),
         *check_declarations(code, lines),
         *check_returns(code, lines),
