@@ -68,6 +68,26 @@ mixed() {
     printf '%s' "${out}    }"$'\n    let '"$2"$'Name: String\n}'
 }
 
+# <型の名前> <表の名前> の、注釈の付いた列と、本体の無い関数を持つ Kotlin の Room の宣言
+room() {
+    local out=$'@Entity(\n    tableName = "'"$2"$'",\n    foreignKeys = [\n        ForeignKey(\n            entity = IconRecord::class,\n            parentColumns = ["id"],\n            childColumns = ["icon_id"],\n        ),\n    ],\n)\n'
+    out+="data class $1("$'\n    @PrimaryKey val id: String,\n    @ColumnInfo(name = "icon_id") val iconId: String,\n    @ColumnInfo(name = "sort_order") val sortOrder: Int,\n)\n\n@Dao\ninterface '"$1"$'Dao {\n'
+    out+=$'    @Query("SELECT * FROM x WHERE id = :id")\n    suspend fun find(id: String): Item?\n\n'
+    out+=$'    @Query("SELECT * FROM x ORDER BY id")\n    suspend fun all(): List<Item>\n\n'
+    out+=$'    @Query("DELETE FROM x")\n    suspend fun deleteAll()\n\n'
+    out+=$'    @Query("SELECT COUNT(*) FROM x")\n    suspend fun count(): Int\n\n'
+    out+=$'    @Query("DELETE FROM x WHERE id = :id")\n    suspend fun delete(id: String)\n'
+    printf '%s' "${out}}"
+}
+
+# <プロトコルの名前> <要求の頭> の、関数の要求だけを持つ Swift の protocol
+requirements() {
+    local out="protocol $1 {"$'\n' i
+    local params=("" "a: Int" "a: Int, b: Int" "a: Int, b: Int, c: Int") effects=("" " throws" " async" " async throws" " mutating")
+    for ((i = 0; i < 20; i++)); do out+="    func $2${i}(${params[i % 4]})${effects[i % 5]} -> String"$'\n'; done
+    printf '%s' "${out}}"
+}
+
 swift="$work/Case.swift"
 kotlin="$work/Case.kt"
 
@@ -169,6 +189,21 @@ body_function() {
 body_function first f >"$features/Funcs.swift"
 git -C "$app" add ios/Features/Funcs.swift
 design_case 2 "同じ処理の本体を 20 行以上持つ関数は止める" "$features/Other.swift" "$(body_function second s)" "Other.swift:1: ここから 20 行以上が、ios/Features/Funcs.swift:1 と同じ形"
+
+room First first >"$features/Wallet.kt"
+git -C "$app" add ios/Features/Wallet.kt
+design_case 0 "注釈の複数行の引数・注釈の付いた列・本体の無い関数は、同じ形に数えない" "$features/Account.kt" "$(room Account account)"
+requirements First first >"$features/Source.swift"
+git -C "$app" add ios/Features/Source.swift
+design_case 0 "protocol の関数の要求だけの並びは、同じ形に数えない" "$features/Gateway.swift" "$(requirements Gateway second)"
+annotated() {
+    local out=$'@MainActor\n@Suppress("x")\nfunc '"$1"$'() {\n' i
+    for ((i = 1; i < 21; i++)); do out+="    let $2${i} = make$2(${i})"$'\n'; done
+    printf '%s' "${out}}"
+}
+annotated first f >"$features/Marked.swift"
+git -C "$app" add ios/Features/Marked.swift
+design_case 2 "注釈の付いた、本体を持つ同じ処理の関数は止める" "$features/Tagged.swift" "$(annotated second s)" "Tagged.swift:"
 
 # <先頭の行> <変数の頭> の、先頭の行の後に同じ処理の本体が続く Swift・Kotlin の中身
 after_head() {
