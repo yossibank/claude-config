@@ -205,6 +205,15 @@ annotated first f >"$features/Marked.swift"
 git -C "$app" add ios/Features/Marked.swift
 design_case 2 "注釈の付いた、本体を持つ同じ処理の関数は止める" "$features/Tagged.swift" "$(annotated second s)" "Tagged.swift:"
 
+defaults() {
+    local out="interface $1 {"$'\n' i params=("" "a: Int" "a: Int, b: Int" "a: Int, b: Int, c: Int") heads=("" "suspend " "private " "override " "inline ")
+    for ((i = 0; i < 20; i++)); do out+="    ${heads[i % 5]}fun $2${i}(${params[i % 4]}) = make(${i})"$'\n'; done
+    printf '%s' "${out}}"
+}
+defaults First first >"$features/Defaults.kt"
+git -C "$app" add ios/Features/Defaults.kt
+design_case 2 "interface の中の式の本体を持つ関数が同じ並びなら止める" "$features/Fallbacks.kt" "$(defaults Fallbacks second)" "Fallbacks.kt:"
+
 # <先頭の行> <変数の頭> の、先頭の行の後に同じ処理の本体が続く Swift・Kotlin の中身
 after_head() {
     local out="$1"$'\n' i

@@ -53,12 +53,21 @@ def is_data_only(line, in_type, in_params):
     return in_type and bool(PROPERTY.match(line))
 
 
+def parameters_end(line):
+    depth = 0
+    for index in range(re.search(r"\b(?:func|fun)\b", line).end(), len(line)):
+        depth += (line[index] == "(") - (line[index] == ")")
+        if line[index] == ")" and depth == 0:
+            return index + 1
+    return len(line)
+
+
 def is_bodiless(line, in_contract):
     if not SIGNATURE.match(line) or line.count("(") != line.count(")"):
         return False
     if not in_contract and not re.search(r"\babstract\b", line):
         return False
-    return not ASSIGNMENT.search(line[line.rfind(")") + 1 :])
+    return not ASSIGNMENT.search(line[parameters_end(line) :])
 
 
 def open_annotation(line):
