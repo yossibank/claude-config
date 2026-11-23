@@ -14,6 +14,7 @@ from hooks.code_design_check.files import (  # noqa: E402
     check_swift_name,
     check_swift_types,
     is_test,
+    is_tooling,
 )
 from hooks.code_design_check.state import (  # noqa: E402
     KOTLIN_NOW,
@@ -25,12 +26,10 @@ from hooks.code_design_check.state import (  # noqa: E402
 from hook_io import block_on_findings, run_gate, run_hook, target_paths  # noqa: E402
 
 HEADER = "設計の決まり（rules/code-design.md）に合わない箇所がある。直す。"
-# make verify から呼ぶ時に、verify.sh が拾うよう行の頭に付ける
 VERIFY_PREFIX = "NG "
 
 
 def from_verify():
-    # パスを引数で渡すのは make verify だけ
     return len(sys.argv) > 1
 
 
@@ -81,7 +80,7 @@ def kotlin_checker(paths):
 
 
 def main():
-    paths = target_paths("")
+    paths = [path for path in target_paths("") if not is_tooling(path)]
     swift = [path for path in paths if path.endswith(".swift")]
     kotlin = [path for path in paths if path.endswith(".kt")]
     checks = {".swift": swift_checker(swift), ".kt": kotlin_checker(kotlin)}
