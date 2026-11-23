@@ -107,6 +107,7 @@ fi
 dir=\$(sed -n 's/^let directory = \"\\(.*\\)\"\$/\\1/p' Tests/UISnapshotTests/SnapshotTests.swift)
 printf png >\"\$dir/home-light.png\"
 printf png >\"\$dir/home-dark.png\"
+printf '{}\\n' >\"\$dir/index.jsonl\"
 exit 0"
 rm -rf "$work/copies/"*.lock
 out=$(CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" bash "$render" "$package" "$set_dir" "$work/out" 2>&1)
@@ -114,6 +115,8 @@ check "render-snapshots: 描けたら PNG の一覧を OK 相当で出す" grep 
 check "render-snapshots: 描けたら出力先へ PNG を移す" test -s "$work/out/home-light.png"
 check "render-snapshots: 描けたら前の PNG を入れ替える" test ! -e "$work/out/old.png"
 check "render-snapshots: 描いた後に途中の置き場を残さない" test ! -e "$work/out/.rendering"
+check "render-snapshots: 描けたら画面の名前の一覧も出力先へ移す" test -s "$work/out/index.jsonl"
+check "render-snapshots: 名前を書く部品を写しのテストに入れる" test -n "$(find "$work/copies" -path '*UISnapshotTests/SnapshotIndex.swift')"
 
 fake_command xcodebuild "
 if [[ \$1 == -list ]]; then
