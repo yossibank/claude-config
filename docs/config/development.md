@@ -71,6 +71,7 @@
 | `record`・`render`・`take`・`tile`・`write` | 録る、描く、撮る、並べる、書く |
 | `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
 | `send` | 外に送る |
+| `wait` | 整うまで待つ |
 
 ### そろえる語
 

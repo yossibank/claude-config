@@ -22,18 +22,34 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 録画からコマを見るまでは、次の順に進める。
 
 1. 動きを自動で起こす一時の仕掛けを入れる。下の「一時の仕掛け」に従う。
-2. アプリをビルドしてシミュレーターに入れ、起動する。
-3. `record-video.sh` で録画する。
-4. `tile-frames.sh` で、はじめは低いコマ数で全体を並べ、動きの起きる時刻を見つける。
-5. その時刻の前後だけを、高いコマ数で切り出して並べ直す。
-6. 一時の仕掛けのファイルと書き換えを戻す。`git status --short` に残っていないことを確かめる。
+2. `wait-simulator.sh` で、シミュレーターを起動して axe で画面を読めるまで待つ。
+3. アプリをビルドしてシミュレーターに入れ、起動する。
+4. `record-video.sh` で録画する。
+5. `tile-frames.sh` で、はじめは低いコマ数で全体を並べ、動きの起きる時刻を見つける。
+6. その時刻の前後だけを、高いコマ数で切り出して並べ直す。
+7. 一時の仕掛けのファイルと書き換えを戻す。`git status --short` に残っていないことを確かめる。
 
 ```sh
+${CLAUDE_SKILL_DIR}/scripts/wait-simulator.sh <UDID> [待つ秒数]
 ${CLAUDE_SKILL_DIR}/scripts/record-video.sh <UDID> <秒数> <出力先>/before.mp4
 ${CLAUDE_SKILL_DIR}/scripts/tile-frames.sh <出力先>/before.mp4 <開始秒> <長さ秒> <コマ数/秒> <crop> <列数> <出力先>/sheet.png
 ```
 
 `crop` は ffmpeg の `幅:高さ:x:y` を元の解像度で書く。画面全体なら `full` を渡す。
+
+## axe で操作する
+
+仕掛けを入れずに画面を押す時は、axe を使う。起動の直後は、axe の最初の読み取りが失敗する。
+
+| 場面 | すること |
+| --- | --- |
+| 起動した | `wait-simulator.sh` が `OK` を出してから操作する |
+| `Timed out creating the ... session` が出た | `wait-simulator.sh` で待ち直す |
+
+| 押し方 | 使う時 |
+| --- | --- |
+| `axe tap --label <文字> --wait-timeout <秒> --udid <UDID>` | 押す要素の文字が、ほかの文字とまとまっていない時 |
+| `axe tap -x <x> -y <y> --udid <UDID>` | SwiftUI が文字をまとめて 1 つの要素にした時。座標は `describe-ui` の frame で探す |
 
 ## 一時の仕掛け
 

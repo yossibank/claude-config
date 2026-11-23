@@ -53,4 +53,16 @@ match "tile-frames: crop のカンマを filter の区切りにしない" "$(cat
 fake_command xcrun 'echo "Invalid device" >&2; exit 1'
 expect "Invalid device" "record-video: simctl の stderr の最後の行を NG に入れる" bash "$record" udid 5 "$work/rec/d.mp4"
 
+ready="$root/dotclaude/skills/ui-record/scripts/wait-simulator.sh"
+expect "NG 使い方" "wait-simulator: 引数が無ければ NG" bash "$ready"
+expect "NG 待つ秒数は 1 以上の整数にする" "wait-simulator: 待つ秒数が整数でなければ NG" bash "$ready" udid x
+fake_command xcrun 'exit 0'
+fake_command axe "n=\$(cat '$work/axe.count' 2>/dev/null || echo 0); echo \$((n + 1)) >'$work/axe.count'; [[ \$1 == describe-ui && \$n -ge 1 ]] && exit 0; echo 'Error: Timed out creating the simulator remote automation session' >&2; exit 1"
+match "wait-simulator: 最初の読み取りが失敗しても、通るまでやり直す" "$(bash "$ready" udid 10)" "OK udid*"
+match "wait-simulator: 2 回目で通る" "$(cat "$work/axe.count")" "2"
+fake_command axe "echo 'Error: Timed out creating the simulator remote automation session' >&2; exit 1"
+expect "Timed out creating the simulator remote automation session" "wait-simulator: 待っても読めなければ、axe の最後の行を NG に入れる" bash "$ready" udid 1
+fake_command xcrun '[[ $2 == bootstatus ]] && exit 1; exit 0'
+expect "NG 起動を待てなかった" "wait-simulator: 起動を待てなければ NG" bash "$ready" udid 5
+
 finish
