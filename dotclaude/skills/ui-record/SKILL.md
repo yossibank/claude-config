@@ -48,8 +48,8 @@ ${CLAUDE_SKILL_DIR}/scripts/tile-frames.sh <出力先>/before.mp4 <開始秒> <�
 
 | 押し方 | 使う時 |
 | --- | --- |
-| `axe tap --label <文字> --wait-timeout <秒>` | 押す要素の文字が、ほかの文字とまとまっていない時 |
-| `axe tap -x <x> -y <y>` | SwiftUI が文字をまとめて 1 つの要素にした時。座標は `describe-ui` の frame で探す |
+| `axe tap --label <文字> --wait-timeout <秒> --udid <UDID>` | 押す要素の文字が、ほかの文字とまとまっていない時 |
+| `axe tap -x <x> -y <y> --udid <UDID>` | SwiftUI が文字をまとめて 1 つの要素にした時。座標は `describe-ui` の frame で探す |
 
 ## 一時の仕掛け
 
