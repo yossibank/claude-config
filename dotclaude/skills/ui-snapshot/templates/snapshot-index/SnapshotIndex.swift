@@ -10,20 +10,16 @@ enum SnapshotIndex {
     ) throws {
         let entry = ["file": file, "title": title, "variant": variant]
         let line = try JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys])
-        let url = URL(fileURLWithPath: directory).appending(path: "index.jsonl")
-        let manager = FileManager.default
+        let path = URL(fileURLWithPath: directory).appending(path: "index.jsonl").path
+        // 並列のテストが同時に書いても行が混ざらないように、追記で開いて 1 回で書く
+        let descriptor = open(path, O_WRONLY | O_APPEND | O_CREAT, 0o644)
 
-        if !manager.fileExists(atPath: url.path) {
-            manager.createFile(atPath: url.path, contents: nil)
+        guard descriptor >= 0 else {
+            throw CocoaError(.fileWriteUnknown)
         }
 
-        let handle = try FileHandle(forWritingTo: url)
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
 
-        defer {
-            try? handle.close()
-        }
-
-        try handle.seekToEnd()
         try handle.write(contentsOf: line + Data("\n".utf8))
     }
 }
