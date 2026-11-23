@@ -43,7 +43,7 @@
 | 接頭語 | 分類 | 使う所 |
 | --- | --- | --- |
 | `app-` | 企画・立ち上げ | skills |
-| `code-` | コード全般 | rules、skills |
+| `code-` | コード全般 | rules、skills、hooks |
 | `config-` | claude-config 自体の手入れ | skills、bin |
 | `ctx-` | 文脈とトークンの管理 | skills、hooks |
 | `docs-` | 文書 | rules、skills、hooks、bin |

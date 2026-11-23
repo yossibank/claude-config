@@ -82,6 +82,16 @@
         "hooks": [
           {
             "type": "command",
+            "if": "Edit(//**/*.kt)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-design-check"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.kt)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-design-check"
+          },
+          {
+            "type": "command",
             "if": "Edit(//**/*.md)",
             "command": "bash \"$HOME/.claude/hooks/run.sh\" docs-check"
           },
@@ -117,12 +127,12 @@
           {
             "type": "command",
             "if": "Edit(//**/*.swift)",
-            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-style-check"
+            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-style-check; style=$?; printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" code-design-check; design=$?; exit $((style > design ? style : design))"
           },
           {
             "type": "command",
             "if": "Write(//**/*.swift)",
-            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-style-check"
+            "command": "input=$(cat); printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-format; printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" swift-style-check; style=$?; printf '%s' \"$input\" | bash \"$HOME/.claude/hooks/run.sh\" code-design-check; design=$?; exit $((style > design ? style : design))"
           }
         ]
       }
