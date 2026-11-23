@@ -28,9 +28,9 @@ ${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ>
 1. パッケージのあるリポジトリを、写しのフォルダに写す。`.git` と、`.gitignore` で外すものは写さない。写しは `CC_UI_WORK_DIR`（既定は `~/Library/Caches/ui-snapshot`）の下に置く。
 2. 写しの Package.swift に、テストのターゲット `UISnapshotTests` を足す。
 3. セットに `patch.py` があれば、写しのパッケージのフォルダを渡して走らせる。
-4. セットの `SnapshotTests.swift` を入れる。PNG は出力先の `.rendering` に描く。
+4. セットの `SnapshotTests.swift` と、名前を書く `SnapshotIndex.swift` を入れる。PNG は出力先の `.rendering` に描く。
 5. シミュレーターで、そのテストだけを動かす。
-6. テストが通れば、出力先の古い PNG を描いたものに入れ替え、一覧を出す。通らなければ、前の PNG は残し、`NG` の行にログの場所を出して止まる。xcodebuild の全ログは、写しの `.build/ui-snapshot.log` に残す。
+6. テストが通れば、出力先の古い PNG と `index.jsonl` を描いたものに入れ替え、PNG の一覧を出す。通らなければ、前の PNG は残し、`NG` の行にログの場所を出して止まる。xcodebuild の全ログは、写しの `.build/ui-snapshot.log` に残す。
 
 元のパッケージのファイルは書き換えない。写しのビルドの成果物は次の回に使い回す。写しの横の `.origin` に元のフォルダを書き、pr-prune はそれで消す写しを選ぶ。
 
@@ -44,7 +44,21 @@ ${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ>
 | `targets.txt` | いつも | テストが依存するターゲットを、1 行に 1 つ書く。ほかのパッケージの製品は `<製品>:<パッケージ>` |
 | `patch.py` | 外から渡せない値を差し替える時 | 引数の写しのパッケージのフォルダの中を書き換える。`@Environment(\.widgetFamily)` を引数に変えるなど |
 
-新しいセットは `${CLAUDE_SKILL_DIR}/templates/snapshot-tests/` から写す。`templates/` の子フォルダは、セット 1 つ分のひな形の単位である。画面の大きさと、ライト・ダークの 2 つを描く形になっている。
+## 画面の名前
+
+PNG を書くたびに、`SnapshotIndex.record` で人が読む名前を書く。名前は出力先の `index.jsonl` に、1 枚 1 行で入る。画像を並べて見る時は、ファイル名の代わりにこの名前で分ける。
+
+| 引数 | 中身 | 例 |
+| --- | --- | --- |
+| `file` | PNG のファイル名 | `settings-wallet-edit-narrow.png` |
+| `title` | 画面と場合を ` › ` で区切った名前。描き方の違いは入れない | `設定 › 口座の編集 › 長い名前` |
+| `variant` | 幅・外観・文字の大きさなど、描き方の違い | `幅 320・ダーク・文字大` |
+
+## ひな形
+
+新しいセットは `${CLAUDE_SKILL_DIR}/templates/snapshot-tests/` から写す。画面の大きさと、ライト・ダークの 2 つを描き、画面の名前も書く形になっている。
+
+`templates/snapshot-index/` は写さない。`render-snapshots.sh` がどのセットにも入れる部品である。
 
 ## 描いた見た目の限り
 

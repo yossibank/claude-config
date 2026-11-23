@@ -56,6 +56,7 @@ source_text=$(<"$set_dir/SnapshotTests.swift")
 shopt -u patsub_replacement 2>/dev/null || true
 test_text=${source_text//__OUT__/$stage}
 printf '%s\n' "$test_text" >|"$tests/SnapshotTests.swift"
+cp "$skill/templates/snapshot-index/SnapshotIndex.swift" "$tests/SnapshotIndex.swift"
 rm -rf "$stage"
 mkdir -p "$stage"
 touch "$marker"
@@ -77,6 +78,7 @@ if [[ $status -ne 0 ]]; then
     exit 1
 fi
 compgen -G "$stage/*.png" >/dev/null || { echo "NG PNG が描かれなかった（ログ: ${log}）"; exit 1; }
-rm -f "$out"/*.png
+rm -f "$out"/*.png "$out/index.jsonl"
 mv "$stage"/*.png "$out/"
+[[ -f $stage/index.jsonl ]] && mv "$stage/index.jsonl" "$out/"
 ls "$out"/*.png
