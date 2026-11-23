@@ -11,7 +11,7 @@ from hooks.code_design_check.files import SERIAL, is_test, is_tooling, stem
 WINDOW = 20
 VARIETY = 10
 STALE = 60 * 60 * 24 * 14
-VERSION = 2
+VERSION = 3
 STATE = state_folder("code-design-check")
 
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -22,8 +22,13 @@ TYPE_HEAD = re.compile(r"(?<!::)\b(?:class(?!\s+(?:var|let|func)\b)|struct|enum|
 CALLABLE_HEAD = re.compile(r"\b(?:func|fun|init)\b")
 PROPERTY = re.compile(r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:public|private|internal|fileprivate|open|package|protected|static|final|lazy|override|weak|unowned|nonisolated|const|lateinit)(?:\([^)]*\))?\s+)*(?:let|var|val)\s+\w+\s*(?::[^={}()]*)?(?:=\s*[^{}()]*)?;?\s*$")
 PARAMETER = re.compile(r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:private|public|internal|protected|override)\s+)*(?:(?:val|var)\s+)?(?:\w+\s+)?\w+\s*:\s*[^{}]+$")
+ANNOTATION_ONLY = re.compile(r"^\s*@\w+(?:\.\w+)*(?:\([^()]*\))?\s*$")
+ANNOTATION_OPEN = re.compile(r"^\s*@\w+(?:\.\w+)*\s*\(")
+SIGNATURE = re.compile(r"^\s*(?:@\w+(?:\([^()]*\))?\s+)*(?:\w+(?:\([^()]*\))?\s+)*?(?:func|fun)\s[^{]*$")
+ASSIGNMENT = re.compile(r"(?<![=!<>])=(?!=)")
 INIT_HEAD = re.compile(r"(?:(?<![.\w])init\s*[?!]?|\bdata\s+class\s+\w+(?:<[^>]*>)?)\s*\(")
 SELF_ASSIGN = re.compile(r"^\s*self\.(\w+)\s*=\s*\1\s*;?\s*$")
+CONTRACTS = frozenset(("interface", "protocol"))
 KEYWORDS = frozenset(
     "actor any as async await by case catch class companion data default defer do else enum extension false fileprivate final for fun func "
     "get guard if import in init interface internal is let mutating nil nonisolated null object override private protocol public return "
@@ -48,6 +53,35 @@ def is_data_only(line, in_type, in_params):
     return in_type and bool(PROPERTY.match(line))
 
 
+def parameters_end(line):
+    depth = 0
+    for index in range(re.search(r"\b(?:func|fun)\b", line).end(), len(line)):
+        depth += (line[index] == "(") - (line[index] == ")")
+        if line[index] == ")" and depth == 0:
+            return index + 1
+    return len(line)
+
+
+def is_bodiless(line, in_contract):
+    if not SIGNATURE.match(line) or line.count("(") != line.count(")"):
+        return False
+    if not in_contract and not re.search(r"\babstract\b", line):
+        return False
+    return not ASSIGNMENT.search(line[parameters_end(line) :])
+
+
+def open_annotation(line):
+    head = ANNOTATION_OPEN.match(line)
+    if not head:
+        return 0
+    depth = 0
+    for char in line[head.end() - 1 :]:
+        depth += (char == "(") - (char == ")")
+        if depth == 0:
+            return 0
+    return depth
+
+
 def paren_depth(depth, line):
     head = INIT_HEAD.search(line) if depth == 0 else None
     if depth == 0 and not head:
@@ -61,11 +95,19 @@ def rows_of(code):
     scopes = []
     depth = 0
     pending = False
+    annotation = 0
     for number, line in enumerate(code, 1):
-        data_only = is_data_only(line, bool(scopes) and scopes[-1], depth > 0)
+        data_only = is_data_only(line, bool(scopes) and bool(scopes[-1]), depth > 0)
+        if annotation:
+            annotation = max(annotation + line.count("(") - line.count(")"), 0)
+            data_only = True
+        else:
+            annotation = open_annotation(line)
+            data_only = data_only or bool(annotation) or bool(ANNOTATION_ONLY.match(line))
+            data_only = data_only or is_bodiless(line, bool(scopes) and scopes[-1] in CONTRACTS)
         depth = paren_depth(depth, line)
         if TYPE_HEAD.search(line):
-            pending = not CALLABLE_HEAD.search(line)
+            pending = False if CALLABLE_HEAD.search(line) else TYPE_HEAD.search(line).group(0)
         for char in line:
             if char == "{":
                 scopes.append(pending)
