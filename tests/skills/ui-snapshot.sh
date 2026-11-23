@@ -156,4 +156,25 @@ exit 65"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG テストが通らなかった" "render-snapshots: ほかの理由で落ちたら描き直さない" bash "$render" "$package" "$set_dir" "$work/out"
 match "render-snapshots: ほかの理由では 1 回だけ走らせる" "$(cat "$work/xcb.count")" "1"
 
+# 別のタイムゾーンで描き直して比べる
+fake_command xcodebuild "
+if [[ \$1 == -list ]]; then
+    echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
+    exit 0
+fi
+dir=\$(sed -n 's/^let directory = \"\\(.*\\)\"\$/\\1/p' Tests/UISnapshotTests/SnapshotTests.swift)
+echo \"\${TEST_RUNNER_TZ:-none}\" >>'$work/zones'
+printf png >\"\$dir/fixed.png\"
+printf '%s' \"\${ZONE_TEXT:-png}\${TEST_RUNNER_TZ:+\${ZONE_SUFFIX:-}}\" >\"\$dir/dated.png\"
+exit 0"
+out=$(CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" CC_UI_CHECK_ZONE=UTC bash "$render" "$package" "$set_dir" "$work/out" 2>&1)
+check "render-snapshots: CC_UI_CHECK_ZONE があれば、同じ結果の時に OK を出す" grep -q "^OK UTC でも同じ結果" <<<"$out"
+match "render-snapshots: 1 回目はタイムゾーンを渡さず、2 回目だけ渡す" "$(tr '\n' ' ' <"$work/zones")" "none UTC "
+check "render-snapshots: 比べた後に途中の置き場を残さない" test ! -e "$work/out/.rendering"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" CC_UI_CHECK_ZONE=UTC ZONE_SUFFIX=x expect "NG タイムゾーンを UTC に変えると、1 枚の結果が変わる" "render-snapshots: タイムゾーンで結果が変われば NG" bash "$render" "$package" "$set_dir" "$work/out"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" CC_UI_CHECK_ZONE=UTC ZONE_SUFFIX=x expect "dated.png" "render-snapshots: 変わった PNG の名前を出す" bash "$render" "$package" "$set_dir" "$work/out"
+rm -f "$work/zones"
+CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" bash "$render" "$package" "$set_dir" "$work/out" >/dev/null 2>&1
+match "render-snapshots: CC_UI_CHECK_ZONE が無ければ 1 回だけ描く" "$(tr '\n' ' ' <"$work/zones")" "none "
+
 finish

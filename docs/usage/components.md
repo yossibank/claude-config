@@ -134,5 +134,6 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | `CC_PRUNE_MIN_FREE_GB` | pr-prune | 空きがこの GB を切ったら、本体のリポジトリの DerivedData と写しも消す。既定は 20 |
 | `CC_STORE_ARCHIVE_ONLY`・`CC_STORE_EXPORT` | store-release | 前の変数。付いていれば、送らずに `NG` で止まる |
 | `CC_STORE_DESTINATION` | store-release | アーカイブの行き先。`upload`（既定）は送り、`export` は IPA を書き出し、`archive` はアーカイブだけを作る |
+| `CC_UI_CHECK_ZONE` | ui-snapshot | 描き直して比べるタイムゾーンの名前（`UTC` など）。描いた結果が、実行する日時とタイムゾーンで変わらないかを見る |
 | `CC_UI_DEVICE` | ui-snapshot | 描くシミュレーターの UDID |
 | `CC_UI_WORK_DIR` | ui-snapshot | 描く時の写しを置くフォルダ。既定は `~/Library/Caches/ui-snapshot` |

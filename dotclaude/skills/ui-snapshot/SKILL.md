@@ -31,6 +31,7 @@ ${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ>
 4. セットの `SnapshotTests.swift` と、名前を書く `SnapshotIndex.swift` を入れる。PNG は出力先の `.rendering` に描く。
 5. シミュレーターで、そのテストだけを動かす。PNG にする処理が `No IDATs written` で落ちた時だけ、1 回描き直す。
 6. テストが通れば、出力先の古い PNG と `index.jsonl` を描いたものに入れ替え、PNG の一覧を出す。通らなければ、前の PNG は残し、`NG` の行にログの場所を出して止まる。xcodebuild の全ログは、写しの `.build/ui-snapshot.log` に残す。
+7. `CC_UI_CHECK_ZONE` にタイムゾーンの名前があれば、そのタイムゾーンでもう一度描いて比べる。変わった PNG があれば、名前を `NG` の行に出して止まる。
 
 元のパッケージのファイルは書き換えない。写しのビルドの成果物は次の回に使い回す。写しの横の `.origin` に元のフォルダを書き、pr-prune はそれで消す写しを選ぶ。
 

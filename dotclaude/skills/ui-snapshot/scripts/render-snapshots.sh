@@ -68,7 +68,7 @@ render() {
     rm -rf "$stage"
     mkdir -p "$stage"
     status=0
-    xcodebuild test \
+    env ${1:+TEST_RUNNER_TZ=$1} xcodebuild test \
         -scheme "$scheme" \
         -destination "id=$device" \
         -collect-test-diagnostics never \
@@ -91,4 +91,24 @@ compgen -G "$stage/*.png" >/dev/null || { echo "NG PNG が描かれなかった�
 rm -f "$out"/*.png "$out/index.jsonl"
 mv "$stage"/*.png "$out/"
 [[ -f $stage/index.jsonl ]] && mv "$stage/index.jsonl" "$out/"
+
+zone=${CC_UI_CHECK_ZONE:-}
+if [[ -n $zone ]]; then
+    render "$zone"
+    if [[ $status -ne 0 ]]; then
+        show_errors "$log"
+        echo "NG ${zone} で描き直せなかった（xcodebuild: ${status}、ログ: ${log}）"
+        exit 1
+    fi
+    changed=()
+    for png in "$out"/*.png; do
+        cmp -s "$png" "$stage/$(basename "$png")" || changed+=("$(basename "$png")")
+    done
+    days="今日は $(date +%F)、${zone} では $(TZ=$zone date +%F)"
+    if [[ ${#changed[@]} -gt 0 ]]; then
+        echo "NG タイムゾーンを ${zone} に変えると、${#changed[@]} 枚の結果が変わる（${days}）: ${changed[*]}。セットとモデルに、決まった日時を渡す"
+        exit 1
+    fi
+    echo "OK ${zone} でも同じ結果（${days}）"
+fi
 ls "$out"/*.png
