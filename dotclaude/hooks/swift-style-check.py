@@ -28,6 +28,13 @@ NOT_VIEW = re.compile(r"^(?:let|var|@|if\b|switch\b|for\b|#if\b)")
 CONTINUATION = re.compile(r"^[.)\]}]")
 SPLIT_OPERAND = re.compile(r"(?:==|!=|<=|>=|&&|\|\||\?\?|\s[<>+\-*/%]\s)\s*[A-Za-z_][A-Za-z0-9_]*$")
 MEMBER = re.compile(r"^\.[A-Za-z_]")
+TYPE_HEAD = re.compile(r"^\s*(?:[@\w]+(?:\([^)]*\))?\s+)*(?:struct|class|enum|actor|extension)\s+(?!(?:func|var|let|subscript|init)\b)[A-Za-z_].*\{$")
+PROPERTY_MODIFIER = re.compile(
+    r"(@\w+(?:\([^)]*\))?|(?:public|private|fileprivate|internal|package|open)(?:\(set\))?|static|\w+)\s+"
+)
+PROPERTY_GROUP_MESSAGE = "保存プロパティのまとまり（アクセスの範囲・var と let・プロパティラッパー）が変わる所には、空行を入れる"
+ACCESS = re.compile(r"^(?:public|private|fileprivate|internal|package|open)(?:\(set\))?$")
+OBSERVER = re.compile(r"\b(?:didSet|willSet)\b")
 
 
 def indent_of(line):
@@ -157,6 +164,44 @@ def check_views(code, lines):
                 yield after[0] + 1, "型が変わるビューと、複数行のビューを含む並びは、すべての間に空行を入れる"
 
 
+def property_group(code, first, last):
+    head = code[first].strip()
+    position = 0
+    modifiers = []
+    while True:
+        found = PROPERTY_MODIFIER.match(head, position)
+        if not found or found.group(1) in ("let", "var"):
+            break
+        modifiers.append(found.group(1))
+        position = found.end()
+    kind = re.match(r"(let|var)\s", head[position:])
+    if not kind:
+        return None
+    declaration = head[position:]
+    brace = declaration.find("{")
+    if brace >= 0 and "=" not in declaration[:brace]:
+        if not any(OBSERVER.search(code[index]) for index in range(first, last + 1)):
+            return None
+    return (
+        "static" in modifiers,
+        " ".join(m for m in modifiers if ACCESS.match(m)),
+        kind.group(1),
+        " ".join(m.split("(")[0] for m in modifiers if m.startswith("@")),
+    )
+
+
+def check_property_groups(code, lines):
+    for start, line in enumerate(code):
+        if not TYPE_HEAD.match(line):
+            continue
+        items = statements(code, lines, start, block_end(code, start))
+        groups = [property_group(code, first, last) for first, last in items]
+        for index in range(1, len(items)):
+            before, after = groups[index - 1], groups[index]
+            if before and after and before != after and not blank_between(lines, items[index - 1], items[index]):
+                yield items[index][0] + 1, PROPERTY_GROUP_MESSAGE
+
+
 def check(path):
     with open(path, encoding="utf-8") as file:
         text = file.read()
@@ -169,6 +214,7 @@ def check(path):
         *check_declarations(code, lines),
         *check_returns(code, lines),
         *check_views(code, lines),
+        *check_property_groups(code, lines),
     ]
     return sorted(findings)
 
