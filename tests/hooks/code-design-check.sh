@@ -42,6 +42,32 @@ body() {
     printf '%s' "${out}}"
 }
 
+# <型の名前> <変数の頭> の、保存プロパティと init だけを持つ Swift の struct
+record() {
+    local out="public struct $1: Sendable {"$'\n' names=(id title note amount date) i
+    for i in "${names[@]}"; do out+="    public let $2${i}: String"$'\n'; done
+    out+=$'\n    public init(\n'
+    for i in "${names[@]}"; do out+="        $2${i}: String,"$'\n'; done
+    out+=$'        flag: Bool = false\n    ) {\n'
+    for i in "${names[@]}"; do out+="        self.$2${i} = $2${i}"$'\n'; done
+    printf '%s' "${out}    }"$'\n}'
+}
+
+# <型の名前> <変数の頭> の、同じ並びの引数を持つ Kotlin の data class
+data_class() {
+    local out="data class $1(" names=(id title note amount date) i
+    out+=$'\n'
+    for i in "${names[@]}"; do out+="    val $2${i}: String,"$'\n'; done
+    printf '%s' "${out}    var flag: Boolean = false"$'\n)'
+}
+
+# <型の名前> <変数の頭> の、保存プロパティの間に同じ処理の本体がある struct
+mixed() {
+    local out="struct $1 {"$'\n    let '"$2"$'Id: String\n    func run() {\n' i
+    for ((i = 1; i < 22; i++)); do out+="        let $2${i} = make$2(${i})"$'\n'; done
+    printf '%s' "${out}    }"$'\n    let '"$2"$'Name: String\n}'
+}
+
 swift="$work/Case.swift"
 kotlin="$work/Case.kt"
 
@@ -125,6 +151,45 @@ design_case 0 "通し番号のファイルは、同じ形でも見ない" "$feat
 body First 20 first | sed 's/^struct/class/' >"$features/First.kt"
 git -C "$app" add ios/Features/First.kt
 design_case 2 "Kotlin も、名前だけ違う 20 行が別のファイルにあれば止める" "$features/Second.kt" "$(body Second 20 second | sed 's/^struct/class/')" "Second.kt:1: ここから 20 行以上が、ios/Features/First.kt:1 と同じ形"
+
+record First f >"$features/Wallet.swift"
+git -C "$app" add ios/Features/Wallet.swift
+design_case 0 "保存プロパティと init だけの同じ並びは、同じ形に数えない" "$features/Account.swift" "$(record Account a)"
+data_class First f >"$features/Wallet.kt"
+git -C "$app" add ios/Features/Wallet.kt
+design_case 0 "Kotlin の data class の同じ並びは、同じ形に数えない" "$features/Account.kt" "$(data_class Account a)"
+mixed First f >"$features/Mixed.swift"
+git -C "$app" add ios/Features/Mixed.swift
+design_case 2 "保存プロパティの間に同じ処理の本体があれば止める" "$features/Mixer.swift" "$(mixed Mixer m)" "Mixer.swift:"
+body_function() {
+    local out="func $1() {"$'\n' i
+    for ((i = 1; i < 21; i++)); do out+="    let $2${i} = make$2(${i})"$'\n'; done
+    printf '%s' "${out}}"
+}
+body_function first f >"$features/Funcs.swift"
+git -C "$app" add ios/Features/Funcs.swift
+design_case 2 "同じ処理の本体を 20 行以上持つ関数は止める" "$features/Other.swift" "$(body_function second s)" "Other.swift:1: ここから 20 行以上が、ios/Features/Funcs.swift:1 と同じ形"
+
+# <先頭の行> <変数の頭> の、先頭の行の後に同じ処理の本体が続く Swift・Kotlin の中身
+after_head() {
+    local out="$1"$'\n' i
+    for ((i = 1; i < 21; i++)); do out+="    let $2${i} = ${i}"$'\n'; done
+    printf '%s' "${out}}"
+}
+after_head $'data class Plain(val id: String)\n\nfun run() {' first >"$features/Plain.kt"
+git -C "$app" add ios/Features/Plain.kt
+design_case 2 "本体の無い data class の後の関数の本体は、同じ形に数える" "$features/Other.kt" "$(after_head $'data class Other(val id: String)\n\nfun run() {' second)" "Other.kt:1: ここから 20 行以上が、ios/Features/Plain.kt:1 と同じ形"
+calls() {
+    local out="struct $1 {"$'\n    func run() {\n        let value = Wallet.init(\n' i
+    for ((i = 1; i < 21; i++)); do out+="            label${i}: ${i},"$'\n'; done
+    printf '%s' "${out}        )"$'\n    }\n}'
+}
+calls Calls >"$features/Calls.swift"
+git -C "$app" add ios/Features/Calls.swift
+design_case 2 "複数行の .init( の呼び出しの引数は、同じ形に数える" "$features/Calling.swift" "$(calls Calling)" "Calling.swift:1: ここから 20 行以上が、ios/Features/Calls.swift:1 と同じ形"
+after_head $'struct Holder {\n    class var kind: Int {' first >"$features/Holder.swift"
+git -C "$app" add ios/Features/Holder.swift
+design_case 2 "class var の後の関数の本体は、同じ形に数える" "$features/Keeper.swift" "$(after_head $'struct Keeper {\n    class var kind: Int {' second)" "Keeper.swift:1: ここから 20 行以上が、ios/Features/Holder.swift:1 と同じ形"
 
 # --- 共通の部品の一覧 ---
 shared="$app/ios/Features/Shared/Model"

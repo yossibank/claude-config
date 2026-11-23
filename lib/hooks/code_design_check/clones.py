@@ -11,13 +11,19 @@ from hooks.code_design_check.files import SERIAL, is_test, is_tooling, stem
 WINDOW = 20
 VARIETY = 10
 STALE = 60 * 60 * 24 * 14
-VERSION = 1
+VERSION = 2
 STATE = state_folder("code-design-check")
 
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 SPACES = re.compile(r"\s+")
 TRIVIAL = re.compile(r"^[\s{}()\[\],.;:]*$")
 SKIPPED = re.compile(r"^\s*(?:import|package)\s")
+TYPE_HEAD = re.compile(r"(?<!::)\b(?:class(?!\s+(?:var|let|func)\b)|struct|enum|actor|extension|protocol|object|interface)\b")
+CALLABLE_HEAD = re.compile(r"\b(?:func|fun|init)\b")
+PROPERTY = re.compile(r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:public|private|internal|fileprivate|open|package|protected|static|final|lazy|override|weak|unowned|nonisolated|const|lateinit)(?:\([^)]*\))?\s+)*(?:let|var|val)\s+\w+\s*(?::[^={}()]*)?(?:=\s*[^{}()]*)?;?\s*$")
+PARAMETER = re.compile(r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:private|public|internal|protected|override)\s+)*(?:(?:val|var)\s+)?(?:\w+\s+)?\w+\s*:\s*[^{}]+$")
+INIT_HEAD = re.compile(r"(?:(?<![.\w])init\s*[?!]?|\bdata\s+class\s+\w+(?:<[^>]*>)?)\s*\(")
+SELF_ASSIGN = re.compile(r"^\s*self\.(\w+)\s*=\s*\1\s*;?\s*$")
 KEYWORDS = frozenset(
     "actor any as async await by case catch class companion data default defer do else enum extension false fileprivate final for fun func "
     "get guard if import in init interface internal is let mutating nil nonisolated null object override private protocol public return "
@@ -34,10 +40,41 @@ def shape(line):
     return IDENTIFIER.sub(lambda found: found.group(0) if found.group(0) in KEYWORDS else "_", text)
 
 
+def is_data_only(line, in_type, in_params):
+    if SELF_ASSIGN.match(line):
+        return True
+    if in_params:
+        return bool(PARAMETER.match(line))
+    return in_type and bool(PROPERTY.match(line))
+
+
+def paren_depth(depth, line):
+    head = INIT_HEAD.search(line) if depth == 0 else None
+    if depth == 0 and not head:
+        return 0
+    text = line[head.end() - 1 :] if head else line
+    return max(depth + text.count("(") - text.count(")"), 0)
+
+
 def rows_of(code):
     rows = []
+    scopes = []
+    depth = 0
+    pending = False
     for number, line in enumerate(code, 1):
-        if TRIVIAL.match(line) or SKIPPED.match(line):
+        data_only = is_data_only(line, bool(scopes) and scopes[-1], depth > 0)
+        depth = paren_depth(depth, line)
+        if TYPE_HEAD.search(line):
+            pending = not CALLABLE_HEAD.search(line)
+        for char in line:
+            if char == "{":
+                scopes.append(pending)
+                pending = False
+            elif char == "}" and scopes:
+                scopes.pop()
+        if pending and depth == 0 and "{" not in line and not line.rstrip().endswith((",", ":", "&")):
+            pending = False
+        if data_only or TRIVIAL.match(line) or SKIPPED.match(line):
             continue
         digest = hashlib.blake2b(shape(line).encode(), digest_size=6).hexdigest()
         rows.append([number, digest])
