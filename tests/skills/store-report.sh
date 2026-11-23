@@ -117,6 +117,8 @@ def serve(reports):
         key = (query["filter[frequency]"][0], query["filter[reportDate]"][0])
         if key not in reports:
             return (404, "{}")
+        if isinstance(reports[key], int):
+            return (reports[key], "{}")
         return gzip.compress((header + reports[key]).encode())
 
     install(route)
@@ -129,6 +131,7 @@ serve({
 })
 result, notice = sales.sales_by_app("2026-11", date(2026, 11, 4))
 print(f"daily\t{result['111'][0]}\t{notice}")
+print("by_day", *sorted(sales.month_totals("2026-11", date(2026, 11, 4))[3]))
 
 serve({("MONTHLY", "2026-10"): "app1\t111\t\t7\t0\t1F\tJPY\n"})
 result, notice = sales.sales_by_app("2026-10", date(2026, 11, 4))
@@ -148,6 +151,15 @@ serve({
 previous, before = sales.history_by_app("2026-02", date(2026, 2, 20))
 print(f"history\t{previous['111']['downloads']}\t{before['111']['downloads']}")
 
+serve({
+    ("MONTHLY", "2026-01"): "app1\t111\t\t2\t0\t1F\tJPY\n",
+    ("YEARLY", "2025"): "app1\t111\t\t10\t0\t1F\tJPY\n",
+    ("YEARLY", "2024"): 410,
+    **{("MONTHLY", f"2024-{m:02d}"): 410 for m in range(1, 13)},
+})
+previous, before = sales.history_by_app("2026-02", date(2026, 2, 20))
+print(f"expired\t{previous['111']['downloads']}\t{before['111']['downloads']}")
+
 print("days", *(len(sales.month_days(m, t)) for m, t in [
     ("2026-02", date(2026, 3, 10)),
     ("2026-12", date(2027, 1, 5)),
@@ -157,7 +169,9 @@ print("days", *(len(sales.month_days(m, t)) for m, t in [
 EOF
 )
 check "fetch-sales: 月のレポートが無ければ、前の日までの日ごとのレポートを足す" \
-    grep -qx $'daily\t5\t月のレポートがまだ無いので、2026-11-03 までの日ごとのレポートを足した。レポートのあった日は 2 日' <<<"$daily"
+    grep -qx $'daily\t5\t月のレポートがまだ無いので、日ごとのレポートを足した。2026-11-03 まで読み、レポートのあった日は 2 日。' <<<"$daily"
+check "fetch-sales: 日ごとのレポートのあった日ごとに合計を返す" grep -qx 'by_day 2026-11-01 2026-11-03' <<<"$daily"
+check "fetch-sales: 期限の切れた（410）レポートは、無いものとして累計をやめる" grep -qx $'expired\t2\t12' <<<"$daily"
 check "fetch-sales: 月のレポートがあれば、それを使って断り書きを付けない" grep -qx $'monthly\t7\tNone' <<<"$daily"
 check "fetch-sales: 年のレポートが無い年は月のレポートで埋め、どちらも無い年で累計をやめる" grep -qx $'history\t2\t16' <<<"$daily"
 check "fetch-sales: 日ごとのレポートも無ければ NG" grep -qx $'none\t2026-11 のレポートがまだ無い' <<<"$daily"
@@ -224,12 +238,18 @@ EOF
 }
 out=$(fake_report)
 check "write-report: 表の数字を、売上・累計・評価・レビューから出す" grep -qx '| foo | 9 | 300.00 JPY | 22 | 300.00 JPY | 4.5 | 20 | 3 | 2 |' <<<"$out"
-check "write-report: 全部取れた時は、届いた日の範囲のほかに WARNING を出さない" test "$(grep -c '^> - ' <<<"$out")" = 1
+check "write-report: 全部取れた時は、届いた日の範囲と数え方のほかに WARNING を出さない" test "$(grep -c '^> - ' <<<"$out")" = 2
+check "write-report: 延べの数と画面の違いを WARNING に書く" grep -q '^> - foo: インプレッションと閲覧は延べの数で' <<<"$out"
+check "write-report: 初回 DL は売上のレポートの数にする" grep -qx '| 初回 DL | 9 | 3 | 22 |' <<<"$out"
+check "write-report: 日ごとの売上のレポートが無ければ、日ごとの初回 DL は分析のレポートのままにする" test "$(jq -c '.apps[0].funnel.downloads' "$ok_apps/reports/.data/2026-09.json")" = "[2,1]"
+check "write-report: 月の初回 DL は売上の数を JSON に書く" test "$(jq -c '.apps[0].funnel.totals.downloads' "$ok_apps/reports/.data/2026-09.json")" = 9
+check "write-report: 月のレポートで作った終わった月は速報にしない" test "$(jq -r '.provisional' "$ok_apps/reports/.data/2026-09.json")" = false
+check "write-report: 速報でない表の題に（速報）を付けない" grep -qx '# 2026-09 のアプリの数字' <<<"$out"
 check "write-report: 前の月の売上を JSON に書く" test "$(jq -c '.apps[0].previous_sales' "$ok_apps/reports/.data/2026-09.json")" = '{"downloads":3,"proceeds":"0"}'
 check "write-report: 累計の売上を JSON に書く" test "$(jq -c '.apps[0].total_sales' "$ok_apps/reports/.data/2026-09.json")" = '{"downloads":22,"proceeds":"300.00 JPY"}'
 check "write-report: 売上の出どころを JSON に書く" test "$(jq -r '.sales_source' "$ok_apps/reports/.data/2026-09.json")" = 月のレポート
 check "write-report: 知らない URL に触れない" test -z "$(grep UNKNOWN <<<"$out")"
-check "write-report: 掲載から DL までの段を、今月と前の月で並べる" grep -qx '| インプレッション | 150 | 40 | 190 |' <<<"$out"
+check "write-report: 掲載から DL までの段を、今月と前の月で並べる" grep -qx '| インプレッション（延べ） | 150 | 40 | 190 |' <<<"$out"
 check "write-report: 段の割合を出す" grep -qx '| 閲覧 ÷ インプレッション | 10.0% | 5.0% | 8.9% |' <<<"$out"
 check "write-report: ソース別の行を出す" grep -qx '| App Store の検索 | 100 | 10 | 2 | 10.0% |' <<<"$out"
 check "write-report: 表のフォルダには HTML だけを置く" test "$(ls "$ok_apps/reports")" = 2026-09.html
@@ -307,6 +327,20 @@ EOF
 )
 check "write-report: store/ を変えた日を、変えた掲載の部分の日本語の言葉で出す" grep -qx "\[{'day': '2026-09-12', 'label': 'スクリーンショット・キーワードを変えた'}\]" <<<"$events"
 check "write-report: git のリポジトリでなければ掲載を変えた日を出さない" grep -qx '\[\]' <<<"$events"
+provisional=$(python3 -I - "$root" "$scripts" <<'EOF'
+import os
+import sys
+from datetime import date
+exec(os.environ["PY_PRELUDE"])
+write_report = load_module(os.path.join(sys.argv[2], "write-report.py"))
+print(*(write_report.is_provisional(m, s, t) for m, s, t in [
+    ("2026-10", "月のレポート", date(2026, 11, 1)),
+    ("2026-10", "日ごとのレポート 31 日分", date(2026, 11, 1)),
+    ("2026-11", "月のレポート", date(2026, 11, 30)),
+]))
+EOF
+)
+check "write-report: 月のレポートが無いか、月の途中なら速報にする" test "$provisional" = "False True True"
 
 checked=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
 import gzip
@@ -417,7 +451,7 @@ check "fetch-analytics: まだレポートが無ければ None にする" grep -
 check "fetch-analytics: 前の日まで届いていて、過去の分もあれば知らせない" grep -qx 'notices ' <<<"$full"
 part=$(analytics_run existing instances nosnap 10)
 check "fetch-analytics: 届いた日が月の初めから前の日までに足りなければ、日の範囲を知らせる" \
-    grep -q '掲載の数字は 2026-11-01〜2026-11-02 の 2 日分だけ（2026-11-01〜2026-11-09 のうち）' <<<"$part"
+    grep -q '掲載の数字は 2026-11-01〜2026-11-02 の 2 日分だけ。2026-11-01〜2026-11-09 のうち、届いた日を足した。' <<<"$part"
 check "fetch-analytics: 過去の分の依頼が届いていなければ知らせる" grep -q '過去の分の依頼（ONE_TIME_SNAPSHOT）の数字は、まだ届いていない' <<<"$part"
 check "fetch-analytics: 依頼を作ったばかりなら、過去の分が未着とは知らせない" test -z "$(grep 過去の分の依頼 <<<"$fresh")"
 

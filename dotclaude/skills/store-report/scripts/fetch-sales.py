@@ -17,6 +17,8 @@ from script_io import Failure, fail, require_month, run_main  # noqa: E402
 DOWNLOADS = {"1", "1F", "1T", "F1"}
 KEYS = [*ASC_KEYS, "ASC_VENDOR_NUMBER"]
 FIRST_YEAR = 2008
+# 404 はまだ無い、410 は期限が切れて消えた（日ごとは 365 日、月ごとは 12 か月）
+MISSING = (404, 410)
 
 
 def fetch_report(frequency, day, version):
@@ -48,47 +50,51 @@ def month_days(month, today):
 
 
 def daily_texts(days):
-    texts = []
+    """日ごとのレポートを、日の文字列からレポートへの辞書で返す。無い日は入れない。"""
+    texts = {}
     for day in days:
         try:
-            texts.append(fetch_text("DAILY", day.isoformat()))
+            texts[day.isoformat()] = fetch_text("DAILY", day.isoformat())
         except urllib.error.HTTPError as error:
-            if error.code != 404:
+            if error.code not in MISSING:
                 raise
     return texts
 
 
 def load_texts(month, days):
+    """月のレポート（無ければ None）と、日ごとのレポートを返す。日ごとは、日ごとのダウンロードを出すのに使う。"""
     try:
         try:
-            return [fetch_text("MONTHLY", month)], True
+            monthly = fetch_text("MONTHLY", month)
         except urllib.error.HTTPError as error:
-            if error.code != 404:
+            if error.code not in MISSING:
                 raise
-        return daily_texts(days), False
+            monthly = None
+        return monthly, daily_texts(days)
     except (*ASC_ERRORS, EOFError, zlib.error) as error:
         raise Failure(f"レポートを読めなかった: {asc_reason(error)}") from error
 
 
 def month_totals(month, today=None):
-    """月の合計と、知らせと、出どころの短い説明を返す。"""
+    """月の合計と、知らせと、出どころの短い説明と、日ごとの合計を返す。"""
     require_keys(KEYS)
     days = month_days(month, today or date.today())
-    texts, monthly = load_texts(month, days)
-    if not texts:
+    monthly, daily = load_texts(month, days)
+    if monthly is None and not daily:
         raise Failure(f"{month} のレポートがまだ無い")
     try:
-        totals = totals_of(*texts)
+        totals = totals_of(monthly) if monthly is not None else totals_of(*daily.values())
+        by_day = {day: totals_of(text) for day, text in daily.items()}
     except (KeyError, ValueError, ArithmeticError) as error:
         raise Failure(f"レポートの中身が想定と違う（{type(error).__name__}: {error}）") from error
-    if monthly:
-        return totals, None, "月のレポート"
-    notice = f"月のレポートがまだ無いので、{days[-1].isoformat()} までの日ごとのレポートを足した。レポートのあった日は {len(texts)} 日"
-    return totals, notice, f"日ごとのレポート {len(texts)} 日分"
+    if monthly is not None:
+        return totals, None, "月のレポート", by_day
+    notice = f"月のレポートがまだ無いので、日ごとのレポートを足した。{days[-1].isoformat()} まで読み、レポートのあった日は {len(daily)} 日。"
+    return totals, notice, f"日ごとのレポート {len(daily)} 日分", by_day
 
 
 def sales_by_app(month, today=None):
-    totals, notice, _ = month_totals(month, today)
+    totals, notice, _, _ = month_totals(month, today)
     return {app: formatted(total) for app, total in sorted(totals.items())}, notice
 
 
@@ -135,7 +141,7 @@ def optional_text(frequency, day):
     try:
         return fetch_text(frequency, day)
     except urllib.error.HTTPError as error:
-        if error.code != 404:
+        if error.code not in MISSING:
             raise
         return None
 
@@ -160,7 +166,7 @@ def history_by_app(month, today=None):
             texts[previous] = optional_text("MONTHLY", previous)
         previous_texts = [texts[previous]] if texts[previous] else []
         if not previous_texts and today < first + timedelta(days=10):
-            previous_texts = daily_texts(month_days(previous, today))
+            previous_texts = list(daily_texts(month_days(previous, today)).values())
         years = []
         year = first.year - 1
         while year >= FIRST_YEAR:

@@ -195,7 +195,7 @@ def coverage_notices(days, first, last, today):
     expected = min(last, today - timedelta(days=1))
     if not days or (date.fromisoformat(days[0]) <= first and date.fromisoformat(days[-1]) >= expected):
         return []
-    return [f"掲載の数字は {days[0]}〜{days[-1]} の {len(days)} 日分だけ（{first.isoformat()}〜{expected.isoformat()} のうち）"]
+    return [f"掲載の数字は {days[0]}〜{days[-1]} の {len(days)} 日分だけ。{first.isoformat()}〜{expected.isoformat()} のうち、届いた日を足した。"]
 
 
 def funnel(app_id, month, today=None):
