@@ -18,6 +18,12 @@ style_case 0 "三項演算子の条件の外にある && は見ない" $'func a(
 style_case 2 "代入の後ろの条件にある && で止める" $'func a() {\n    b = c == d && e ? 1 : 2\n}' "Case.swift:2: 条件に && か ||"
 style_case 0 "文字列とコメントの中の && と ? は見ない" $'let a = "x && y ? 1 : 2" // b || c ? 1 : 2'
 
+style_case 2 "比べる式の途中で切れたメンバーの参照を止める" $'func a() {\n    b = c == d && e == f\n        .g\n}' "Case.swift:2: 式の途中が整形で切れている"
+style_case 2 "< の後ろで切れた式も止める" $'func a() {\n    let b = c || d.e(f) < g\n        .e(h)\n}' "Case.swift:2: 式の途中が整形で切れている"
+style_case 0 "let で名前を付けて分ければ通る" $'func a() {\n    let g = f.g\n    b = c == d && e == g\n}'
+style_case 0 "#if の条件の後ろのモディファイアは見ない" $'var a: some View {\n    Text("a")\n    #if DEBUG || TESTING\n        .padding()\n    #endif\n}'
+style_case 0 "代入の右から始まるメソッドのつなぎは通る" $'func a() {\n    let b = items\n        .filter { $0.c }\n}'
+
 style_case 2 "else if の条件を , で折り返せば止める" $'func a() {\n    if b {\n    } else if c,\n              d {\n    }\n}' "Case.swift:3: else if の条件は 1 つ"
 style_case 2 "else if の条件を , で 1 行に並べても止める" $'func a() {\n    if b {\n    } else if let c, d {\n    }\n}' "Case.swift:3: else if の条件は 1 つ"
 style_case 0 "else if の条件が 1 つなら通る" $'func a() {\n    if b, c {\n    } else if d {\n    }\n}'
