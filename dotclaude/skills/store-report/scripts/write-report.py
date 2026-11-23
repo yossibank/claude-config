@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +16,7 @@ from script_io import Failure, fail, require_month, run_main  # noqa: E402
 render_report = load_module(os.path.join(HERE, "render-report.py"))
 
 
-STAGE_ROWS = [("インプレッション", "impressions"), ("閲覧", "page_views"), ("初回 DL", "downloads")]
+STAGE_ROWS = [("インプレッション（延べ）", "impressions"), ("閲覧（延べ）", "page_views"), ("初回 DL", "downloads")]
 RATE_ROWS = [("閲覧 ÷ インプレッション", "page_views", "impressions"), ("初回 DL ÷ 閲覧", "downloads", "page_views")]
 
 
@@ -42,6 +42,8 @@ def funnel_lines(repo, funnel, labels):
         *[f"| {label} | {percent(month, a, b)} | {percent(previous, a, b)} | {percent(total, a, b)} |" for label, a, b in RATE_ROWS],
         "",
         f"累計は {funnel['total']['since']} から数えた。",
+        "",
+        "ソースごとの数は、分析のレポートの延べの数である。初回 DL の合計は、上の表と合わないことがある。",
         "",
         "| ソース | インプレッション | 閲覧 | 初回 DL | 閲覧 ÷ インプレッション |",
         "| --- | --- | --- | --- | --- |",
@@ -93,6 +95,45 @@ def store_events(repo_dir, month, fetch_analytics):
     return events
 
 
+COUNTS_NOTE = "インプレッションと閲覧は延べの数で、画面のユニークデバイスの数とは合わない。初回 DL は売上のレポートの数で、画面と合う。"
+
+
+def sales_downloads(totals, app_id):
+    return totals.get(app_id, {"downloads": 0})["downloads"]
+
+
+def apply_sales_downloads(funnel, app_id, current, previous, total, by_day):
+    """初回 DL を、Apple ID ごとに数える売上のレポートの数に差し替える。差し替えられなかった所の知らせを返す。
+
+    売上の無い日は日ごとのレポートも無いので、届いた最後の日までの無い日は 0 とする。その後の日は分析のレポートのままにする。
+    """
+    if current is None:
+        return ["初回 DL は、売上のレポートが取れなかったので分析のレポートの延べの数である。"]
+    funnel["month"]["totals"]["downloads"] = sales_downloads(current, app_id)
+    last = max(by_day, default=None)
+    for day, stages in funnel["month"]["days"].items():
+        if last is not None and day <= last:
+            stages["downloads"] = sales_downloads(by_day.get(day, {}), app_id)
+    notices = []
+    if funnel["previous"]:
+        if previous is None:
+            notices.append("前の月の初回 DL は、分析のレポートの延べの数である。")
+        else:
+            funnel["previous"]["totals"]["downloads"] = sales_downloads(previous, app_id)
+    if total is None:
+        notices.append("累計の初回 DL は、分析のレポートの延べの数である。")
+    else:
+        funnel["total"]["totals"]["downloads"] = sales_downloads(total, app_id)
+    return notices
+
+
+def is_provisional(month, sales_source, today):
+    """月のレポートで作っていないか、月がまだ終わっていなければ速報とする。"""
+    first = date.fromisoformat(f"{month}-01")
+    next_month = (first.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return sales_source != "月のレポート" or today < next_month
+
+
 def funnel_data(funnel, labels):
     current = funnel["month"]
     days = list(current["days"])
@@ -100,6 +141,7 @@ def funnel_data(funnel, labels):
     return {
         "days": days,
         **{stage: [current["days"][day][stage] for day in days] for _, stage in STAGE_ROWS},
+        "totals": current["totals"],
         "previous": funnel["previous"]["totals"] if funnel["previous"] else None,
         "total": funnel["total"]["totals"],
         "since": funnel["total"]["since"],
@@ -137,15 +179,16 @@ def main():
     fetch_ratings = load_module(os.path.join(HERE, "fetch-ratings.py"))
     fetch_analytics = load_module(os.path.join(HERE, "fetch-analytics.py"))
     current = previous = total = None
+    by_day = {}
     notes = []
     sales_source = None
     try:
-        current, notice, sales_source = fetch_sales.month_totals(month)
+        current, notice, sales_source, by_day = fetch_sales.month_totals(month)
     except Exception as error:
         notes.append(f"売上とダウンロードは取れなかった（{failure_of(error)}）")
     else:
         if notice:
-            notes.append(f"売上とダウンロードは日ごとのレポートの合計（{notice}）")
+            notes.append(f"売上とダウンロードは、{notice}")
         try:
             previous, before = fetch_sales.history_by_app(month)
         except Exception as error:
@@ -183,12 +226,16 @@ def main():
             continue
         notes += [f"{repo}: {notice}" for notice in notices]
         if funnel is not None:
+            unmatched = apply_sales_downloads(funnel, app_id, current, previous, total, by_day)
+            notes += [f"{repo}: {note}" for note in [COUNTS_NOTE, *unmatched]]
             funnels += funnel_lines(repo, funnel, fetch_analytics.SOURCES)
             entry["funnel"] = funnel_data(funnel, fetch_analytics.SOURCES)
 
+    provisional = is_provisional(month, sales_source, date.today())
     lines = [
-        f"# {month} のアプリの数字",
+        f"# {month} のアプリの数字{'（速報）' if provisional else ''}",
         "",
+        *(["速報である。月のレポートが届いたら、作り直して確定させる。", ""] if provisional else []),
         "アプリごとのダウンロード・収益・評価・レビューである。累計は公開からこの月までの合計である。評価とレビューは日本の App Store のものである。",
         "",
         "| アプリ | ダウンロード | 収益 | 累計の DL | 累計の収益 | 評価 | 評価の数 | 今月のレビュー | 星 2 以下 |",
@@ -204,7 +251,7 @@ def main():
     lines += kept_next_steps(path)
     Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
     report = {"month": month, "generated": date.today().isoformat(), "apps": report_apps, "notes": notes,
-              "sales_source": sales_source}
+              "sales_source": sales_source, "provisional": provisional}
     Path(data_dir, f"{month}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     html = render_report.write_html(report, out_dir)
     render_report.rerender(out_dir, fetch_analytics.previous_month(month))

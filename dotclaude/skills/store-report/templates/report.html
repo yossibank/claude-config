@@ -323,7 +323,7 @@ function choose(index) {
   DATA = app.funnel;
   EVENTS = app.events || [];
   SOURCES = DATA ? DATA.sources : [];
-  IMP = DATA ? sum(DATA.impressions) : 0; PV = DATA ? sum(DATA.page_views) : 0; DL = DATA ? sum(DATA.downloads) : 0;
+  IMP = DATA ? sum(DATA.impressions) : 0; PV = DATA ? sum(DATA.page_views) : 0; DL = DATA ? (DATA.totals ? DATA.totals.downloads : sum(DATA.downloads)) : 0;
   document.querySelectorAll(".needs-funnel").forEach((n) => n.classList.toggle("hidden", !DATA));
   document.querySelectorAll(".no-funnel").forEach((n) => n.classList.toggle("hidden", !!DATA));
   render(); countUp();
@@ -334,7 +334,7 @@ function nav() {
   const prev = REPORT.previous_html ? `<a class="chip" href="${esc(REPORT.previous_html)}">‹ ${m === 1 ? 12 : m - 1} 月</a>` : "";
   document.getElementById("nav").innerHTML = `${apps}<span style="flex:1"></span>${prev}<span class="chip" aria-pressed="true">${m} 月</span>`;
   document.querySelectorAll("[data-app]").forEach((b) => b.addEventListener("click", () => choose(Number(b.dataset.app))));
-  document.getElementById("month").textContent = `${y} · ${new Date(y, m - 1, 1).toLocaleString("en", { month: "long" }).toUpperCase()}`;
+  document.getElementById("month").textContent = `${y} · ${new Date(y, m - 1, 1).toLocaleString("en", { month: "long" }).toUpperCase()}${REPORT.provisional ? " · 速報" : ""}`;
 }
 function jpy(s) { const m = /^(-?[\d.]+) JPY$/.exec(s || ""); return m ? Number(m[1]) : s === "0" ? 0 : null; }
 function change(now, before) {
@@ -353,8 +353,8 @@ function kpis() {
   const items = [{ key: "dl", name: "ダウンロード", now: Number.isFinite(sold) ? sold : null, prev: prev ? prev.downloads : null, total: total ? total.downloads : null, since: null }];
   if (DATA) {
     const p = DATA.previous || null, t = DATA.total || null;
-    items.push({ key: "imp", name: "インプレッション", now: IMP, prev: p ? p.impressions : null, total: t ? t.impressions : null, since: DATA.since, spark: DATA.impressions });
-    items.push({ key: "pv", name: "ページの閲覧", now: PV, prev: p ? p.page_views : null, total: t ? t.page_views : null, since: DATA.since, spark: DATA.page_views });
+    items.push({ key: "imp", name: "インプレッション（延べ）", now: IMP, prev: p ? p.impressions : null, total: t ? t.impressions : null, since: DATA.since, spark: DATA.impressions });
+    items.push({ key: "pv", name: "ページの閲覧（延べ）", now: PV, prev: p ? p.page_views : null, total: t ? t.page_views : null, since: DATA.since, spark: DATA.page_views });
   }
   items.push({ key: "money", name: "収益", now: jpy(app.proceeds), prev: prev ? jpy(prev.proceeds) : null, total: total ? jpy(total.proceeds) : null, since: null, money: true, label: app.proceeds });
   return items;
@@ -394,7 +394,7 @@ function cover() {
   document.getElementById("lede").textContent = DATA
     ? `検索結果などに ${nf(IMP)} 回出て、${nf(PV)} 回ページが開かれました。開いた割合は ${pc(open)}、開いた後に入れた割合は ${pc(rate(DL, PV))} です。`
     : "掲載の数字はまだ届いていないので、売上のレポートのダウンロードの数を出しています。";
-  const hint = { dl: "売上のレポートの新規", imp: "検索結果などに出た回数", pv: "プロダクトページが開かれた回数", money: "手取り" };
+  const hint = { dl: "売上のレポートの新規", imp: "検索結果などに出た延べの回数", pv: "プロダクトページが開かれた延べの回数", money: "手取り" };
   document.getElementById("heroes").innerHTML = kpis().map((it) => {
     const [color, path] = KPI[it.key];
     const v = it.now == null ? esc(it.label || "—") : it.money ? esc(yen(it.label)) : `<span data-count="${it.now}">${nf(it.now)}</span>`;
@@ -430,7 +430,7 @@ function insights() {
   document.getElementById("insights").innerHTML = cards.map(([c, t, big, h, p]) => `<div class="card insight"><div class="big ${c} num">${big}</div><div><span class="tag ${c}">${t}</span><h3>${h}</h3><p>${p}</p></div></div>`).join("");
 }
 function funnel() {
-  const W = 560, H = 270, stages = [["インプレッション", IMP], ["ページの閲覧", PV], ["初回 DL", DL]];
+  const W = 560, H = 270, stages = [["インプレッション（延べ）", IMP], ["ページの閲覧（延べ）", PV], ["初回 DL", DL]];
   const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "掲載から DL までの段" });
   const widthOf = (v) => 120 + (Math.log10(v + 1) / Math.max(Math.log10(IMP + 1), 1)) * (W - 120);
   const colors = [css("--s1"), css("--heat2"), css("--s2")];
