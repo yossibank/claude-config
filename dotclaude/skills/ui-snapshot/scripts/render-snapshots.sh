@@ -57,20 +57,30 @@ shopt -u patsub_replacement 2>/dev/null || true
 test_text=${source_text//__OUT__/$stage}
 printf '%s\n' "$test_text" >|"$tests/SnapshotTests.swift"
 cp "$skill/templates/snapshot-index/SnapshotIndex.swift" "$tests/SnapshotIndex.swift"
-rm -rf "$stage"
-mkdir -p "$stage"
 touch "$marker"
 
 cd "$work"
 
 log="$work/.build/ui-snapshot.log"
 mkdir -p "$(dirname "$log")"
-status=0
-xcodebuild test \
-    -scheme "$scheme" \
-    -destination "id=$device" \
-    -collect-test-diagnostics never \
-    -only-testing:UISnapshotTests >|"$log" 2>&1 || status=$?
+
+render() {
+    rm -rf "$stage"
+    mkdir -p "$stage"
+    status=0
+    xcodebuild test \
+        -scheme "$scheme" \
+        -destination "id=$device" \
+        -collect-test-diagnostics never \
+        -only-testing:UISnapshotTests >|"$log" 2>&1 || status=$?
+}
+
+render
+# PNG にする処理は、マシンが重い時にまれに失敗する。その時だけ 1 回描き直す
+if [[ $status -ne 0 ]] && grep -q "No IDATs written" "$log"; then
+    echo "PNG を書けなかったので、描き直す"
+    render
+fi
 
 if [[ $status -ne 0 ]]; then
     show_errors "$log"
