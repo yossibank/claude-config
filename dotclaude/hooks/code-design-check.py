@@ -22,9 +22,16 @@ from hooks.code_design_check.state import (  # noqa: E402
     check_now,
     check_swift_state,
 )
-from hook_io import block_on_findings, run_hook, target_paths  # noqa: E402
+from hook_io import block_on_findings, run_gate, run_hook, target_paths  # noqa: E402
 
 HEADER = "設計の決まり（rules/code-design.md）に合わない箇所がある。直す。"
+# make verify から呼ぶ時に、verify.sh が拾うよう行の頭に付ける
+VERIFY_PREFIX = "NG "
+
+
+def from_verify():
+    # パスを引数で渡すのは make verify だけ
+    return len(sys.argv) > 1
 
 
 def read(path, mask):
@@ -78,8 +85,11 @@ def main():
     swift = [path for path in paths if path.endswith(".swift")]
     kotlin = [path for path in paths if path.endswith(".kt")]
     checks = {".swift": swift_checker(swift), ".kt": kotlin_checker(kotlin)}
-    block_on_findings(HEADER, [*swift, *kotlin], lambda path: checks[os.path.splitext(path)[1]](path))
+    block_on_findings(HEADER, [*swift, *kotlin], lambda path: checks[os.path.splitext(path)[1]](path), VERIFY_PREFIX if from_verify() else "")
 
 
 if __name__ == "__main__":
-    run_hook("code-design-check", main)
+    if from_verify():
+        run_gate("code-design-check", main, VERIFY_PREFIX)
+    else:
+        run_hook("code-design-check", main)

@@ -48,8 +48,8 @@ def target_paths(suffix):
     return [path for path in map(os.path.abspath, filter(None, paths)) if path.endswith(suffix) and os.path.isfile(path)]
 
 
-def block_on_findings(header, paths, check):
-    report = [f"{path}:{n}: {m}" for path in paths for n, m in check(path)]
+def block_on_findings(header, paths, check, prefix=""):
+    report = [f"{prefix}{path}:{n}: {m}" for path in paths for n, m in check(path)]
     if report:
         print(header + "\n" + "\n".join(report), file=sys.stderr)
         sys.exit(2)
@@ -59,11 +59,11 @@ def notify(message):
     print(json.dumps({"systemMessage": message}, ensure_ascii=False))
 
 
-def run_gate(name, main):
+def run_gate(name, main, prefix=""):
     try:
         main()
     except Exception as error:
-        print(f"{GATE_FAILED}（{name}: {type(error).__name__}: {error}）。直すまでは CC_HOOKS_OFF={name} で外せる", file=sys.stderr)
+        print(f"{prefix}{GATE_FAILED}（{name}: {type(error).__name__}: {error}）。直すまでは CC_HOOKS_OFF={name} で外せる", file=sys.stderr)
         sys.exit(2)
 
 

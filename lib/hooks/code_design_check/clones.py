@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import re
+import tempfile
 
 from git import git, git_root
 from hook_state import prepare_state, safe_name, state_folder
@@ -10,6 +11,8 @@ from hooks.code_design_check.files import SERIAL, is_test, stem
 WINDOW = 20
 VARIETY = 10
 STALE = 60 * 60 * 24 * 14
+# shape・KEYWORDS・TRIVIAL・mask を変えたら上げる。古いキャッシュは読まずに、STALE で消える
+VERSION = 1
 STATE = state_folder("code-design-check")
 
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -56,7 +59,7 @@ def tracked(root, suffix):
 
 
 def cache_path(root, suffix):
-    return os.path.join(STATE, safe_name(root + suffix) + ".json")
+    return os.path.join(STATE, safe_name(f"{root}{suffix}-v{VERSION}") + ".json")
 
 
 def load_cache(path):
@@ -70,9 +73,10 @@ def load_cache(path):
 
 def save_cache(path, cache):
     try:
-        with open(path + ".tmp", "w", encoding="utf-8") as file:
+        handle, temporary = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+        with os.fdopen(handle, "w", encoding="utf-8") as file:
             json.dump(cache, file)
-        os.replace(path + ".tmp", path)
+        os.replace(temporary, path)
     except OSError:
         pass
 

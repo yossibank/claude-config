@@ -135,4 +135,12 @@ design_case 0 "一覧にある Shared のプロトコルは通る" "$shared/Sett
 design_case 0 "Shared の外のプロトコルは見ない" "$app/ios/Features/Screens/HomeSource.swift" 'protocol HomeSource {}'
 design_case 0 "git の外のファイルは、同じ形を見ない" "$work/Second.swift" "$(body Second 20 second)"
 
+# --- make verify から呼ぶ時 ---
+printf 'struct Case {}\n' >"$work/Named.swift"
+out=$(bash "$hooks" code-design-check "$work/Named.swift" </dev/null 2>&1)
+match "verify から呼ぶ時は、外れの行の頭に NG を付けて止める" "$?:$(grep -c '^NG .*Named.swift:1: ファイルの名前は' <<<"$out")" "2:1"
+printf 'struct Broken {}\n\xff\n' >"$work/Broken.swift"
+out=$(bash "$hooks" code-design-check "$work/Broken.swift" </dev/null 2>&1)
+match "verify から呼ぶ時は、想定外の失敗でも NG で止める" "$?:$out" "2:NG *"
+
 finish
