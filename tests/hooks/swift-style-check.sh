@@ -55,4 +55,16 @@ style_case 0 "let を含むビューの並びは見ない" $'#Preview {\n    let
 style_case 0 "補間の中の入れ子の文字列も、文字列として見ない" 'let a = "\(c ? "x && y ? 1 : 2" : "z")"'
 style_case 2 "補間のある文字列の後ろの三項演算子は見る" $'let a = "\\(b)"; let c = d && e ? 1 : 2' "Case.swift:1: 条件に && か ||"
 
+style_case 2 "var の後に空行なしで let を置けば止める" $'struct A {\n    public var b = 1\n    let c: Int\n}' "Case.swift:3: 保存プロパティのまとまり"
+style_case 2 "let の後に空行なしで private let を置けば止める" $'struct A {\n    let b: Int\n    private let c: Int\n}' "Case.swift:3: 保存プロパティのまとまり"
+style_case 2 "extension の中でも、プロパティラッパーが変われば止める" $'extension A {\n    @State private var b = 1\n    private var c = 2\n}' "Case.swift:3: 保存プロパティのまとまり"
+style_case 2 "static と static でないものの間に空行が無ければ止める" $'struct A {\n    static let b = 1\n    let c = 2\n}' "Case.swift:3: 保存プロパティのまとまり"
+style_case 2 "didSet を持つプロパティは保存プロパティとして見る" $'struct A {\n    var b = 1 {\n        didSet {}\n    }\n    let c = 2\n}' "Case.swift:5: 保存プロパティのまとまり"
+style_case 0 "まとまりの間に空行があれば通る" $'struct A {\n    public var b = 1\n\n    let c: Int\n}'
+style_case 0 "同じまとまりが続けば通る" $'struct A {\n    public var b = 1\n    public var c = 2\n\n    static let d = 3\n    static let e = 4\n}'
+style_case 0 "計算プロパティを挟めば見ない" $'struct A {\n    var b = 1\n    var c: Int { 2 }\n    let d = 3\n}'
+style_case 0 "関数の中の let と var は見ない" $'struct A {\n    func a() {\n        var b = 1\n        let c = 2\n    }\n}'
+style_case 0 "class func の中の let と var は見ない" $'final class A: XCTestCase {\n    override class func setUp() {\n        let b = 1\n        var c = 2\n        c += b\n    }\n}'
+style_case 0 "class var の getter の中の let と var は見ない" $'final class A {\n    class var shared: Int {\n        let b = 1\n        var c = 2\n        c += b\n        return c\n    }\n}'
+
 finish
