@@ -13,6 +13,7 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 | [CLAUDE.md](../../dotclaude/CLAUDE.md) | いつも | | 言語、進め方、使う量、報告、ブランチ・commit・PR |
 | [dotclaude/output-styles/report.md](../../dotclaude/output-styles/report.md) | いつも。config-install.sh が `outputStyle` に入れる | | 結論を先に書き、表と状態の印で組む日本語の報告の形 |
 | [dotclaude/rules/code-comments.md](../../dotclaude/rules/code-comments.md) | Swift・Kotlin・設定・シェル | | コメントを書かない |
+| [dotclaude/rules/code-design.md](../../dotclaude/rules/code-design.md) | Swift・Kotlin | | 状態の持ち方、重複、API の形、置き場所、検査で止める数 |
 | [dotclaude/rules/docs-app.md](../../dotclaude/rules/docs-app.md) | `docs/`・`spec/`・README・CLAUDE.md | docs-core | アプリの文書ごとの役割と、足す条件 |
 | [dotclaude/rules/docs-claude.md](../../dotclaude/rules/docs-claude.md) | CLAUDE.md・rules・SKILL.md・agents | docs-core | 飾らない形と、節の並び |
 | [dotclaude/rules/docs-core.md](../../dotclaude/rules/docs-core.md) | `.md` | | 運用、文、表現、守らせる仕組み |
@@ -39,7 +40,9 @@ flowchart LR
     editAfter["Edit・Write の後"] -->|.md だけ| docs["docs-check"]
     editAfter -->|.swift だけ| swift["swift-format"]
     swift --> swiftStyle["swift-style-check"]
+    swiftStyle --> design["code-design-check"]
     editAfter -->|.kt だけ| kotlinStyle["kotlin-style-check"]
+    editAfter -->|.kt だけ| design
     editAfter -->|.sh だけ| shell["shell-check"]
     editAfter --> detect
     bashBefore["Bash の前"] --> detect
@@ -52,12 +55,13 @@ flowchart LR
     classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
     classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
     class limit,require,gate,japanese block
-    class docs,kotlinStyle,swiftStyle,shell,detect inform
+    class design,docs,kotlinStyle,swiftStyle,shell,detect inform
     class swift tidy
 ```
 
 | フック | 動き | 呼ばれる時 | 動く条件 |
 | --- | --- | --- | --- |
+| [code-design-check](../../dotclaude/hooks/code-design-check.py) | 💬 知らせる | `.swift` と `.kt` を Edit・Write した後。`.swift` は swift-style-check の後に順に走る | `dotclaude/rules/code-design.md` の、数で分かる決まりに合わない時。大きさ・名前・状態の数・同じ形を見る |
 | [ctx-limit-read](../../dotclaude/hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
 | [docs-check](../../dotclaude/hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `dotclaude/rules/docs-*.md` に合わない時 |
 | [kotlin-style-check](../../dotclaude/hooks/kotlin-style-check.py) | 💬 知らせる | `.kt` を Edit・Write した後 | `.kt` が、整形で直らない `dotclaude/rules/kotlin-*.md` の空行に合わない時 |

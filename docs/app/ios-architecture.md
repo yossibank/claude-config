@@ -151,7 +151,7 @@ ios/
 | `make format` | SwiftFormat で整える |
 | `make licenses` | 設定アプリに出すライセンスの一覧を、LicensePlist で作り直す |
 | `make build` | iOS シミュレーター向けにビルドする |
-| `make verify` | Kit の `swift test` と iOS のビルドを `scripts/verify.sh` を通して走らせる |
+| `make verify` | code-design-check・Kit の `swift test`・iOS のビルドを走らせる。どれも `scripts/verify.sh` を通す |
 | `make test` | テストプランを iOS シミュレーターで走らせる。出力は `.build/test.log` にも残す |
 | `make test-build` | 走らせずにコンパイルだけする |
 | `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` を ui-snapshot で描く。出力は `.build/snapshots/` |
@@ -250,9 +250,23 @@ ios/
 | DB を見張る | `ValueObservation` で見張る。保存すると、見張っている画面が自動で変わる |
 | 見張りの書き方 | 画面のモデルが共通で持つ `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す |
 | 最初の読み込み | 見張りと一緒に `run()` にまとめる。1 回だけ読む値を先に読み、見張りは並べて動かす |
+| 状態の持ち方 | `dotclaude/rules/code-design.md` に従う。数の上限は、code-design-check が確かめる |
+| 同じ種類の画面 | 一覧や編集の画面が 2 つ目になる時に、共通のプロトコルと部品に括ってから足す |
 
 > [!TIP]
 > `observe` はひな形に無い。最初に見張る画面を作る時に、`Features/Shared/Model/ScreenModel.swift` として足す。
+
+### 共通の部品の一覧
+
+複数の画面で使う仕組みは、アプリの `docs/architecture-parts.md` に一覧で持つ。最初の仕組みを `Features/Shared/` に足す時に作る。
+
+| 列 | 書くこと |
+| --- | --- |
+| 仕組み | 型かプロトコルの名前 |
+| 使いどころ | どんな画面や処理を作る時に使うか |
+| 置き場所 | ファイルのあるフォルダ |
+
+一覧は、CLAUDE.md の文書の表で「機能・画面を足す」の先に読む文書に入れる。`Shared` のプロトコルが一覧に無いと、code-design-check が止める。
 
 ### AppModel と MainView
 

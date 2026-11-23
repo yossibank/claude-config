@@ -12,9 +12,10 @@
 | `bin/config_install/` | [config-install.sh](../bin/config-install.sh) だけが読む中身 |
 | `bin/docs_section/` | [docs-section.sh](../bin/docs-section.sh) だけが読む中身 |
 | `hook_` | フックの共通の処理 |
+| `hooks/code_design_check/` | [code-design-check.py](../dotclaude/hooks/code-design-check.py) だけが読む中身 |
 | `hooks/docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
 | `md_` | Markdown の読み方 |
-| `store_`・`swift_` | その分類の共通の処理 |
+| `kotlin_`・`store_`・`swift_` | その分類の共通の処理 |
 | 無し | 分類をまたぐ共通の処理 |
 
 ## 📦 ファイル
@@ -41,6 +42,9 @@
 | [hook_io.py](hook_io.py) | フックの入力の読み方、止め方と知らせ方、例外を受ける入口 |
 | [hook_messages.py](hook_messages.py) | フックが止める時の文の書き出し |
 | [hook_state.py](hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除 |
+| [hooks/code_design_check/clones.py](hooks/code_design_check/clones.py) | 名前を伏せた行の形と、別のファイルと同じ形の検査 |
+| [hooks/code_design_check/files.py](hooks/code_design_check/files.py) | ファイルの大きさ・名前と型・フォルダの中の数・共通の部品の一覧の検査 |
+| [hooks/code_design_check/state.py](hooks/code_design_check/state.py) | モデルの状態の数と、今の時刻の既定値の検査 |
 | [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
 | [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
 | [kotlin_source.py](kotlin_source.py) | Kotlin のコードから、コメント・文字列・文字の中身を空白にする |

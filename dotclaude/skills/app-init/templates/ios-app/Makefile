@@ -43,5 +43,7 @@ snapshot:
 	$(CLAUDE_CONFIG)/dotclaude/skills/ui-snapshot/scripts/render-snapshots.sh ios/Packages/__App__App .claude/snapshots/$(SNAPSHOT) .build/snapshots/$(SNAPSHOT)
 
 verify:
+	@test -f $(CLAUDE_CONFIG)/dotclaude/hooks/code-design-check.py || { echo "NG claude-config に code-design-check が無い: $(CLAUDE_CONFIG)"; exit 1; }
+	scripts/verify.sh code-design python3 -I $(CLAUDE_CONFIG)/dotclaude/hooks/code-design-check.py $$(git ls-files '*.swift' '*.kt')
 	scripts/verify.sh kit-test swift test --package-path ios/Packages/__App__Kit
 	scripts/verify.sh app-build $(XCODEBUILD) $(ANY_SIMULATOR) build

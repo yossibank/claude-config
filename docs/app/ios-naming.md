@@ -17,10 +17,45 @@
 | テストのフォルダ | `Tests/` の下に、ソースと同じフォルダ分けで置く。`Shared` のテストは、`Shared/` の中を子フォルダに分けない |
 | フォルダ | ファイルが 1 つだけのフォルダは作らず、近いフォルダに入れる。ターゲットの直下、`Shared` の下の役割のフォルダ、ソースにそろえたテストは例外 |
 | ファイル | 中の型の名前。拡張は `<型>+<役割>.swift` |
+| 入れ子の型の拡張 | `.` を抜いてつなぎ、途中の親を省かない。`Wallet.Kind` の拡張は `WalletKind+Title.swift` |
 | モディファイア | DesignSystem の、画面をまたいで使うものだけ `View+<役割>.swift` にする。画面ごとのものは画面の名前で始める |
 | `Store/Writes/Methods/`・`Store/Queries/Methods/` | `AppDatabase+` の後ろは、Core の型の名前のまま書く（`AppDatabase+EntryTag`） |
 | fixtures | 頭に、試す型の名前を kebab-case で付ける。形は `<型>-<場合>.json` |
 | テストのファイル | `dotclaude/rules/swift-test.md` の「テストの名前」に従う |
+
+## 📏 役割と語尾の語
+
+拡張の役割と部品の語尾は、同じ役割に同じ語を使う。アプリだけの語は、アプリの名前の文書に行を足してから使う。
+
+### 拡張の役割の語
+
+拡張のファイルの `+` の後ろは、次の語にそろえる。
+
+| 語 | 足すもの | 例 |
+| --- | --- | --- |
+| `+Actions` | 画面の操作。複数形にする | `CategoryListView+Actions` |
+| `+Message` | エラーと問題の文 | `DraftProblem+Message` |
+| `+Record` | 表の行への適合 | `Entry+Record` |
+| `+Text` | 値から組み立てる文 | `BudgetUsage+Text` |
+| `+Title` | 選択肢と種類の表示名 | `WalletKind+Title` |
+
+複数の型をまたぐ文言は、拡張にせず `<頭>Text` の名前空間の enum に置く。例は `PeriodText` である。
+
+### 部品の語尾
+
+型の語尾は、次の役割で使い分ける。
+
+| 語尾 | 役割 |
+| --- | --- |
+| `Card` | 面を持つ、ひとまとまりの部品 |
+| `Choice` | 選ぶ 1 件を表す値 |
+| `Drawer` | 下から引き出す入力の板 |
+| `Model` | `@Observable` の画面のモデルだけに付ける。処理の名前空間には付けない |
+| `Preview` | 設定の見本を出す部品 |
+| `Row` | 一覧の 1 行 |
+| `Sheet` | 画面から開くシート。編集は `<対象>EditSheet` と `<対象>EditModel` の対にする |
+| `Tile` | 格子の 1 マス |
+| `View` | 画面の本体 |
 
 ## 📂 置き場所の決まり
 

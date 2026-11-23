@@ -20,6 +20,7 @@ paths:
 | CLAUDE.md | 作業の進め方、このリポジトリだけのコードの書き方、作業と文書の対応 | 全リポジトリ共通の決まり（claude-config） |
 | overview | 何を作るか、解決したい不満、最初のリリースの機能、守ること、未決 | 作り方 |
 | architecture | 今の形（フォルダ、ターゲット、依存、署名の状態） | 理由、選ばなかった案、decisions の決定の言い直し |
+| architecture-parts | 複数の画面で使う仕組みの名前、使いどころ、置き場所 | 仕組みの中身の説明 |
 | decisions | 決定、理由、選ばなかった案 | 形の詳しい説明（architecture へリンク） |
 | data | 表の形と、その決まり | なぜその形か |
 | roadmap | 作る順番、状態、画面、この先の段階と収益化 | 設定・環境の状態 |
@@ -33,6 +34,7 @@ paths:
 | --- | --- |
 | `docs/decisions/<領域>.md` | 迷った案があり、理由を残さないと同じ議論になる決定が出た時 |
 | `docs/architecture.md` | 構成が共通の形（claude-config の `docs/app/ios-architecture.md`）から外れた時。書くのは、外れた点と、ID などアプリだけの事実 |
+| `docs/architecture-parts.md` | 複数の画面で使う仕組みを、初めて `Features/Shared/` に足した時 |
 | `docs/data.md` | データベースに表を持った時 |
 | `spec/fixtures/` | 計算の決まりがあり、iOS と Android で同じ結果が要る時 |
 | `spec/export-format.md` | ユーザーのデータを書き出す・読み込む時 |

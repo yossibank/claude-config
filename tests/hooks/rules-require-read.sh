@@ -9,19 +9,19 @@ STOP="この編集に当たる決まりを、この会話でまだ読んでい�
 log="$work/t.jsonl"
 : >"$log"
 run rules-require-read 2 "rules: 読まずに Swift を編集すると止まる" "$(edit s1 main "$log" "$swift")"
-for name in code-comments.md swift-core.md swift-ui.md; do read_rule s1 main "$name"; done
+for name in code-comments.md code-design.md swift-core.md swift-ui.md; do read_rule s1 main "$name"; done
 run rules-require-read 0 "rules: Read した後は通る" "$(edit s1 main "$log" "$swift")"
 echo "{\"type\":\"system\",\"subtype\":\"compact_boundary\",\"timestamp\":\"2099-01-01T00:00:00.000Z\"}" >>"$log"
 run rules-require-read 2 "rules: 読んだ後に圧縮があれば、また止まる" "$(edit s1 main "$log" "$swift")"
 auto="$HOME/.claude/rules"
-echo "{\"type\":\"attachment\",\"attachment\":{\"type\":\"instructions\",\"files\":[{\"path\":\"$auto/code-comments.md\"},{\"path\":\"$auto/swift-core.md\"},{\"path\":\"$auto/swift-ui.md\"}]}}" >>"$log"
+echo "{\"type\":\"attachment\",\"attachment\":{\"type\":\"instructions\",\"files\":[{\"path\":\"$auto/code-comments.md\"},{\"path\":\"$auto/code-design.md\"},{\"path\":\"$auto/swift-core.md\"},{\"path\":\"$auto/swift-ui.md\"}]}}" >>"$log"
 run rules-require-read 0 "rules: 圧縮の後に自動で読み込まれた印があれば通る" "$(edit s1 main "$log" "$swift")"
 run rules-require-read 2 "rules: まだ無いフォルダへの編集も止める" "$(edit s4 main "$work/none.jsonl" "$app/ios/Features/New/Deep/NewView.swift")"
 run rules-require-read 0 "rules: 当たる rules が無いファイルは止めない" "$(edit s1 main "$log" "$app/data.json")"
 echo '# メモ' >"$work/memo.md"
 run rules-require-read 0 "rules: git の外のファイル（メモリ・プラン）は止めない" "$(edit s1 main "$log" "$work/memo.md")"
 : >"$work/empty.jsonl"
-for name in code-comments.md swift-core.md swift-ui.md; do read_rule s3 main "$name" & done
+for name in code-comments.md code-design.md swift-core.md swift-ui.md; do read_rule s3 main "$name" & done
 wait
 run rules-require-read 0 "rules: 同時に Read しても取りこぼさない" "$(edit s3 main "$work/empty.jsonl" "$swift")"
 fresh="$work/t2.jsonl"
@@ -52,7 +52,7 @@ match "rules: hook_io の hook_off は run.sh が分けた名前の並びを使�
 
 inc="$work/inc.jsonl"
 : >"$inc"
-for name in code-comments.md swift-core.md swift-ui.md; do read_rule s5 main "$name"; done
+for name in code-comments.md code-design.md swift-core.md swift-ui.md; do read_rule s5 main "$name"; done
 run rules-require-read 0 "rules: 記録が空でも読んだ rules で通る" "$(edit s5 main "$inc" "$swift")"
 printf '{"type":"x","note":"a\xe2\x80\xa8b"}\n' >>"$inc"
 run rules-require-read 0 "rules: 続きの行を足しても通る" "$(edit s5 main "$inc" "$swift")"
