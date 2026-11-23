@@ -341,6 +341,22 @@ print(*(write_report.is_provisional(m, s, t) for m, s, t in [
 EOF
 )
 check "write-report: 月のレポートが無いか、月の途中なら速報にする" test "$provisional" = "False True True"
+applied=$(python3 -I - "$root" "$scripts" <<'EOF'
+import os
+import sys
+exec(os.environ["PY_PRELUDE"])
+write_report = load_module(os.path.join(sys.argv[2], "write-report.py"))
+stage = lambda downloads: {"impressions": 0, "page_views": 0, "downloads": downloads}
+funnel = {"month": {"totals": stage(9), "days": {"2026-11-01": stage(4), "2026-11-02": stage(5), "2026-11-03": stage(6)}},
+          "previous": {"totals": stage(7)}, "total": {"totals": stage(20)}}
+by_day = {"2026-11-02": {"1": {"downloads": 3}}}
+notes = write_report.apply_sales_downloads(funnel, "1", {"1": {"downloads": 3}}, None, None, by_day)
+print(*(funnel["month"]["days"][day]["downloads"] for day in sorted(funnel["month"]["days"])), funnel["previous"]["totals"]["downloads"])
+print(*notes, sep="\n")
+EOF
+)
+check "write-report: 届いた最後の日までは売上の数にし、無い日は 0、その後の日は分析のレポートのままにする" grep -qx '0 3 6 7' <<<"$applied"
+check "write-report: 前の月と累計を差し替えられなければ、延べの数だと知らせる" test "$(grep -c '延べの数である' <<<"$applied")" = 2
 
 checked=$(python3 -I - "$root" "$scripts/fetch-sales.py" <<'EOF'
 import gzip

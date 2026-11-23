@@ -103,18 +103,28 @@ def sales_downloads(totals, app_id):
 
 
 def apply_sales_downloads(funnel, app_id, current, previous, total, by_day):
-    """初回 DL を、Apple ID ごとに数える売上のレポートの数に差し替える。差し替えられなければ知らせを返す。"""
+    """初回 DL を、Apple ID ごとに数える売上のレポートの数に差し替える。差し替えられなかった所の知らせを返す。
+
+    売上の無い日は日ごとのレポートも無いので、届いた最後の日までの無い日は 0 とする。その後の日は分析のレポートのままにする。
+    """
     if current is None:
-        return "初回 DL は分析のレポートの延べの数（売上のレポートが取れなかった）"
+        return ["初回 DL は、売上のレポートが取れなかったので分析のレポートの延べの数である。"]
     funnel["month"]["totals"]["downloads"] = sales_downloads(current, app_id)
-    if by_day:
-        for day, stages in funnel["month"]["days"].items():
+    last = max(by_day, default=None)
+    for day, stages in funnel["month"]["days"].items():
+        if last is not None and day <= last:
             stages["downloads"] = sales_downloads(by_day.get(day, {}), app_id)
-    if funnel["previous"] and previous is not None:
-        funnel["previous"]["totals"]["downloads"] = sales_downloads(previous, app_id)
-    if total is not None:
+    notices = []
+    if funnel["previous"]:
+        if previous is None:
+            notices.append("前の月の初回 DL は、分析のレポートの延べの数である。")
+        else:
+            funnel["previous"]["totals"]["downloads"] = sales_downloads(previous, app_id)
+    if total is None:
+        notices.append("累計の初回 DL は、分析のレポートの延べの数である。")
+    else:
         funnel["total"]["totals"]["downloads"] = sales_downloads(total, app_id)
-    return None
+    return notices
 
 
 def is_provisional(month, sales_source, today):
@@ -216,8 +226,8 @@ def main():
             continue
         notes += [f"{repo}: {notice}" for notice in notices]
         if funnel is not None:
-            notice = apply_sales_downloads(funnel, app_id, current, previous, total, by_day)
-            notes += [f"{repo}: {COUNTS_NOTE}", *([f"{repo}: {notice}"] if notice else [])]
+            unmatched = apply_sales_downloads(funnel, app_id, current, previous, total, by_day)
+            notes += [f"{repo}: {note}" for note in [COUNTS_NOTE, *unmatched]]
             funnels += funnel_lines(repo, funnel, fetch_analytics.SOURCES)
             entry["funnel"] = funnel_data(funnel, fetch_analytics.SOURCES)
 
