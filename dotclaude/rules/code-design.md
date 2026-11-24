@@ -62,6 +62,30 @@ Kotlin は、同じまとまりを次の形で書く。
 | `output` | 入れ子の `class Output`。`derivedStateOf` はここに置き、計算は拡張に分けてよい |
 | `dependencies` | `private class Dependencies`。モデルの関数だけが使う |
 
+## 画面の形
+
+画面は、意味のある状態を持たない。Swift の `View` と Kotlin の Composable が持てる物は、次のとおりである。
+
+| 持ち物 | Swift | Kotlin |
+| --- | --- | --- |
+| モデル | `@State` の、型の名前が `Model` で終わる値。子のモデルも同じ | `remember { XModel(...) }` |
+| 見た目の値 | `@State private var layout = Layout()`。型は、View の入れ子の `struct Layout` にする | `remember { Layout() }`。型は、画面のファイルの `class Layout` にする |
+| 仕組みの持ち物 | `@FocusState`・`@Namespace`・`@GestureState` | `rememberScrollState`・`rememberLazyListState`・`FocusRequester` など |
+| 外から受け取る物 | `@Environment`・`@Bindable var model`・`let model` | 引数と `CompositionLocal` |
+
+持ち物は、次の決まりで置く。
+
+| 対象 | 決まり |
+| --- | --- |
+| 意味のある状態 | モデルの `state` に置く。出しているシート・確認中か・編集中か・選んでいる物・入力中の文字である |
+| `Layout` の中 | 寸法・位置・スクロールの型だけを置く。Bool・文字列・整数・ID・ドメインの型は置かない |
+| Swift の寸法の型 | `CGFloat`・`CGSize`・`CGRect`・`CGPoint`・`CGVector`・`EdgeInsets`・`ScrollPosition`・`ScrollGeometry` |
+| Kotlin の寸法の型 | `Dp`・`DpSize`・`DpOffset`・`Float`・`Offset`・`IntOffset`・`Size`・`IntSize`・`Rect`・`IntRect`・`PaddingValues` |
+| 型の包み | 寸法の型の Optional・配列・集合と、値が寸法の型の辞書は置ける。辞書の鍵は問わない |
+| Kotlin の状態 | Composable の関数で、`mutableStateOf` の仲間を直接作らない。作るのは、モデルと状態のクラスと `Layout` の中だけにする |
+| DesignSystem の部品 | モデルを持てないので、この決まりの外に置く。部品の中だけで閉じる状態は、部品が持ってよい |
+| プレビュー | `@Previewable` の `@State` と `@Preview` の関数は、この決まりの外に置く |
+
 ## 重複
 
 同じ形のコードは、2 つ目を書く前に括る。
@@ -131,6 +155,10 @@ Kotlin は、同じまとまりを次の形で書く。
 | モデルの形 | Kotlin の `this` 以外の `.input.` への代入が無いか | |
 | モデルの形 | Swift の `self` 以外の `.dependencies` の読み出しが無いか | |
 | モデルの形 | `.output.state`・`.output.input` の読み出しが無いか | |
+| 画面の形 | Swift の `@State` の型が、`Model` で終わる型か `Layout` か。`@Previewable` の行は除く | |
+| 画面の形 | Swift の `struct Layout` の保存プロパティが、寸法の型か。型を読み取れない値も止める | |
+| 画面の形 | Kotlin の `@Composable` のあるファイルの関数が、`mutableStateOf` の仲間を作っていないか。`@Preview` の関数は除く | |
+| 画面の形 | Kotlin の `class Layout` のプロパティが、寸法の型か。型を読み取れない値も止める | |
 | 今の時刻と今日 | `Date()`・`Instant.now()` などを、引数やプロパティの既定値に書いていないか | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
@@ -139,6 +167,8 @@ Kotlin は、同じまとまりを次の形で書く。
 
 - テストのファイルは、大きさだけを見る。
 - リポジトリの `.claude/` の下は、道具のためのコードなので見ない。
+- 画面の形は、`DesignSystem`（Kotlin は `designsystem`）のフォルダの下を見ない。
+- 画面の形は、`@State` の行と関数の中の行を 1 行ずつ見る。型は、書かれた型か初めの値の頭で読む。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
 - 型の保存プロパティ・init の引数の並び・`self.x = x` だけの行は、データの宣言なので数えない。
 - 注釈の行は、複数行の引数も含め、データの宣言として数えない。

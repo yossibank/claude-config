@@ -33,6 +33,7 @@ from hooks.code_design_check.state import (  # noqa: E402
     check_swift_output,
     check_swift_state,
 )
+from hooks.code_design_check.view import check_kotlin_view, check_swift_view  # noqa: E402
 from hook_io import run_gate, run_hook, target_paths  # noqa: E402
 
 HEADER = "設計の決まり（rules/code-design.md）に合わない箇所がある。直す。"
@@ -68,6 +69,7 @@ def swift_checker(paths):
                 *check_swift_clock(code),
                 *check_swift_input(code),
                 *check_swift_access(code),
+                *check_swift_view(path, code),
                 *check_now(code, SWIFT_NOW),
                 *clones.check(path),
             ]
@@ -89,6 +91,7 @@ def kotlin_checker(paths):
                 *check_kotlin_clock(code),
                 *check_kotlin_input(code),
                 *check_kotlin_access(code),
+                *check_kotlin_view(path, code),
                 *check_now(code, KOTLIN_NOW),
                 *clones.check(path),
             ]

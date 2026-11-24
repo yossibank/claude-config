@@ -17,6 +17,7 @@ Composable の関数は、次の決まりで書く。
 
 - 画面の部品は、同じファイルの `private` な Composable に分ける。公開する Composable の後に置く。
 - 状態の変え方と保存などの操作は、画面のモデルに置く。モデルは `ViewModel` か状態のクラスである。
+- Composable が持てる物は、`code-design.md` の「画面の形」に従う。関数の中で `mutableStateOf` を作らない。
 - 1 つの要素だけで 1 か所でしか使わない部品は、関数に分けずにその場に書く。ボタン 1 つ、`Switch` 1 つなどである。
 - 公開する Composable は、省ける引数の先頭に `modifier` を置く。初めの値は `Modifier` にする。
 - 受けた `modifier` は、いちばん外の要素に渡す。
