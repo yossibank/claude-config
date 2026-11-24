@@ -322,6 +322,7 @@ design_case 0 "Kotlin でまとまりの型でない state の val は、まと�
 design_case 2 "Kotlin の State の var が 13 個なら止める" "$kotlin" "$(grouped 13 0)" "Case の State の mutableStateOf の var は 12 個まで"
 design_case 2 "Kotlin の State の Boolean が 4 個なら止める" "$kotlin" "$(grouped 0 4)" "Case の State の Boolean は 3 個まで"
 design_case 2 "Kotlin の Output で suspend を使えば止める" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        suspend fun load() {}\n    }\n}' "Case.kt:5: Output は input と state から値を出すだけにする"
+design_case 0 "Kotlin の 1 行の Output の後ろのモデルの関数は見ない" "$kotlin" $'class Case {\n    val output = Output(state)\n\n    class State\n    class Output(private val state: State)\n\n    suspend fun load() {\n        dependencies.database.load()\n    }\n}'
 design_case 0 "Kotlin の Output の外の suspend は見ない" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val total: Int\n            get() = 1\n    }\n\n    suspend fun load() {}\n}'
 design_case 2 "Kotlin の Output の拡張で suspend を使えば止める" "$work/CaseOutputText.kt" $'suspend fun Case.Output.load() {\n    run()\n}' "CaseOutputText.kt:1: Output は input と state から値を出すだけにする"
 design_case 2 "Kotlin の Output の拡張で dependencies を使えば止める" "$work/CaseOutputText.kt" $'val Case.Output.title: String\n    get() = dependencies.name' "CaseOutputText.kt:2: Output は input と state から値を出すだけにする"
@@ -330,7 +331,7 @@ rm -f "$work/CaseOutputText.kt"
 design_case 2 "Kotlin で dependencies を持つモデルが Instant.now() を作れば止める" "$kotlin" $'class Case {\n    suspend fun save() {\n        dependencies.database.save(at = Instant.now())\n    }\n}' "Case.kt:3: dependencies を持つモデルで、今の時刻を作らない"
 design_case 0 "Kotlin で dependencies の時計から受け取れば通る" "$kotlin" $'class Case {\n    suspend fun save() {\n        dependencies.database.save(at = dependencies.clock.now)\n    }\n}'
 design_case 2 "Kotlin の画面から input に書けば止める" "$kotlin" $'class Case {\n    fun choose(model: Other) {\n        model.input.count = 1\n    }\n}' "Case.kt:3: モデルの input に、モデルの外から書かない"
-design_case 0 "Kotlin のモデルが自分の input に書くのは通る" "$kotlin" $'class Case {\n    fun load() {\n        input.count = 1\n        this.input.count = 2\n    }\n}'
+design_case 0 "Kotlin のモデルが自分の input に書くのは通る" "$kotlin" $'class Case {\n    fun load() {\n        input.count = 1\n        this.input.count = 2\n        this@Case.input.count = 3\n    }\n}'
 
 # --- 基準線 ---
 base="$work/base"
