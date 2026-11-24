@@ -110,7 +110,7 @@ Swift の画面のモデルは、次のまとまりの `let` だけを持つ。�
 | モデルの形 | 入れ子の `State` の `var` と Bool の数。`Input` は数えない | 12 個・3 個 |
 | モデルの形 | `Output` のクラスと拡張の中に、`await`・`async`・`AppDatabase`・`dependencies` が無いか | |
 | モデルの形 | `dependencies.` を使うファイルに、`Date()`・`Date.now` が無いか | |
-| モデルの形 | `self` 以外の `.input.` への代入と、`input` を包む `Bindable` が無いか | |
+| モデルの形 | `self` 以外から `.input.` に書いていないか。代入・添字・`append`・`insert`・`remove`・`toggle` と、`input` を包む `Bindable` を見る | |
 | 今の時刻と今日 | `Date()`・`Instant.now()` などを、引数やプロパティの既定値に書いていないか | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |

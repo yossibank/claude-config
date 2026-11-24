@@ -19,7 +19,11 @@ SWIFT_OUTPUT = re.compile(
 SWIFT_IMPURE = re.compile(r"\b(?:await|async|AppDatabase|dependencies)\b")
 SWIFT_DEPENDENCIES = re.compile(r"\bdependencies\.")
 SWIFT_MADE_NOW = re.compile(r"\bDate\(\)|\bDate\.now\b")
-SWIFT_INPUT_WRITE = re.compile(r"(?<!\bself)\.input\.[\w.]+\s*[-+*/]?=(?!=)|\bBindable\([\w.]*\.input\)|\$\w+\.input\.")
+SWIFT_INPUT_WRITE = re.compile(
+    r"(?<!\bself)(?<!\bself\?)(?<!\bself!)\.input\.\w+(?:\.\w+|\[[^\]]*\])*"
+    r"\s*(?:[-+*/]?=(?!=)|\.(?:append|insert|remove\w*|toggle)\()"
+    r"|\bBindable\([\w.]*\.input\)|\$\w+\.input\."
+)
 PARTS = {"State", "Input"}
 SWIFT_OBSERVER = re.compile(r"^\s*(?:didSet|willSet)\b")
 SWIFT_NOW = re.compile(r":\s*Date\s*=\s*(?:Date\(\)|Date\.now|\.now)(?=\s*[,)]|\s*$)")
