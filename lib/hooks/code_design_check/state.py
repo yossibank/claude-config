@@ -24,7 +24,7 @@ SWIFT_INPUT_WRITE = re.compile(
     r"\s*(?:[-+*/]?=(?!=)|\.(?:append|insert|remove\w*|toggle)\()"
     r"|\bBindable\([\w.]*\.input\)|\$\w+\.input\."
 )
-SWIFT_DEPENDENCIES_READ = re.compile(r"(?<!\bself)(?<!\bself\?)(?<!\bself!)\.dependencies\b")
+SWIFT_DEPENDENCIES_READ = re.compile(r"(?<!\\)(?<!\bSelf)(?<!\bself)(?<!\bself\?)(?<!\bself!)\.dependencies\b")
 OUTPUT_PASSAGE = re.compile(r"\.output\.(?:state|input)\b")
 PARTS = {"State", "Input"}
 SWIFT_OBSERVER = re.compile(r"^\s*(?:didSet|willSet)\b")

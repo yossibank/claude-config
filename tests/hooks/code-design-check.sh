@@ -309,6 +309,7 @@ rm -f "$features/CaseView.swift"
 
 design_case 2 "画面からモデルの dependencies を読めば止める" "$features/CaseView.swift" $'struct CaseView {\n    var body: some View {\n        Child(database: model.dependencies.database)\n    }\n}' "CaseView.swift:3: モデルの dependencies を、モデルの外から読まない"
 design_case 0 "モデルが自分の dependencies を読むのは通る" "$features/CaseView.swift" $'struct CaseView {\n    func load() async {\n        await dependencies.database.load()\n        await self.dependencies.database.load()\n        await self?.dependencies.database.load()\n    }\n}'
+design_case 0 "Environment のキーパスの dependencies は通る" "$features/CaseView.swift" $'struct CaseView {\n    @Environment(\\.dependencies) private var dependencies\n}'
 design_case 2 "output 越しに state を読めば止める" "$features/CaseView.swift" $'struct CaseView {\n    var title: String {\n        model.output.state.title\n    }\n}' "CaseView.swift:3: output 越しに state と input を読まない"
 rm -f "$features/CaseView.swift"
 design_case 2 "Kotlin で output 越しに input を読めば止める" "$kotlin" $'class Case {\n    fun title(model: Other): String = model.output.input.title\n}' "Case.kt:2: output 越しに state と input を読まない"
