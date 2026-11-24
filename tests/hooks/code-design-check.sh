@@ -322,6 +322,17 @@ match "渡していないファイルの基準線は、残っていても見な�
 printf '%s\n' "$(model 13 0 0)" >"$base/Sources/Case.swift"
 hook_case code-design-check 0 "編集の後も、基準線にある外れは知らせない" "$base/Sources/Case.swift" "$(model 13 0 0)"
 bash "$hooks" code-design-check --write-baseline "$base/Sources/Fine.swift" </dev/null >/dev/null 2>&1
+check "--write-baseline は、渡していないファイルの行を残す" grep -qF "Sources/Case.swift: " "$base/.claude/code-design-baseline.txt"
+printf 'struct Twice {\n    func a(at: Date = .now) {}\n}\n' >"$base/Sources/Twice.swift"
+bash "$hooks" code-design-check --write-baseline "$base/Sources/Twice.swift" </dev/null >/dev/null 2>&1
+printf 'struct Twice {\n    func a(at: Date = .now) {}\n    func b(at: Date = .now) {}\n}\n' >"$base/Sources/Twice.swift"
+out=$(bash "$hooks" code-design-check "$base/Sources/Twice.swift" </dev/null 2>&1)
+match "同じ文の外れが基準線より増えたら NG にする" "$?:$(grep -c '^NG ' <<<"$out")" "2:1"
+rm "$base/Sources/Twice.swift"
+out=$(bash "$hooks" code-design-check "$base/Sources/Case.swift" </dev/null 2>&1)
+match "消したファイルの行が基準線に残っていたら、verify で NG にする" "$?:$(grep -c '行を消す: Sources/Twice.swift' <<<"$out")" "2:1"
+printf 'struct Case {}\n' >"$base/Sources/Case.swift"
+bash "$hooks" code-design-check --write-baseline "$base/Sources/Case.swift" "$base/Sources/Fine.swift" </dev/null >/dev/null 2>&1
 check "外れが無くなったら、--write-baseline は基準線のファイルを消す" test ! -e "$base/.claude/code-design-baseline.txt"
 
 finish

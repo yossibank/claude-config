@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import Counter
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "lib"))
 
@@ -98,38 +99,45 @@ def by_root(findings):
     for path, line, message in findings:
         root = root_of(os.path.dirname(os.path.realpath(path)))
         if root:
-            roots.setdefault(root, set()).add(baseline.key(root, os.path.realpath(path), message))
+            roots.setdefault(root, Counter())[baseline.key(root, os.path.realpath(path), message)] += 1
     return roots
 
 
+def kept_entry(root, entry, checked):
+    target = os.path.realpath(baseline.path_of(root, entry))
+    return target not in checked and os.path.exists(target)
+
+
 def write_baseline(paths, findings):
-    roots = {root: set() for root in filter(None, (root_of(os.path.dirname(os.path.realpath(path))) for path in paths))}
-    roots.update(by_root(findings))
-    for root, keys in roots.items():
+    checked = {os.path.realpath(path) for path in paths}
+    found = by_root(findings)
+    for root in filter(None, {root_of(os.path.dirname(path)) for path in checked}):
+        kept = Counter({entry: count for entry, count in baseline.read(root).items() if kept_entry(root, entry, checked)})
+        keys = kept + found.get(root, Counter())
         baseline.write(root, keys)
-        print(f"OK 基準線を書いた: {os.path.join(root, baseline.NAME)}（{len(keys)} 件）")
+        print(f"OK 基準線を書いた: {os.path.join(root, baseline.NAME)}（{sum(keys.values())} 件）")
 
 
 def unknown_of(paths, findings, with_stale):
     roots = {root_of(os.path.dirname(os.path.realpath(path))) for path in paths}
-    known = {root: baseline.read(root) for root in roots if root}
+    left = {root: baseline.read(root) for root in roots if root}
     report = []
-    seen = set()
     for path, line, message in findings:
         real = os.path.realpath(path)
         root = root_of(os.path.dirname(real))
-        entries = known.get(root, set())
+        entries = left.get(root, Counter())
         entry = baseline.key(root, real, message) if root else ""
-        if entry in entries:
-            seen.add((root, entry))
+        if entries[entry] > 0:
+            entries[entry] -= 1
         else:
             report.append(f"{path}:{line}: {message}")
     if not with_stale:
         return report
     checked = {os.path.realpath(path) for path in paths}
-    for root, entries in known.items():
-        for entry in sorted(entries):
-            if (root, entry) not in seen and os.path.realpath(baseline.path_of(root, entry)) in checked:
+    for root, entries in left.items():
+        for entry in sorted(entry for entry, count in entries.items() if count > 0):
+            target = os.path.realpath(baseline.path_of(root, entry))
+            if target in checked or not os.path.exists(target):
                 report.append(f"{os.path.join(root, baseline.NAME)}: 基準線にある外れが、もう無い。行を消す: {entry}")
     return report
 

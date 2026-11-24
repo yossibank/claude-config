@@ -1,5 +1,6 @@
 import os
 import re
+from collections import Counter
 
 NAME = os.path.join(".claude", "code-design-baseline.txt")
 LINE_REF = re.compile(r":\d+")
@@ -12,9 +13,9 @@ def key(root, path, message):
 def read(root):
     try:
         with open(os.path.join(root, NAME), encoding="utf-8") as file:
-            return {line.strip() for line in file if line.strip()}
+            return Counter(line.strip() for line in file if line.strip())
     except OSError:
-        return set()
+        return Counter()
 
 
 def write(root, keys):
@@ -25,7 +26,7 @@ def write(root, keys):
         return
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as file:
-        file.write("\n".join(sorted(keys)) + "\n")
+        file.write("\n".join(sorted(keys.elements())) + "\n")
 
 
 def path_of(root, entry):
