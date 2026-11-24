@@ -79,7 +79,7 @@ Kotlin は、同じまとまりを次の形で書く。
 | --- | --- |
 | 意味のある状態 | モデルの `state` に置く。出しているシート・確認中か・編集中か・選んでいる物・入力中の文字である |
 | `Layout` の中 | 寸法・位置・スクロールの型だけを置く。Bool・文字列・整数・ID・ドメインの型は置かない |
-| Swift の寸法の型 | `CGFloat`・`CGSize`・`CGRect`・`CGPoint`・`CGVector`・`EdgeInsets`・`ScrollPosition`・`ScrollGeometry` |
+| Swift の寸法の型 | `CGFloat`・`CGSize`・`CGRect`・`CGPoint`・`CGVector`・`EdgeInsets`・`ScrollPosition`・`ScrollGeometry`。動きの進みは、`Double` と `Angle` で持つ |
 | Kotlin の寸法の型 | `Dp`・`DpSize`・`DpOffset`・`Float`・`Offset`・`IntOffset`・`Size`・`IntSize`・`Rect`・`IntRect`・`PaddingValues` |
 | 型の包み | 寸法の型の Optional・配列・集合と、値が寸法の型の辞書は置ける。辞書の鍵は問わない |
 | Kotlin の状態 | Composable の関数で、`mutableStateOf` の仲間を直接作らない。作るのは、モデルと状態のクラスと `Layout` の中だけにする |

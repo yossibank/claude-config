@@ -4,7 +4,7 @@ import re
 from hooks.code_design_check.state import KOTLIN_TOP, block_end, next_code
 
 PART_LIBRARY = "designsystem"
-SWIFT_METRICS = {"CGFloat", "CGSize", "CGRect", "CGPoint", "CGVector", "EdgeInsets", "ScrollPosition", "ScrollGeometry"}
+SWIFT_METRICS = {"CGFloat", "CGSize", "CGRect", "CGPoint", "CGVector", "EdgeInsets", "ScrollPosition", "ScrollGeometry", "Double", "Angle"}
 KOTLIN_METRICS = {"Dp", "DpSize", "DpOffset", "Float", "Offset", "IntOffset", "Size", "IntSize", "Rect", "IntRect", "PaddingValues"}
 ATTRIBUTES = r"(?:@\w+(?:\([^)]*\))?\s+)*"
 SWIFT_ACCESS = r"(?:(?:public|package|internal|fileprivate|private)(?:\(set\))?\s+)*"
