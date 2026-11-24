@@ -19,6 +19,8 @@ from hooks.code_design_check.files import (  # noqa: E402
     is_tooling,
     root_of,
 )
+from hooks.code_design_check.modules import is_open_to  # noqa: E402
+from hooks.code_design_check.shape import check_kotlin_shape, check_swift_shape  # noqa: E402
 from hooks.code_design_check.state import (  # noqa: E402
     KOTLIN_NOW,
     SWIFT_NOW,
@@ -66,10 +68,11 @@ def swift_checker(paths):
                 *check_folder(path, ".swift", folders),
                 *check_parts(path, code, clones.root_of(os.path.realpath(path))),
                 *check_swift_state(code),
+                *check_swift_shape(code),
                 *check_swift_output(code),
                 *check_swift_clock(code),
-                *check_swift_input(code),
-                *check_swift_dependencies(code),
+                *(check_swift_input(code) if is_open_to(path, "input") else ()),
+                *(check_swift_dependencies(code) if is_open_to(path, "dependencies") else ()),
                 *check_passage(code),
                 *check_swift_view(path, code),
                 *check_now(code, SWIFT_NOW),
@@ -90,9 +93,10 @@ def kotlin_checker(paths):
             findings += [
                 *check_kotlin_types(path, code),
                 *check_kotlin_state(code),
+                *check_kotlin_shape(code),
                 *check_kotlin_output(code),
                 *check_kotlin_clock(code),
-                *check_kotlin_input(code),
+                *(check_kotlin_input(code) if is_open_to(path, "input") else ()),
                 *check_passage(code),
                 *check_kotlin_view(path, code),
                 *check_now(code, KOTLIN_NOW),

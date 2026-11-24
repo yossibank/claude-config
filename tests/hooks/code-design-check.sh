@@ -396,16 +396,60 @@ rm -f "$compose" "$features/CaseFlow.kt"
 design_case 2 "まとまりを全部 var で持てば止める" "$swift" $'@Observable\nfinal class Case {\n    var state: State\n    var input = Input()\n\n    private let dependencies: Dependencies\n}' "Case.swift:3: Case のまとまりは let で持つ: state"
 design_case 2 "let のまとまりに var のまとまりが混じれば止める" "$swift" $'@Observable\nfinal class Case {\n    let state: State\n    public var output: Case.Output\n}' "Case.swift:4: Case のまとまりは let で持つ: output"
 design_case 0 "state という名前の var が 1 つだけのクラスは、まとまりのモデルと見ない" "$swift" $'@Observable\nfinal class Case {\n    var state: State = .idle\n    var count = 0\n}'
+design_case 2 "@Observable のクラスが DB を直接持てば止める" "$swift" $'@Observable\nfinal class Case {\n    private(set) var isOn = false\n\n    private let database: AppDatabase\n}' "Case.swift:5: Case は DB と時計を直接持たない: database"
+design_case 2 "@Observable のクラスが時計を直接持てば止める" "$swift" $'@Observable\nfinal class Case {\n    let state: State\n    let clock = ScreenClock.system\n}' "Case.swift:4: Case は DB と時計を直接持たない: clock"
+design_case 0 "@Observable でない型と、DB を返す関数の値は見ない" "$swift" $'struct Case {\n    let database: AppDatabase\n}\n\n@Observable\nfinal class CaseFlag {\n    private let open: () -> AppDatabase\n}'
+design_case 2 "Input の public な var に (set) が無ければ止める" "$features/Case+Input.swift" $'extension Case {\n    @Observable\n    public final class Input {\n        public var count = 0\n    }\n}' "Case+Input.swift:4: Input の public な var は、public internal(set) にする: count"
+design_case 0 "Input の internal(set) の var・public でない var・計算プロパティは通る" "$features/Case+Input.swift" $'extension Case {\n    @Observable\n    public final class Input {\n        public internal(set) var count = 0\n        var items: [Int] = []\n\n        public var total: Int {\n            count\n        }\n    }\n}'
+design_case 2 "共通の Input の型の public な var も止める" "$features/BoardInput.swift" $'@Observable\npublic final class BoardInput<Value> {\n    public var value: Value?\n}' "BoardInput.swift:3: BoardInput の public な var は、public internal(set) にする: value"
+design_case 2 "Dependencies の中身が public なら止める" "$swift" $'final class Case {}\n\nextension Case {\n    public struct Dependencies {\n        public let database: AppDatabase\n        let clock: ScreenClock\n    }\n}' "Case.swift:5: Dependencies の中身を public にしない: database"
+design_case 0 "Dependencies の中身が public でなければ通る" "$swift" $'final class Case {}\n\npublic struct CaseDependencies {\n    let database: AppDatabase\n}'
 design_case 2 "dependencies の無いファイルの Output の Date() も止める" "$features/Case+Output.swift" $'extension Case.Output {\n    var isLate: Bool {\n        state.due < Date()\n    }\n}' "Case+Output.swift:3: Output で今の時刻を作らない"
 rm -f "$features/Case+Input.swift" "$features/BoardInput.swift" "$features/Case+Output.swift"
 
 design_case 2 "Kotlin のまとまりを var で持てば止める" "$kotlin" $'class Case {\n    var state = State()\n\n    class State\n}' "Case.kt:2: Case のまとまりは val で持つ: state"
+design_case 2 "Kotlin の Input の var に internal set が無ければ止める" "$kotlin" $'class Case {\n    val input = Input()\n\n    class Input {\n        var count: Int by mutableIntStateOf(0)\n    }\n}' "Case.kt:5: Case の Input の var は、internal set にする: count"
+design_case 0 "Kotlin の Input の private set と internal の var は通る" "$kotlin" $'class Case {\n    val input = Input()\n\n    class Input(\n        val id: String,\n    ) {\n        var count: Int by mutableIntStateOf(0)\n            private set\n\n        internal var name: String by mutableStateOf("")\n    }\n}'
+design_case 2 "Kotlin の Input に書き換えられる集まりを置けば止める" "$kotlin" $'class Case {\n    val input = Input()\n\n    class Input {\n        val items = mutableStateListOf<Int>()\n    }\n}' "Case.kt:5: Case の Input に、書き換えられる集まりを置かない"
+design_case 2 "Kotlin の dependencies が private でなければ止める" "$kotlin" $'class Case(database: AppDatabase) {\n    val state = State()\n\n    internal val dependencies = Dependencies(database)\n\n    class State\n}' "Case.kt:4: Case の dependencies は、private val にする"
+design_case 2 "Kotlin の状態のクラスが DB を直接持てば止める" "$kotlin" $'class Case(\n    private val database: AppDatabase,\n) {\n    var isOn: Boolean by mutableStateOf(false)\n        private set\n}' "Case.kt:2: Case は DB と時計を直接持たない: database"
+design_case 0 "Kotlin の状態を持たないクラスが DB を持つのは見ない" "$kotlin" $'class Case(\n    private val database: AppDatabase,\n) {\n    suspend fun load() = database.load()\n}'
 with_arguments=$(grouped 13 0)
 design_case 2 "Kotlin で引数のある State の var も数える" "$kotlin" "${with_arguments/$'    class State {'/$'    class State(\n        today: Int,\n    ) {'}""Case の State の mutableStateOf の var は 12 個まで"
 design_case 2 "Kotlin で引数のある Output の中も見る" "$kotlin" $'class Case {\n    val output = Output(state)\n\n    class Output(\n        private val state: State,\n    ) {\n        suspend fun load() {}\n    }\n}' "Case.kt:7: Output は input と state から値を出すだけにする"
 design_case 2 "Kotlin の Output で Instant.now() を作れば止める" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val isLate: Boolean\n            get() = due < Instant.now()\n    }\n}' "Case.kt:6: Output で今の時刻を作らない"
 design_case 2 "Kotlin で dependencies を持つモデルが LocalDate.now() を作れば止める" "$kotlin" $'class Case {\n    suspend fun save() {\n        dependencies.database.save(on = LocalDate.now())\n    }\n}' "Case.kt:3: dependencies を持つモデルで、今の時刻を作らない"
 design_case 2 "Kotlin の画面から input の一覧に足せば止める" "$kotlin" $'class Case {\n    fun choose(model: Other) {\n        model.input.items.add(1)\n    }\n}' "Case.kt:3: モデルの input に、モデルの外から書かない"
+
+# --- モデルを別のモジュールに置いたアプリ ---
+sources="$app/ios/Packages/CaseApp/Sources"
+mkdir -p "$sources/FeatureModels" "$sources/Features"
+printf '@Observable\npublic final class CaseModel {\n    public let input: Input\n\n    let dependencies: Dependencies\n}\n' >"$sources/FeatureModels/CaseModel.swift"
+writes=$'struct CaseView {\n    func choose() {\n        model.input.count = 1\n    }\n}'
+reads=$'struct CaseView {\n    var body: some View {\n        Child(database: model.dependencies.database)\n    }\n}'
+design_case 0 "モデルが別のモジュールにある画面は、input への書き込みを型に任せる" "$sources/Features/CaseView.swift" "$writes"
+design_case 0 "モデルが別のモジュールにある画面は、dependencies の読み出しを型に任せる" "$sources/Features/CaseView.swift" "$reads"
+design_case 2 "モデルのモジュールの中では、ほかのモデルの input への書き込みを止める" "$sources/FeatureModels/OtherModel.swift" $'final class OtherModel {\n    func choose() {\n        model.input.count = 1\n    }\n}' "OtherModel.swift:3: モデルの input に、モデルの外から書かない"
+printf '@Observable\nfinal class SideModel {\n    let state: State\n\n    func load() {\n        let input = 1\n    }\n}\n' >"$sources/Features/SideModel.swift"
+design_case 0 "画面のモジュールの、input を持たないモデルと関数の中の値は数えない" "$sources/Features/CaseView.swift" "$writes"
+printf '@Observable\nfinal class SideModel {\n    let input: Input\n}\n' >"$sources/Features/SideModel.swift"
+design_case 2 "画面と同じモジュールに input を持つモデルがあれば、書き込みを止める" "$sources/Features/CaseView.swift" "$writes" "CaseView.swift:3: モデルの input に、モデルの外から書かない"
+design_case 0 "input を持つモデルだけでは、dependencies の読み出しを止めない" "$sources/Features/CaseView.swift" "$reads"
+printf '@Observable\nfinal class SideModel {\n    let dependencies: Dependencies\n}\n' >"$sources/Features/SideModel.swift"
+design_case 2 "画面と同じモジュールに dependencies を持つモデルがあれば、読み出しを止める" "$sources/Features/CaseView.swift" "$reads" "CaseView.swift:3: モデルの dependencies を、モデルの外から読まない"
+rm -rf "$app/ios/Packages"
+
+gradle="$app/android"
+mkdir -p "$gradle/app/src/main/kotlin/view" "$gradle/featuremodels/src/main/kotlin/model" "$gradle/app/build/generated"
+touch "$gradle/app/build.gradle.kts" "$gradle/featuremodels/build.gradle.kts"
+printf 'class CaseModel {\n    val input = Input()\n\n    class Input\n}\n' >"$gradle/featuremodels/src/main/kotlin/model/CaseModel.kt"
+cp "$gradle/featuremodels/src/main/kotlin/model/CaseModel.kt" "$gradle/app/build/generated/CaseModel.kt"
+writes=$'fun choose(model: CaseModel) {\n    model.input.count = 1\n}'
+design_case 0 "Kotlin でモデルが別のモジュールにある画面は、input への代入を型に任せる" "$gradle/app/src/main/kotlin/view/CaseView.kt" "$writes"
+design_case 2 "Kotlin のモデルのモジュールの中では、ほかのモデルの input への代入を止める" "$gradle/featuremodels/src/main/kotlin/model/OtherModel.kt" "$writes" "OtherModel.kt:2: モデルの input に、モデルの外から書かない"
+cp "$gradle/featuremodels/src/main/kotlin/model/CaseModel.kt" "$gradle/app/src/main/kotlin/view/SideModel.kt"
+design_case 2 "Kotlin で画面と同じモジュールにモデルがあれば、input への代入を止める" "$gradle/app/src/main/kotlin/view/CaseView.kt" "$writes" "CaseView.kt:2: モデルの input に、モデルの外から書かない"
+rm -rf "$gradle/app" "$gradle/featuremodels"
 
 # --- 基準線 ---
 base="$work/base"
