@@ -340,6 +340,56 @@ design_case 0 "Kotlin で dependencies の時計から受け取れば通る" "$k
 design_case 2 "Kotlin の画面から input に書けば止める" "$kotlin" $'class Case {\n    fun choose(model: Other) {\n        model.input.count = 1\n    }\n}' "Case.kt:3: モデルの input に、モデルの外から書かない"
 design_case 0 "Kotlin のモデルが自分の input に書くのは通る" "$kotlin" $'class Case {\n    fun load() {\n        input.count = 1\n        this.input.count = 2\n        this@Case.input.count = 3\n    }\n}'
 
+# --- 画面の形 ---
+view="$features/CaseView.swift"
+# <View の中の行> を持つ Swift の View
+screen() {
+    printf 'struct CaseView: View {\n%s\n}' "$1"
+}
+design_case 0 "モデルと layout と SwiftUI の持ち物だけの View は通る" "$view" "$(screen $'    @State private var model: CaseModel\n    @State private var layout = Layout()\n    @FocusState private var focus: Field?\n    @Namespace private var space\n    @GestureState private var drag: CGFloat = 0\n    @Environment(\\.dismiss) private var dismiss\n    @Bindable var parent: OtherModel\n    let child: ChildModel\n\n    struct Layout {\n        var width: CGFloat = 0\n        var frame: CGRect?\n        var heights: [Int: CGFloat] = [:]\n        var frames: [Entry.ID: CGRect] = [:]\n        var offsets: [CGPoint] = []\n        var size = CGSize.zero\n        var insets = EdgeInsets()\n        var position = ScrollPosition()\n        var glow: Double = 0\n        var turn = Angle.zero\n        static let limit = 3\n\n        var isWide: Bool {\n            width > 600\n        }\n    }')"
+design_case 0 "初めの値で作るモデル・子のモデル・入れ子のモデル・型引数のあるモデルは通る" "$view" "$(screen $'    @State private var appIcon = AppIconListModel()\n    @State var home: HomeModel?\n    @State var board: Spec.Model\n    @State var weekStart: MenuValueModel<Weekday>\n    @State private var layout: CaseView.Layout')"
+design_case 2 "View の @State の Bool は止める" "$view" "$(screen $'    @State private var isEditing = false')" "CaseView.swift:2: View の @State に置けるのは、モデルと layout だけにする: isEditing。意味のある状態は、モデルの state に移す"
+design_case 2 "View の @State の、出しているシートと選んでいる物は止める" "$view" "$(screen $'    @State var sheet: Sheet?\n    @State private var selection: Entry.ID?')" "CaseView.swift:3: View の @State に置けるのは、モデルと layout だけにする: selection。意味のある状態"
+design_case 2 "View の @State の、入力中の文字は止める" "$view" "$(screen $'    @State private var text = ""')" "モデルと layout だけにする: text。意味のある状態は、モデルの state に移す"
+design_case 0 "子のモデルの配列と Optional は通る" "$view" "$(screen $'    @State private var items: [ItemModel] = []\n    @State private var next: ItemModel? = nil')"
+design_case 2 "View の @State の寸法は、Layout にまとめるよう止める" "$view" "$(screen $'    @State private var width: CGFloat = 0')" "CaseView.swift:2: View の @State に置けるのは、モデルと layout だけにする: width。見た目の値は、入れ子の struct Layout にまとめる"
+design_case 2 "名前が Model で終わらない状態の型は止める" "$view" "$(screen $'    @State private var flow = EntryFlow()')" "モデルと layout だけにする: flow。意味のある状態"
+design_case 2 "ViewModifier の @State も止める" "$features/CaseLift.swift" $'struct CaseLift: ViewModifier {\n    @State private var isLifted = false\n}' "CaseLift.swift:2: View の @State に置けるのは、モデルと layout だけにする: isLifted"
+design_case 0 "プレビューの @Previewable の @State は見ない" "$view" "$(screen $'    let title: String')"$'\n\n#Preview {\n    @Previewable @State var text = "a"\n    @Previewable @State var isOn = false\n}'
+design_case 0 "コメントと文字列の中の @State は見ない" "$view" "$(screen $'    // @State private var isOn = false\n    let note = "@State var isOn = false"')"
+design_case 2 "Layout の Bool は止める" "$view" "$(screen $'    @State private var layout = Layout()\n\n    struct Layout {\n        var width: CGFloat = 0\n        var isOpen: Bool = false\n    }')" "CaseView.swift:6: Layout に置けるのは、寸法・位置・スクロールの型だけにする: isOpen。意味のある状態は、モデルの state に移す"
+design_case 2 "Layout の Int・String・ID・ドメインの型は止める" "$view" "$(screen $'    struct Layout {\n        var page: Int?\n        var text: String\n        var open: Entry.ID?\n        var days: [LocalDate]\n    }')" "CaseView.swift:6: Layout に置けるのは、寸法・位置・スクロールの型だけにする: days"
+design_case 2 "Layout の let も見る" "$view" "$(screen $'    struct Layout {\n        let isOpen: Bool\n    }')" "CaseView.swift:3: Layout に置けるのは、寸法・位置・スクロールの型だけにする: isOpen"
+design_case 2 "Layout の辞書は、値の型で見る" "$view" "$(screen $'    struct Layout {\n        var flags: [CGFloat: Bool] = [:]\n    }')" "Layout に置けるのは、寸法・位置・スクロールの型だけにする: flags"
+design_case 2 "Layout の型を読み取れない値は、型を書くよう止める" "$view" "$(screen $'    struct Layout {\n        var width = 0\n    }')" "CaseView.swift:3: Layout の値には、型を書く: width"
+design_case 2 "拡張に置いた Layout の中も見る" "$features/CaseView+Layout.swift" $'extension CaseView {\n    struct Layout {\n        var isOpen = false\n    }\n}' "CaseView+Layout.swift:3: Layout の値には、型を書く: isOpen"
+design_case 0 "DesignSystem の部品の @State は見ない" "$app/ios/DesignSystem/Components/CaseSwitch.swift" $'struct CaseSwitch: View {\n    @State private var isPressed = false\n    @State private var width: CGFloat = 0\n}'
+design_case 0 "テストの View の @State は見ない" "$app/ios/FeaturesTests/CaseViewTests.swift" $'struct CaseViewTests: View {\n    @State private var isOn = false\n}'
+rm -f "$view" "$features/CaseLift.swift" "$features/CaseView+Layout.swift"
+
+compose="$features/CaseView.kt"
+# <関数の中の行> を持つ Kotlin の Composable
+composable() {
+    printf '@Composable\nfun CaseView(model: CaseModel) {\n%s\n}' "$1"
+}
+design_case 0 "モデルと Layout と Compose の持ち物だけの Composable は通る" "$compose" "$(composable $'    val child = remember { ChildModel(model.makeChild()) }\n    val layout = remember { Layout() }\n    val scroll = rememberScrollState()\n    val list = rememberLazyListState()\n    val focus = remember { FocusRequester() }\n    val total by remember { derivedStateOf { model.output.total } }')"$'\n\nprivate class Layout {\n    var width: Dp by mutableStateOf(0.dp)\n    var dragY by mutableFloatStateOf(0f)\n    var origin by mutableStateOf(Offset.Zero)\n    var size by mutableStateOf(IntSize.Zero)\n    var frame by mutableStateOf<Rect?>(null)\n    var heights: Map<Int, Float> by mutableStateOf(emptyMap())\n    var scale = 1f\n\n    val isWide: Boolean\n        get() = width > 600.dp\n}'
+design_case 2 "Composable で mutableStateOf を作れば止める" "$compose" "$(composable $'    var isEditing by remember { mutableStateOf(false) }')" "CaseView.kt:3: Composable の関数で、状態を直接作らない（mutableStateOf: isEditing）。意味のある状態は、モデルの State に移す"
+design_case 2 "Composable で rememberSaveable の中に作っても止める" "$compose" "$(composable $'    var sheet by rememberSaveable(stateSaver = Sheet.Saver) {\n        mutableStateOf<Sheet?>(null)\n    }')" "CaseView.kt:4: Composable の関数で、状態を直接作らない（mutableStateOf）。意味のある状態は、モデルの State に移す"
+design_case 2 "Composable で mutableIntStateOf を作れば止める" "$compose" "$(composable $'    var round by remember { mutableIntStateOf(0) }')" "状態を直接作らない（mutableIntStateOf: round）。意味のある状態は、モデルの State に移す"
+design_case 2 "Composable で作る寸法は、Layout にまとめるよう止める" "$compose" "$(composable $'    var dragY by remember { mutableFloatStateOf(0f) }\n    var size by remember { mutableStateOf(IntSize.Zero) }')" "CaseView.kt:3: Composable の関数で、状態を直接作らない（mutableFloatStateOf: dragY）。見た目の値は、class Layout にまとめる"
+design_case 2 "private な Composable の中も見る" "$compose" "$(composable $'    Row {}')"$'\n\n@Composable\nprivate fun Row() {\n    val open = remember { mutableStateOf<Sheet?>(null) }\n}' "CaseView.kt:8: Composable の関数で、状態を直接作らない（mutableStateOf: open）"
+design_case 0 "同じファイルの、モデルでない状態のクラスの mutableStateOf は見ない" "$compose" $'class CaseViewState(context: Context) {\n    var isAllowed: Boolean by mutableStateOf(true)\n}\n\n@Composable\nfun rememberCaseViewState(): CaseViewState {\n    val context = LocalContext.current\n    return remember(context) { CaseViewState(context) }\n}'
+design_case 0 "@Preview の関数の中は見ない" "$compose" "$(composable $'    Text(model.state.title)')"$'\n\n@Preview(showBackground = true)\n@Composable\nprivate fun CaseViewPreview() {\n    var text by remember { mutableStateOf("a") }\n}'
+design_case 0 "Composable の無いファイルの関数は見ない" "$features/CaseFlow.kt" $'fun caseFlow(): MutableState<Boolean> {\n    return mutableStateOf(false)\n}'
+design_case 0 "コメントと文字列の中の mutableStateOf は見ない" "$compose" "$(composable $'    // var a by remember { mutableStateOf(false) }\n    Text("mutableStateOf(false)")')"
+design_case 2 "Kotlin の Layout の Boolean は止める" "$compose" "$(composable $'    val layout = remember { Layout() }')"$'\n\nprivate class Layout {\n    var width by mutableStateOf(0.dp)\n    var isOpen by mutableStateOf(false)\n}' "CaseView.kt:8: Layout の値には、型を書く: isOpen"
+design_case 2 "Kotlin の Layout の Int・String・ID は止める" "$compose" $'private class Layout {\n    var page by mutableIntStateOf(0)\n    var text: String by mutableStateOf("")\n    var open by mutableStateOf<Identifier<Entry>?>(null)\n}' "CaseView.kt:4: Layout に置けるのは、寸法と位置の型だけにする: open。意味のある状態は、モデルの State に移す"
+design_case 2 "修飾語が 2 つある Kotlin の Layout も見る" "$compose" $'private data class Layout {\n    var on = false\n}' "CaseView.kt:2: Layout"
+design_case 2 "Kotlin の Layout の Map は、値の型で見る" "$compose" $'private class Layout {\n    var flags: Map<Float, Boolean> by mutableStateOf(emptyMap())\n}' "CaseView.kt:2: Layout に置けるのは、寸法と位置の型だけにする: flags"
+design_case 0 "designsystem の部品の mutableStateOf は見ない" "$app/android/designsystem/components/CaseSwitch.kt" "$(composable $'    var isPressed by remember { mutableStateOf(false) }' | sed 's/CaseView/CaseSwitch/')"
+design_case 0 "テストの Composable の mutableStateOf は見ない" "$app/android/src/test/CaseViewTest.kt" "$(composable $'    var isOn by remember { mutableStateOf(false) }')"
+rm -f "$compose" "$features/CaseFlow.kt"
+
 # --- 基準線 ---
 base="$work/base"
 mkdir -p "$base/Sources"
