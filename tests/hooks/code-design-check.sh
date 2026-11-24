@@ -298,6 +298,15 @@ design_case 0 "dependencies の時計から受け取れば通す" "$features/Cas
 design_case 0 "dependencies を持たないファイルの Date() は見ない" "$features/Case+Actions.swift" $'extension Case {\n    func save() async {\n        await database.save(at: Date())\n    }\n}'
 rm -f "$features/Case+Actions.swift"
 
+design_case 2 "View から input に書けば止める" "$features/CaseView.swift" $'struct CaseView {\n    func choose() {\n        model.input.count = 1\n    }\n}' "CaseView.swift:3: モデルの input に、モデルの外から書かない"
+design_case 2 "input を Bindable で包めば止める" "$features/CaseView.swift" $'struct CaseView {\n    var count: Binding<Int> {\n        Bindable(model.input).count\n    }\n}' "CaseView.swift:3: モデルの input に、モデルの外から書かない"
+design_case 0 "モデルが自分の input に書くのは通す" "$features/CaseView.swift" $'struct CaseView {\n    func load() {\n        input.count = 1\n        self.input.count = 2\n    }\n}'
+design_case 0 "input を読んで比べるだけなら通す" "$features/CaseView.swift" $'struct CaseView {\n    var isEmpty: Bool {\n        model.input.count == 0\n    }\n}'
+design_case 2 "View から input の添字に書けば止める" "$features/CaseView.swift" $'struct CaseView {\n    func choose() {\n        model.input.items[0] = 1\n    }\n}' "CaseView.swift:3: モデルの input に、モデルの外から書かない"
+design_case 2 "View から input の配列に足せば止める" "$features/CaseView.swift" $'struct CaseView {\n    func choose() {\n        model.input.items.append(1)\n    }\n}' "CaseView.swift:3: モデルの input に、モデルの外から書かない"
+design_case 0 "weak self のクロージャから自分の input に書くのは通す" "$features/CaseView.swift" $'struct CaseView {\n    func load() {\n        task { [weak self] in\n            self?.input.count = 1\n            self?.input.items.append(1)\n        }\n    }\n}'
+rm -f "$features/CaseView.swift"
+
 # --- 基準線 ---
 base="$work/base"
 mkdir -p "$base/Sources"
