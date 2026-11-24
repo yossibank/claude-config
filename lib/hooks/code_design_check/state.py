@@ -39,7 +39,8 @@ KOTLIN_TOP = re.compile(r"^[^\s})]")
 KOTLIN_IMPURE = re.compile(r"\b(?:suspend|AppDatabase|dependencies|launch|collect\w*)\b")
 KOTLIN_DEPENDENCIES = re.compile(r"\bdependencies\.")
 KOTLIN_MADE_NOW = re.compile(r"\bInstant\.now\(\)|\bSystem\.currentTimeMillis\(\)|\bLocalDateTime\.now\(\)")
-KOTLIN_INPUT_WRITE = re.compile(r"(?<!\bthis)\.input\.[\w.]+\s*[-+*/]?=(?!=)")
+KOTLIN_INPUT_WRITE = re.compile(r"\.input\.[\w.]+\s*[-+*/]?=(?!=)")
+KOTLIN_SELF = re.compile(r"\bthis(?:@\w+)?$")
 KOTLIN_CLASS = re.compile(r"^(?:(?:public|internal|private|abstract|open|data|sealed)\s+)*class\s+(\w+)")
 
 
@@ -116,7 +117,8 @@ def kotlin_parts(code):
     for index, line in enumerate(code):
         found = KOTLIN_PART.match(line)
         if found:
-            yield index, block_end(code, index, "    "), found.group(1)
+            end = block_end(code, index, "    ") if line.rstrip().endswith("{") else index + 1
+            yield index, end, found.group(1)
 
 
 def check_kotlin_parts(code, name):
@@ -202,7 +204,7 @@ def check_kotlin_clock(code):
 
 def check_kotlin_input(code):
     for index, line in enumerate(code):
-        if KOTLIN_INPUT_WRITE.search(line):
+        if any(not KOTLIN_SELF.search(line[: found.start()]) for found in KOTLIN_INPUT_WRITE.finditer(line)):
             yield index + 1, "モデルの input に、モデルの外から書かない。モデルの関数で書き換える"
 
 
