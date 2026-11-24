@@ -155,10 +155,10 @@ Kotlin は、同じまとまりを次の形で書く。
 | モデルの形 | Kotlin の `this` 以外の `.input.` への代入が無いか | |
 | モデルの形 | Swift の `self` 以外の `.dependencies` の読み出しが無いか | |
 | モデルの形 | `.output.state`・`.output.input` の読み出しが無いか | |
-| 画面の形 | Swift の `@State` の型が、`Model` で終わる型か `Layout` か。`@Previewable` の行は除く | |
+| 画面の形 | Swift の `@State` の型が、Optional と配列は中の型が、`Model` で終わる型か `Layout` か。`@Previewable` の行は除く | |
 | 画面の形 | Swift の `struct Layout` の保存プロパティが、寸法の型か。型を読み取れない値も止める | |
 | 画面の形 | Kotlin の `@Composable` のあるファイルの関数が、`mutableStateOf` の仲間を作っていないか。`@Preview` の関数は除く | |
-| 画面の形 | Kotlin の `class Layout` のプロパティが、寸法の型か。型を読み取れない値も止める | |
+| 画面の形 | Kotlin の `class Layout` の本体のプロパティが、寸法の型か。型を読み取れない値も止め、コンストラクターの引数は見ない | |
 | 今の時刻と今日 | `Date()`・`Instant.now()` などを、引数やプロパティの既定値に書いていないか | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |

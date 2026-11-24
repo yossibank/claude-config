@@ -8,11 +8,11 @@ SWIFT_METRICS = {"CGFloat", "CGSize", "CGRect", "CGPoint", "CGVector", "EdgeInse
 KOTLIN_METRICS = {"Dp", "DpSize", "DpOffset", "Float", "Offset", "IntOffset", "Size", "IntSize", "Rect", "IntRect", "PaddingValues"}
 ATTRIBUTES = r"(?:@\w+(?:\([^)]*\))?\s+)*"
 SWIFT_ACCESS = r"(?:(?:public|package|internal|fileprivate|private)(?:\(set\))?\s+)*"
-SWIFT_VALUE = r"var\s+(?P<name>\w+)\s*(?::\s*(?P<type>[^={]+?))?\s*(?:=\s*(?P<value>[^{]*?))?\s*$"
-SWIFT_STATE = re.compile(r"^\s*" + ATTRIBUTES + r"@State\s+" + SWIFT_ACCESS + SWIFT_VALUE)
+SWIFT_VALUE = r"\s+(?P<name>\w+)\s*(?::\s*(?P<type>[^={]+?))?\s*(?:=\s*(?P<value>[^{]*?))?\s*$"
+SWIFT_STATE = re.compile(r"^\s*" + ATTRIBUTES + r"@State\s+" + SWIFT_ACCESS + "var" + SWIFT_VALUE)
 SWIFT_PREVIEW = re.compile(r"@Previewable\b")
 SWIFT_LAYOUT = re.compile(r"^(\s*)" + SWIFT_ACCESS + r"(?:final\s+)?(?:struct|class)\s+Layout\b")
-SWIFT_MEMBER = ATTRIBUTES + SWIFT_ACCESS + SWIFT_VALUE
+SWIFT_MEMBER = ATTRIBUTES + SWIFT_ACCESS + r"(?:var|let)" + SWIFT_VALUE
 SWIFT_BOX = re.compile(r"(?:Optional|Array|Set|Dictionary)<(.*)>")
 HEAD = re.compile(r"[A-Z]\w*(?:\.[A-Z]\w*)*")
 GENERIC = re.compile(r"<.*>$")
@@ -22,7 +22,7 @@ KOTLIN_FUN = re.compile("^" + ATTRIBUTES + KOTLIN_ACCESS + r"fun\b")
 KOTLIN_PREVIEW = "@Preview"
 KOTLIN_MADE = re.compile(r"\b(?P<maker>mutable\w*State\w*Of)\s*(?:<(?P<generic>[^(]*)>)?\s*\((?P<held>.*)")
 KOTLIN_NAMED = re.compile(r"\b(?:var|val)\s+(?P<name>\w+)\s*(?::\s*(?P<type>[^=]+?))?\s*(?:\bby\b|=)")
-KOTLIN_LAYOUT = re.compile(r"^(\s*)(?:(?:public|internal|private)\s+)?class\s+Layout\b")
+KOTLIN_LAYOUT = re.compile(r"^(\s*)(?:(?:public|internal|private|data|open)\s+)*class\s+Layout\b")
 KOTLIN_MEMBER = KOTLIN_ACCESS + r"(?:var|val)\s+(?P<name>\w+)\b(?P<rest>.*)$"
 KOTLIN_TYPED = re.compile(r"^\s*:\s*(?P<type>[^=]+?)\s*(?:\bby\b|=|$)")
 KOTLIN_PLAIN = re.compile(r"=\s*(?P<held>.*)$")
@@ -111,7 +111,7 @@ def check_swift_view(path, code):
         if not found or SWIFT_PREVIEW.search(line):
             continue
         kind = swift_kind(found)
-        name = bare(kind)
+        name = bare(swift_leaf(kind))
         if name.endswith("Model") or name == "Layout" or name.endswith(".Layout"):
             continue
         if kind and swift_leaf(kind) in SWIFT_METRICS:
