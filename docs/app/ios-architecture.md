@@ -250,7 +250,7 @@ ios/
 | DB を見張る | `ValueObservation` で見張る。保存すると、見張っている画面が自動で変わる |
 | 見張りの書き方 | 画面のモデルが共通で持つ `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す |
 | 最初の読み込み | 見張りと一緒に `run()` にまとめる。1 回だけ読む値を先に読み、見張りは並べて動かす |
-| 状態の持ち方 | `dotclaude/rules/code-design.md` に従う。数の上限は、code-design-check が確かめる |
+| 状態とモデルの形 | `dotclaude/rules/code-design.md` に従う。数の上限は、code-design-check が確かめる |
 | 同じ種類の画面 | 一覧や編集の画面が 2 つ目になる時に、共通のプロトコルと部品に括ってから足す |
 
 > [!TIP]

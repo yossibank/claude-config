@@ -266,4 +266,73 @@ mkdir -p "$nested"
 git -C "$nested" init -q
 design_case 2 ".claude の下にできたワークツリーの中は見る" "$nested/Case.swift" "struct Case {"$'\n'"$(repeat 399 '    // a')"$'\n}' "Case.swift:401: 1 つのファイルは 400 行まで"
 
+# --- 4 つのまとまりのモデル ---
+grouped=$'@Observable\nfinal class Case {\n    let state: State\n    let input: Input\n    let output: Output\n\n    private let dependencies: Dependencies\n}'
+design_case 0 "4 つのまとまりの let だけのモデルは通す" "$swift" "$grouped"
+design_case 2 "まとまりのモデルの直下に var があれば止める" "$swift" $'@Observable\nfinal class Case {\n    let state: State\n\n    var count = 0\n}' "Case.swift:5: Case は 4 つのまとまりのモデルなので、保存プロパティの var を直下に置かない（今は 1 個）"
+design_case 2 "まとまりのモデルの didSet は 1 個でも止める" "$swift" $'@Observable\nfinal class Case {\n    let input: Input\n\n    var count = 0 {\n        didSet {}\n    }\n}' "Case に didSet と willSet を書かない（今は 1 個）"
+design_case 0 "まとまりのモデルの計算プロパティは数えない" "$swift" $'@Observable\nfinal class Case {\n    let state: State\n\n    var total: Int {\n        1\n    }\n}'
+design_case 0 "dependencies だけを持つクラスは、まとまりのモデルにしない" "$swift" $'@Observable\nfinal class Case {\n    var count = 0\n\n    private let dependencies: Dependencies\n}'
+
+part() {
+    local out=$'extension Case {\n    @MainActor\n    @Observable\n    final class '"$1"$' {\n' i
+    for ((i = 0; i < $2; i++)); do out+="        var value${i}: Int = 0"$'\n'; done
+    for ((i = 0; i < $3; i++)); do out+="        var watched${i}: Int = 0 {"$'\n            didSet {}\n        }\n'; done
+    printf '%s' "${out}    }"$'\n}'
+}
+design_case 0 "入れ子の State の var は 12 個まで通す" "$features/Case+State.swift" "$(part State 12 0)"
+design_case 2 "入れ子の State の var が 13 個なら止める" "$features/Case+State.swift" "$(part State 13 0)" "State の保存プロパティの var は 12 個まで"
+design_case 2 "入れ子の State の didSet は 1 個でも止める" "$features/Case+State.swift" "$(part State 1 1)" "まとまりの State に didSet と willSet を書かない（今は 1 個）"
+design_case 0 "入れ子の Input は var の数を数えない" "$features/Case+Input.swift" "$(part Input 20 0)"
+design_case 2 "入れ子の Input の didSet は 1 個でも止める" "$features/Case+Input.swift" "$(part Input 1 1)" "まとまりの Input に didSet と willSet を書かない"
+rm -f "$features/Case+State.swift" "$features/Case+Input.swift"
+
+design_case 0 "Output が input と state だけを読むなら通す" "$features/Case+Output.swift" $'extension Case {\n    final class Output {\n        let input: Input\n    }\n}\n\nextension Case.Output {\n    var total: Int {\n        input.count\n    }\n}'
+design_case 2 "Output の中で await を使えば止める" "$features/Case+Output.swift" $'extension Case.Output {\n    func load() async {\n        await input.load()\n    }\n}' "Case+Output.swift:2: Output は input と state から値を出すだけにする"
+design_case 2 "Output の中で DB を使えば止める" "$features/Case+Output.swift" $'extension Case {\n    final class Output {\n        let database: AppDatabase\n    }\n}' "Case+Output.swift:3: Output は input と state から値を出すだけにする"
+design_case 0 "Output の外の await は見ない" "$features/Case+Output.swift" $'extension Case.Output {\n    var total: Int {\n        1\n    }\n}\n\nextension Case {\n    func load() async {\n        await run()\n    }\n}'
+rm -f "$features/Case+Output.swift"
+
+design_case 2 "dependencies を持つモデルで Date() を作れば止める" "$features/Case+Actions.swift" $'extension Case {\n    func save() async {\n        await dependencies.database.save(at: Date())\n    }\n}' "Case+Actions.swift:3: dependencies を持つモデルで、今の時刻を作らない"
+design_case 0 "dependencies の時計から受け取れば通す" "$features/Case+Actions.swift" $'extension Case {\n    func save() async {\n        await dependencies.database.save(at: dependencies.clock.now)\n    }\n}'
+design_case 0 "dependencies を持たないファイルの Date() は見ない" "$features/Case+Actions.swift" $'extension Case {\n    func save() async {\n        await database.save(at: Date())\n    }\n}'
+rm -f "$features/Case+Actions.swift"
+
+# --- 基準線 ---
+base="$work/base"
+mkdir -p "$base/Sources"
+git -C "$base" init -q
+printf '%s\n' "$(model 13 0 0)" >"$base/Sources/Case.swift"
+printf 'struct Fine {}\n' >"$base/Sources/Fine.swift"
+git -C "$base" add -A
+out=$(bash "$hooks" code-design-check "$base/Sources/Case.swift" "$base/Sources/Fine.swift" </dev/null 2>&1)
+match "基準線が無ければ、今ある外れを NG にする" "$?:$(grep -c '^NG ' <<<"$out")" "2:1"
+out=$(bash "$hooks" code-design-check --write-baseline "$base/Sources/Case.swift" "$base/Sources/Fine.swift" </dev/null 2>&1)
+match "--write-baseline は、今ある外れを基準線に書く" "$?:$out" "0:OK 基準線を書いた: *（1 件）"
+check "基準線の行は、パスと文だけを持つ" grep -qxF "Sources/Case.swift: Case の保存プロパティの var は 12 個までにする（今は 13 個）。一緒に動く値を struct か enum にまとめる" "$base/.claude/code-design-baseline.txt"
+expect OK "基準線にある外れは通す" bash "$hooks" code-design-check "$base/Sources/Case.swift" "$base/Sources/Fine.swift"
+printf '%s\n' "$(model 14 0 0)" >"$base/Sources/Case.swift"
+out=$(bash "$hooks" code-design-check "$base/Sources/Case.swift" "$base/Sources/Fine.swift" </dev/null 2>&1)
+match "基準線より悪くなったら NG にする" "$?:$(grep -c '今は 14 個' <<<"$out")" "2:1"
+printf 'struct Case {}\n' >"$base/Sources/Case.swift"
+out=$(bash "$hooks" code-design-check "$base/Sources/Case.swift" "$base/Sources/Fine.swift" </dev/null 2>&1)
+match "直った外れが基準線に残っていたら NG にする" "$?:$(grep -c '基準線にある外れが、もう無い。行を消す: Sources/Case.swift' <<<"$out")" "2:1"
+out=$(bash "$hooks" code-design-check "$base/Sources/Fine.swift" </dev/null 2>&1)
+match "渡していないファイルの基準線は、残っていても見ない" "$?" "0"
+printf '%s\n' "$(model 13 0 0)" >"$base/Sources/Case.swift"
+hook_case code-design-check 0 "編集の後も、基準線にある外れは知らせない" "$base/Sources/Case.swift" "$(model 13 0 0)"
+bash "$hooks" code-design-check --write-baseline "$base/Sources/Fine.swift" </dev/null >/dev/null 2>&1
+check "--write-baseline は、渡していないファイルの行を残す" grep -qF "Sources/Case.swift: " "$base/.claude/code-design-baseline.txt"
+printf 'struct Twice {\n    func a(at: Date = .now) {}\n}\n' >"$base/Sources/Twice.swift"
+bash "$hooks" code-design-check --write-baseline "$base/Sources/Twice.swift" </dev/null >/dev/null 2>&1
+printf 'struct Twice {\n    func a(at: Date = .now) {}\n    func b(at: Date = .now) {}\n}\n' >"$base/Sources/Twice.swift"
+out=$(bash "$hooks" code-design-check "$base/Sources/Twice.swift" </dev/null 2>&1)
+match "同じ文の外れが基準線より増えたら NG にする" "$?:$(grep -c '^NG ' <<<"$out")" "2:1"
+rm "$base/Sources/Twice.swift"
+out=$(bash "$hooks" code-design-check "$base/Sources/Case.swift" </dev/null 2>&1)
+match "消したファイルの行が基準線に残っていたら、verify で NG にする" "$?:$(grep -c '行を消す: Sources/Twice.swift' <<<"$out")" "2:1"
+printf 'struct Case {}\n' >"$base/Sources/Case.swift"
+bash "$hooks" code-design-check --write-baseline "$base/Sources/Case.swift" "$base/Sources/Fine.swift" </dev/null >/dev/null 2>&1
+check "外れが無くなったら、--write-baseline は基準線のファイルを消す" test ! -e "$base/.claude/code-design-baseline.txt"
+
 finish
