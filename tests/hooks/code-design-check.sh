@@ -307,6 +307,31 @@ design_case 2 "View から input の配列に足せば止める" "$features/Case
 design_case 0 "weak self のクロージャから自分の input に書くのは通す" "$features/CaseView.swift" $'struct CaseView {\n    func load() {\n        task { [weak self] in\n            self?.input.count = 1\n            self?.input.items.append(1)\n        }\n    }\n}'
 rm -f "$features/CaseView.swift"
 
+# <State の var の数> <Boolean の数> の、4 つのまとまりの Kotlin のモデル
+grouped() {
+    local out=$'class Case(database: AppDatabase) {\n    val state = State()\n    val input = Input()\n    val output = Output(input, state)\n\n    class State {\n' i
+    for ((i = 0; i < $1; i++)); do out+="        var value${i}: Int by mutableIntStateOf(0)"$'\n'; done
+    for ((i = 0; i < $2; i++)); do out+="        var flag${i}: Boolean by mutableStateOf(false)"$'\n'; done
+    out+=$'    }\n\n    class Input {\n        var list: List<Int> by mutableStateOf(emptyList())\n            internal set\n    }\n\n    class Output(\n        private val input: Input,\n        private val state: State,\n    ) {\n        val total: Int\n            get() = input.list.sum()\n    }\n}'
+    printf '%s' "$out"
+}
+
+design_case 0 "Kotlin のまとまりのモデルは通る" "$kotlin" "$(grouped 9 3)"
+design_case 2 "Kotlin のまとまりのモデルの直下に mutableStateOf を置けば止める" "$kotlin" $'class Case {\n    val state = State()\n\n    var count: Int by mutableIntStateOf(0)\n\n    class State\n}' "Case.kt:4: Case は 4 つのまとまりのモデルなので、mutableStateOf の var を直下に置かない"
+design_case 0 "Kotlin でまとまりの型でない state の val は、まとまりのモデルと見ない" "$kotlin" $'class Case {\n    val state = remember()\n\n    var count: Int by mutableIntStateOf(0)\n}'
+design_case 2 "Kotlin の State の var が 13 個なら止める" "$kotlin" "$(grouped 13 0)" "Case の State の mutableStateOf の var は 12 個まで"
+design_case 2 "Kotlin の State の Boolean が 4 個なら止める" "$kotlin" "$(grouped 0 4)" "Case の State の Boolean は 3 個まで"
+design_case 2 "Kotlin の Output で suspend を使えば止める" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        suspend fun load() {}\n    }\n}' "Case.kt:5: Output は input と state から値を出すだけにする"
+design_case 0 "Kotlin の Output の外の suspend は見ない" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val total: Int\n            get() = 1\n    }\n\n    suspend fun load() {}\n}'
+design_case 2 "Kotlin の Output の拡張で suspend を使えば止める" "$work/CaseOutputText.kt" $'suspend fun Case.Output.load() {\n    run()\n}' "CaseOutputText.kt:1: Output は input と state から値を出すだけにする"
+design_case 2 "Kotlin の Output の拡張で dependencies を使えば止める" "$work/CaseOutputText.kt" $'val Case.Output.title: String\n    get() = dependencies.name' "CaseOutputText.kt:2: Output は input と state から値を出すだけにする"
+design_case 0 "Kotlin の Output の拡張が input と state だけを読むなら通る" "$work/CaseOutputText.kt" $'val Case.Output.title: String\n    get() = input.name\n\nsuspend fun Case.load() {\n    run()\n}'
+rm -f "$work/CaseOutputText.kt"
+design_case 2 "Kotlin で dependencies を持つモデルが Instant.now() を作れば止める" "$kotlin" $'class Case {\n    suspend fun save() {\n        dependencies.database.save(at = Instant.now())\n    }\n}' "Case.kt:3: dependencies を持つモデルで、今の時刻を作らない"
+design_case 0 "Kotlin で dependencies の時計から受け取れば通る" "$kotlin" $'class Case {\n    suspend fun save() {\n        dependencies.database.save(at = dependencies.clock.now)\n    }\n}'
+design_case 2 "Kotlin の画面から input に書けば止める" "$kotlin" $'class Case {\n    fun choose(model: Other) {\n        model.input.count = 1\n    }\n}' "Case.kt:3: モデルの input に、モデルの外から書かない"
+design_case 0 "Kotlin のモデルが自分の input に書くのは通る" "$kotlin" $'class Case {\n    fun load() {\n        input.count = 1\n        this.input.count = 2\n    }\n}'
+
 # --- 基準線 ---
 base="$work/base"
 mkdir -p "$base/Sources"

@@ -22,6 +22,8 @@ from hooks.code_design_check.files import (  # noqa: E402
 from hooks.code_design_check.state import (  # noqa: E402
     KOTLIN_NOW,
     SWIFT_NOW,
+    check_kotlin_clock,
+    check_kotlin_input,
     check_kotlin_state,
     check_now,
     check_swift_clock,
@@ -81,6 +83,8 @@ def kotlin_checker(paths):
             findings += [
                 *check_kotlin_types(path, code),
                 *check_kotlin_state(code),
+                *check_kotlin_clock(code),
+                *check_kotlin_input(code),
                 *check_now(code, KOTLIN_NOW),
                 *clones.check(path),
             ]
