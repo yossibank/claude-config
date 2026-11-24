@@ -25,6 +25,7 @@ from hooks.code_design_check.state import (  # noqa: E402
     check_kotlin_state,
     check_now,
     check_swift_clock,
+    check_swift_input,
     check_swift_output,
     check_swift_state,
 )
@@ -61,6 +62,7 @@ def swift_checker(paths):
                 *check_swift_state(code),
                 *check_swift_output(code),
                 *check_swift_clock(code),
+                *check_swift_input(code),
                 *check_now(code, SWIFT_NOW),
                 *clones.check(path),
             ]

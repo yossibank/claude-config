@@ -19,6 +19,7 @@ SWIFT_OUTPUT = re.compile(
 SWIFT_IMPURE = re.compile(r"\b(?:await|async|AppDatabase|dependencies)\b")
 SWIFT_DEPENDENCIES = re.compile(r"\bdependencies\.")
 SWIFT_MADE_NOW = re.compile(r"\bDate\(\)|\bDate\.now\b")
+SWIFT_INPUT_WRITE = re.compile(r"(?<!\bself)\.input\.[\w.]+\s*[-+*/]?=(?!=)|\bBindable\([\w.]*\.input\)|\$\w+\.input\.")
 PARTS = {"State", "Input"}
 SWIFT_OBSERVER = re.compile(r"^\s*(?:didSet|willSet)\b")
 SWIFT_NOW = re.compile(r":\s*Date\s*=\s*(?:Date\(\)|Date\.now|\.now)(?=\s*[,)]|\s*$)")
@@ -130,3 +131,9 @@ def check_swift_clock(code):
     for index, line in enumerate(code):
         if SWIFT_MADE_NOW.search(line):
             yield index + 1, "dependencies を持つモデルで、今の時刻を作らない。dependencies の時計から受け取る"
+
+
+def check_swift_input(code):
+    for index, line in enumerate(code):
+        if SWIFT_INPUT_WRITE.search(line):
+            yield index + 1, "モデルの input に、モデルの外から書かない。モデルの関数で書き換える"
