@@ -24,6 +24,8 @@ SWIFT_INPUT_WRITE = re.compile(
     r"\s*(?:[-+*/]?=(?!=)|\.(?:append|insert|remove\w*|toggle)\()"
     r"|\bBindable\([\w.]*\.input\)|\$\w+\.input\."
 )
+SWIFT_DEPENDENCIES_READ = re.compile(r"(?<!\\)(?<!\bSelf)(?<!\bself)(?<!\bself\?)(?<!\bself!)\.dependencies\b")
+OUTPUT_PASSAGE = re.compile(r"\.output\.(?:state|input)\b")
 PARTS = {"State", "Input"}
 SWIFT_OBSERVER = re.compile(r"^\s*(?:didSet|willSet)\b")
 SWIFT_NOW = re.compile(r":\s*Date\s*=\s*(?:Date\(\)|Date\.now|\.now)(?=\s*[,)]|\s*$)")
@@ -204,3 +206,17 @@ def check_kotlin_input(code):
     for index, line in enumerate(code):
         if any(not KOTLIN_SELF.search(line[: found.start()]) for found in KOTLIN_INPUT_WRITE.finditer(line)):
             yield index + 1, "モデルの input に、モデルの外から書かない。モデルの関数で書き換える"
+
+
+def check_swift_access(code):
+    for index, line in enumerate(code):
+        if SWIFT_DEPENDENCIES_READ.search(line):
+            yield index + 1, "モデルの dependencies を、モデルの外から読まない。子のモデルや画面に渡す物は、モデルの関数で作る"
+        if OUTPUT_PASSAGE.search(line):
+            yield index + 1, "output 越しに state と input を読まない。model.state・model.input から読む"
+
+
+def check_kotlin_access(code):
+    for index, line in enumerate(code):
+        if OUTPUT_PASSAGE.search(line):
+            yield index + 1, "output 越しに state と input を読まない。model.state・model.input から読む"

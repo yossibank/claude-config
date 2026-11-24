@@ -307,6 +307,13 @@ design_case 2 "View から input の配列に足せば止める" "$features/Case
 design_case 0 "weak self のクロージャから自分の input に書くのは通す" "$features/CaseView.swift" $'struct CaseView {\n    func load() {\n        task { [weak self] in\n            self?.input.count = 1\n            self?.input.items.append(1)\n        }\n    }\n}'
 rm -f "$features/CaseView.swift"
 
+design_case 2 "画面からモデルの dependencies を読めば止める" "$features/CaseView.swift" $'struct CaseView {\n    var body: some View {\n        Child(database: model.dependencies.database)\n    }\n}' "CaseView.swift:3: モデルの dependencies を、モデルの外から読まない"
+design_case 0 "モデルが自分の dependencies を読むのは通る" "$features/CaseView.swift" $'struct CaseView {\n    func load() async {\n        await dependencies.database.load()\n        await self.dependencies.database.load()\n        await self?.dependencies.database.load()\n    }\n}'
+design_case 0 "Environment のキーパスの dependencies は通る" "$features/CaseView.swift" $'struct CaseView {\n    @Environment(\\.dependencies) private var dependencies\n}'
+design_case 2 "output 越しに state を読めば止める" "$features/CaseView.swift" $'struct CaseView {\n    var title: String {\n        model.output.state.title\n    }\n}' "CaseView.swift:3: output 越しに state と input を読まない"
+rm -f "$features/CaseView.swift"
+design_case 2 "Kotlin で output 越しに input を読めば止める" "$kotlin" $'class Case {\n    fun title(model: Other): String = model.output.input.title\n}' "Case.kt:2: output 越しに state と input を読まない"
+
 # <State の var の数> <Boolean の数> の、4 つのまとまりの Kotlin のモデル
 grouped() {
     local out=$'class Case(database: AppDatabase) {\n    val state = State()\n    val input = Input()\n    val output = Output(input, state)\n\n    class State {\n' i

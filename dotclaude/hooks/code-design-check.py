@@ -22,10 +22,12 @@ from hooks.code_design_check.files import (  # noqa: E402
 from hooks.code_design_check.state import (  # noqa: E402
     KOTLIN_NOW,
     SWIFT_NOW,
+    check_kotlin_access,
     check_kotlin_clock,
     check_kotlin_input,
     check_kotlin_state,
     check_now,
+    check_swift_access,
     check_swift_clock,
     check_swift_input,
     check_swift_output,
@@ -65,6 +67,7 @@ def swift_checker(paths):
                 *check_swift_output(code),
                 *check_swift_clock(code),
                 *check_swift_input(code),
+                *check_swift_access(code),
                 *check_now(code, SWIFT_NOW),
                 *clones.check(path),
             ]
@@ -85,6 +88,7 @@ def kotlin_checker(paths):
                 *check_kotlin_state(code),
                 *check_kotlin_clock(code),
                 *check_kotlin_input(code),
+                *check_kotlin_access(code),
                 *check_now(code, KOTLIN_NOW),
                 *clones.check(path),
             ]
