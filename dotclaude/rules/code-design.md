@@ -55,7 +55,7 @@ Kotlin は、同じまとまりを次の形で書く。
 | --- | --- |
 | `state` | 入れ子の `class State`。値は `mutableStateOf` の `var` で持つ |
 | `input` | 入れ子の `class Input`。値は `mutableStateOf` の `var` で持ち、setter を `internal set` にする |
-| `output` | 入れ子の `class Output`。`derivedStateOf` もここに置く。計算は `Output` の拡張に分けてよい |
+| `output` | 入れ子の `class Output`。`derivedStateOf` はここに置き、計算は拡張に分けてよい |
 | `dependencies` | `private class Dependencies`。モデルの関数だけが使う |
 
 ## 重複
