@@ -354,6 +354,8 @@ design_case 2 "View の @State の、入力中の文字は止める" "$view" "$(
 design_case 0 "子のモデルの配列と Optional は通る" "$view" "$(screen $'    @State private var items: [ItemModel] = []\n    @State private var next: ItemModel? = nil')"
 design_case 2 "View の @State の寸法は、Layout にまとめるよう止める" "$view" "$(screen $'    @State private var width: CGFloat = 0')" "CaseView.swift:2: View の @State に置けるのは、モデルと layout だけにする: width。見た目の値は、入れ子の struct Layout にまとめる"
 design_case 2 "名前が Model で終わらない状態の型は止める" "$view" "$(screen $'    @State private var flow = EntryFlow()')" "モデルと layout だけにする: flow。意味のある状態"
+design_case 2 "寸法だけを持つ型の @State は、Layout にまとめるよう止める" "$view" "$(screen $'    @State private var frame = FrameHolder()')"$'\n\nprivate extension CaseView {\n    final class FrameHolder {\n        var rect: CGRect = .zero\n    }\n}' "CaseView.swift:2: View の @State に置けるのは、モデルと layout だけにする: frame。見た目の値は、入れ子の struct Layout にまとめる"
+design_case 2 "寸法でない値も持つ型の @State は、意味のある状態として止める" "$view" "$(screen $'    @State private var flow = Flow()')"$'\n\nprivate struct Flow {\n    var width: CGFloat = 0\n    var isOpen: Bool = false\n}' "モデルと layout だけにする: flow。意味のある状態"
 design_case 2 "ViewModifier の @State も止める" "$features/CaseLift.swift" $'struct CaseLift: ViewModifier {\n    @State private var isLifted = false\n}' "CaseLift.swift:2: View の @State に置けるのは、モデルと layout だけにする: isLifted"
 design_case 0 "プレビューの @Previewable の @State は見ない" "$view" "$(screen $'    let title: String')"$'\n\n#Preview {\n    @Previewable @State var text = "a"\n    @Previewable @State var isOn = false\n}'
 design_case 0 "コメントと文字列の中の @State は見ない" "$view" "$(screen $'    // @State private var isOn = false\n    let note = "@State var isOn = false"')"
