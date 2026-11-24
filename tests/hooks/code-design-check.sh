@@ -414,6 +414,9 @@ design_case 2 "Kotlin の Input に書き換えられる集まりを置けば止
 design_case 2 "Kotlin の dependencies が private でなければ止める" "$kotlin" $'class Case(database: AppDatabase) {\n    val state = State()\n\n    internal val dependencies = Dependencies(database)\n\n    class State\n}' "Case.kt:4: Case の dependencies は、private val にする"
 design_case 2 "Kotlin の状態のクラスが DB を直接持てば止める" "$kotlin" $'class Case(\n    private val database: AppDatabase,\n) {\n    var isOn: Boolean by mutableStateOf(false)\n        private set\n}' "Case.kt:2: Case は DB と時計を直接持たない: database"
 design_case 0 "Kotlin の状態を持たないクラスが DB を持つのは見ない" "$kotlin" $'class Case(\n    private val database: AppDatabase,\n) {\n    suspend fun load() = database.load()\n}'
+design_case 0 "Kotlin のモデルの外の Dependencies のクラスは DB を持ってよい" "$kotlin" $'class Case {\n    val state = State()\n\n    class State\n}\n\nprivate class Dependencies(\n    val database: AppDatabase,\n    val clock: Clock,\n)'
+design_case 0 "Kotlin のモデルでないクラスの dependencies は見ない" "$kotlin" $'class Case : Application() {\n    val dependencies by lazy { CaseDependencies(this) }\n}'
+design_case 2 "Kotlin の Input の引数の var は、internal var か本体に移すよう知らせる" "$kotlin" $'class Case {\n    val input = Input()\n\n    class Input(\n        var name: String,\n    )\n}' "Case.kt:5: Case の Input の引数の var は、internal var にするか、本体の var に移して internal set にする: name"
 with_arguments=$(grouped 13 0)
 design_case 2 "Kotlin で引数のある State の var も数える" "$kotlin" "${with_arguments/$'    class State {'/$'    class State(\n        today: Int,\n    ) {'}""Case の State の mutableStateOf の var は 12 個まで"
 design_case 2 "Kotlin で引数のある Output の中も見る" "$kotlin" $'class Case {\n    val output = Output(state)\n\n    class Output(\n        private val state: State,\n    ) {\n        suspend fun load() {}\n    }\n}' "Case.kt:7: Output は input と state から値を出すだけにする"

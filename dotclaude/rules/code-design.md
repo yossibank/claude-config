@@ -160,8 +160,9 @@ Kotlin は、同じまとまりを次の形で書く。
 | モデルの形 | Kotlin の `Output` とその拡張に、`suspend`・DB・`dependencies` が無いか | |
 | モデルの形 | Kotlin の `dependencies.` を使うファイルに、`Instant.now()` などが無いか | |
 | モデルの形 | Kotlin の `this` 以外から `.input.` に書いていないか。代入と、`add`・`remove`・`put`・`clear` の呼び出しを見る | |
-| モデルの形 | Kotlin の `Input` の `var` が、`internal set` か `private set` か。書き換えられる集まりも止める | |
-| モデルの形 | Kotlin の `dependencies` が `private` か | |
+| モデルの形 | Kotlin の `Input` の `var` が、`internal set` か `private set` か。引数の `var` は `internal var` か | |
+| モデルの形 | Kotlin の `Input` に、書き換えられる集まりが無いか | |
+| モデルの形 | Kotlin のモデルのクラスの `dependencies` が `private` か。まとまりか状態を持つクラスだけを見る | |
 | モデルの形 | Swift の `self` 以外の `.dependencies` の読み出しが無いか | |
 | モデルの形 | `.output.state`・`.output.input` の読み出しが無いか | |
 | 画面の形 | Swift の `@State` の型が、Optional と配列は中の型が、`Model` で終わる型か `Layout` か。`@Previewable` の行は除く | |

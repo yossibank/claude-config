@@ -4,6 +4,7 @@ from hooks.code_design_check.state import (
     KOTLIN_CLASS,
     KOTLIN_GROUP,
     KOTLIN_STATE,
+    KOTLIN_TOP,
     SWIFT_ACCESS,
     SWIFT_ATTRIBUTES,
     block_end,
@@ -62,26 +63,47 @@ def check_swift_shape(code):
                 yield index + 1, f"Dependencies の中身を public にしない: {found.group(1)}。DB と時計は、モデルの関数だけが使う"
 
 
+def constructor_end(code, start):
+    if not code[start].rstrip().endswith("("):
+        return start
+    return next((at for at in range(start + 1, len(code)) if code[at].startswith("    )")), start)
+
+
 def input_findings(code, name):
     for start, end, part in kotlin_parts(code):
         if part != "Input":
             continue
+        arguments = constructor_end(code, start)
         for index in range(start + 1, end):
             if KOTLIN_MUTABLE.search(code[index]):
                 yield index + 1, f"{name} の Input に、書き換えられる集まりを置かない。List・Set・Map で持ち、モデルの関数が入れ替える"
             found = KOTLIN_INPUT_VAR.match(code[index])
-            if found and not KOTLIN_CLOSED.search(found.group("words")) and not KOTLIN_SETTER.match(next_code(code, index)):
+            if not found or KOTLIN_CLOSED.search(found.group("words")):
+                continue
+            if index < arguments:
+                yield index + 1, f"{name} の Input の引数の var は、internal var にするか、本体の var に移して internal set にする: {found.group('name')}"
+            elif not KOTLIN_SETTER.match(next_code(code, index)):
                 yield index + 1, f"{name} の Input の var は、internal set にする: {found.group('name')}。input に書くのは、モデルの関数だけにする"
 
 
+def kotlin_models(code):
+    for start, line in enumerate(code):
+        found = KOTLIN_CLASS.match(line)
+        if not found:
+            continue
+        end = next((at for at in range(start + 1, len(code)) if KOTLIN_TOP.match(code[at])), len(code))
+        if any(KOTLIN_GROUP.match(code[at]) or KOTLIN_STATE.match(code[at]) for at in range(start + 1, end)):
+            yield start, end, found.group(1)
+
+
 def check_kotlin_shape(code):
+    for start, end, name in kotlin_models(code):
+        for index in range(start + 1, end):
+            held = KOTLIN_HELD.match(code[index])
+            if held and "private" not in held.group("words").split():
+                yield index + 1, f"{name} の dependencies は、private val にする。モデルの関数だけが使う"
+            found = KOTLIN_DIRECT.match(code[index])
+            if found:
+                yield index + 1, f"{name} は DB と時計を直接持たない: {found.group('name')}。dependencies にまとめ、値は State・Input・Output に分ける"
     name = next((found.group(1) for line in code if (found := KOTLIN_CLASS.match(line))), "クラス")
-    is_model = any(KOTLIN_GROUP.match(line) or KOTLIN_STATE.match(line) for line in code)
-    for index, line in enumerate(code):
-        held = KOTLIN_HELD.match(line)
-        if held and "private" not in held.group("words").split():
-            yield index + 1, f"{name} の dependencies は、private val にする。モデルの関数だけが使う"
-        found = KOTLIN_DIRECT.match(line) if is_model else None
-        if found:
-            yield index + 1, f"{name} は DB と時計を直接持たない: {found.group('name')}。dependencies にまとめ、値は State・Input・Output に分ける"
     yield from input_findings(code, name)
