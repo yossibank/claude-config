@@ -4,13 +4,22 @@ STATE_LIMIT = 12
 FLAG_LIMIT = 3
 OBSERVER_LIMIT = 2
 
-OBSERVABLE = re.compile(r"^@Observable\b")
+OBSERVABLE = re.compile(r"^(\s*)@Observable\b")
 SWIFT_CLASS = re.compile(r"\bclass\s+(\w+)")
-SWIFT_STORED = re.compile(
-    r"^    (?:@\w+(?:\([^)]*\))?\s+)*"
+SWIFT_STORED = (
+    r"(?:@\w+(?:\([^)]*\))?\s+)*"
     r"(?:(?:public|package|internal|fileprivate|private)(?:\((?:set)\))?\s+)*"
     r"var\s+\w+\s*(?::\s*(?P<type>[^={]+?))?\s*(?P<value>=[^{]*)?(?P<open>\{)?\s*$"
 )
+SWIFT_GROUP = r"(?:(?:public|package|internal|fileprivate|private)\s+)?let\s+(?:state|input|output)\b"
+SWIFT_OUTPUT = re.compile(
+    r"^(\s*)(?:(?:public|package|internal|fileprivate|private)\s+)?"
+    r"(?:(?:final\s+)?class\s+Output\b|extension\s+[\w.]+\.Output\b)"
+)
+SWIFT_IMPURE = re.compile(r"\b(?:await|async|AppDatabase|dependencies)\b")
+SWIFT_DEPENDENCIES = re.compile(r"\bdependencies\.")
+SWIFT_MADE_NOW = re.compile(r"\bDate\(\)|\bDate\.now\b")
+PARTS = {"State", "Input"}
 SWIFT_OBSERVER = re.compile(r"^\s*(?:didSet|willSet)\b")
 SWIFT_NOW = re.compile(r":\s*Date\s*=\s*(?:Date\(\)|Date\.now|\.now)(?=\s*[,)]|\s*$)")
 KOTLIN_STATE = re.compile(r"^    (?:(?:public|internal|private|override)\s+)*var\s+\w+.*\bby\s+mutable\w*StateOf\b")
@@ -25,23 +34,26 @@ def next_code(code, index):
     return ""
 
 
+def block_end(code, start, indent):
+    return next((at for at in range(start + 1, len(code)) if code[at].startswith(indent + "}")), len(code))
+
+
 def observable_classes(code):
-    index = 0
-    while index < len(code):
-        if not OBSERVABLE.match(code[index]):
-            index += 1
+    for index, line in enumerate(code):
+        found = OBSERVABLE.match(line)
+        if not found:
             continue
         start = next((at for at in range(index, len(code)) if SWIFT_CLASS.search(code[at])), None)
         if start is None:
             return
-        end = next((at for at in range(start + 1, len(code)) if code[at].startswith("}")), len(code))
-        yield start, end, SWIFT_CLASS.search(code[start]).group(1)
-        index = end + 1
+        indent = found.group(1)
+        yield start, block_end(code, start, indent), SWIFT_CLASS.search(code[start]).group(1), indent
 
 
-def stored_properties(code, start, end):
+def stored_properties(code, start, end, indent):
+    pattern = re.compile("^" + indent + "    " + SWIFT_STORED)
     for index in range(start + 1, end):
-        found = SWIFT_STORED.match(code[index])
+        found = pattern.match(code[index])
         if not found:
             continue
         observed = bool(SWIFT_OBSERVER.match(next_code(code, index)))
@@ -52,11 +64,27 @@ def stored_properties(code, start, end):
         yield index, kind == "Bool" or value in {"false", "true"}
 
 
+def is_grouped(code, start, end, indent):
+    pattern = re.compile("^" + indent + "    " + SWIFT_GROUP)
+    return any(pattern.match(code[index]) for index in range(start + 1, end))
+
+
 def check_swift_state(code):
-    for start, end, name in observable_classes(code):
-        stored = list(stored_properties(code, start, end))
+    for start, end, name, indent in observable_classes(code):
+        stored = list(stored_properties(code, start, end, indent))
         flags = [index for index, is_flag in stored if is_flag]
         observers = [index for index in range(start + 1, end) if SWIFT_OBSERVER.match(code[index])]
+        if is_grouped(code, start, end, indent):
+            if stored:
+                yield stored[0][0] + 1, f"{name} は 4 つのまとまりのモデルなので、保存プロパティの var を直下に置かない（今は {len(stored)} 個）。state か input に移す"
+            if observers:
+                yield observers[0] + 1, f"{name} に didSet と willSet を書かない（今は {len(observers)} 個）。連動は State の関数に置き、派生する値は Output で出す"
+            continue
+        if indent and name in PARTS:
+            if observers:
+                yield observers[0] + 1, f"まとまりの {name} に didSet と willSet を書かない（今は {len(observers)} 個）。連動は State の関数に置き、派生する値は Output で出す"
+            if name == "Input":
+                continue
         if len(stored) > STATE_LIMIT:
             line = stored[STATE_LIMIT][0] + 1
             yield line, f"{name} の保存プロパティの var は {STATE_LIMIT} 個までにする（今は {len(stored)} 個）。一緒に動く値を struct か enum にまとめる"
@@ -80,3 +108,25 @@ def check_now(code, pattern):
     for index, line in enumerate(code):
         if pattern.search(line):
             yield index + 1, "今の時刻を引数やプロパティの既定値にしない。呼ぶ側から引数で渡す"
+
+
+def check_swift_output(code):
+    index = 0
+    while index < len(code):
+        found = SWIFT_OUTPUT.match(code[index])
+        if not found:
+            index += 1
+            continue
+        end = block_end(code, index, found.group(1))
+        for at in range(index + 1, end):
+            if SWIFT_IMPURE.search(code[at]):
+                yield at + 1, "Output は input と state から値を出すだけにする。DB・dependencies・async を使う処理は、モデルの関数に置く"
+        index = end + 1
+
+
+def check_swift_clock(code):
+    if not any(SWIFT_DEPENDENCIES.search(line) for line in code):
+        return
+    for index, line in enumerate(code):
+        if SWIFT_MADE_NOW.search(line):
+            yield index + 1, "dependencies を持つモデルで、今の時刻を作らない。dependencies の時計から受け取る"
