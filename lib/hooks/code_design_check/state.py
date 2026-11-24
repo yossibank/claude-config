@@ -29,6 +29,16 @@ SWIFT_OBSERVER = re.compile(r"^\s*(?:didSet|willSet)\b")
 SWIFT_NOW = re.compile(r":\s*Date\s*=\s*(?:Date\(\)|Date\.now|\.now)(?=\s*[,)]|\s*$)")
 KOTLIN_STATE = re.compile(r"^    (?:(?:public|internal|private|override)\s+)*var\s+\w+.*\bby\s+mutable\w*StateOf\b")
 KOTLIN_NOW = re.compile(r":\s*(?:Instant|LocalDate|LocalDateTime)\s*=\s*(?:Instant|LocalDate|LocalDateTime)\.now\(\)")
+KOTLIN_GROUP = re.compile(r"^    (?:(?:public|internal|private)\s+)?val\s+(?:state|input|output)\s*(?::\s*[\w.<>]+\s*)?=\s*(?:State|Input|Output)\(")
+KOTLIN_PART = re.compile(r"^    (?:(?:public|internal|private)\s+)?class\s+(State|Input|Output)\b")
+KOTLIN_PART_STATE = re.compile(r"^        (?:(?:public|internal|private|override)\s+)*var\s+\w+\s*(?::\s*(?P<type>[^=]+?))?\s+by\s+mutable\w*StateOf\((?P<value>[^)]*)\)")
+KOTLIN_OUTPUT_EXTENSION = re.compile(r"^(?:(?:public|internal|private)\s+)?(?:suspend\s+)?(?:val|var|fun)\s+(?:<[^>]*>\s*)?\w+\.Output\.")
+KOTLIN_TOP = re.compile(r"^[^\s})]")
+KOTLIN_IMPURE = re.compile(r"\b(?:suspend|AppDatabase|dependencies|launch|collect\w*)\b")
+KOTLIN_DEPENDENCIES = re.compile(r"\bdependencies\.")
+KOTLIN_MADE_NOW = re.compile(r"\bInstant\.now\(\)|\bSystem\.currentTimeMillis\(\)|\bLocalDateTime\.now\(\)")
+KOTLIN_INPUT_WRITE = re.compile(r"\.input\.[\w.]+\s*[-+*/]?=(?!=)")
+KOTLIN_SELF = re.compile(r"\bthis(?:@\w+)?$")
 KOTLIN_CLASS = re.compile(r"^(?:(?:public|internal|private|abstract|open|data|sealed)\s+)*class\s+(\w+)")
 
 
@@ -101,9 +111,48 @@ def check_swift_state(code):
             yield line, f"{name} の didSet と willSet は {OBSERVER_LIMIT} 個までにする（今は {len(observers)} 個）。派生する値は計算で出すか、入力を 1 つの型にまとめる"
 
 
+def kotlin_parts(code):
+    for index, line in enumerate(code):
+        found = KOTLIN_PART.match(line)
+        if found:
+            end = block_end(code, index, "    ") if line.rstrip().endswith("{") else index + 1
+            yield index, end, found.group(1)
+
+
+def check_kotlin_parts(code, name):
+    for start, end, part in kotlin_parts(code):
+        if part == "Output":
+            for index in range(start + 1, end):
+                if KOTLIN_IMPURE.search(code[index]):
+                    yield index + 1, "Output は input と state から値を出すだけにする。DB・dependencies・suspend を使う処理は、モデルの関数に置く"
+        if part != "State":
+            continue
+        stored = [(index, found) for index in range(start + 1, end) if (found := KOTLIN_PART_STATE.match(code[index]))]
+        flags = [index for index, found in stored if (found.group("type") or "").strip() == "Boolean" or found.group("value").strip() in {"false", "true"}]
+        if len(stored) > STATE_LIMIT:
+            yield stored[STATE_LIMIT][0] + 1, f"{name} の State の mutableStateOf の var は {STATE_LIMIT} 個までにする（今は {len(stored)} 個）。一緒に動く値を data class にまとめる"
+        if len(flags) > FLAG_LIMIT:
+            yield flags[FLAG_LIMIT] + 1, f"{name} の State の Boolean は {FLAG_LIMIT} 個までにする（今は {len(flags)} 個）。両立しない状態は sealed interface にまとめる"
+
+
+def check_kotlin_output_extensions(code):
+    inside = False
+    for index, line in enumerate(code):
+        if KOTLIN_TOP.match(line):
+            inside = bool(KOTLIN_OUTPUT_EXTENSION.match(line))
+        if inside and KOTLIN_IMPURE.search(line):
+            yield index + 1, "Output は input と state から値を出すだけにする。DB・dependencies・suspend を使う処理は、モデルの関数に置く"
+
+
 def check_kotlin_state(code):
     name = next((found.group(1) for line in code if (found := KOTLIN_CLASS.match(line))), "クラス")
     states = [index for index, line in enumerate(code) if KOTLIN_STATE.match(line)]
+    if any(KOTLIN_GROUP.match(line) for line in code):
+        if states:
+            yield states[0] + 1, f"{name} は 4 つのまとまりのモデルなので、mutableStateOf の var を直下に置かない（今は {len(states)} 個）。State か Input に移す"
+        yield from check_kotlin_parts(code, name)
+        return
+    yield from check_kotlin_output_extensions(code)
     if len(states) > STATE_LIMIT:
         line = states[STATE_LIMIT] + 1
         yield line, f"{name} の mutableStateOf の var は {STATE_LIMIT} 個までにする（今は {len(states)} 個）。一緒に動く値を data class か sealed interface にまとめる"
@@ -140,4 +189,18 @@ def check_swift_clock(code):
 def check_swift_input(code):
     for index, line in enumerate(code):
         if SWIFT_INPUT_WRITE.search(line):
+            yield index + 1, "モデルの input に、モデルの外から書かない。モデルの関数で書き換える"
+
+
+def check_kotlin_clock(code):
+    if not any(KOTLIN_DEPENDENCIES.search(line) for line in code):
+        return
+    for index, line in enumerate(code):
+        if KOTLIN_MADE_NOW.search(line):
+            yield index + 1, "dependencies を持つモデルで、今の時刻を作らない。dependencies の時計から受け取る"
+
+
+def check_kotlin_input(code):
+    for index, line in enumerate(code):
+        if any(not KOTLIN_SELF.search(line[: found.start()]) for found in KOTLIN_INPUT_WRITE.finditer(line)):
             yield index + 1, "モデルの input に、モデルの外から書かない。モデルの関数で書き換える"

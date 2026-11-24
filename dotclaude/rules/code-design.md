@@ -27,7 +27,7 @@ Swift と Kotlin のコードを読み書きする時に読み込まれる決ま
 
 ## モデルの形
 
-Swift の画面のモデルは、次のまとまりの `let` だけを持つ。使わないまとまりは書かない。
+画面のモデルは、次のまとまりだけを持つ。使わないまとまりは書かない。Swift は `let`、Kotlin は `val` で持つ。
 
 | まとまり | 型 | 持つもの |
 | --- | --- | --- |
@@ -48,6 +48,15 @@ Swift の画面のモデルは、次のまとまりの `let` だけを持つ。�
 | View | `model.state.x`・`model.input.x`・`model.output.x` の形で読む。モデルに転送のプロパティを足さない |
 | `input` に書く | モデルの関数だけが書く。View やほかの型からは書かず、`Bindable` でも包まない |
 | 共通の型 | まとまりの中身が共通の型で足りる時は、入れ子の型を作らずに、それを使ってよい |
+
+Kotlin は、同じまとまりを次の形で書く。
+
+| まとまり | Kotlin の形 |
+| --- | --- |
+| `state` | 入れ子の `class State`。値は `mutableStateOf` の `var` で持つ |
+| `input` | 入れ子の `class Input`。値は `mutableStateOf` の `var` で持ち、setter を `internal set` にする |
+| `output` | 入れ子の `class Output`。`derivedStateOf` はここに置き、計算は拡張に分けてよい |
+| `dependencies` | `private class Dependencies`。モデルの関数だけが使う |
 
 ## 重複
 
@@ -111,6 +120,11 @@ Swift の画面のモデルは、次のまとまりの `let` だけを持つ。�
 | モデルの形 | `Output` のクラスと拡張の中に、`await`・`async`・`AppDatabase`・`dependencies` が無いか | |
 | モデルの形 | `dependencies.` を使うファイルに、`Date()`・`Date.now` が無いか | |
 | モデルの形 | `self` 以外から `.input.` に書いていないか。代入・添字・`append`・`insert`・`remove`・`toggle` と、`input` を包む `Bindable` を見る | |
+| モデルの形 | Kotlin のまとまりの `val` を持つクラスの、直下の `mutableStateOf` の数 | 0 個 |
+| モデルの形 | Kotlin の入れ子の `State` の、`mutableStateOf` の `var` と Boolean の数 | 12 個・3 個 |
+| モデルの形 | Kotlin の `Output` とその拡張に、`suspend`・DB・`dependencies` が無いか | |
+| モデルの形 | Kotlin の `dependencies.` を使うファイルに、`Instant.now()` などが無いか | |
+| モデルの形 | Kotlin の `this` 以外の `.input.` への代入が無いか | |
 | 今の時刻と今日 | `Date()`・`Instant.now()` などを、引数やプロパティの既定値に書いていないか | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
