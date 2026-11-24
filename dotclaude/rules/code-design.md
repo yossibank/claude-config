@@ -143,16 +143,18 @@ Kotlin は、同じまとまりを次の形で書く。
 | 両立しない状態 | Swift の `@Observable` のクラスの、Bool の保存プロパティの数 | 3 個 |
 | 派生する値 | Swift の `@Observable` のクラスの、`didSet` と `willSet` の数 | 2 個 |
 | モデルの形 | `state`・`input`・`output` の `let` を持つクラスの、直下の保存プロパティの `var` の数 | 0 個 |
+| モデルの形 | まとまりを `var` で持っていないか。Swift は、まとまりの型の `var` が 2 つ以上あるクラスを見る | |
 | モデルの形 | まとまりのモデルと、入れ子の `State`・`Input` の、`didSet` と `willSet` の数 | 0 個 |
 | モデルの形 | 入れ子の `State` の `var` と Bool の数。`Input` は数えない | 12 個・3 個 |
 | モデルの形 | `Output` のクラスと拡張の中に、`await`・`async`・`AppDatabase`・`dependencies` が無いか | |
+| モデルの形 | `Output` のクラスと拡張の中に、`Date()`・`Date.now` が無いか。Kotlin は `Instant.now()` などを見る | |
 | モデルの形 | `dependencies.` を使うファイルに、`Date()`・`Date.now` が無いか | |
 | モデルの形 | `self` 以外から `.input.` に書いていないか。代入・添字・`append`・`insert`・`remove`・`toggle` と、`input` を包む `Bindable` を見る | |
 | モデルの形 | Kotlin のまとまりの `val` を持つクラスの、直下の `mutableStateOf` の数 | 0 個 |
 | モデルの形 | Kotlin の入れ子の `State` の、`mutableStateOf` の `var` と Boolean の数 | 12 個・3 個 |
 | モデルの形 | Kotlin の `Output` とその拡張に、`suspend`・DB・`dependencies` が無いか | |
 | モデルの形 | Kotlin の `dependencies.` を使うファイルに、`Instant.now()` などが無いか | |
-| モデルの形 | Kotlin の `this` 以外の `.input.` への代入が無いか | |
+| モデルの形 | Kotlin の `this` 以外から `.input.` に書いていないか。代入と、`add`・`remove`・`put`・`clear` の呼び出しを見る | |
 | モデルの形 | Swift の `self` 以外の `.dependencies` の読み出しが無いか | |
 | モデルの形 | `.output.state`・`.output.input` の読み出しが無いか | |
 | 画面の形 | Swift の `@State` の型が、Optional と配列は中の型が、`Model` で終わる型か `Layout` か。`@Previewable` の行は除く | |

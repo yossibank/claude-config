@@ -392,6 +392,21 @@ design_case 0 "designsystem の部品の mutableStateOf は見ない" "$app/andr
 design_case 0 "テストの Composable の mutableStateOf は見ない" "$app/android/src/test/CaseViewTest.kt" "$(composable $'    var isOn by remember { mutableStateOf(false) }')"
 rm -f "$compose" "$features/CaseFlow.kt"
 
+# --- まとまりの宣言 ---
+design_case 2 "まとまりを全部 var で持てば止める" "$swift" $'@Observable\nfinal class Case {\n    var state: State\n    var input = Input()\n\n    private let dependencies: Dependencies\n}' "Case.swift:3: Case のまとまりは let で持つ: state"
+design_case 2 "let のまとまりに var のまとまりが混じれば止める" "$swift" $'@Observable\nfinal class Case {\n    let state: State\n    public var output: Case.Output\n}' "Case.swift:4: Case のまとまりは let で持つ: output"
+design_case 0 "state という名前の var が 1 つだけのクラスは、まとまりのモデルと見ない" "$swift" $'@Observable\nfinal class Case {\n    var state: State = .idle\n    var count = 0\n}'
+design_case 2 "dependencies の無いファイルの Output の Date() も止める" "$features/Case+Output.swift" $'extension Case.Output {\n    var isLate: Bool {\n        state.due < Date()\n    }\n}' "Case+Output.swift:3: Output で今の時刻を作らない"
+rm -f "$features/Case+Input.swift" "$features/BoardInput.swift" "$features/Case+Output.swift"
+
+design_case 2 "Kotlin のまとまりを var で持てば止める" "$kotlin" $'class Case {\n    var state = State()\n\n    class State\n}' "Case.kt:2: Case のまとまりは val で持つ: state"
+with_arguments=$(grouped 13 0)
+design_case 2 "Kotlin で引数のある State の var も数える" "$kotlin" "${with_arguments/$'    class State {'/$'    class State(\n        today: Int,\n    ) {'}""Case の State の mutableStateOf の var は 12 個まで"
+design_case 2 "Kotlin で引数のある Output の中も見る" "$kotlin" $'class Case {\n    val output = Output(state)\n\n    class Output(\n        private val state: State,\n    ) {\n        suspend fun load() {}\n    }\n}' "Case.kt:7: Output は input と state から値を出すだけにする"
+design_case 2 "Kotlin の Output で Instant.now() を作れば止める" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val isLate: Boolean\n            get() = due < Instant.now()\n    }\n}' "Case.kt:6: Output で今の時刻を作らない"
+design_case 2 "Kotlin で dependencies を持つモデルが LocalDate.now() を作れば止める" "$kotlin" $'class Case {\n    suspend fun save() {\n        dependencies.database.save(on = LocalDate.now())\n    }\n}' "Case.kt:3: dependencies を持つモデルで、今の時刻を作らない"
+design_case 2 "Kotlin の画面から input の一覧に足せば止める" "$kotlin" $'class Case {\n    fun choose(model: Other) {\n        model.input.items.add(1)\n    }\n}' "Case.kt:3: モデルの input に、モデルの外から書かない"
+
 # --- 基準線 ---
 base="$work/base"
 mkdir -p "$base/Sources"
