@@ -16,7 +16,8 @@ flowchart LR
         appPlan["app-plan"] --> appInit["app-init"]
     end
     subgraph build["作って出す（PR ごとに繰り返す）"]
-        uiSnapshot["ui-snapshot"] -.->|見た目を確かめる| prCreate["pr-create"]
+        codeScreen["code-screen"] -.->|画面を足す| prCreate["pr-create"]
+        uiSnapshot["ui-snapshot"] -.->|見た目を確かめる| prCreate
         uiRecord["ui-record"] -.->|動きを確かめる| prCreate
         codeDebug["code-debug"] -.->|不具合を直す| prCreate
         prCreate --> prFix["pr-fix"]
@@ -55,6 +56,7 @@ flowchart LR
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
+| [code-screen](../../dotclaude/skills/code-screen/SKILL.md) | 🤝 人と Claude | モデル・画面・テストのひな形から、設計の検査を通る形で新しい画面を足す |
 | [ui-snapshot](../../dotclaude/skills/ui-snapshot/SKILL.md) | 🧠 Claude だけ | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
 | [ui-record](../../dotclaude/skills/ui-record/SKILL.md) | 🧠 Claude だけ | シミュレーターを録画し、確かめたい場面のコマを並べる |
 | [code-debug](../../dotclaude/skills/code-debug/SKILL.md) | 🤝 人と Claude | 再現・3 つの仮説・検証で原因を確かめ、承認された直し方と再現テストを入れる |

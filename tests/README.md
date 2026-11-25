@@ -37,6 +37,7 @@
 | --- | --- |
 | [app-init.sh](skills/app-init.sh) | ひな形の印を置き換え、一時のフォルダに新しいアプリを作れるか |
 | [app-plan.sh](skills/app-plan.sh) | 通信せずに、引数の NG と通信できない時の NG を出すか |
+| [code-screen.sh](skills/code-screen.sh) | 画面のひな形を展開でき、展開したコードが設計と書き方の検査を通るか。土台が無い時は NG にするか |
 | [config-learn.sh](skills/config-learn.sh) | フックが止めた回数を数えられるか |
 | [ctx-report.sh](skills/ctx-report.sh) | 作り物の会話の記録から、月ごとのトークンを数えられるか |
 | [docs-polish.sh](skills/docs-polish.sh) | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
