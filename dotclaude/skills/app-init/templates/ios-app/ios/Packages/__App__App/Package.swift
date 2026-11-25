@@ -21,7 +21,14 @@ let package = Package(
             name: "AppFeature",
             dependencies: [
                 "DesignSystem",
+                "FeatureModels",
                 "Features",
+                .product(name: "Core", package: "__App__Kit")
+            ]
+        ),
+        .target(
+            name: "FeatureModels",
+            dependencies: [
                 .product(name: "Core", package: "__App__Kit"),
                 .product(name: "Store", package: "__App__Kit")
             ]
@@ -30,8 +37,11 @@ let package = Package(
             name: "Features",
             dependencies: [
                 "DesignSystem",
-                .product(name: "Core", package: "__App__Kit"),
-                .product(name: "Store", package: "__App__Kit")
+                "FeatureModels",
+                .product(name: "Core", package: "__App__Kit")
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("MemberImportVisibility")
             ]
         ),
         .target(
@@ -42,7 +52,11 @@ let package = Package(
         ),
         .testTarget(
             name: "AppFeatureTests",
-            dependencies: ["AppFeature"]
+            dependencies: [
+                "AppFeature",
+                "FeatureModels",
+                .product(name: "Store", package: "__App__Kit")
+            ]
         ),
         .testTarget(
             name: "DesignSystemTests",
@@ -50,7 +64,12 @@ let package = Package(
         ),
         .testTarget(
             name: "FeaturesTests",
-            dependencies: ["Features"]
+            dependencies: [
+                "FeatureModels",
+                "Features",
+                .product(name: "Core", package: "__App__Kit"),
+                .product(name: "Store", package: "__App__Kit")
+            ]
         )
     ]
 )

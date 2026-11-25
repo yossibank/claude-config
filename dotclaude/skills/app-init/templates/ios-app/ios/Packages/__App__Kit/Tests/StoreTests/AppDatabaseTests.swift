@@ -12,4 +12,13 @@ struct AppDatabaseTests {
 
         #expect(isMigrated)
     }
+
+    @Test
+    func listsAppliedMigrations() async throws {
+        let database = try AppDatabase.inMemory()
+
+        let migrations = try await database.appliedMigrations()
+
+        #expect(migrations == ["v1"])
+    }
 }

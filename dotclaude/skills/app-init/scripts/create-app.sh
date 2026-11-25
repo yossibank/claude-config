@@ -10,7 +10,7 @@ root="${CC_APPS_DIR:-$HOME/Applications/AppStore}/$name"
 
 [[ "$name" =~ ^[a-z][a-z0-9]*$ ]] || { echo "NG 名前は英小文字と数字だけにする: $name"; exit 1; }
 case "$name" in
-    app | core | store | features | appfeature | designsystem) echo "NG パッケージのモジュールと同じ名前は使えない: $name"; exit 1 ;;
+    app | core | store | features | featuremodels | appfeature | designsystem) echo "NG パッケージのモジュールと同じ名前は使えない: $name"; exit 1 ;;
 esac
 [[ "$display" == *[\"\\]* || "$display" == *$'\n'* ]] && { echo "NG 表示名に \" や \\ や改行は使えない"; exit 1; }
 
@@ -41,9 +41,9 @@ cleanup() {
 trap cleanup ERR INT TERM
 
 mkdir -p "$root/docs"
-rsync -a --exclude .DS_Store --exclude /docs/ "$skill/templates/ios-app/" "$root/"
+rsync -a --exclude .DS_Store --exclude .build --exclude .swiftpm --exclude /docs/ "$skill/templates/ios-app/" "$root/"
 
-for doc in overview roadmap; do
+for doc in overview roadmap architecture-parts; do
     if [[ ! -f $root/docs/$doc.md ]]; then
         cp "$skill/templates/ios-app/docs/$doc.md" "$root/docs/$doc.md"
         copied+=("$root/docs/$doc.md")
@@ -53,6 +53,15 @@ done
 python3 -I "$skill/scripts/replace-placeholders.py" "$root" "$pascal" "$name" "$display"
 
 git -C "$root" init -q -b main
+
+# 土台の型は、code-screen のひな形から置く。写しを app-init に持たない
+package="$root/ios/Packages/${pascal}App"
+base="Shared/Model"
+placed=$(python3 -I "$skill/../code-screen/scripts/create-screen.py" swift base "$package/Sources/FeatureModels/$base" "$package/Sources/Features/$base" "$package/Tests/FeaturesTests/$base") || {
+    echo "$placed"
+    false
+}
+
 git -C "$root" add -A
 git -C "$root" commit -q -m "chore: start $name from the ios-app template"
 

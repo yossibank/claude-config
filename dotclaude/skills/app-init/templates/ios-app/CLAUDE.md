@@ -17,12 +17,21 @@
 
 構成は、claude-config の `docs/app/ios-architecture.md` の共通の形に従う。外れた時に足す文書は、claude-config の `dotclaude/rules/docs-app.md` に従う。
 
+画面の作りは、次の決まりに従う。
+
+| 対象 | 決まり |
+| --- | --- |
+| 画面のモデル | `FeatureModels` に置く。画面の `Features` と入口の `AppFeature` は、`Store` を import しない |
+| 新しい画面 | claude-config の `code-screen` のスキルで足す。土台の名前は、[architecture-parts](docs/architecture-parts.md) にある |
+| 画面の組み立て | claude-config の `docs/app/ios-screens.md` に従う |
+
 ## 文書
 
 作業ごとに、先に読む文書と、終えたら直す文書が決まっている。
 
 | 作業 | 先に読む | 終えたら直す |
 | --- | --- | --- |
-| 機能・画面を足す | [overview](docs/overview.md)、[roadmap](docs/roadmap.md) | overview、roadmap |
+| 機能・画面を足す | [overview](docs/overview.md)、[roadmap](docs/roadmap.md)、[architecture-parts](docs/architecture-parts.md) | overview、roadmap |
+| 複数の画面で使う仕組みを足す | [architecture-parts](docs/architecture-parts.md) | architecture-parts |
 | 作る順番の 1 段を終える | [roadmap](docs/roadmap.md) | roadmap の状態 |
 | 構成を共通の形から外す | claude-config の `docs/app/ios-architecture.md` | `docs/architecture.md` |

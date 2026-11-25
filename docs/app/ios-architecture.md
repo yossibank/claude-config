@@ -1,8 +1,8 @@
 # iOS アプリの構成
 
 > [!NOTE]
-> 個人アプリの iOS 版で、どのアプリでも同じにする構成が分かる。
-> フォルダ・パッケージの分け方、依存の向き、画面・ウィジェット・テストの作り方がある。名前の決まりは [ios-naming](ios-naming.md) にある。
+> 個人アプリの iOS 版で、どのアプリでも同じにするフォルダ・パッケージ・依存の向き・テストが分かる。
+> 画面の組み立ては [ios-screens](ios-screens.md)、名前の決まりは [ios-naming](ios-naming.md) にある。
 > アプリだけの事実と、ここから外れた点は、アプリの `docs/architecture.md` に書く。
 
 文書の中の印は、アプリごとに次の値に置き換えて読む。
@@ -26,6 +26,7 @@ flowchart TB
         AppFeature
         AppWidget
         Features
+        FeatureModels
         Notifications
         DesignSystem
     end
@@ -39,12 +40,14 @@ flowchart TB
     App --> AppWidget
     Widget --> AppWidget
     AppFeature --> Features
+    AppFeature --> FeatureModels
     AppFeature --> Notifications
     AppWidget -.->|ウィジェットから書いた後に通知を予約し直す時だけ| Notifications
     AppWidget --> Store
     AppWidget --> DesignSystem
-    Features --> Store
+    Features --> FeatureModels
     Features --> DesignSystem
+    FeatureModels --> Store
     Notifications --> Core
     DesignSystem --> Core
     Store --> Core
@@ -151,7 +154,7 @@ ios/
 | `make format` | SwiftFormat で整える |
 | `make licenses` | 設定アプリに出すライセンスの一覧を、LicensePlist で作り直す |
 | `make build` | iOS シミュレーター向けにビルドする |
-| `make verify` | code-design-check・Kit の `swift test`・iOS のビルドを走らせる。どれも `scripts/verify.sh` を通す |
+| `make verify` | 書き方と設計の検査、画面の `import Store` の検査を走らせる。続けて、Kit の `swift test` と iOS のビルドを通す |
 | `make test` | テストプランを iOS シミュレーターで走らせる。出力は `.build/test.log` にも残す |
 | `make test-build` | 走らせずにコンパイルだけする |
 | `make snapshot SNAPSHOT=<セット>` | `.claude/snapshots/<セット>` を ui-snapshot で描く。出力は `.build/snapshots/` |
@@ -208,6 +211,9 @@ ios/
 │   ├── DesignSystem/
 │   │   ├── Components/
 │   │   └── Theme/
+│   ├── FeatureModels/
+│   │   ├── Screens/
+│   │   └── Shared/
 │   ├── Features/
 │   │   ├── Screens/
 │   │   └── Shared/
@@ -224,95 +230,26 @@ ios/
 | `AppWidget/` | `Widgets/` にウィジェットごと、`Intents/` に `AppIntent` を置く。`Shared/` はタイムラインなど |
 | `DesignSystem/Components/` | 部品の種類ごとのフォルダ |
 | `DesignSystem/Theme/` | 色・角の丸み・字体・文字の大きさ |
+| `FeatureModels/Screens/` | 画面のモデル。フォルダは `Features/Screens/` と同じ形にする |
+| `FeatureModels/Shared/` | 複数の画面で使うモデルと値の型。土台の型は `Model/` に置く |
 | `Features/Screens/` | 画面ごとのフォルダ。タブの画面は `Tabs/` の下 |
-| `Features/Shared/` | 複数の画面で使う部品とモデル。役割ごとのフォルダ |
+| `Features/Shared/` | 複数の画面で使う部品。役割ごとのフォルダ |
+| `FeaturesTests/` | 画面のモデルのテスト。`FeatureModels` と `Store` を読む |
 | `Notifications/` | あるべき通知の予約と、今の予約の差を OS に反映する。押された通知の行き先を受ける |
 
 ## 📱 Features と AppFeature
 
-画面の処理は、各画面と、画面どうしをつなぐ部分に分ける。
+画面の処理は、各画面・画面のモデル・画面どうしをつなぐ部分に分ける。
 
 | ターゲット | 受け持つこと | 知らないこと |
 | --- | --- | --- |
-| Features | 1 つ 1 つの画面の表示と操作 | ほかの画面、タブ、通知、ウィジェット |
-| AppFeature | タブ、シート、移動、起動時の処理、通知とウィジェットへの反映 | 各画面の中身 |
+| FeatureModels | 画面のモデル。DB の読み書きと、画面に出す値の計算 | 画面の見た目、タブ、通知、ウィジェット |
+| Features | 1 つ 1 つの画面の表示と操作 | DB、ほかの画面、タブ、通知、ウィジェット |
+| AppFeature | タブ、シート、移動、起動時の処理、通知とウィジェットへの反映 | DB、各画面の中身 |
 
-### 画面のモデル
+**`Features` と `AppFeature` は、`Store` に依存しない。** DB は `ScreenParts` に包んで受け取り、`FeatureModels` のモデルだけが開く。
 
-画面のモデルは、場面ごとに次の決まりで作る。計算は Core に任せ、書き込みは DB に書くだけにする。
-
-| 場面 | 決まり |
-| --- | --- |
-| モデルを置く | 処理のある画面だけ `@Observable` のモデルを置く。表示だけの画面には置かない |
-| 受け取るもの | DB・今日の日付・ほかの画面を開く関数を、引数で受け取る |
-| ほかの画面を開く | 開く関数は、Core の型だけを使う（`open<画面>(<型>.ID)`） |
-| 設定の一覧 | 項目の enum を持つ。移る先は AppFeature が決める |
-| DB を見張る | `ValueObservation` で見張る。保存すると、見張っている画面が自動で変わる |
-| 見張りの書き方 | 画面のモデルが共通で持つ `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す |
-| 最初の読み込み | 見張りと一緒に `run()` にまとめる。1 回だけ読む値を先に読み、見張りは並べて動かす |
-| 状態とモデルの形 | `dotclaude/rules/code-design.md` に従う。数の上限は、code-design-check が確かめる |
-| 同じ種類の画面 | 一覧や編集の画面が 2 つ目になる時に、共通のプロトコルと部品に括ってから足す |
-
-> [!TIP]
-> `observe` はひな形に無い。最初に見張る画面を作る時に、`Features/Shared/Model/ScreenModel.swift` として足す。
-
-### 共通の部品の一覧
-
-複数の画面で使う仕組みは、アプリの `docs/architecture-parts.md` に一覧で持つ。最初の仕組みを `Features/Shared/` に足す時に作る。
-
-| 列 | 書くこと |
-| --- | --- |
-| 仕組み | 型かプロトコルの名前 |
-| 使いどころ | どんな画面や処理を作る時に使うか |
-| 置き場所 | ファイルのあるフォルダ |
-
-一覧は、CLAUDE.md の文書の表で「機能・画面を足す」の先に読む文書に入れる。`Shared` のプロトコルが一覧に無いと、code-design-check が止める。
-
-### AppModel と MainView
-
-AppModel は起動と行き先を、MainView はタブとシートを持つ。
-
-| 型 | 持つもの |
-| --- | --- |
-| AppModel | 起動の状態（DB を開いている途中、最初の設定、準備済み、失敗）、今日、押された通知の行き先 |
-| MainView | タブのモデル（アプリが動いている間ずっと持ち、今日が変わったら渡し直す）、開いているシート |
-
-### 起動と画面復帰
-
-起動・前面に戻る・日付が変わる時に行う処理を、上から順に並べる。
-
-| 処理 | 起動 | 前面に戻る | 日付が変わる |
-| --- | --- | --- | --- |
-| DB を開き、表の形を最新にする | する | | |
-| 今日を決める | する | する | する |
-| ほかのプロセス（ウィジェット）の書き込みを、見張りに知らせて読み直させる | | する | する |
-| 通知を予約し直す（通知を持つ時） | する | する | する |
-
-> [!IMPORTANT]
-> DB は、裏に回ると止め、前面に戻ると再開する。書き込みの最中に裏に回っても、`0xdead10cc` で終了させないためである。
-
-```mermaid
-stateDiagram-v2
-    state "動いている" as running
-    state "止めている" as suspended
-    running --> suspended: 裏に回る（AppDatabase.suspend）
-    suspended --> running: 前面に戻る（AppDatabase.resume）
-```
-
-### 外からの入口
-
-ウィジェット・通知などから開く先は、1 つの行き先の型で表す。ウィジェットからは、行き先の文字列を `<app>://` の URL にして渡す。
-
-```mermaid
-sequenceDiagram
-    participant W as ウィジェット
-    participant M as AppModel
-    participant L as 起動画面
-    W->>M: 行き先の URL
-    Note over M,L: 起動した時は、起動画面が消えるまで待つ
-    L-->>M: 消えた
-    M->>M: 行き先の画面を開く
-```
+モデルの作り方・土台の型・起動と外からの入口は、[ios-screens](ios-screens.md) にある。
 
 ## 🪟 ウィジェット
 
@@ -335,7 +272,7 @@ sequenceDiagram
 | --- | --- |
 | Core | Mac の上で `swift test`。fixtures は `#filePath` からの相対パスで読む |
 | Store | メモリ上の DB で、表の形の変更・集計・書き出しの往復 |
-| Features | 処理のある画面のモデル |
+| FeatureModels | 処理のある画面のモデル。テストは `FeaturesTests` に置く |
 | AppFeature | AppModel と通知の予約。通知の予約係だけテスト用に差し替える |
 | 見た目 | プレビューと ui-snapshot で描いた PNG を目で確かめる。XCUITest の UI テストは書かない |
 

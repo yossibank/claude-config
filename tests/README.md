@@ -35,7 +35,7 @@
 
 | テスト | 確かめること |
 | --- | --- |
-| [app-init.sh](skills/app-init.sh) | ひな形の印を置き換え、一時のフォルダに新しいアプリを作れるか |
+| [app-init.sh](skills/app-init.sh) | ひな形の印を置き換え、一時のフォルダに新しいアプリを作れるか。作ったアプリが設計と書き方の検査を通り、code-screen で画面を足せるか |
 | [app-plan.sh](skills/app-plan.sh) | 通信せずに、引数の NG と通信できない時の NG を出すか |
 | [code-screen.sh](skills/code-screen.sh) | 画面のひな形を展開でき、展開したコードが設計と書き方の検査を通るか。土台が無い時は NG にするか |
 | [config-learn.sh](skills/config-learn.sh) | フックが止めた回数を数えられるか |
