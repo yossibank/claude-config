@@ -7,7 +7,9 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/create-app.sh *)
 
 # アプリを立ち上げる
 
-ビルドとテストが通る新しいアプリのリポジトリを、ひな形から作る手順。ひな形は `${CLAUDE_SKILL_DIR}/templates/ios-app/` にある。構成は、claude-config の `docs/app/ios-architecture.md` の共通の形に従う。
+ビルドとテストが通る新しいアプリのリポジトリを、ひな形から作る手順。ひな形は `${CLAUDE_SKILL_DIR}/templates/ios-app/` にある。
+
+構成は、claude-config の共通の形に従う。形は、`docs/app/` の ios-architecture と ios-screens にある。
 
 ## 入力
 
@@ -37,8 +39,9 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 - 名前がパッケージのモジュール（`core`・`store` など）と同じ時は、`NG` を出して止まる。
 - 表示名に `"`・`\`・改行がある時も、`NG` を出して止まる。
 - ひな形を写し、ファイルの中身と名前の `__App__`・`__app__`・`__DisplayName__` を置き換える。
-- `docs/overview.md`・`docs/roadmap.md` は、無い方だけをひな形から置く。`app-plan` の下書きは上書きしない。
+- `docs/` の文書は、無い物だけをひな形から置く。`app-plan` の下書きは上書きしない。
 - overview の最初の 1 文を、README の `__Summary__` に写す。
+- 土台の型を、`code-screen` の `create-screen.py` の形 `base` で置く。写しは、ひな形に持たない。
 - `git init` し、最初の commit を作る。
 - 途中で失敗したら、新しく作ったフォルダは丸ごと消す。既にあったフォルダは、`docs/` のほかを消し、この実行で置いた `docs/` の文書も消す。
 
@@ -57,16 +60,20 @@ ${CLAUDE_SKILL_DIR}/scripts/create-app.sh <名前> <表示名>
 
 ひな形は、kakeibot からアプリだけの事実を外した形である。ウィジェットと通知のターゲットは入れていない。要る時に、共通の形に合わせて Xcode で足す。
 
+画面のモデルは、`FeatureModels` に置く。`Features` と `AppFeature` は、`Store` に依存しない。最初の画面は、`code-design.md` の「モデルの形」と「画面の形」で書いてある。
+
 | 置き場所 | 中身 |
 | --- | --- |
 | 直下 | CLAUDE.md、README、Makefile、Brewfile、Mintfile |
 | 直下の設定 | `.swiftformat`、`.pre-commit-config.yaml` |
 | `docs/` | overview と roadmap。`app-plan` も、ここを写して下書きを書く |
+| `docs/architecture-parts.md` | 共通の部品の一覧の最初の版。土台の型の名前があり、`code-screen` がここを読む |
 | `scripts/verify.sh` | 確認の名前とコマンドを受け、成否と失敗の行だけを出す。ログは `.build/verify/` に書く |
 | `scripts/find-simulator.sh` | 使える先頭の iPhone のシミュレーターの UDID を出す |
 | `ios/` | Xcode プロジェクト、ワークスペース、テストプラン、アプリのターゲット、空のプライバシーの申告 |
 | `ios/Packages/<App>Kit` | Core/Shared（`Identifier`）、Store（`AppDatabase` と最初のマイグレーション） |
-| `ios/Packages/<App>App` | AppFeature（`RootView`）、DesignSystem、Features（`HomeView`） |
+| `ios/Packages/<App>App` の画面 | AppFeature（`AppModel`・`RootView`）、DesignSystem、Features（`HomeView`） |
+| `ios/Packages/<App>App` のモデル | FeatureModels（`HomeModel` と、`ScreenParts` を作る関数）。土台の型は、展開の時に置く |
 
 ## 報告
 
