@@ -39,6 +39,8 @@ flowchart LR
 
 新しい画面は、`code-screen` のスキルのひな形から足す。モデル・画面・テストが、この形で置かれる。
 
+DB を同期で呼ぶアプリは、ひな形の同期の版を使う。見張りを持たず、モデルの `refresh()` で読み直す。共通の形との違いは、アプリの `docs/architecture.md` に書く。
+
 > [!TIP]
 > `observe` はひな形に無い。最初に見張る画面を作る時に足す。置き場所は `FeatureModels/Shared/Model/ScreenModel.swift` である。
 
