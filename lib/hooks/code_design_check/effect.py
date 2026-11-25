@@ -13,6 +13,10 @@ EXTENDED_VIEW = "View"
 SWIFT_HEAD = r"^(\s*)" + ATTRIBUTES + SWIFT_ACCESS + r"(?:final\s+)?"
 SWIFT_SCREEN = re.compile(SWIFT_HEAD + r"(?P<word>struct|class|extension)\s+(?P<name>[\w.]+)(?:<[^>]*>)?\s*:[^{]*\b(?:View|ViewModifier)\b")
 SWIFT_EXTENSION = re.compile(SWIFT_HEAD + r"extension\s+(?P<name>[\w.]+)")
+SWIFT_NAMED = re.compile(SWIFT_HEAD + r"(?:nonisolated\s+)?(?:struct|class|enum|actor|protocol|extension)\s+(?P<name>[\w.]+)(?:<[^>]*>)?\s*(?::(?P<parents>[^{]*))?")
+SWIFT_HELD_MODEL = re.compile(r"\b(?:let|var)\s+\w+\s*[:=]\s*\[?(?:\w+\.)*\w*Model\b")
+SYSTEM_CALLED = {"NSObject", "TimelineProvider", "AppIntentTimelineProvider", "AppIntent", "WidgetConfigurationIntent"}
+SYSTEM_SUFFIX = "Delegate"
 SWIFT_TASK = re.compile(r"(?<![\w.])Task\s*(?P<generic><[^<>{(=]*>\s*)?(?:[{(]|\.(?:detached|init)\b)")
 SWIFT_KIND = re.compile(r"(?:->|:)\s*$")
 SWIFT_KEPT = re.compile(r"^\s*(?:@ObservationIgnored\s+)?" + SWIFT_ACCESS + r"var\s+(\w+)\s*:\s*Task<[^=]*>\?\s*(?:=\s*nil\s*)?$")
@@ -48,28 +52,69 @@ def read(path):
 
 @functools.cache
 def folder_types(folder):
-    """フォルダの下の、View の型の名前と、@Observable のクラスの名前を返す。"""
-    views, classes = set(), set()
+    """フォルダの下の、View の型の名前と、@Observable のクラスの名前と、View がモデルを持つかを返す。"""
+    views, classes, held = set(), set(), False
     for text in map(read, sources(folder, ".swift")):
         if EXTENDED_VIEW in text or OBSERVABLE in text:
-            found, _, observed = declared(swift_source.mask(text))
+            code = swift_source.mask(text)
+            found, _, observed = declared(code)
             views |= found
             classes |= observed
-    return frozenset(views), frozenset(classes)
+            held = held or bool(found) and any(SWIFT_HELD_MODEL.search(line) for line in code)
+    return frozenset(views), frozenset(classes), held
+
+
+def leaf(name):
+    return name.rsplit(".", 1)[-1]
+
+
+def named(code):
+    """このファイルが宣言する型と拡張する型の名前と、その行に書いた親の名前を返す。"""
+    for line in code:
+        found = SWIFT_NAMED.match(line)
+        if found:
+            parents = (found.group("parents") or "").split(" where ")[0]
+            yield leaf(found.group("name")), {leaf(parent) for parent in re.findall(r"[\w.]+", parents)}
+
+
+@functools.cache
+def system_called(module):
+    """OS が呼ぶ型の名前を返す。NSObject・委譲・ウィジェットと App Intents の型を継ぐ型で、プロトコルを挟んだ型も含める。"""
+    parents = {}
+    for text in map(read, sources(module, ".swift")):
+        for name, found in named(swift_source.mask(text)):
+            parents.setdefault(name, set()).update(found)
+    called = {name for name, found in parents.items() if any(parent in SYSTEM_CALLED or parent.endswith(SYSTEM_SUFFIX) for parent in found)}
+    while more := {name for name, found in parents.items() if found & called} - called:
+        called |= more
+    return frozenset(called)
 
 
 def screen_types(path):
     """モデルを持たずに View を宣言するモジュールは、@Observable のクラスも画面と見る。モジュールが分からない時は、View だけを見る。"""
     module = swift_module(path)
-    views, classes = folder_types(module or os.path.dirname(os.path.realpath(path)))
-    if not module or not views or any(module_holds(module, ".swift", part) for part in MODEL_PARTS):
+    views, classes, _ = folder_types(module or os.path.dirname(os.path.realpath(path)))
+    if not module or not views or holds_model(module):
         return views
     return views | classes
 
 
+def holds_model(module):
+    return any(module_holds(module, ".swift", part) for part in MODEL_PARTS)
+
+
+def is_screen_module(module):
+    """まとまりのモデルを置かず、View がモデルを持つモジュールか。ウィジェットや拡張のモジュールは、モデルを持つ View が無い。"""
+    views, _, view_holds_model = folder_types(module)
+    return bool(views) and view_holds_model and not holds_model(module)
+
+
 def is_screen(path, code):
     views, extended, classes = declared(code)
-    return bool(views or EXTENDED_VIEW in extended or (extended | classes) & screen_types(path))
+    if views or EXTENDED_VIEW in extended or (extended | classes) & screen_types(path):
+        return True
+    module = swift_module(path)
+    return bool(module) and is_screen_module(module) and not {name for name, _ in named(code)} & system_called(module)
 
 
 def view_lines(code):

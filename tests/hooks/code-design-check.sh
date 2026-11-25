@@ -500,10 +500,24 @@ starts=$'@Observable\nfinal class CaseDrag {\n    func arm() {\n        Task {}\
 design_case 2 "モデルを持たない画面のモジュールでは、@Observable のクラスの Task も止める" "$sources/Features/CaseDrag.swift" "$starts" "CaseDrag.swift:4: $effect"
 design_case 2 "画面のモジュールの @Observable のクラスを拡張するファイルの Task も止める" "$sources/Features/CaseDrag+Arm.swift" $'extension CaseDrag {\n    func rearm() {\n        Task {}\n    }\n}' "CaseDrag+Arm.swift:3: $effect"
 design_case 0 "画面のモジュールの @Observable のクラスも、入れて取り消す Task は通る" "$sources/Features/CaseDrag.swift" $'@Observable\nfinal class CaseDrag {\n    private var armTask: Task<Void, Never>?\n\n    func arm() {\n        armTask?.cancel()\n        armTask = Task {}\n    }\n}'
-design_case 0 "画面のモジュールの、View でも @Observable でもない型の Task は見ない" "$sources/Features/CaseProvider.swift" $'struct CaseProvider {\n    func reload() {\n        Task {}\n    }\n}'
+plain=$'final class CaseTimer {\n    func arm() {\n        Task {}\n    }\n}'
+design_case 0 "モデルを持つ View の無いモジュールの、View でも @Observable でもない型の Task は見ない" "$sources/Features/CaseTimer.swift" "$plain"
+printf 'struct CaseList: View {\n    @State private var model: CaseModel\n}\n' >"$sources/Features/CaseList.swift"
+design_case 2 "View がモデルを持つ画面のモジュールでは、ただのクラスの Task も止める" "$sources/Features/CaseTimer.swift" "$plain" "CaseTimer.swift:3: $effect"
+design_case 2 "画面のモジュールの struct と enum の Task も止める" "$sources/Features/CaseReload.swift" $'struct CaseReload {\n    func reload() {\n        Task {}\n    }\n}\n\nprivate enum Later {\n    static func run() {\n        Task.detached {}\n    }\n}' "CaseReload.swift:9: $effect"
+design_case 2 "画面のモジュールの、型の外の関数の Task も止める" "$sources/Features/CaseReload.swift" $'struct CaseReload {}\n\nfunc reload(_ model: CaseModel) {\n    Task {\n        await model.load()\n    }\n}' "CaseReload.swift:4: $effect"
+design_case 2 "画面のモジュールの、View でない型を拡張するファイルの Task も止める" "$sources/Features/CaseTimer+Retry.swift" $'extension CaseTimer {\n    func retry() {\n        Task {}\n    }\n}' "CaseTimer+Retry.swift:3: $effect"
+design_case 0 "画面のモジュールのただのクラスも、入れて取り消す Task は通る" "$sources/Features/CaseTimer.swift" $'final class CaseTimer {\n    private var task: Task<Void, Never>?\n\n    func arm() {\n        task?.cancel()\n        task = Task {}\n    }\n}'
+design_case 0 "画面のモジュールでも、ウィジェットの TimelineProvider の Task は通る" "$sources/Features/CaseProvider.swift" $'struct CaseProvider: TimelineProvider {\n    func getTimeline(completion: @escaping (Timeline<Entry>) -> Void) {\n        Task {}\n    }\n}'
+printf 'protocol CaseFeed: TimelineProvider,\n    Sendable where Entry: Sendable {}\n' >"$sources/Features/CaseFeed.swift"
+design_case 0 "TimelineProvider を継ぐプロトコルを拡張するファイルの Task も通る" "$sources/Features/CaseFeed+Snapshot.swift" $'extension CaseFeed {\n    func getSnapshot(completion: @escaping (Entry) -> Void) {\n        Task {}\n    }\n}'
+design_case 0 "NSObject を継ぐ委譲の型と、AppIntent の Task は通る" "$sources/Features/CaseCamera.swift" $'struct CaseCamera: UIViewControllerRepresentable {\n    final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {\n        func finish() {\n            Task {}\n        }\n    }\n}\n\nprivate struct CaseCameraIntent: AppIntent {\n    func open() {\n        Task {}\n    }\n}'
+design_case 0 "NSObject を継がない委譲の型の Task も通る" "$sources/Features/CasePicker.swift" $'final class CasePicker: CasePickerDelegate {\n    func pick() {\n        Task {}\n    }\n}'
+rm -f "$sources/Features/CaseTimer.swift" "$sources/Features/CaseTimer+Retry.swift" "$sources/Features/CaseReload.swift"
 design_case 0 "モデルのモジュールの @Observable のクラスの Task は見ない" "$sources/FeatureModels/OtherModel.swift" $'@Observable\nfinal class OtherModel {\n    func perform() {\n        Task {}\n    }\n}'
 printf '@Observable\nfinal class SideModel {\n    let state: State\n}\n' >"$sources/Features/SideModel.swift"
 design_case 0 "View と同じモジュールにモデルがあれば、@Observable のクラスの Task は見ない" "$sources/Features/CaseDrag.swift" "$starts"
+design_case 0 "View と同じモジュールにモデルがあれば、ただのクラスの Task も見ない" "$sources/Features/CaseTimer.swift" "$plain"
 design_case 2 "モデルと同じモジュールの View の Task は止める" "$sources/Features/CaseList.swift" $'struct CaseList: View {\n    func save() {\n        Task {}\n    }\n}' "CaseList.swift:3: $effect"
 rm -rf "$app/ios/Packages"
 
