@@ -33,9 +33,25 @@ SWIFT_DEPENDENCIES_READ = re.compile(r"(?<!\\)(?<!\bSelf)(?<!\bself)(?<!\bself\?
 OUTPUT_PASSAGE = re.compile(r"\.output\.(?:state|input)\b")
 PARTS = {"State", "Input"}
 SWIFT_OBSERVER = re.compile(r"^\s*(?:didSet|willSet)\b")
-SWIFT_NOW = re.compile(r":\s*Date\s*=\s*(?:Date\(\)|Date\.now|\.now)(?=\s*[,)]|\s*$)")
+TIME_TYPES = r"(?:Date|Instant|LocalDate|LocalDateTime|LocalTime|ZonedDateTime|OffsetDateTime|TimeInterval|Long)"
+NOW_TYPE = r"\w\s*:[^=:]*->\s*(?:\w+\.)*" + TIME_TYPES + r"[?)]*\s*=\s*"
+NOW_OPEN = r"^(\s*).*" + NOW_TYPE + r"\{\s*$"
+SWIFT_NOW_VALUE = r"\bDate\(\)|\bDate\.now\b|\bDate\.init\b|(?<![\w)\]?!])\.now\b"
+SWIFT_NOW = (
+    re.compile(r":\s*Date\s*=\s*(?:Date\(\)|Date\.now|\.now)(?=\s*[,)]|\s*$)"),
+    re.compile(NOW_TYPE + r"(?:\{[^{}]*(?:" + SWIFT_NOW_VALUE + r")[^{}]*\}|" + SWIFT_NOW_VALUE + ")"),
+    re.compile(NOW_OPEN),
+    re.compile(SWIFT_NOW_VALUE),
+)
 KOTLIN_STATE = re.compile(r"^    (?:(?:public|internal|private|override)\s+)*var\s+\w+.*\bby\s+mutable\w*StateOf\b")
-KOTLIN_NOW = re.compile(r":\s*(?:Instant|LocalDate|LocalDateTime)\s*=\s*(?:Instant|LocalDate|LocalDateTime)\.now\(\)")
+KOTLIN_CLOCKS = r"(?:Instant|LocalDate|LocalDateTime|LocalTime|ZonedDateTime|OffsetDateTime|Clock\.System)"
+KOTLIN_NOW_VALUE = r"\b" + KOTLIN_CLOCKS + r"\.now\(|\bSystem\.currentTimeMillis\("
+KOTLIN_NOW = (
+    re.compile(r":\s*(?:Instant|LocalDate|LocalDateTime)\s*=\s*(?:Instant|LocalDate|LocalDateTime)\.now\(\)"),
+    re.compile(NOW_TYPE + r"(?:\{[^{}]*(?:" + KOTLIN_NOW_VALUE + r")[^{}]*\}|" + KOTLIN_CLOCKS + r"::now\b|System::currentTimeMillis\b)"),
+    re.compile(NOW_OPEN),
+    re.compile(KOTLIN_NOW_VALUE),
+)
 KOTLIN_GROUP = re.compile(r"^    (?:(?:public|internal|private)\s+)?(?P<word>va[lr])\s+(?P<name>state|input|output)\s*(?::\s*[\w.<>]+\s*)?=\s*(?:State|Input|Output)\(")
 KOTLIN_PART = re.compile(r"^    (?:(?:public|internal|private)\s+)?class\s+(State|Input|Output)\b")
 KOTLIN_PART_STATE = re.compile(r"^        (?:(?:public|internal|private|override)\s+)*var\s+\w+\s*(?::\s*(?P<type>[^=]+?))?\s+by\s+mutable\w*StateOf\((?P<value>[^)]*)\)")
@@ -190,9 +206,14 @@ def check_kotlin_state(code):
         yield line, f"{name} の mutableStateOf の var は {STATE_LIMIT} 個までにする（今は {len(states)} 個）。一緒に動く値を data class か sealed interface にまとめる"
 
 
-def check_now(code, pattern):
+def check_now(code, patterns):
+    """既定値の今の時刻を見る。値そのものと、今の時刻を返す関数と、複数行の閉じ込めを見る。"""
+    value, function, opened, made = patterns
     for index, line in enumerate(code):
-        if pattern.search(line):
+        found = value.search(line) or function.search(line)
+        if not found and (head := opened.match(line)):
+            found = any(made.search(code[at]) for at in range(index + 1, block_end(code, index, head.group(1))))
+        if found:
             yield index + 1, "今の時刻を引数やプロパティの既定値にしない。呼ぶ側から引数で渡す"
 
 

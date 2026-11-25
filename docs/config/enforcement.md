@@ -38,7 +38,7 @@
 | 入力の下書き | レビューのみ | レビューのみ |
 | 派生する値 | 検査 `check_swift_state`。`didSet` と `willSet` の数だけを見る | レビューのみ |
 | 値を覚える | レビューのみ | レビューのみ |
-| 今の時刻と今日 | 検査 `check_now`。引数とプロパティの既定値だけを見る | 検査 `check_now`。`Instant`・`LocalDate`・`LocalDateTime` の既定値だけを見る |
+| 今の時刻と今日 | 検査 `check_now`。既定値の値と、今の時刻を作る関数を見て、名前を付けた関数と時計の既定値は見ない | 検査 `check_now`。値は `Instant`・`LocalDate`・`LocalDateTime` だけを見て、関数は Swift と同じに見る |
 | 書き換える範囲 | レビューのみ。`private(set)` と書いた値は、コンパイルが守る | レビューのみ。`private set` と書いた値は、コンパイルが守る |
 
 ### モデルの形
@@ -150,7 +150,7 @@ DesignSystem のフォルダは、`is_part_library` が検査から外す。`@Pr
 
 | 決まり | Swift | Kotlin |
 | --- | --- | --- |
-| 入口 | 検査 `check_swift_effect`。画面のファイルの `Task` の始まりだけを見る | 検査 `check_kotlin_effect`。スコープを作る行と、関数の中の `.launch {`・`.async {` を見る |
+| 入口 | 検査 `check_swift_effect`。画面のファイルと画面のモジュールの `Task` の始まりを見て、モデルと同じモジュールの View でない型は見ない | 検査 `check_kotlin_effect`。スコープを作る行と、関数の中の `.launch {`・`.async {` を見る |
 | 出口 | レビューのみ | レビューのみ |
 | 画面の寿命の読み込み | レビューのみ。`.task` の中身は見ない | レビューのみ。`LaunchedEffect` の中身は見ない |
 | 画面だけの非同期 | 検査 `check_swift_effect`。`Task<…>?` の保存プロパティへの代入と `cancel()` の有無を見る | 検査 `check_kotlin_effect`。許す形は無く、`LaunchedEffect` か `pointerInput` の中に書く |
