@@ -502,6 +502,8 @@ design_case 2 "画面のモジュールの @Observable のクラスを拡張す�
 design_case 0 "画面のモジュールの @Observable のクラスも、入れて取り消す Task は通る" "$sources/Features/CaseDrag.swift" $'@Observable\nfinal class CaseDrag {\n    private var armTask: Task<Void, Never>?\n\n    func arm() {\n        armTask?.cancel()\n        armTask = Task {}\n    }\n}'
 plain=$'final class CaseTimer {\n    func arm() {\n        Task {}\n    }\n}'
 design_case 0 "モデルを持つ View の無いモジュールの、View でも @Observable でもない型の Task は見ない" "$sources/Features/CaseTimer.swift" "$plain"
+printf 'struct CaseList: View {\n    @Environment(CaseModel.self) private var model\n}\n' >"$sources/Features/CaseList.swift"
+design_case 2 "View が環境からモデルを受ける画面のモジュールでも、ただのクラスの Task を止める" "$sources/Features/CaseTimer.swift" "$plain" "CaseTimer.swift:3: $effect"
 printf 'struct CaseList: View {\n    @State private var model: CaseModel\n}\n' >"$sources/Features/CaseList.swift"
 design_case 2 "View がモデルを持つ画面のモジュールでは、ただのクラスの Task も止める" "$sources/Features/CaseTimer.swift" "$plain" "CaseTimer.swift:3: $effect"
 design_case 2 "画面のモジュールの struct と enum の Task も止める" "$sources/Features/CaseReload.swift" $'struct CaseReload {\n    func reload() {\n        Task {}\n    }\n}\n\nprivate enum Later {\n    static func run() {\n        Task.detached {}\n    }\n}' "CaseReload.swift:9: $effect"

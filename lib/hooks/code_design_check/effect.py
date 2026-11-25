@@ -14,7 +14,7 @@ SWIFT_HEAD = r"^(\s*)" + ATTRIBUTES + SWIFT_ACCESS + r"(?:final\s+)?"
 SWIFT_SCREEN = re.compile(SWIFT_HEAD + r"(?P<word>struct|class|extension)\s+(?P<name>[\w.]+)(?:<[^>]*>)?\s*:[^{]*\b(?:View|ViewModifier)\b")
 SWIFT_EXTENSION = re.compile(SWIFT_HEAD + r"extension\s+(?P<name>[\w.]+)")
 SWIFT_NAMED = re.compile(SWIFT_HEAD + r"(?:nonisolated\s+)?(?:struct|class|enum|actor|protocol|extension)\s+(?P<name>[\w.]+)(?:<[^>]*>)?\s*(?::(?P<parents>[^{]*))?")
-SWIFT_HELD_MODEL = re.compile(r"\b(?:let|var)\s+\w+\s*[:=]\s*\[?(?:\w+\.)*\w*Model\b")
+SWIFT_HELD_MODEL = re.compile(r"\b(?:let|var)\s+\w+\s*[:=]\s*\[?(?:\w+\.)*\w*Model\b|@Environment\(\s*(?:\w+\.)*\w*Model\.self\s*\)")
 SYSTEM_CALLED = {"NSObject", "TimelineProvider", "AppIntentTimelineProvider", "AppIntent", "WidgetConfigurationIntent"}
 SYSTEM_SUFFIX = "Delegate"
 SWIFT_TASK = re.compile(r"(?<![\w.])Task\s*(?P<generic><[^<>{(=]*>\s*)?(?:[{(]|\.(?:detached|init)\b)")
