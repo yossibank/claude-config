@@ -113,7 +113,7 @@ Kotlin は、同じまとまりを次の形で書く。
 | 括った後 | `Shared` に置いたプロトコルは、共通の部品の一覧に使いどころと一緒に足す |
 | 別の OS へ写す | 写す前に、元の側の重複を括る。括った形のまま写す |
 
-共通の部品の一覧は、アプリの `docs/architecture-parts.md` である。形は、claude-config の `docs/app/ios-architecture.md` にある。
+共通の部品の一覧は、アプリの `docs/architecture-parts.md` である。形は、claude-config の `docs/app/ios-screens.md` にある。
 
 ## API の形
 

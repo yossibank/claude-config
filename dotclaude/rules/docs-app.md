@@ -28,13 +28,13 @@ paths:
 
 ## 足す条件
 
-最初は CLAUDE.md・README・`docs/overview.md`・`docs/roadmap.md` だけを作る。ほかの文書は、次の条件を満たした時に足す。
+最初は CLAUDE.md・README・`docs/overview.md`・`docs/roadmap.md` を作る。app-init は、`docs/architecture-parts.md` も置く。ほかの文書は、次の条件を満たした時に足す。
 
 | 文書 | 足す条件 |
 | --- | --- |
 | `docs/decisions/<領域>.md` | 迷った案があり、理由を残さないと同じ議論になる決定が出た時 |
 | `docs/architecture.md` | 構成が共通の形（claude-config の `docs/app/ios-architecture.md`）から外れた時。書くのは、外れた点と、ID などアプリだけの事実 |
-| `docs/architecture-parts.md` | 複数の画面で使う仕組みを、初めて `Features/Shared/` に足した時 |
+| `docs/architecture-parts.md` | app-init が、土台の型の行を入れて置く。無いアプリは、複数の画面で使う仕組みを初めて足した時 |
 | `docs/data.md` | データベースに表を持った時 |
 | `spec/fixtures/` | 計算の決まりがあり、iOS と Android で同じ結果が要る時 |
 | `spec/export-format.md` | ユーザーのデータを書き出す・読み込む時 |

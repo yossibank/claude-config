@@ -100,6 +100,7 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/README.md](docs/README.md) | 文書を探す時 | フォルダの役割と、claude-config の文書を読む順 |
 | [docs/app/ios-naming.md](docs/app/ios-naming.md) | ファイルを足す・名前を付ける時 | iOS アプリのフォルダとファイルの名前、迷いやすい置き場所 |
 | [docs/app/ios-architecture.md](docs/app/ios-architecture.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
+| [docs/app/ios-screens.md](docs/app/ios-screens.md) | 画面を足す・起動の流れを変える時 | iOS アプリの画面とモデルの分け方、土台の型、起動と外からの入口 |
 | [docs/config/development.md](docs/config/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・足し方 |
 | [docs/config/enforcement.md](docs/config/enforcement.md) | 設計の検査を足す・消す時 | 設計の決まりごとの守り方（型・検査・レビュー） |
 | [docs/config/improvements.md](docs/config/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
