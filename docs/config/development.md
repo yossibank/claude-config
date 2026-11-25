@@ -22,7 +22,7 @@
 | エージェント | 役割の名詞（`-er`） | `explorer` |
 | output style | 返す形の名詞 | `report.md` |
 | 環境変数 | `CC_[<分類>_]<中身>`。分類は接頭語の表の名前を大文字にする | `CC_UI_DEVICE`、`CC_APPS_DIR` |
-| ひな形の印（置き換える所） | `__<名前>__` にし、`replace-placeholders.py` の tokens に入れる | `__App__` |
+| ひな形の印（置き換える所） | `__<名前>__` にし、そのスキルの置き換えるスクリプトで置き換える。app-init は、`replace-placeholders.py` の tokens に入れる | `__App__`、`__Screen__` |
 | ひな形の印（人が書く所） | `<中身>` にする | `<名前>` |
 | 外の道具が読むファイル | 道具が決めた名前のままにし、この表の形にしない | `ios/license_plist.yml`、`store-release/templates/ja/*.txt` |
 
