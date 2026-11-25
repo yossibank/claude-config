@@ -1,7 +1,7 @@
 ---
 name: code-screen
 description: Swift と Kotlin の新しい画面を、モデル・画面・テストのひな形から、設計の検査を通る形で足す。アプリに画面を足す時や、人が新しい画面を頼んだ時に使う。
-argument-hint: "<画面の名前> <扱う型の名前> [list|edit] [sync]"
+argument-hint: "<画面の名前> <扱う型の名前> [list|edit] [Database=sync]"
 allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py *)
 ---
 

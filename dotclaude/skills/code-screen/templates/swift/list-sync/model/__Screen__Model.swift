@@ -50,6 +50,7 @@ public extension __Screen__Model {
     func refresh() {
         do {
             input.items = try dependencies.database.__item__List()
+            state.failureMessage = nil
         } catch {
             state.failureMessage = Self.loadFailedMessage
         }
