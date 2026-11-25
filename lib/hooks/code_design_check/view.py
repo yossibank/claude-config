@@ -12,6 +12,7 @@ SWIFT_VALUE = r"\s+(?P<name>\w+)\s*(?::\s*(?P<type>[^={]+?))?\s*(?:=\s*(?P<value
 SWIFT_STATE = re.compile(r"^\s*" + ATTRIBUTES + r"@State\s+" + SWIFT_ACCESS + "var" + SWIFT_VALUE)
 SWIFT_PREVIEW = re.compile(r"@Previewable\b")
 SWIFT_LAYOUT = re.compile(r"^(\s*)" + SWIFT_ACCESS + r"(?:final\s+)?(?:struct|class)\s+Layout\b")
+SWIFT_HOLDER = re.compile(r"^(\s*)" + ATTRIBUTES + SWIFT_ACCESS + r"(?:final\s+)?(?:struct|class)\s+(\w+)\b.*\{\s*$")
 SWIFT_MEMBER = ATTRIBUTES + SWIFT_ACCESS + r"(?:var|let)" + SWIFT_VALUE
 SWIFT_BOX = re.compile(r"(?:Optional|Array|Set|Dictionary)<(.*)>")
 HEAD = re.compile(r"[A-Z]\w*(?:\.[A-Z]\w*)*")
@@ -103,9 +104,21 @@ def check_swift_layout(code):
                 yield index + 1, f"Layout に置けるのは、寸法・位置・スクロールの型だけにする: {name}。意味のある状態は、モデルの state に移す"
 
 
+def metric_holders(code):
+    for start, line in enumerate(code):
+        head = SWIFT_HOLDER.match(line)
+        if not head:
+            continue
+        pattern = re.compile("^" + head.group(1) + "    " + SWIFT_MEMBER)
+        kinds = [swift_kind(found) for index in range(start + 1, block_end(code, start, head.group(1))) if (found := pattern.match(code[index]))]
+        if kinds and all(kind and swift_leaf(kind) in SWIFT_METRICS for kind in kinds):
+            yield head.group(2)
+
+
 def check_swift_view(path, code):
     if is_part_library(path):
         return
+    holders = set(metric_holders(code))
     for index, line in enumerate(code):
         found = SWIFT_STATE.match(line)
         if not found or SWIFT_PREVIEW.search(line):
@@ -114,7 +127,7 @@ def check_swift_view(path, code):
         name = bare(swift_leaf(kind))
         if name.endswith("Model") or name == "Layout" or name.endswith(".Layout"):
             continue
-        if kind and swift_leaf(kind) in SWIFT_METRICS:
+        if kind and (swift_leaf(kind) in SWIFT_METRICS or name in holders):
             fix = "見た目の値は、入れ子の struct Layout にまとめる"
         else:
             fix = "意味のある状態は、モデルの state に移す"

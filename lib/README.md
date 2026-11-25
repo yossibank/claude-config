@@ -45,6 +45,8 @@
 | [hooks/code_design_check/baseline.py](hooks/code_design_check/baseline.py) | アプリの基準線の読み書きと、外れを見分ける鍵 |
 | [hooks/code_design_check/clones.py](hooks/code_design_check/clones.py) | 名前を伏せた行の形と、別のファイルと同じ形の検査 |
 | [hooks/code_design_check/files.py](hooks/code_design_check/files.py) | ファイルの大きさ・名前と型・フォルダの中の数・共通の部品の一覧の検査 |
+| [hooks/code_design_check/modules.py](hooks/code_design_check/modules.py) | ファイルのモジュールと、そのモジュールが `input`・`dependencies` を持つモデルを置くかの見分け |
+| [hooks/code_design_check/shape.py](hooks/code_design_check/shape.py) | モデルの宣言（DB と時計の持ち方・`Input` と `dependencies` の見せる範囲）の検査 |
 | [hooks/code_design_check/state.py](hooks/code_design_check/state.py) | モデルの状態の数・モデルの形・今の時刻の検査 |
 | [hooks/code_design_check/view.py](hooks/code_design_check/view.py) | 画面の形（`@State`・`Layout`・Composable の中の状態）の検査 |
 | [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |

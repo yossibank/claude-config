@@ -49,6 +49,8 @@ Swift と Kotlin のコードを読み書きする時に読み込まれる決ま
 | `input` に書く | モデルの関数だけが書く。View やほかの型からは書かず、`Bindable` でも包まない |
 | 共通の型 | まとまりの中身が共通の型で足りる時は、入れ子の型を作らずに、それを使ってよい |
 | 子のモデル | 子のモデルや画面に渡す物は、モデルの関数が作る。View は `dependencies` を読まない |
+| 外に見せる範囲 | Swift の `Input` の `public` な `var` は、`public internal(set)` にする。`Dependencies` の中身は `public` にしない |
+| DB と時計 | `@Observable` のクラスは、名前によらず直接持たない。`dependencies` にまとめ、まとまりの形にする |
 | 共通のプロトコル | 転送のプロパティを求めない。`state` と `input` を求め、そこから読む |
 | `Output` と時刻 | 日付で足りる時は、`state` の今日を使う。時刻が要る時は、モデルの関数が引数で渡す |
 | 見せない持ち物 | 進行中の処理や頼み直しの控えは、見張らない値にする。画面から触れない所に置く |
@@ -58,9 +60,9 @@ Kotlin は、同じまとまりを次の形で書く。
 | まとまり | Kotlin の形 |
 | --- | --- |
 | `state` | 入れ子の `class State`。値は `mutableStateOf` の `var` で持つ |
-| `input` | 入れ子の `class Input`。値は `mutableStateOf` の `var` で持ち、setter を `internal set` にする |
+| `input` | 入れ子の `class Input`。値は `internal set` の `mutableStateOf` で持ち、集まりは書き換えられない型にする |
 | `output` | 入れ子の `class Output`。`derivedStateOf` はここに置き、計算は拡張に分けてよい |
-| `dependencies` | `private class Dependencies`。モデルの関数だけが使う |
+| `dependencies` | `private val` で持ち、型は `private class Dependencies` にする。モデルの関数だけが使う |
 
 ## 画面の形
 
@@ -143,16 +145,24 @@ Kotlin は、同じまとまりを次の形で書く。
 | 両立しない状態 | Swift の `@Observable` のクラスの、Bool の保存プロパティの数 | 3 個 |
 | 派生する値 | Swift の `@Observable` のクラスの、`didSet` と `willSet` の数 | 2 個 |
 | モデルの形 | `state`・`input`・`output` の `let` を持つクラスの、直下の保存プロパティの `var` の数 | 0 個 |
+| モデルの形 | まとまりを `var` で持っていないか。Swift は、まとまりの型の `var` が 2 つ以上あるクラスを見る | |
+| モデルの形 | `@Observable` のクラスが、DB か時計の型の値を直接持っていないか。Kotlin は、状態を持つクラスのファイルを見る | |
 | モデルの形 | まとまりのモデルと、入れ子の `State`・`Input` の、`didSet` と `willSet` の数 | 0 個 |
 | モデルの形 | 入れ子の `State` の `var` と Bool の数。`Input` は数えない | 12 個・3 個 |
 | モデルの形 | `Output` のクラスと拡張の中に、`await`・`async`・`AppDatabase`・`dependencies` が無いか | |
+| モデルの形 | `Output` のクラスと拡張の中に、`Date()`・`Date.now` が無いか。Kotlin は `Instant.now()` などを見る | |
 | モデルの形 | `dependencies.` を使うファイルに、`Date()`・`Date.now` が無いか | |
 | モデルの形 | `self` 以外から `.input.` に書いていないか。代入・添字・`append`・`insert`・`remove`・`toggle` と、`input` を包む `Bindable` を見る | |
+| モデルの形 | Swift の `Input` で終わる クラスの `public var` に、`(set)` があるか | |
+| モデルの形 | Swift の `Dependencies` で終わる構造体に、`public` の値が無いか | |
 | モデルの形 | Kotlin のまとまりの `val` を持つクラスの、直下の `mutableStateOf` の数 | 0 個 |
 | モデルの形 | Kotlin の入れ子の `State` の、`mutableStateOf` の `var` と Boolean の数 | 12 個・3 個 |
 | モデルの形 | Kotlin の `Output` とその拡張に、`suspend`・DB・`dependencies` が無いか | |
 | モデルの形 | Kotlin の `dependencies.` を使うファイルに、`Instant.now()` などが無いか | |
-| モデルの形 | Kotlin の `this` 以外の `.input.` への代入が無いか | |
+| モデルの形 | Kotlin の `this` 以外から `.input.` に書いていないか。代入と、`add`・`remove`・`put`・`clear` の呼び出しを見る | |
+| モデルの形 | Kotlin の `Input` の `var` が、`internal set` か `private set` か。引数の `var` は `internal var` か | |
+| モデルの形 | Kotlin の `Input` に、書き換えられる集まりが無いか | |
+| モデルの形 | Kotlin のモデルのクラスの `dependencies` が `private` か。まとまりか状態を持つクラスだけを見る | |
 | モデルの形 | Swift の `self` 以外の `.dependencies` の読み出しが無いか | |
 | モデルの形 | `.output.state`・`.output.input` の読み出しが無いか | |
 | 画面の形 | Swift の `@State` の型が、Optional と配列は中の型が、`Model` で終わる型か `Layout` か。`@Previewable` の行は除く | |
@@ -167,8 +177,13 @@ Kotlin は、同じまとまりを次の形で書く。
 
 - テストのファイルは、大きさだけを見る。
 - リポジトリの `.claude/` の下は、道具のためのコードなので見ない。
+- `input` への書き込みと `dependencies` の読み出しは、それを持つモデルと同じモジュールだけを見る。
+- 別のモジュールの画面からは、コンパイルが止める。モジュールを見分けられないファイルは見る。
+- Swift のモジュールは、`Sources/<ターゲット>` のフォルダで見分ける。
+- Kotlin のモジュールは、`build.gradle.kts` か `build.gradle` のあるフォルダで見分ける。
 - 画面の形は、`DesignSystem`（Kotlin は `designsystem`）のフォルダの下を見ない。
 - 画面の形は、`@State` の行と関数の中の行を 1 行ずつ見る。型は、書かれた型か初めの値の頭で読む。
+- `@State` の型が同じファイルにあり、寸法の型の値だけを持つ時は、`Layout` にまとめるよう知らせる。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
 - 型の保存プロパティ・init の引数の並び・`self.x = x` だけの行は、データの宣言なので数えない。
 - 注釈の行は、複数行の引数も含め、データの宣言として数えない。

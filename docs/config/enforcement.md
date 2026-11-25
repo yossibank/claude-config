@@ -43,40 +43,81 @@
 
 ### モデルの形
 
-右の列は、iOS のモデルを画面と別のモジュールに分けた後の守り方である。
+モデルが画面と同じモジュールにある時は、次のように守る。
 
-| 決まり | Swift | Kotlin | 分けた後の Swift |
-| --- | --- | --- | --- |
-| まとまりだけを持つ | 検査 `check_swift_state`。直下の `var` だけを見て、余分な `let` は見ない | 検査 `check_kotlin_state`。直下の `mutableStateOf` だけを見る | 未確認 |
-| まとまりの型と持つもの | レビューのみ | レビューのみ | 未確認 |
-| `let`・`val` で持つ | レビューのみ。全部を `var` で書くと、検査はまとまりのモデルと見ない | レビューのみ。`var` で書くと、検査はまとまりのモデルと見ない | 未確認 |
-| 連動する値 | 検査 `check_swift_state`。モデルと `State`・`Input` の `didSet` を 0 個にする | レビューのみ | 未確認 |
-| 派生する値 | レビューのみ | レビューのみ | 未確認 |
-| `Output` の中 | 検査 `check_swift_output` | 検査 `check_kotlin_parts`・`check_kotlin_output_extensions` | 未確認 |
-| 入力の下書き | レビューのみ | レビューのみ | 未確認 |
-| 今の時刻 | 検査 `check_swift_clock`。`dependencies.` を使うファイルだけを見る | 検査 `check_kotlin_clock`。`dependencies.` を使うファイルだけを見て、`LocalDate.now()` は見ない | 未確認 |
-| View | 検査 `check_swift_access`。`.output.state` と `.output.input` だけを見て、転送のプロパティは見ない | 検査 `check_kotlin_access`。見る範囲は Swift と同じである | 未確認 |
-| `input` に書く | 検査 `check_swift_input` | 検査 `check_kotlin_input`。代入だけを見て、`add` などの呼び出しは見ない | 型。`public internal(set)` にするので、画面から書くとコンパイルで止まる |
-| 共通の型 | 許す決まりなので、守るものが無い | 許す決まりなので、守るものが無い | |
-| 子のモデル | 検査 `check_swift_access`。`self` 以外の `.dependencies` の読み出しを見る | レビューのみ。`private` と書いた時は、コンパイルが守る | 型。`dependencies` が internal なので、画面から読むとコンパイルで止まる |
-| 共通のプロトコル | レビューのみ | レビューのみ | 未確認 |
-| `Output` と時刻 | レビューのみ。`dependencies.` の無いファイルの `Date()` は、検査が見ない | レビューのみ | 未確認 |
-| 見せない持ち物 | レビューのみ | レビューのみ | 未確認 |
+| 決まり | Swift | Kotlin |
+| --- | --- | --- |
+| まとまりだけを持つ | 検査 `check_swift_state`。直下の `var` だけを見て、余分な `let` は見ない | 検査 `check_kotlin_state`。直下の `mutableStateOf` だけを見る |
+| まとまりの型と持つもの | レビューのみ | レビューのみ |
+| `let`・`val` で持つ | 検査 `check_swift_state`。まとまりの型の `var` が 1 つだけのクラスは、モデルと見ない | 検査 `check_kotlin_state`。`State(`・`Input(`・`Output(` で作る `var` を見る |
+| 連動する値 | 検査 `check_swift_state`。モデルと `State`・`Input` の `didSet` を 0 個にする | レビューのみ |
+| 派生する値 | レビューのみ | レビューのみ |
+| `Output` の中 | 検査 `check_swift_output` | 検査 `check_kotlin_output` |
+| 入力の下書き | レビューのみ | レビューのみ |
+| 今の時刻 | 検査 `check_swift_clock`。`dependencies.` を使うファイルだけを見る | 検査 `check_kotlin_clock`。`dependencies.` を使うファイルだけを見る |
+| View | 検査 `check_passage`。`.output.state` と `.output.input` だけを見て、転送のプロパティは見ない | 検査 `check_passage`。見る範囲は Swift と同じである |
+| `input` に書く | 検査 `check_swift_input` | 検査 `check_kotlin_input` |
+| 共通の型 | 許す決まりなので、守るものが無い | 許す決まりなので、守るものが無い |
+| 子のモデル | 検査 `check_swift_dependencies`。`self` 以外の `.dependencies` の読み出しを見る | 型。`check_kotlin_shape` が `private val` を求めるので、外から読むとコンパイルで止まる |
+| 外に見せる範囲 | 検査 `check_swift_shape` | Kotlin の形の表にある |
+| DB と時計 | 検査 `check_swift_shape`。型の名前が `Database` か `Clock` で終わる値だけを見る | 検査 `check_kotlin_shape`。見る型は Swift と同じである |
+| 共通のプロトコル | レビューのみ | レビューのみ |
+| `Output` と時刻 | 検査 `check_swift_output`。`Output` の中の `Date()` を見る | 検査 `check_kotlin_output`。`Output` の中の `Instant.now()` などを見る |
+| 見せない持ち物 | レビューのみ | レビューのみ |
 
 Kotlin の形の表は、次のように守る。
 
 | まとまり | 守り方 |
 | --- | --- |
 | `state` | 検査 `check_kotlin_state`・`check_kotlin_parts`。直下の `mutableStateOf` と、`State` の中の数を見る |
-| `input` | レビューのみ。`internal set` の有無は見ず、外からの代入を `check_kotlin_input` が見る |
+| `input` | 検査 `check_kotlin_shape`。`internal set` か `private set` の有無と、書き換えられる集まりを見る |
 | `output` | レビューのみ。`derivedStateOf` の置き場所は見ない |
-| `dependencies` | レビューのみ。`private` の有無は見ない |
+| `dependencies` | 検査 `check_kotlin_shape`。`private` の有無を見る |
+
+### モデルを別のモジュールに置いた時
+
+kakeibot で、画面のモジュールに違反を書いてコンパイルした。iOS は `FeatureModels`、Android は `:featuremodels` に分けたブランチで試した。
+
+| 決まり | Swift | Kotlin |
+| --- | --- | --- |
+| まとまりだけを持つ | 型。画面の側の拡張は、保存プロパティを足せない | 未確認 |
+| まとまりの型と持つもの | レビューのみ。画面が `state` に書くのは通る | レビューのみ。画面が `state` に書くのは通る |
+| `let`・`val` で持つ | 型。まとまりを入れ替えると止まり、画面で `State` を作るのも止まる | 型。まとまりを入れ替えると止まり、画面で `Input()` を作るのは通る |
+| 連動する値 | 未確認 | 未確認 |
+| 派生する値 | 未確認 | 未確認 |
+| `Output` の中 | 検査。画面の側の拡張に DB と `async` を足しても通る | 検査。画面の側の拡張に DB と `suspend` を足しても通る |
+| 入力の下書き | 未確認 | 未確認 |
+| 今の時刻 | 検査。画面の側の拡張に `Date()` を書いても通る | 検査。画面の側の拡張に `Instant.now()` を書いても通る |
+| View | 型。output 越しに読むと止まり、画面の側の拡張で足す転送のプロパティは通る | 型。output 越しに読むと止まり、画面の側の拡張で足す転送のプロパティは通る |
+| `input` に書く | 型。`public internal(set)` なので、代入・`append`・`Bindable` が止まる | 型。`internal set` なので代入が止まり、`List` なので `add` も止まる |
+| 共通の型 | 許す決まりなので、守るものが無い | 許す決まりなので、守るものが無い |
+| 子のモデル | 型。internal の `dependencies` は止まり、`public` にした入れ物は中の DB で止まる | 型。`private` なので止まる |
+| 外に見せる範囲 | 検査。宣言の決まりなので、分けても変わらない | 検査。宣言の決まりなので、分けても変わらない |
+| DB と時計 | 検査。宣言の決まりなので、分けても変わらない | 検査。宣言の決まりなので、分けても変わらない |
+| 共通のプロトコル | レビューのみ。転送のプロパティを求めるプロトコルを画面の側に作っても通る | 未確認 |
+| `Output` と時刻 | 検査。画面の側の拡張に `Date()` を書いても通る | 検査。画面の側の拡張に `Instant.now()` を書いても通る |
+| 見せない持ち物 | 型。`public` を付けない値は、画面から読むと止まる | 未確認 |
+
+型が守る 2 つの決まりは、使う側の検査を次のように切り替える。
+
+| 場面 | 使う側の検査 |
+| --- | --- |
+| ファイルのモジュールに、`input` か `dependencies` を持つモデルが無い | 走らない。型が守る |
+| ファイルのモジュールに、それを持つモデルがある | 走る。同じモジュールの中は、型が守らない |
+| モジュールを見分けられない | 走る |
+
+使う側の検査は、次のとおりである。モジュールの見分け方は、code-design.md の「守らせる仕組み」にある。
+
+- `check_swift_input`
+- `check_swift_dependencies`
+- `check_kotlin_input`
+
+型の守りを外す宣言は、`check_swift_shape` と `check_kotlin_shape` が止める。
 
 > [!WARNING]
 > 次のことは、確かめていない。
 >
-> - 「未確認」の行が、モジュールを分けた後に型で止まるか。
-> - Kotlin で型に移せる決まり。Android のモジュールは、まだ分けていない。
+> - 「未確認」の行。画面の側に書ける違反を作れず、コンパイルしていない。
 > - アプリのテストとスナップショットが守る決まり。
 
 ### 重複
