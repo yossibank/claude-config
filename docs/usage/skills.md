@@ -56,7 +56,7 @@ flowchart LR
 
 | スキル | 呼ぶ人 | すること |
 | --- | --- | --- |
-| [code-screen](../../dotclaude/skills/code-screen/SKILL.md) | 🤝 人と Claude | モデル・画面・テストのひな形から、設計の検査を通る形で新しい画面を足す |
+| [code-screen](../../dotclaude/skills/code-screen/SKILL.md) | 🤝 人と Claude | モデル・画面・テストのひな形から、設計の検査を通る形で新しい画面を足す。DB を同期で呼ぶアプリの版もある |
 | [ui-snapshot](../../dotclaude/skills/ui-snapshot/SKILL.md) | 🧠 Claude だけ | SwiftUI の画面をテストとして描き、場合ごとの PNG にする |
 | [ui-record](../../dotclaude/skills/ui-record/SKILL.md) | 🧠 Claude だけ | シミュレーターを録画し、確かめたい場面のコマを並べる |
 | [code-debug](../../dotclaude/skills/code-debug/SKILL.md) | 🤝 人と Claude | 再現・3 つの仮説・検証で原因を確かめ、承認された直し方と再現テストを入れる |

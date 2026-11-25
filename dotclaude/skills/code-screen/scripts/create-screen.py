@@ -29,7 +29,9 @@ RENAMED = {
     "swift": (*BASE["swift"], "AppDatabase", "Core", "Store"),
     "kotlin": (*BASE["kotlin"], "AppDatabase"),
 }
-ASKED = ("Screen", "Item", "View")
+ASKED = ("Screen", "Item", "View", "Database")
+CALLS = ("async", "sync")
+UNUSED = {"async": (), "sync": ("ScreenPerforming",)}
 BASE_HINT = "先に、形を base にして土台を足す。名前が違う時は、<既定の名前>=<アプリの名前> で渡す"
 
 
@@ -110,15 +112,24 @@ def parse(pairs, language, kind):
         for name in ("Screen", "Item"):
             if not NAME.fullmatch(asked.get(name, "")):
                 raise Failure(f"{name}=<頭が大文字の名前> が要る")
-    return asked, given
+    return asked, given, calls_of(asked.pop("Database", CALLS[0]), language, kind)
 
 
-def tokens_of(language, kind, asked, renames, folders, root):
+def calls_of(calls, language, kind):
+    """DB の呼び方を確かめて返す。同期の版は、Swift の画面にだけある。"""
+    if calls not in CALLS:
+        raise Failure(f"Database= は {'・'.join(CALLS)} のどちらかにする: {calls}")
+    if calls != CALLS[0] and (language != "swift" or kind == "base"):
+        raise Failure(f"Database={calls} の版は、Swift の list と edit にだけある")
+    return calls
+
+
+def tokens_of(language, kind, asked, renames, folders, root, calls):
     tokens = {}
     if kind != "base":
         screen, item = asked["Screen"], asked["Item"]
         tokens |= {"__Screen__": screen, "__View__": asked.get("View", f"{screen}View"), "__Item__": item, "__item__": lower_first(item)}
-    base = [renames.get(name, name) for name in BASE[language]]
+    base = [renames.get(name, name) for name in BASE[language] if name not in UNUSED[calls]]
     found = find(base, root, SUFFIXES[language])
     if kind == "base":
         if found:
@@ -207,10 +218,11 @@ def main():
     if language not in SUFFIXES or kind not in KINDS:
         fail(USAGE)
     folders = dict(zip(ROLES, map(os.path.abspath, sys.argv[3:6])))
-    asked, renames = parse(sys.argv[6:], language, kind)
+    asked, renames, calls = parse(sys.argv[6:], language, kind)
     root = repository(folders["model"]) or os.path.commonpath(list(folders.values()))
-    tokens = tokens_of(language, kind, asked, renames, folders, root)
-    files = list(plan(language, kind, folders, tokens, renames))
+    tokens = tokens_of(language, kind, asked, renames, folders, root, calls)
+    template = kind if calls == CALLS[0] else f"{kind}-{calls}"
+    files = list(plan(language, template, folders, tokens, renames))
     for target, text in files:
         os.makedirs(os.path.dirname(target), exist_ok=True)
         Path(target).write_text(text, encoding="utf-8")
