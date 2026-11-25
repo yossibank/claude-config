@@ -38,7 +38,7 @@
 | 入力の下書き | レビューのみ | レビューのみ |
 | 派生する値 | 検査 `check_swift_state`。`didSet` と `willSet` の数だけを見る | レビューのみ |
 | 値を覚える | レビューのみ | レビューのみ |
-| 今の時刻と今日 | 検査 `check_now`。引数とプロパティの既定値だけを見る | 検査 `check_now`。`Instant`・`LocalDate`・`LocalDateTime` の既定値だけを見る |
+| 今の時刻と今日 | 検査 `check_now`。既定値の値と、今の時刻を作る関数を見て、名前を付けた関数と時計の既定値は見ない | 検査 `check_now`。値は `Instant`・`LocalDate`・`LocalDateTime` だけを見て、関数は Swift と同じに見る |
 | 書き換える範囲 | レビューのみ。`private(set)` と書いた値は、コンパイルが守る | レビューのみ。`private set` と書いた値は、コンパイルが守る |
 
 ### モデルの形

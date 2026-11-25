@@ -151,6 +151,18 @@ design_case 0 "時刻を必須の引数で受ければ通る" "$swift" $'struct 
 design_case 0 "文字列とコメントの中の Date() は見ない" "$swift" $'struct Case {\n    let a = "now: Date = Date()" // b: Date = Date()\n}'
 design_case 2 "Kotlin の既定値に Instant.now() を書けば止める" "$kotlin" $'class Case {\n    fun save(at: Instant = Instant.now()) {}\n}' "Case.kt:2: 今の時刻を"
 design_case 0 "Kotlin で時刻を必須の引数で受ければ通る" "$kotlin" $'class Case {\n    fun save(at: Instant) {}\n}'
+now="今の時刻を引数やプロパティの既定値にしない"
+design_case 2 "既定値に Date.init を書けば止める" "$swift" $'final class Case {\n    init(\n        database: AppDatabase,\n        now: @escaping () -> Date = Date.init\n    ) {}\n}' "Case.swift:4: $now"
+design_case 2 "既定値に .now を返す閉じ込めを書けば止める" "$swift" $'final class Case {\n    init(\n        now: @escaping @MainActor () -> Date = { .now },\n        isOpen: (Item) -> Bool = Item.isOpen(for:)\n    ) {}\n}' "Case.swift:3: $now"
+design_case 2 "既定値に Date() と Date.now を返す閉じ込めを書いても止める" "$swift" $'struct Case {\n    var now: () -> Date = { Date() }\n    var today: (@Sendable () -> Date)? = { Date.now }\n}' "Case.swift:3: $now"
+design_case 2 "既定値の複数行の閉じ込めが今の時刻を作れば止める" "$swift" $'final class Case {\n    init(\n        day: @escaping () -> LocalDate = {\n            LocalDate(Date(), in: .current)\n        },\n        count: Int = 0\n    ) {}\n}' "Case.swift:3: $now"
+design_case 2 "@autoclosure の既定値の Date() も止める" "$swift" $'struct Case {\n    func save(at now: @autoclosure () -> Date = Date()) {}\n}' "Case.swift:2: $now"
+design_case 0 "時刻を返す関数を必須の引数で受け、呼ぶ側が Date.init を渡せば通る" "$swift" $'final class Case {\n    init(now: @escaping () -> Date, day: (@Sendable () -> LocalDate)? = nil) {}\n\n    static func live() -> Case {\n        Case(now: Date.init, day: { LocalDate(Date()) })\n    }\n\n    func child() -> Child {\n        Child(now: { .now })\n    }\n}'
+design_case 0 "今の時刻を作らない関数の既定値と、時計から読む閉じ込めは通る" "$swift" $'struct Case {\n    var onSave: (Date) -> Void = { _ in }\n    var later: () -> Date = { .distantFuture }\n\n    init(clock: ScreenClock, now: (() -> Date)? = nil) {\n        let now: () -> Date = now ?? { clock.now }\n\n        let open: () -> AppDatabase = {\n            AppDatabase.file(now: Date())\n        }\n    }\n}'
+design_case 2 "Kotlin の既定値に Instant.now() を返すラムダを書けば止める" "$kotlin" $'class Case(\n    private val database: AppDatabase,\n    private val now: () -> Instant = { Instant.now() },\n)' "Case.kt:3: $now"
+design_case 2 "Kotlin の既定値に Clock.System::now と LocalDate::now を書いても止める" "$kotlin" $'class Case(\n    private val now: () -> Instant = Clock.System::now,\n    private val today: () -> LocalDate = LocalDate::now,\n)' "Case.kt:3: $now"
+design_case 2 "Kotlin の既定値の複数行のラムダが今の時刻を作れば止める" "$kotlin" $'class Case(\n    private val today: () -> LocalDate = {\n        LocalDate.now(ZoneId.systemDefault())\n    },\n)' "Case.kt:2: $now"
+design_case 0 "Kotlin で時刻を返す関数を必須の引数で受け、呼ぶ側が渡せば通る" "$kotlin" $'class Case(\n    private val now: () -> Instant,\n    private val onSave: (Instant) -> Unit = {},\n)\n\nfun live() = Case(now = { Instant.now() })\n\nfun other() = Case(now = Clock.System::now)\n\nfun clock(): () -> Instant = Instant::now\n\nval open: suspend () -> AppDatabase = {\n    AppDatabase.file(now = Instant.now())\n}'
 
 # --- 別のファイルと同じ形 ---
 features="$app/ios/Features"
