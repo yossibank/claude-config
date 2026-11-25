@@ -8,6 +8,7 @@ import kotlin_source  # noqa: E402
 import swift_source  # noqa: E402
 from hooks.code_design_check import baseline  # noqa: E402
 from hooks.code_design_check.clones import Clones  # noqa: E402
+from hooks.code_design_check.effect import check_swift_effect  # noqa: E402
 from hooks.code_design_check.files import (  # noqa: E402
     check_folder,
     check_kotlin_types,
@@ -75,6 +76,7 @@ def swift_checker(paths):
                 *(check_swift_dependencies(code) if is_open_to(path, "dependencies") else ()),
                 *check_passage(code),
                 *check_swift_view(path, code),
+                *check_swift_effect(path, code),
                 *check_now(code, SWIFT_NOW),
                 *clones.check(path),
             ]
