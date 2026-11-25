@@ -37,6 +37,20 @@ struct __Screen__ModelTests {
     }
 
     @Test
+    func savesOnceWhenSavedTwice() async throws {
+        let setup = try Setup()
+        let model = __Screen__Model(parts: setup.parts)
+        model.state.name = "見本"
+
+        await model.save()
+        await model.save()
+        let stored = try await setup.database.__item__List()
+
+        #expect(stored.map(\.name) == ["見本"])
+        #expect(!model.output.canSave)
+    }
+
+    @Test
     func savesEditedItemInPlace() async throws {
         let setup = try Setup()
         let saved = try await setup.save("見本")

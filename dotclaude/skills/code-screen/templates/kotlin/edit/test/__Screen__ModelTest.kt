@@ -40,6 +40,19 @@ class __Screen__ModelTest {
     }
 
     @Test
+    fun savesOnceWhenSavedTwice() = runTest {
+        val database = AppDatabase.inMemory()
+        val model = database.editModel(editing = null)
+        model.state.name = "見本"
+
+        model.save()
+        model.save()
+
+        assertEquals(listOf("見本"), database.__item__List().map { it.name })
+        assertFalse(model.output.canSave)
+    }
+
+    @Test
     fun savesEditedItemInPlace() = runTest {
         val database = AppDatabase.inMemory()
         val saved = database.save(name = "見本")

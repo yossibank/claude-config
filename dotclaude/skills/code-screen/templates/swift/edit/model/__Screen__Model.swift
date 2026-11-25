@@ -34,6 +34,7 @@ public extension __Screen__Model {
         public var failureMessage: String?
         public var isConfirmingDiscard = false
 
+        public internal(set) var isSaving = false
         public internal(set) var outcome = ScreenOutcome<__Item__>()
 
         init(name: String) {
@@ -76,6 +77,8 @@ public extension __Screen__Model {
             return
         }
 
+        state.isSaving = true
+
         do {
             let saved = try await dependencies.database.save__Item__(
                 output.draft,
@@ -86,6 +89,7 @@ public extension __Screen__Model {
             state.outcome.send(saved)
         } catch {
             state.failureMessage = Self.saveFailedMessage
+            state.isSaving = false
         }
     }
 }
@@ -96,7 +100,7 @@ public extension __Screen__Model.Output {
     }
 
     var canSave: Bool {
-        draft.problems.isEmpty
+        draft.problems.isEmpty && !state.isSaving
     }
 
     var isChanged: Bool {

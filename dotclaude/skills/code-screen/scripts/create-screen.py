@@ -186,11 +186,13 @@ def own_of(language, folder):
 
 def plan(language, kind, folders, tokens, renames):
     source = Path(TEMPLATES) / language / kind
+    placed = set()
     for role in ROLES:
         for template in sorted((source / role).glob("*")):
             target = os.path.join(folders[role], render(template.name, tokens, renames))
-            if os.path.lexists(target):
+            if os.path.lexists(target) or target in placed:
                 raise Failure(f"ファイルが既にある: {target}")
+            placed.add(target)
             text = render(template.read_text(encoding="utf-8"), tokens, renames)
             left = sorted(set(TOKEN.findall(text + os.path.basename(target))))
             if left:

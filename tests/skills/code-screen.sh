@@ -72,6 +72,9 @@ check "create-screen: 画面は、モデルのターゲットを import する" 
 check "create-screen: 画面は、DB のモジュールを import しない" test -z "$(grep -rl '^import Store' "$swift/Sources/Features")"
 check "create-screen: Swift に印を残さない" test -z "$(grep -rlE '__[A-Za-z]+__' "$swift")"
 expect "NG ファイルが既にある" "create-screen: 既にあるファイルは上書きしない" swift_screen "$app" list "$stamps" Screen=StampList Item=Stamp
+shared="$swift/Sources/FeatureModels/$stamps"
+expect "NG ファイルが既にある" "create-screen: 置くファイルどうしの名前が重なれば NG" python3 -I "$create" swift list "$shared" "$shared" "$swift/Tests/FeaturesTests/$stamps" Screen=StampTag Item=Stamp View=StampTagModel
+check "create-screen: 名前が重なった時は、ファイルを 1 つも置かない" test ! -e "$shared/StampTagModel.swift"
 
 expect OK "ひな形: Swift の土台と一覧と編集が、code-design-check と swift-style-check を通る" checked "$swift" .swift code-design-check swift-style-check
 view="$swift/Sources/Features/$stamps/StampListView.swift"

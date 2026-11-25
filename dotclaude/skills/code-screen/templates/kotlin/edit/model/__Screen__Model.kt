@@ -30,6 +30,8 @@ class __Screen__Model(
         var name: String by mutableStateOf(name)
         var failureMessage: String? by mutableStateOf(null)
         var isConfirmingDiscard: Boolean by mutableStateOf(false)
+        var isSaving: Boolean by mutableStateOf(false)
+            internal set
     }
 
     class Input(
@@ -46,7 +48,7 @@ class __Screen__Model(
             get() = __Item__Draft(name = state.name)
 
         val canSave: Boolean
-            get() = draft.problems.isEmpty()
+            get() = draft.problems.isEmpty() && !state.isSaving
 
         val isChanged: Boolean
             get() = draft != input.baseline
@@ -62,6 +64,8 @@ class __Screen__Model(
             return
         }
 
+        state.isSaving = true
+
         try {
             val saved = dependencies.database.save__Item__(
                 draft = output.draft,
@@ -71,9 +75,11 @@ class __Screen__Model(
 
             state.outcome.send(saved)
         } catch (error: CancellationException) {
+            state.isSaving = false
             throw error
         } catch (_: Exception) {
             state.failureMessage = saveFailed
+            state.isSaving = false
         }
     }
 }
