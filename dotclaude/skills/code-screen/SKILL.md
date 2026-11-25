@@ -63,7 +63,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | 4 | 形と、渡す名前 | 同じ形の 2 つ目を中身を書かずに置くと、同じ形の検査が止める |
 | 5 | `state`・`input`・`output` に置く値 | 人が変える値は `state`、DB から来る値は `input`、計算は `output` に置く。使わないまとまりは消す |
 | 5 | 結果の型 | 結果は、できた時だけ `state` の `outcome` に 1 回置く。何種類もある時は、1 つの `enum` にする |
-| 6 | 確かめる筋書き | DB はメモリに開き、時計は固定する。`perform` を通す筋書きは、返る処理を待つ |
+| 6 | 確かめる筋書き | DB はメモリに開き、時計は固定する。Kotlin の `perform` は Main が要るので、テストはモデルの関数を直接呼ぶ |
 | 7 | `Layout` に置く見た目の値 | 意味のある状態を、画面の `@State` や `remember` に置かない。使わない `Layout` は消す |
 | 7 | 入口と出口 | ボタンからは `perform` で呼ぶ。結果は、`onOutcome`（Kotlin は `OnOutcome`）の 1 か所で受ける |
 | 8 | 親が開く時に持つ値 | 開いている画面は、親のモデルの `state` の 1 つの値で持つ。子のモデルは、親のモデルの関数が作る |

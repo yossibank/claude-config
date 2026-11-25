@@ -4,7 +4,6 @@ import __core__.__Item__
 import __draft__.__Item__Draft
 import __base__.ScreenClock
 import __modelPackage__.__Screen__Model
-import __base__.perform
 import __store__.AppDatabase
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -33,7 +32,7 @@ class __Screen__ModelTest {
         val model = database.editModel(editing = null)
         model.state.name = "見本"
 
-        model.perform { it.save() }.join()
+        model.save()
 
         assertEquals("見本", model.state.outcome.value?.name)
         assertEquals(listOf("見本"), database.__item__List().map { it.name })

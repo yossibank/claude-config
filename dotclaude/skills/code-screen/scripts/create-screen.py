@@ -35,7 +35,7 @@ BASE_HINT = "先に、形を base にして土台を足す。名前が違う時�
 
 def declared(name):
     kinds = r"(?:struct|class|protocol|interface|object|enum|actor|typealias)"
-    return re.compile(rf"\b{kinds}\s+{name}\b|\bfunc?\s+(?:<[^>]*>\s*)?(?:[\w.]+\.)?{name}\b")
+    return re.compile(rf"\b{kinds}\s+{name}\b|\bfunc?\s+(?:<[^>]*>\s*)?(?:[\w.]+\.)?{name}\s*[(<]")
 
 
 def repository(folder):

@@ -4,7 +4,6 @@ import androidx.compose.runtime.snapshots.Snapshot
 import __core__.__Item__
 import __draft__.__Item__Draft
 import __modelPackage__.__Screen__Model
-import __base__.perform
 import __store__.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -59,7 +58,7 @@ class __Screen__ModelTest {
         val model = __Screen__Model(database = database)
         model.load()
 
-        model.perform { it.remove(saved) }.join()
+        model.remove(saved)
         model.load()
 
         assertEquals(saved, model.state.outcome.value)

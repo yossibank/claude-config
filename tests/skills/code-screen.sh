@@ -40,6 +40,7 @@ kotlin_app() {
     mkdir -p "$android/core/$base/core" "$android/store/$base/store" "$android/featuremodels" "$android/app"
     touch "$android/core/build.gradle.kts" "$android/store/build.gradle.kts" "$android/featuremodels/build.gradle.kts" "$android/app/build.gradle.kts"
     printf 'package com.example.demo.store\n\nclass AppDatabase\n' >"$android/store/$base/store/AppDatabase.kt"
+    printf 'package com.example.demo.core\n\nimport com.example.demo.store.AppDatabase\n\nfun AppDatabase.stampCount(): Int = 0\n' >"$android/core/$base/core/AppDatabaseStamp.kt"
     for name in "$@"; do
         printf 'package com.example.demo.core\n\ndata class %s(\n    val name: String,\n)\n' "$name" >"$android/core/$base/core/$name.kt"
     done
@@ -100,6 +101,7 @@ expect OK "create-screen: Kotlin の一覧の画面を作る" kotlin_screen "$ap
 expect OK "create-screen: Kotlin の編集の画面を作る" kotlin_screen "$app" edit screens/stamps Screen=StampEdit Item=Stamp View=StampEditSheet
 check "create-screen: 土台の import を、宣言のあるパッケージから決める" grep -qx 'import com.example.demo.featuremodels.shared.model.perform' "$views/screens/stamps/StampListView.kt"
 check "create-screen: Core の型の import を、宣言のあるパッケージから決める" grep -qx 'import com.example.demo.core.StampDraft' "$models/screens/stamps/StampEditModel.kt"
+check "create-screen: 拡張の関数の受け手を、型の宣言と取り違えない" grep -qx 'import com.example.demo.store.AppDatabase' "$models/screens/stamps/StampListModel.kt"
 check "create-screen: 同じパッケージのモデルは、テストから import しない" test -z "$(grep -l 'import .*StampListModel$' "$android/featuremodels/src/test/kotlin/com/example/demo/featuremodels/screens/stamps/StampListModelTest.kt")"
 check "create-screen: Kotlin に印を残さない" test -z "$(grep -rlE '__[A-Za-z]+__' "$android")"
 
