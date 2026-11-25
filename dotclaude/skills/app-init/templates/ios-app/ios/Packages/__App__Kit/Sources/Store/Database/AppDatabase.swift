@@ -18,7 +18,6 @@ public extension AppDatabase {
     static func appGroup() throws -> AppDatabase {
         let path = try groupPath()
         let pool = try DatabasePool(path: path, configuration: configuration)
-
         return try AppDatabase(pool)
     }
 
@@ -40,6 +39,12 @@ public extension AppDatabase {
             object: nil
         )
     }
+
+    func appliedMigrations() async throws -> [String] {
+        try await writer.read { db in
+            try Self.migrator.appliedMigrations(db)
+        }
+    }
 }
 
 extension AppDatabase {
@@ -59,7 +64,6 @@ private extension AppDatabase {
 
     static var groupContainer: URL? {
         let manager = FileManager.default
-
         return manager.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier)
     }
 
