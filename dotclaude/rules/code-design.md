@@ -94,10 +94,12 @@ Kotlin は、同じまとまりを次の形で書く。
 
 | 対象 | 決まり |
 | --- | --- |
-| 入口 | 画面は、モデルの口から処理を始める。Swift は `Task` を画面に書かない。Kotlin は、画面でスコープを作らず、スコープから `launch` しない |
+| 入口 | 画面は、モデルの口から処理を始める |
+| 入口の書き方 | Swift は `Task` を画面に書かない。Kotlin は、画面でスコープを作らず、スコープから `launch` しない |
 | 出口 | モデルは、結果を `state` に置く。画面は、関数の戻り値を待たずに、`state` の変化を 1 か所で受ける |
 | 画面の寿命の読み込み | Swift の `.task` と Kotlin の `LaunchedEffect` は書いてよい。中では、モデルの関数を呼ぶだけにする |
-| 画面だけの非同期 | 指の動きを追うような処理は、View でない型に置く。始めた処理は値で持ち、取り消せるようにする。Kotlin は、`LaunchedEffect` と `pointerInput` の中に書く |
+| 画面だけの非同期 | 指の動きを追うような処理は、View でない型に置く。始めた処理は値で持ち、取り消せるようにする |
+| Kotlin の画面だけの非同期 | `LaunchedEffect` と `pointerInput` の中に書く |
 | DesignSystem の部品の非同期 | 呼ぶモデルが無いので、この決まりの外に置く |
 
 ## 重複
@@ -182,8 +184,8 @@ Kotlin は、同じまとまりを次の形で書く。
 | 画面の形 | Kotlin の `@Composable` のあるファイルの関数が、`mutableStateOf` の仲間を作っていないか。`@Preview` の関数は除く | |
 | 画面の形 | Kotlin の `class Layout` の本体のプロパティが、寸法の型か。型を読み取れない値も止め、コンストラクターの引数は見ない | |
 | 画面の形 | Swift の画面のファイルに、`Task {`・`Task(`・`Task.detached` が無いか | |
-| 画面の形 | Kotlin の `@Composable` のあるファイルに、`rememberCoroutineScope`・`CoroutineScope(`・`MainScope(`・`GlobalScope` が無いか | |
-| 画面の形 | Kotlin の `@Composable` のあるファイルの関数に、スコープから始める `.launch {`・`.async {` が無いか | |
+| 画面の形 | Kotlin の画面のファイルで、スコープを作っていないか。`rememberCoroutineScope` などを見る | |
+| 画面の形 | Kotlin の画面の関数が、スコープから `.launch {`・`.async {` で始めていないか | |
 | 今の時刻と今日 | `Date()`・`Instant.now()` などを、引数やプロパティの既定値に書いていないか | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
@@ -205,6 +207,8 @@ Kotlin は、同じまとまりを次の形で書く。
 - モジュールを見分けられない時は、同じフォルダの下の View を拡張するファイルまでを画面と見る。
 - 画面のファイルでも、`Task<…>?` の保存プロパティに入れて `cancel()` で取り消す `Task` は通す。
 - その保存プロパティは、同じファイルの View の外で宣言した物だけを見る。`@State` は当たらない。
+- Kotlin の画面のファイルは、`@Composable` のあるファイルである。
+- スコープを作る物は、`rememberCoroutineScope`・`CoroutineScope(` を見る。`MainScope(` と `GlobalScope` も見る。
 - Kotlin のコルーチンは、`@Preview` の関数を除く。`.launch {` と `.async {` は、クラスの中を見ない。
 - `LaunchedEffect` と、その中の受け手の無い `launch {`、波かっこの続かない `launch(` は通す。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
