@@ -5,7 +5,7 @@ import re
 import swift_source
 from hooks.code_design_check.modules import module_holds, sources, swift_module
 from hooks.code_design_check.state import block_end, observable_classes
-from hooks.code_design_check.view import ATTRIBUTES, SWIFT_ACCESS, is_part_library
+from hooks.code_design_check.view import ATTRIBUTES, COMPOSABLE, SWIFT_ACCESS, is_part_library, top_lines
 
 MODEL_PARTS = ("state", "input", "dependencies")
 OBSERVABLE = "@Observable"
@@ -18,6 +18,9 @@ SWIFT_KIND = re.compile(r"(?:->|:)\s*$")
 SWIFT_KEPT = re.compile(r"^\s*(?:@ObservationIgnored\s+)?" + SWIFT_ACCESS + r"var\s+(\w+)\s*:\s*Task<[^=]*>\?\s*(?:=\s*nil\s*)?$")
 SWIFT_ASSIGNED = re.compile(r"^\s*(?:self\.)?(\w+)\s*=\s*$")
 SWIFT_EFFECT = "画面で Task を始めない。モデルの口から始め、結果は state の変化で受ける。画面だけの非同期は、View でない型が Task? の保存プロパティに入れて取り消す"
+KOTLIN_SCOPE = re.compile(r"\b(?:rememberCoroutineScope|CoroutineScope|MainScope)(?=\s*\()|(?<![\w.])GlobalScope\b")
+KOTLIN_START = re.compile(r"\.\s*(launch|async)\s*(?:\((?:[^()]|\([^()]*\))*\)\s*)?\{")
+KOTLIN_EFFECT = "画面でコルーチンを始めない（{}）。モデルの口から始め、結果は State の変化で受ける。画面の寿命の読み込みは、LaunchedEffect からモデルの関数を呼ぶ"
 
 
 def task_starts(code):
@@ -95,3 +98,13 @@ def check_swift_effect(path, code):
         assigned = SWIFT_ASSIGNED.match(before)
         if not (assigned and assigned.group(1) in kept):
             yield index + 1, SWIFT_EFFECT
+
+
+def check_kotlin_effect(path, code):
+    """スコープを作る行はファイルの全体で、スコープから始める行は最上位の関数の中で見る。@Preview の関数は除く。"""
+    if is_part_library(path) or not any(COMPOSABLE.search(line) for line in code):
+        return
+    for index, line, is_fun, is_preview in top_lines(code):
+        found = not is_preview and (KOTLIN_SCOPE.search(line) or (is_fun and KOTLIN_START.search(line)))
+        if found:
+            yield index + 1, KOTLIN_EFFECT.format(found.group(found.lastindex or 0))
