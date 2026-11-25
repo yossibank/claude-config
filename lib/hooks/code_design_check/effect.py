@@ -13,7 +13,7 @@ EXTENDED_VIEW = "View"
 SWIFT_HEAD = r"^(\s*)" + ATTRIBUTES + SWIFT_ACCESS + r"(?:final\s+)?"
 SWIFT_SCREEN = re.compile(SWIFT_HEAD + r"(?P<word>struct|class|extension)\s+(?P<name>[\w.]+)(?:<[^>]*>)?\s*:[^{]*\b(?:View|ViewModifier)\b")
 SWIFT_EXTENSION = re.compile(SWIFT_HEAD + r"extension\s+(?P<name>[\w.]+)")
-SWIFT_TASK = re.compile(r"(?<![\w.])Task\s*(?P<generic><[^{(=]*>\s*)?(?:[{(]|\.(?:detached|init)\b)")
+SWIFT_TASK = re.compile(r"(?<![\w.])Task\s*(?P<generic><[^<>{(=]*>\s*)?(?:[{(]|\.(?:detached|init)\b)")
 SWIFT_KIND = re.compile(r"(?:->|:)\s*$")
 SWIFT_KEPT = re.compile(r"^\s*(?:@ObservationIgnored\s+)?" + SWIFT_ACCESS + r"var\s+(\w+)\s*:\s*Task<[^=]*>\?\s*(?:=\s*nil\s*)?$")
 SWIFT_ASSIGNED = re.compile(r"^\s*(?:self\.)?(\w+)\s*=\s*$")
@@ -73,7 +73,10 @@ def view_lines(code):
     for index, line in enumerate(code):
         found = SWIFT_SCREEN.match(line)
         if found and found.group("word") != "extension":
-            yield from range(index, block_end(code, index, found.group(1)))
+            if "{" in line and line.count("{") == line.count("}"):
+                yield index
+            else:
+                yield from range(index, block_end(code, index, found.group(1)))
 
 
 def kept_tasks(code):
