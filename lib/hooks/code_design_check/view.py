@@ -196,16 +196,20 @@ def check_kotlin_layout(code):
                 yield index + 1, f"Layout に置けるのは、寸法と位置の型だけにする: {name}。意味のある状態は、モデルの State に移す"
 
 
-def composable_lines(code):
-    inside = False
+def top_lines(code):
+    """行ごとに、最上位の関数の中かと、@Preview の関数の中かを付けて返す。"""
+    is_fun = is_preview = False
     marks = ""
     for index, line in enumerate(code):
         if KOTLIN_TOP.match(line):
             is_fun = bool(KOTLIN_FUN.match(line))
-            inside = is_fun and KOTLIN_PREVIEW not in marks + line
+            is_preview = is_fun and KOTLIN_PREVIEW in marks + line
             marks = marks + line if line.startswith("@") and not is_fun else ""
-        if inside:
-            yield index, line
+        yield index, line, is_fun, is_preview
+
+
+def composable_lines(code):
+    return ((index, line) for index, line, is_fun, is_preview in top_lines(code) if is_fun and not is_preview)
 
 
 def check_kotlin_view(path, code):
