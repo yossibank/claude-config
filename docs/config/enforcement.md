@@ -144,7 +144,7 @@ kakeibot で、画面のモジュールに違反を書いてコンパイルし�
 
 DesignSystem のフォルダは、`is_part_library` が検査から外す。`@Previewable` の行と `@Preview` の関数も外す。
 
-新しい画面は、`code-screen` のひな形から始める。ひな形が検査を通ることは、`tests/skills/code-screen.sh` が確かめる。
+新しい画面は、`code-screen` のひな形から始める。ひな形が検査を通ることは、`tests/skills/code-screen.sh` が確かめる。Swift のひな形は、仮のパッケージでビルドとテストも通す。
 
 非同期の処理の決まりは、次のように守る。検査の関数は、`effect.py` にある。
 

@@ -3,6 +3,7 @@ set -uo pipefail
 
 source "$(dirname "$0")/../support/assert.sh"
 source "$(dirname "$0")/../support/fixtures.sh"
+source "$(dirname "$0")/../support/screen_package.sh"
 
 export TMPDIR="$work/state/"
 mkdir -p "$TMPDIR"
@@ -44,6 +45,31 @@ kotlin_app() {
     for name in "$@"; do
         printf 'package com.example.demo.core\n\ndata class %s(\n    val name: String,\n)\n' "$name" >"$android/core/$base/core/$name.kt"
     done
+}
+
+# <アプリ> <async|sync> で、仮の Swift パッケージに、土台と一覧と編集を展開する
+compiled_app() {
+    local app=$1 calls=$2
+    mkdir -p "$app"
+    git -C "$app" init -q
+    screen_package "$app" "$calls"
+    swift_screen "$app" base Shared/Model || return 1
+    swift_screen "$app" list Screens/Stamps Screen=StampList Item=Stamp "Database=$calls" || return 1
+    swift_screen "$app" edit Screens/Stamps Screen=StampEdit Item=Stamp View=StampEditSheet "Database=$calls"
+}
+
+# <アプリ> で、展開したままのパッケージをビルドしてテストを流し、通ったら <アプリ>.ok を置く。待たずに並べて流す
+swift_test() {
+    { swift test --package-path "$1/ios/Packages/DemoApp" >"$1.log" 2>&1 && touch "$1.ok"; } &
+}
+
+# <アプリ> で、swift_test が通り、2 つのテストの型が走ったかを見る。落ちた時は、エラーの行を出す
+swift_tested() {
+    if [[ -f $1.ok ]] && grep -q 'tests in 2 suites passed' "$1.log"; then
+        return 0
+    fi
+    grep -E 'error|failed|recorded an issue' "$1.log" || tail -5 "$1.log"
+    return 1
 }
 
 app="$work/app"
@@ -132,5 +158,41 @@ check "create-screen: モジュールの名前も置き換える" grep -qx 'impo
 check "create-screen: 同じターゲットのモデルは、画面から import しない" test -z "$(grep -l '^import Features$' "$features/StampListView.swift")"
 check "create-screen: テストは、モデルのターゲットを import する" grep -qx 'import Features' "$named/ios/Packages/DemoApp/Tests/FeaturesTests/Stamps/StampListModelTests.swift"
 expect OK "ひな形: モデルと画面が同じターゲットでも、検査を通る" checked "$features" .swift code-design-check swift-style-check
+
+expect "NG Database= は async・sync のどちらか" "create-screen: 知らない DB の呼び方は NG" swift_screen "$app" list Screens/Notes Screen=NoteList Item=Note Database=fast
+expect "NG Database=sync の版は、Swift の list と edit にだけある" "create-screen: 同期の版の土台は無いので NG" swift_screen "$work/none" base Shared/Model Database=sync
+expect "NG Database=sync の版は、Swift の list と edit にだけある" "create-screen: Kotlin の同期の版は無いので NG" kotlin_screen "$app" list screens/notes Screen=NoteList Item=Stamp Database=sync
+check "create-screen: DB の呼び方が NG の時は、ファイルを 1 つも置かない" test ! -e "$swift/Sources/FeatureModels/Screens/Notes" -a ! -e "$models/screens/notes"
+
+plain="$work/plain"
+mkdir -p "$plain/ios/Packages/DemoApp/Sources/FeatureModels/Shared" "$plain/ios/Packages/DemoApp/Sources/Features/Shared"
+git -C "$plain" init -q
+printf 'struct ScreenParts {}\nstruct ScreenClock {}\nstruct ScreenOutcome<Value> {}\n' >"$plain/ios/Packages/DemoApp/Sources/FeatureModels/Shared/ScreenParts.swift"
+cp "$shared/View+Outcome.swift" "$plain/ios/Packages/DemoApp/Sources/Features/Shared/View+Outcome.swift"
+expect "NG 土台の型か関数が無い: ScreenPerforming" "create-screen: 非同期の版は、口が無ければ NG" swift_screen "$plain" list "$stamps" Screen=StampList Item=Stamp
+expect OK "create-screen: 同期の版は、口が無くても置ける" swift_screen "$plain" list "$stamps" Screen=StampList Item=Stamp Database=sync
+
+expect OK "create-screen: 非同期の版を、仮のパッケージに展開する" compiled_app "$work/async" async
+expect OK "create-screen: 同期の版を、仮のパッケージに展開する" compiled_app "$work/sync" sync
+for file in FeatureModels/$stamps/StampListModel Features/$stamps/StampListView FeatureModels/$stamps/StampEditModel Features/$stamps/StampEditSheet; do
+    check "create-screen: Database=async は、渡さない時と同じ中身を置く（$(basename "$file")）" cmp -s "$work/async/ios/Packages/DemoApp/Sources/$file.swift" "$swift/Sources/$file.swift"
+done
+sync="$work/sync/ios/Packages/DemoApp"
+check "create-screen: 同期の版は、モデルが init で読み、refresh で読み直す" test "$(grep -c 'refresh()' "$sync/Sources/FeatureModels/$stamps/StampListModel.swift")" = 3
+check "create-screen: 同期の版は、async と await と perform を書かない" test -z "$(grep -rlE '\b(async|await|perform)\b' "$sync/Sources/FeatureModels/Screens" "$sync/Sources/Features/Screens" "$sync/Tests")"
+check "create-screen: 同期の版の画面も、DB のモジュールを import しない" test -z "$(grep -rl '^import Store' "$sync/Sources/Features")"
+check "create-screen: 同期の版に印を残さない" test -z "$(grep -rlE '__[A-Za-z]+__' "$sync")"
+expect OK "ひな形: 同期の版の土台と一覧と編集が、code-design-check と swift-style-check を通る" checked "$sync" .swift code-design-check swift-style-check
+model="$sync/Sources/FeatureModels/$stamps/StampListModel.swift"
+cp "$model" "$work/StampListModel.swift"
+replace_text "$work/StampListModel.swift" "$model" 'input.items.isEmpty' '(try? input.dependencies.database.stampList())?.isEmpty ?? true'
+expect "Output" "ひな形: 同期の版の Output に DB を読ませると、code-design-check が止める" checked "$sync" .swift code-design-check
+cp "$work/StampListModel.swift" "$model"
+
+swift_test "$work/async"
+swift_test "$work/sync"
+wait
+expect OK "ひな形: 非同期の版が、展開したままで swift build と swift test を通る" swift_tested "$work/async"
+expect OK "ひな形: 同期の版が、展開したままで swift build と swift test を通る" swift_tested "$work/sync"
 
 finish

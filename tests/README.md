@@ -37,7 +37,7 @@
 | --- | --- |
 | [app-init.sh](skills/app-init.sh) | ひな形の印を置き換え、一時のフォルダに新しいアプリを作れるか。作ったアプリが設計と書き方の検査を通り、code-screen で画面を足せるか |
 | [app-plan.sh](skills/app-plan.sh) | 通信せずに、引数の NG と通信できない時の NG を出すか |
-| [code-screen.sh](skills/code-screen.sh) | 画面のひな形を展開でき、展開したコードが設計と書き方の検査を通るか。土台が無い時は NG にするか |
+| [code-screen.sh](skills/code-screen.sh) | 画面のひな形を展開でき、展開したコードが設計と書き方の検査を通るか。Swift の非同期と同期の版が、仮のパッケージで `swift test` を通るか |
 | [config-learn.sh](skills/config-learn.sh) | フックが止めた回数を数えられるか |
 | [ctx-report.sh](skills/ctx-report.sh) | 作り物の会話の記録から、月ごとのトークンを数えられるか |
 | [docs-polish.sh](skills/docs-polish.sh) | 文字だけが続く節を見つけ、表・図・コードの囲みのある節は通すか |
@@ -60,3 +60,4 @@
 | [support/fixtures.sh](support/fixtures.sh) | 作り物のリポジトリと、偽の gh・偽のコマンド |
 | [support/hook_fixtures.sh](support/hook_fixtures.sh) | フックのテストの作り物のアプリと、入力の作り方 |
 | [support/http_fake.sh](support/http_fake.sh) | 通信の境界を差し替える Python の部品と、偽の鍵 |
+| [support/screen_package.sh](support/screen_package.sh) | 画面のひな形をコンパイルする、仮の Swift パッケージ。DB は非同期と同期の 2 通り |
