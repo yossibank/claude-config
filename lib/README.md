@@ -44,6 +44,7 @@
 | [hook_state.py](hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除 |
 | [hooks/code_design_check/baseline.py](hooks/code_design_check/baseline.py) | アプリの基準線の読み書きと、外れを見分ける鍵 |
 | [hooks/code_design_check/clones.py](hooks/code_design_check/clones.py) | 名前を伏せた行の形と、別のファイルと同じ形の検査 |
+| [hooks/code_design_check/effect.py](hooks/code_design_check/effect.py) | 画面のファイルの見分けと、画面が始める `Task` の検査 |
 | [hooks/code_design_check/files.py](hooks/code_design_check/files.py) | ファイルの大きさ・名前と型・フォルダの中の数・共通の部品の一覧の検査 |
 | [hooks/code_design_check/modules.py](hooks/code_design_check/modules.py) | ファイルのモジュールと、そのモジュールが `input`・`dependencies` を持つモデルを置くかの見分け |
 | [hooks/code_design_check/shape.py](hooks/code_design_check/shape.py) | モデルの宣言（DB と時計の持ち方・`Input` と `dependencies` の見せる範囲）の検査 |

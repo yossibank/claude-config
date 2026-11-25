@@ -367,7 +367,35 @@ design_case 2 "Layout の型を読み取れない値は、型を書くよう止�
 design_case 2 "拡張に置いた Layout の中も見る" "$features/CaseView+Layout.swift" $'extension CaseView {\n    struct Layout {\n        var isOpen = false\n    }\n}' "CaseView+Layout.swift:3: Layout の値には、型を書く: isOpen"
 design_case 0 "DesignSystem の部品の @State は見ない" "$app/ios/DesignSystem/Components/CaseSwitch.swift" $'struct CaseSwitch: View {\n    @State private var isPressed = false\n    @State private var width: CGFloat = 0\n}'
 design_case 0 "テストの View の @State は見ない" "$app/ios/FeaturesTests/CaseViewTests.swift" $'struct CaseViewTests: View {\n    @State private var isOn = false\n}'
-rm -f "$view" "$features/CaseLift.swift" "$features/CaseView+Layout.swift"
+rm -f "$features/CaseLift.swift" "$features/CaseView+Layout.swift"
+
+# --- 画面の非同期 ---
+effect="画面で Task を始めない。モデルの口から始め、結果は state の変化で受ける"
+# <Task を入れる変数の宣言> <取り消しの行> の、View でない型と ViewModifier が同じファイルにある画面だけの非同期
+scroller() {
+    printf '@Observable\nfinal class CaseScroll {\n%s\n\n    func follow() {\n        task = Task {\n            await run()\n        }\n    }\n\n    func stop() {\n%s\n    }\n}\n\nprivate struct CaseScrollModifier: ViewModifier {}' "$1" "$2"
+}
+design_case 2 "View の中の Task は止める" "$view" "$(screen $'    func save() {\n        Task {\n            await model.save()\n        }\n    }')" "CaseView.swift:3: $effect"
+design_case 2 "View の中の Task( と Task.detached と、型引数のある Task も止める" "$view" "$(screen $'    func save() {\n        Task(priority: .high) {}\n        Task.detached {}\n        Task<Void, Never> {}\n    }')" "CaseView.swift:5: $effect"
+design_case 2 "クロージャの中で @MainActor を付けた Task も止める" "$view" "$(screen $'    var body: some View {\n        Button("a") {\n            Task { @MainActor in\n                await model.save()\n            }\n        }\n    }')" "CaseView.swift:4: $effect"
+design_case 0 "View の .task・Task.sleep・addTask・型の宣言・コメントと文字列は通る" "$view" "$(screen $'    let pending: Task<Void, Never>?\n\n    var body: some View {\n        Text("Task { }")\n            .task {\n                try? await Task.sleep(for: .seconds(1))\n                await Task.yield()\n                // Task { await model.save() }\n                await withTaskGroup(of: Void.self) { group in\n                    group.addTask { await model.load() }\n                }\n            }\n            .task(id: model.state.day) {\n                if !Task.isCancelled {\n                    await model.load()\n                }\n            }\n    }\n\n    func start() -> Task<Void, Never> {\n        model.perform { await $0.save() }\n    }')"
+design_case 2 "View を拡張するファイルの Task も止める" "$features/CaseView+Actions.swift" $'extension CaseView {\n    func save() {\n        Task {\n            await model.save()\n        }\n    }\n}' "CaseView+Actions.swift:3: $effect"
+design_case 2 "extension View のファイルの Task も止める" "$features/CaseNotice.swift" $'extension View {\n    func notice(_ model: CaseModel) -> some View {\n        onTapGesture {\n            Task {}\n        }\n    }\n}' "CaseNotice.swift:4: $effect"
+design_case 2 "ViewModifier の Task も止める" "$features/CaseLift.swift" $'struct CaseLift: ViewModifier {\n    func lift() {\n        Task {}\n    }\n}' "CaseLift.swift:3: $effect"
+design_case 0 "View でない型だけのファイルの Task は見ない" "$features/CaseModel.swift" $'@Observable\nfinal class CaseModel {\n    func perform() {\n        Task {\n            await save()\n        }\n    }\n}'
+design_case 0 "View でない型を拡張するファイルの Task は見ない" "$features/CaseModel+Pro.swift" $'extension CaseModel {\n    func watch() {\n        Task {}\n    }\n}'
+design_case 0 "View の外の Task? の保存プロパティに入れて取り消す Task は通る" "$features/CaseScroll.swift" "$(scroller $'    private var task: Task<Void, Never>?' $'        task?.cancel()\n        task = nil')"
+design_case 0 "@ObservationIgnored の保存プロパティと self. の代入も通る" "$features/CaseScroll.swift" "$(scroller $'    @ObservationIgnored private var task: Task<Void, Never>? = nil' $'        self.task?.cancel()' | sed 's/        task = Task/        self.task = Task/')"
+design_case 0 "型引数の中の Task は通る" "$view" "$(screen $'    let tasks = Dictionary<UUID, Task<Void, Never>>()\n    let all = Set<Task<Void, Never>>()')"
+design_case 0 "1 行で宣言した ViewModifier の後の型の、取り消す Task は通る" "$features/CaseScroll.swift" $'private struct CaseScrollModifier: ViewModifier { func body(content: Content) -> some View { content } }\n\n@Observable\nfinal class CaseScroll {\n    private var task: Task<Void, Never>?\n\n    func follow() {\n        task?.cancel()\n        task = Task {}\n    }\n}'
+design_case 2 "保存プロパティに入れても、取り消さない Task は止める" "$features/CaseScroll.swift" "$(scroller $'    private var task: Task<Void, Never>?' $'        task = nil')" "CaseScroll.swift:6: $effect"
+design_case 2 "画面のファイルの View でない型でも、入れずに始める Task は止める" "$features/CaseScroll.swift" "$(scroller $'    private var task: Task<Void, Never>?' $'        task?.cancel()\n        Task {}')" "CaseScroll.swift:13: $effect"
+design_case 2 "View の @State に入れる Task は止める" "$view" "$(screen $'    @State private var task: Task<Void, Never>?\n\n    func save() {\n        task?.cancel()\n        task = Task {}\n    }')" "CaseView.swift:6: $effect"
+design_case 2 "View の中で宣言した保存プロパティに入れる Task は止める" "$view" "$(screen $'    private var task: Task<Void, Never>?\n\n    init() {\n        task = Task {}\n        task?.cancel()\n    }')" "CaseView.swift:5: $effect"
+design_case 2 "View からほかの型のプロパティに入れる Task は止める" "$view" "$(screen $'    func save() {\n        holder.task?.cancel()\n        holder.task = Task {}\n    }')"$'\n\nfinal class CaseViewHolder {\n    var task: Task<Void, Never>?\n}' "CaseView.swift:4: $effect"
+design_case 0 "DesignSystem の部品の Task は見ない" "$app/ios/DesignSystem/Components/CaseSwitch.swift" $'struct CaseSwitch: View {\n    func flash() {\n        Task {}\n    }\n}'
+design_case 0 "テストの View の Task は見ない" "$app/ios/FeaturesTests/CaseViewTests.swift" $'struct CaseViewTests: View {\n    func run() {\n        Task {}\n    }\n}'
+rm -f "$view" "$features"/Case{Lift,Notice,Model,Model+Pro,Scroll,View+Actions}.swift
 
 compose="$features/CaseView.kt"
 # <関数の中の行> を持つ Kotlin の Composable
@@ -440,6 +468,17 @@ design_case 2 "画面と同じモジュールに input を持つモデルがあ�
 design_case 0 "input を持つモデルだけでは、dependencies の読み出しを止めない" "$sources/Features/CaseView.swift" "$reads"
 printf '@Observable\nfinal class SideModel {\n    let dependencies: Dependencies\n}\n' >"$sources/Features/SideModel.swift"
 design_case 2 "画面と同じモジュールに dependencies を持つモデルがあれば、読み出しを止める" "$sources/Features/CaseView.swift" "$reads" "CaseView.swift:3: モデルの dependencies を、モデルの外から読まない"
+rm -f "$sources/Features/SideModel.swift"
+printf 'struct CaseList: View {}\n' >"$sources/Features/CaseList.swift"
+starts=$'@Observable\nfinal class CaseDrag {\n    func arm() {\n        Task {}\n    }\n}'
+design_case 2 "モデルを持たない画面のモジュールでは、@Observable のクラスの Task も止める" "$sources/Features/CaseDrag.swift" "$starts" "CaseDrag.swift:4: $effect"
+design_case 2 "画面のモジュールの @Observable のクラスを拡張するファイルの Task も止める" "$sources/Features/CaseDrag+Arm.swift" $'extension CaseDrag {\n    func rearm() {\n        Task {}\n    }\n}' "CaseDrag+Arm.swift:3: $effect"
+design_case 0 "画面のモジュールの @Observable のクラスも、入れて取り消す Task は通る" "$sources/Features/CaseDrag.swift" $'@Observable\nfinal class CaseDrag {\n    private var armTask: Task<Void, Never>?\n\n    func arm() {\n        armTask?.cancel()\n        armTask = Task {}\n    }\n}'
+design_case 0 "画面のモジュールの、View でも @Observable でもない型の Task は見ない" "$sources/Features/CaseProvider.swift" $'struct CaseProvider {\n    func reload() {\n        Task {}\n    }\n}'
+design_case 0 "モデルのモジュールの @Observable のクラスの Task は見ない" "$sources/FeatureModels/OtherModel.swift" $'@Observable\nfinal class OtherModel {\n    func perform() {\n        Task {}\n    }\n}'
+printf '@Observable\nfinal class SideModel {\n    let state: State\n}\n' >"$sources/Features/SideModel.swift"
+design_case 0 "View と同じモジュールにモデルがあれば、@Observable のクラスの Task は見ない" "$sources/Features/CaseDrag.swift" "$starts"
+design_case 2 "モデルと同じモジュールの View の Task は止める" "$sources/Features/CaseList.swift" $'struct CaseList: View {\n    func save() {\n        Task {}\n    }\n}' "CaseList.swift:3: $effect"
 rm -rf "$app/ios/Packages"
 
 gradle="$app/android"
