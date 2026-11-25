@@ -122,6 +122,30 @@ kakeibot で、画面のモジュールに違反を書いてコンパイルし�
 
 ### 画面の形
 
+画面の持ち物の決まりは、次のように守る。検査の関数は、`view.py` にある。
+
+| 決まり | Swift | Kotlin |
+| --- | --- | --- |
+| モデル | 検査 `check_swift_view`。`@State` の型の名前の終わりだけを見る | レビューのみ。`remember` の中身は見ない |
+| 見た目の値 | 検査 `check_swift_view`。寸法の型の `@State` は、`Layout` にまとめるよう知らせる | 検査 `check_kotlin_view`。寸法の型の `mutableStateOf` は、`Layout` にまとめるよう知らせる |
+| 意味のある状態 | 検査 `check_swift_view`。`@State` の行だけを見る | 検査 `check_kotlin_view`。`mutableStateOf` の仲間だけを見る |
+| `Layout` の中 | 検査 `check_swift_layout`。型を読み取れない値も止める | 検査 `check_kotlin_layout`。引数と getter は見ない |
+| Swift の寸法の型 | 検査 `check_swift_layout`。`SWIFT_METRICS` と比べる | Swift の決まりである |
+| Kotlin の寸法の型 | Kotlin の決まりである | 検査 `check_kotlin_layout`。`KOTLIN_METRICS` と比べる |
+| 型の包み | 検査 `check_swift_layout`。包みの中の型を見る | 検査 `check_kotlin_layout`。見方は Swift と同じである |
+| Kotlin の状態 | Kotlin の決まりである | 検査 `check_kotlin_view`。`@Composable` のあるファイルの関数を見る |
+
+次の決まりは、許す決まりなので、守るものが無い。
+
+- 仕組みの持ち物
+- 外から受け取る物
+- DesignSystem の部品
+- プレビュー
+
+DesignSystem のフォルダは、`is_part_library` が検査から外す。`@Previewable` の行と `@Preview` の関数も外す。
+
+新しい画面は、`code-screen` のひな形から始める。ひな形が検査を通ることは、`tests/skills/code-screen.sh` が確かめる。
+
 非同期の処理の決まりは、次のように守る。Kotlin の検査は、アプリの画面を直してから足す。
 
 | 決まり | Swift | Kotlin |
