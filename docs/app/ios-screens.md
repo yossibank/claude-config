@@ -95,7 +95,7 @@ AppModel は起動と行き先を、MainView はタブとシートを持つ。Ma
 
 | 型 | 持つもの |
 | --- | --- |
-| AppModel | 起動の状態（DB を開いている途中、最初の設定、準備済み、失敗）、今日、押された通知の行き先 |
+| AppModel | 起動の状態（DB を開いている途中・最初の設定・準備済み・失敗）と、今日と、押された通知の行き先 |
 | AppModel の DB | `ScreenParts` を返す関数を、init で受け取る。`RootView` は `ScreenParts.appGroup(clock:)` を渡す |
 | MainView | タブのモデル（アプリが動いている間ずっと持ち、今日が変わったら渡し直す）、開いているシート |
 
