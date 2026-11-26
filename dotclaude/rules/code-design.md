@@ -72,7 +72,7 @@ Kotlin は、同じまとまりを次の形で書く。
 | --- | --- | --- |
 | モデル | `@State` の、型の名前が `Model` で終わる値。子のモデルも同じ | `remember { XModel(...) }` |
 | 流れ | `@State` の、型の名前が `Flow` で終わる値。モデルと同じまとまりを持ち、親のモデルの関数が作る | `remember { XFlow(...) }` |
-| 指の動きを追う型 | `@State` の、型の名前が `Drag` で終わる値。下の「画面だけの非同期」の型である | `remember { XDrag() }` |
+| 指の動きを追う型 | `@State` の、型の名前が `Drag` で終わる値。下の「画面だけの非同期」の型である | `pointerInput` の中に書く。型は作らない |
 | 見た目の値 | `@State private var layout = Layout()`。型は、View の入れ子の `struct Layout` にする | `remember { Layout() }`。型は、画面のファイルの `class Layout` にする |
 | 仕組みの持ち物 | `@FocusState`・`@Namespace`・`@GestureState` | `rememberScrollState`・`rememberLazyListState`・`FocusRequester` など |
 | 外から受け取る物 | `@Environment`・`@Bindable var model`・`let model` | 引数と `CompositionLocal` |
