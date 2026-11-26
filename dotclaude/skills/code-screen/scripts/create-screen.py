@@ -21,9 +21,10 @@ KOTLIN_SOURCE = re.compile(r"/src/[^/]+/(?:kotlin|java)/(.+)$")
 KOTLIN_PACKAGE = re.compile(r"^package\s+([\w.]+)", re.M)
 IMPORT = re.compile(r"^(?:@testable )?import ")
 KOTLIN_LAST = ("java.", "javax.", "kotlin.")
+PARTS = ("ScreenEditable", "Shown", "ModelTask", "Loadable")
 BASE = {
-    "swift": ("ScreenParts", "ScreenClock", "ScreenPerforming", "ScreenOutcome", "onOutcome"),
-    "kotlin": ("ScreenClock", "ScreenPerforming", "ScreenOutcome", "OnOutcome"),
+    "swift": ("ScreenParts", "ScreenClock", "ScreenPerforming", "ScreenOutcome", "onOutcome", *PARTS),
+    "kotlin": ("ScreenClock", "ScreenPerforming", "ScreenOutcome", "OnOutcome", *PARTS),
 }
 RENAMED = {
     "swift": (*BASE["swift"], "AppDatabase", "Core", "Store"),
@@ -31,7 +32,7 @@ RENAMED = {
 }
 ASKED = ("Screen", "Item", "View", "Database")
 CALLS = ("async", "sync")
-UNUSED = {"async": (), "sync": ("ScreenPerforming",)}
+UNUSED = {"async": (), "sync": ("ScreenPerforming", "ModelTask", "Loadable")}
 BASE_HINT = "先に、形を base にして土台を足す。名前が違う時は、<既定の名前>=<アプリの名前> で渡す"
 
 
@@ -132,7 +133,7 @@ def tokens_of(language, kind, asked, renames, folders, root, calls):
     base = [renames.get(name, name) for name in BASE[language] if name not in UNUSED[calls]]
     found = find(base, root, SUFFIXES[language])
     if kind == "base":
-        if found:
+        if len(found) == len(base):
             raise Failure(f"土台の型が既にある: {'・'.join(sorted(found))}")
     else:
         missing = [name for name in base if name not in found]
@@ -195,16 +196,24 @@ def own_of(language, folder):
     return swift_target(folder) if language == "swift" else kotlin_package(folder)
 
 
-def plan(language, kind, folders, tokens, renames):
+def is_present(language, text, present):
+    """土台のひな形が宣言する名前が、どれもリポジトリにあるか。"""
+    names = [name for name in BASE[language] if declared(name).search(text)]
+    return bool(names) and all(name in present for name in names)
+
+
+def plan(language, kind, folders, tokens, renames, present):
     source = Path(TEMPLATES) / language / kind
     placed = set()
     for role in ROLES:
         for template in sorted((source / role).glob("*")):
             target = os.path.join(folders[role], render(template.name, tokens, renames))
+            text = render(template.read_text(encoding="utf-8"), tokens, renames)
+            if kind == "base" and is_present(language, template.read_text(encoding="utf-8"), present):
+                continue
             if os.path.lexists(target) or target in placed:
                 raise Failure(f"ファイルが既にある: {target}")
             placed.add(target)
-            text = render(template.read_text(encoding="utf-8"), tokens, renames)
             left = sorted(set(TOKEN.findall(text + os.path.basename(target))))
             if left:
                 raise Failure(f"置き換えていない印がある: {'・'.join(left)}（{template.name}）")
@@ -222,7 +231,9 @@ def main():
     root = repository(folders["model"]) or os.path.commonpath(list(folders.values()))
     tokens = tokens_of(language, kind, asked, renames, folders, root, calls)
     template = kind if calls == CALLS[0] else f"{kind}-{calls}"
-    files = list(plan(language, template, folders, tokens, renames))
+    present = set(find([renames.get(name, name) for name in BASE[language]], root, SUFFIXES[language])) if kind == "base" else set()
+    present = {name for name in BASE[language] if renames.get(name, name) in present}
+    files = list(plan(language, template, folders, tokens, renames, present))
     for target, text in files:
         os.makedirs(os.path.dirname(target), exist_ok=True)
         Path(target).write_text(text, encoding="utf-8")

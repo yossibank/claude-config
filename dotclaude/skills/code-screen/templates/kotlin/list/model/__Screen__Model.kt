@@ -4,8 +4,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import __core__.__Item__
+import __base__.Loadable
 import __base__.ScreenOutcome
 import __base__.ScreenPerforming
+import __base__.Shown
 import __store__.AppDatabase
 import kotlinx.coroutines.CancellationException
 
@@ -21,12 +23,14 @@ class __Screen__Model(
     class State {
         val outcome = ScreenOutcome<__Item__>()
 
+        val editing = Shown<__Item__>()
+
         var failureMessage: String? by mutableStateOf(null)
-        var editing: __Item__? by mutableStateOf(null)
+            internal set
     }
 
     class Input {
-        var items: List<__Item__>? by mutableStateOf(null)
+        var items: Loadable<List<__Item__>> by mutableStateOf(Loadable.Loading)
             internal set
     }
 
@@ -34,10 +38,10 @@ class __Screen__Model(
         private val input: Input,
     ) {
         val items: List<__Item__>
-            get() = input.items ?: emptyList()
+            get() = input.items.value ?: emptyList()
 
         val isLoaded: Boolean
-            get() = input.items != null
+            get() = input.items.isLoaded
     }
 
     private class Dependencies(
@@ -50,8 +54,8 @@ class __Screen__Model(
     }
 
     suspend fun load() {
-        attempt(failure = loadFailed) {
-            input.items = dependencies.database.__item__List()
+        attempt(failure = loadFailed, onFailure = { input.items = Loadable.Failed }) {
+            input.items = Loadable.Loaded(dependencies.database.__item__List())
         }
     }
 
@@ -64,12 +68,13 @@ class __Screen__Model(
 
     private suspend fun observe() {
         attempt(failure = loadFailed) {
-            dependencies.database.__item__ListUpdates().collect { input.items = it }
+            dependencies.database.__item__ListUpdates().collect { input.items = Loadable.Loaded(it) }
         }
     }
 
     private suspend fun attempt(
         failure: String,
+        onFailure: () -> Unit = {},
         action: suspend () -> Unit,
     ) {
         try {
@@ -77,6 +82,7 @@ class __Screen__Model(
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
+            onFailure()
             state.failureMessage = failure
         }
     }

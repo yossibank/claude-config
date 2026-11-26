@@ -7,6 +7,7 @@ import kotlin_source  # noqa: E402
 import swift_source  # noqa: E402
 from hooks.code_design_check.clones import Clones  # noqa: E402
 from hooks.code_design_check.effect import check_kotlin_effect, check_swift_effect  # noqa: E402
+from hooks.code_design_check.flags import check_kotlin_flags, check_swift_flags  # noqa: E402
 from hooks.code_design_check.files import (  # noqa: E402
     check_folder,
     check_kotlin_types,
@@ -65,6 +66,7 @@ def swift_checker(paths):
                 *check_folder(path, ".swift", folders),
                 *check_parts(path, code, clones.root_of(os.path.realpath(path))),
                 *check_swift_state(code),
+                *check_swift_flags(code),
                 *check_swift_shape(code),
                 *check_swift_output(code),
                 *check_swift_clock(code),
@@ -91,6 +93,7 @@ def kotlin_checker(paths):
             findings += [
                 *check_kotlin_types(path, code),
                 *check_kotlin_state(code),
+                *check_kotlin_flags(code),
                 *check_kotlin_shape(code),
                 *check_kotlin_output(code),
                 *check_kotlin_clock(code),

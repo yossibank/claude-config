@@ -23,7 +23,7 @@ struct __Screen__ModelTests {
     func savesAndSendsOutcome() throws {
         let setup = try Setup()
         let model = __Screen__Model(parts: setup.parts)
-        model.state.name = "見本"
+        model.state.fields.name = "見本"
 
         model.save()
         let stored = try setup.database.__item__List()
@@ -37,7 +37,7 @@ struct __Screen__ModelTests {
     func savesOnceWhenSavedTwice() throws {
         let setup = try Setup()
         let model = __Screen__Model(parts: setup.parts)
-        model.state.name = "見本"
+        model.state.fields.name = "見本"
 
         model.save()
         model.save()
@@ -52,7 +52,7 @@ struct __Screen__ModelTests {
         let setup = try Setup()
         let saved = try setup.save("見本")
         let model = __Screen__Model(parts: setup.parts, editing: saved)
-        model.state.name = "直した見本"
+        model.state.fields.name = "直した見本"
 
         model.save()
         let stored = try setup.database.__item__List()
@@ -80,7 +80,7 @@ struct __Screen__ModelTests {
         let model = __Screen__Model(parts: setup.parts, editing: saved)
 
         let opened = model.output.isChanged
-        model.state.name = "直した見本"
+        model.state.fields.name = "直した見本"
         let typed = model.output.isChanged
         model.save()
 

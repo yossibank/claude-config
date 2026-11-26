@@ -30,7 +30,7 @@ class __Screen__ModelTest {
     fun savesAndSendsOutcome() = runTest {
         val database = AppDatabase.inMemory()
         val model = database.editModel(editing = null)
-        model.state.name = "見本"
+        model.state.rename("見本")
 
         model.save()
 
@@ -43,7 +43,7 @@ class __Screen__ModelTest {
     fun savesOnceWhenSavedTwice() = runTest {
         val database = AppDatabase.inMemory()
         val model = database.editModel(editing = null)
-        model.state.name = "見本"
+        model.state.rename("見本")
 
         model.save()
         model.save()
@@ -57,7 +57,7 @@ class __Screen__ModelTest {
         val database = AppDatabase.inMemory()
         val saved = database.save(name = "見本")
         val model = database.editModel(editing = saved)
-        model.state.name = "直した見本"
+        model.state.rename("直した見本")
 
         model.save()
 
@@ -71,9 +71,9 @@ class __Screen__ModelTest {
         val model = database.editModel(editing = saved)
 
         val opened = model.output.isChanged
-        model.state.name = "直した見本"
+        model.state.rename("直した見本")
         val typed = model.output.isChanged
-        model.state.name = "見本"
+        model.state.rename("見本")
 
         assertFalse(opened)
         assertTrue(typed)

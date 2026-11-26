@@ -5,9 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import __core__.__Item__
 import __draft__.__Item__Draft
+import __base__.ModelTask
 import __base__.ScreenClock
 import __base__.ScreenOutcome
 import __base__.ScreenPerforming
+import __base__.Shown
 import __store__.AppDatabase
 import kotlinx.coroutines.CancellationException
 
@@ -26,12 +28,22 @@ class __Screen__Model(
         name: String,
     ) {
         val outcome = ScreenOutcome<__Item__>()
+        val prompt = Shown<Prompt>()
+        val saving = ModelTask()
 
         var name: String by mutableStateOf(name)
+            private set
+
         var failureMessage: String? by mutableStateOf(null)
-        var isConfirmingDiscard: Boolean by mutableStateOf(false)
-        var isSaving: Boolean by mutableStateOf(false)
             internal set
+
+        fun rename(name: String) {
+            this.name = name
+        }
+    }
+
+    enum class Prompt {
+        Discard,
     }
 
     class Input(
@@ -48,7 +60,7 @@ class __Screen__Model(
             get() = __Item__Draft(name = state.name)
 
         val canSave: Boolean
-            get() = draft.problems.isEmpty() && !state.isSaving
+            get() = draft.problems.isEmpty() && !state.saving.isRunning && state.outcome.value == null
 
         val isChanged: Boolean
             get() = draft != input.baseline
@@ -64,22 +76,20 @@ class __Screen__Model(
             return
         }
 
-        state.isSaving = true
-
         try {
-            val saved = dependencies.database.save__Item__(
-                draft = output.draft,
-                editing = input.editing,
-                at = dependencies.clock.now,
-            )
+            val saved = state.saving.attempt {
+                dependencies.database.save__Item__(
+                    draft = output.draft,
+                    editing = input.editing,
+                    at = dependencies.clock.now,
+                )
+            }
 
             state.outcome.send(saved)
         } catch (error: CancellationException) {
-            state.isSaving = false
             throw error
         } catch (_: Exception) {
             state.failureMessage = saveFailed
-            state.isSaving = false
         }
     }
 }

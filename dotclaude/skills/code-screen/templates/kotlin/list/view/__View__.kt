@@ -52,7 +52,7 @@ fun __View__(
             items(model.output.items) { item ->
                 ItemRow(
                     item = item,
-                    onOpen = { model.state.editing = item },
+                    onOpen = { model.state.editing.show(item) },
                     onRemove = { model.perform { it.remove(item) } },
                 )
             }

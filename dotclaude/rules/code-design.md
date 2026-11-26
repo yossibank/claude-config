@@ -105,6 +105,25 @@ Kotlin は、同じまとまりを次の形で書く。
 | Kotlin の画面だけの非同期 | `LaunchedEffect` と `pointerInput` の中に書く |
 | DesignSystem の部品の非同期 | 呼ぶモデルが無いので、この決まりの外に置く |
 
+## 画面の部品
+
+画面のモデルの決まった並びは、アプリの `Shared` の部品で書く。部品は、iOS と Android で同じ名前と意味にする。
+
+| 部品 | 使う所 | 使わない形 |
+| --- | --- | --- |
+| `ScreenEditable` | 画面が書いてよい値の型の印。`State` で画面から書ける値は、この印の型だけにする | 印の無い型の `public var`。Swift は `internal(set)`、Kotlin は `private set` にし、`State` の関数で書く |
+| `Shown<Value>` | 表示中のシート・確認・メニューを、1 つの値で持つ | 種類ごとの Bool。1 つの値と Bool の組 |
+| `ModelTask` | 保存などの実行中の印と、二度押しの防ぎ | `isSaving`・`isWorking` などの手書きの Bool |
+| `EditFlow`・`EditFlowSource` | 編集シートの閉じる・捨てる確認・保存・隠す・消すと、その結果 | 編集のモデルごとに書く、確認と保存の流れ |
+| `editSheet`・`EditSheet` | 画面で、編集シートの確認一式と結果を受ける | 編集の画面ごとに並べる確認 |
+| `Loadable<Value>` | 読み込み中・読めた・失敗を、1 つの値で持つ | 値と、`isLoaded`・`isListFailed` などの印の組 |
+| `UndoNotice<Item>`・`ScreenWait` | 取り消しの知らせの値と、消すまでの時間を、モデルが持つ | 画面で時間を数える |
+| `ObservationRound` | DB の見張りをやり直す回。回が進むと、見張りを始め直す | 見張りごとの、やり直しの印 |
+| `TabScreen` | タブの外枠と、読めなかった時の画面 | タブごとに書く外枠 |
+| 子の結果の受け口 | 子の画面の結果を、親のモデルの関数（`receive(...)`）で受ける | 画面が親の `state` に直に書く |
+
+部品が無いアプリは、`code-screen` のスキルの土台から足す。土台に無い部品は、2 つ目の画面を書く前に `Shared` に括る。
+
 ## 重複
 
 同じ形のコードは、2 つ目を書く前に括る。
@@ -194,6 +213,9 @@ Kotlin は、同じまとまりを次の形で書く。
 | 画面の形 | Kotlin の画面の関数が、スコープから `.launch {`・`.async {` で始めていないか | |
 | 今の時刻と今日 | `Date()`・`Instant.now()` などを、引数やプロパティの既定値に書いていないか | |
 | 今の時刻と今日 | 時刻を返す関数の既定値に、`Date.init`・`{ .now }`・`Instant::now` などを書いていないか | |
+| 画面の部品 | 入れ子の `State` の Bool に、`isShowing〜`・`isConfirming〜` などが無いか | |
+| 画面の部品 | 入れ子の `Input` の Bool に、`isLoaded`・`is〜ListFailed` などが無いか | |
+| 画面の部品 | 入れ子の `State` の Bool に、`isSaving`・`isWorking`・`working` などが無いか | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
 
@@ -226,6 +248,12 @@ Kotlin は、同じまとまりを次の形で書く。
 - スコープを作る物は、`rememberCoroutineScope`・`CoroutineScope(` を見る。`MainScope(` と `GlobalScope` も見る。
 - Kotlin のコルーチンは、`@Preview` の関数を除く。`.launch {` と `.async {` は、クラスの中を見ない。
 - `LaunchedEffect` と、その中の受け手の無い `launch {`、波かっこの続かない `launch(` は通す。
+- 画面の部品は、入れ子の `State` と `Input` の、保存プロパティだけを見る。
+- 表示の名前は、`show〜Sheet` のような、シートなどの語で終わる物も見る。`isScheduleOpen` は通す。
+- `State` の読んだ印は、`isLoaded`・`isLoadFailed`・`is〜ListFailed` だけを見る。`isHomeLoaded` のような合図は通す。
+- 実行中の名前は、型が Bool の物だけを見る。どの処理かを持つ `working: Work?` は通す。
+- `ScreenEditable` の印は見ない。シートの `enum` のような、印の無い型で許す物を見分けられないためである。
+- 画面から `state` への書き込みは見ない。印の型への書き込みは、画面に許されているためである。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
 - 型の保存プロパティ・init の引数の並び・`self.x = x` だけの行は、データの宣言なので数えない。
 - 注釈の行は、複数行の引数も含め、データの宣言として数えない。
