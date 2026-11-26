@@ -84,8 +84,10 @@ Kotlin は、同じまとまりを次の形で書く。
 | 意味のある状態 | モデルの `state` に置く。出しているシート・確認中か・編集中か・選んでいる物・入力中の文字である |
 | `Layout` の中 | 寸法・位置・スクロールの型と、動きの段階の型だけを置く。Bool・文字列・整数・ID・ドメインの型は置かない |
 | 動きの段階の型 | 見た目の動きの途中を表す、同じファイルの `enum`。名前を `Phase` で終え、画面の意味を持たせない |
-| Swift の寸法の型 | `CGFloat`・`CGSize`・`CGRect`・`CGPoint`・`CGVector`・`EdgeInsets`・`ScrollPosition`・`ScrollGeometry`。動きの進みは、`Double` と `Angle` で持つ |
-| Kotlin の寸法の型 | `Dp`・`DpSize`・`DpOffset`・`Float`・`Offset`・`IntOffset`・`Size`・`IntSize`・`Rect`・`IntRect`・`PaddingValues` |
+| Swift の寸法の型 | `CGFloat`・`CGSize`・`CGRect`・`CGPoint`・`CGVector` |
+| SwiftUI の寸法の型 | `EdgeInsets`・`ScrollPosition`・`ScrollGeometry`。動きの進みは、`Double` と `Angle` で持つ |
+| Kotlin の dp の型 | `Dp`・`DpSize`・`DpOffset`・`PaddingValues` |
+| Kotlin の px の型 | `Float`・`Offset`・`Size`・`Rect` と、`Int` の版の `IntOffset`・`IntSize`・`IntRect` |
 | 型の包み | 寸法の型の Optional・配列・集合と、値が寸法の型の辞書は置ける。辞書の鍵は問わない |
 | Kotlin の状態 | Composable の関数で、`mutableStateOf` の仲間を直接作らない。作るのは、モデルと状態のクラスと `Layout` の中だけにする |
 | DesignSystem の部品 | モデルを持てないので、この決まりの外に置く。部品の中だけで閉じる状態は、部品が持ってよい |

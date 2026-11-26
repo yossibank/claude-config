@@ -4,6 +4,7 @@ from md_doc import EMOJI, bare, body_emojis
 
 JA = r"々぀-ヺー-ヿ一-鿿"
 HTML_TAGS = {"img", "picture", "source", "table", "thead", "tbody", "tr", "th", "td", "details", "summary"}
+HUMAN_TAGS = {"kbd"}
 SENTENCE_LIMIT = 60
 COMMA_LIMIT = 3
 SENTENCES = 3
@@ -119,7 +120,8 @@ def check_marks(doc, row):
     number, text = row.number, row.text
     found = []
     for closing, name in TAG.findall(text):
-        if not (doc.html and name.lower() in HTML_TAGS):
+        allowed = (doc.html and name.lower() in HTML_TAGS) or (doc.human and name.lower() in HUMAN_TAGS)
+        if not allowed:
             found.append((number, f"使ってよい HTML ではない（<{closing}{name}>）"))
             break
     if ITALIC.search(BOLD.sub("", text)):
@@ -187,7 +189,7 @@ def check_rows(doc):
     found = []
     followings = following_kinds(doc.rows)
     for index, row in enumerate(doc.rows):
-        if row.what in ("code", "blank", "heading"):
+        if row.what in ("code", "math", "blank", "heading"):
             continue
         found += check_preface(row, *followings[index])
         found += check_marks(doc, row)

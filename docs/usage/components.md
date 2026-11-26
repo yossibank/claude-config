@@ -124,6 +124,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | [bin/config-audit.py](../../bin/config-audit.py) | `make audit` の時 | 部品の文書の表・図・参照先と名前の食い違い、置き場所、文書とスクリプトの書き方の違反を見る。引数に検査の名前を並べると、その検査だけを走らせる |
 | [bin/config-install.sh](../../bin/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [bin/docs-section.sh](../../bin/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
+| [bin/docs-color-swatches.py](../../bin/docs-color-swatches.py) | 文書にテーマの色見本を置く時 | 色の四角と名前・値を、ライトとダークの列に並べた SVG を書く |
 | [bin/docs-tech-icons.py](../../bin/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
 | [bin/pr-merge.sh](../../bin/pr-merge.sh) | launchd が 30 分ごとに。入れる時は `install <リポジトリ>...` | PR を番号の順に squash でマージし、競合は `claude -p` に解かせて確認を通してからマージする。止めた時は、PR にコメントとラベル `auto-merge-stopped` を付け、通知を出す |
 

@@ -21,4 +21,4 @@
 | --- | --- |
 | 使う時 | [setup.md](usage/setup.md) → [components.md](usage/components.md) → [skills.md](usage/skills.md) |
 | 直す時 | [development.md](config/development.md) → [layout.md](config/layout.md) → [testing.md](config/testing.md) |
-| 調べ直す時 | [improvements.md](config/improvements.md) → [enforcement.md](config/enforcement.md) |
+| 調べ直す時 | [improvements.md](config/improvements.md) → [enforcement.md](config/enforcement.md) → [enforcement-screens.md](config/enforcement-screens.md) |
