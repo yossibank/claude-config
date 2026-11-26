@@ -102,7 +102,8 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/app/ios-architecture.md](docs/app/ios-architecture.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
 | [docs/app/ios-screens.md](docs/app/ios-screens.md) | 画面を足す・起動の流れを変える時 | iOS アプリの画面とモデルの分け方、土台の型、起動と外からの入口 |
 | [docs/config/development.md](docs/config/development.md) | claude-config を直す時 | 名前の付け方・スクリプトの書き方・共通の処理・足し方 |
-| [docs/config/enforcement.md](docs/config/enforcement.md) | 設計の検査を足す・消す時 | 設計の決まりごとの守り方（型・検査・レビュー） |
+| [docs/config/enforcement.md](docs/config/enforcement.md) | 設計の検査を足す・消す時 | 状態とモデルの決まりごとの守り方（型・検査・レビュー） |
+| [docs/config/enforcement-screens.md](docs/config/enforcement-screens.md) | 設計の検査を足す・消す時 | 画面・重複・API・置き場所の決まりごとの守り方 |
 | [docs/config/improvements.md](docs/config/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
 | [docs/config/layout.md](docs/config/layout.md) | ファイルを置く・分ける時 | フォルダの分け方、置ける場所、数が増えた時に分ける合図 |
 | [docs/config/testing.md](docs/config/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方 |
