@@ -16,13 +16,13 @@ from hooks.docs_check.headings import (  # noqa: E402
     heading_level,
     section_titles,
 )
-from hooks.docs_check.advice import (  # noqa: E402
-    SIZE_LIMIT,
+from hooks.docs_check.advice import SIZE_LIMIT, check_no_chains, check_size_near  # noqa: E402
+from hooks.docs_check.marks import check_colors, check_decision_rows, check_strikes, in_decisions  # noqa: E402
+from hooks.docs_check.readability import (  # noqa: E402
     check_alert_lists,
-    check_phrases,
-    check_size_near,
     check_table_first_code,
     check_table_rows,
+    check_words,
 )
 from hooks.docs_check.rows import BOLD, check_list_endings, check_rows, check_short_lists, tables  # noqa: E402
 from hook_io import notify, run_hook, target_paths  # noqa: E402
@@ -203,7 +203,7 @@ def always(doc):
 
 
 def outside_decisions(doc):
-    return "/docs/decisions/" not in doc.path
+    return not in_decisions(doc)
 
 
 def opens_with_sentence(doc):
@@ -230,15 +230,19 @@ CHECKS = [
     (opens_with_sentence, check_opening_sentence),
     (lambda doc: doc.human and not opens_with_sentence(doc), check_opening_note),
     (always, check_rows),
+    (always, check_table_rows),
+    (outside_decisions, check_table_first_code),
+    (always, check_alert_lists),
+    (always, check_words),
+    (in_decisions, check_decision_rows),
+    (always, check_strikes),
+    (always, check_colors),
 ]
 
 
 ADVICE = [
     (always, check_size_near),
-    (always, check_table_rows),
-    (outside_decisions, check_table_first_code),
-    (always, check_alert_lists),
-    (always, check_phrases),
+    (always, check_no_chains),
 ]
 HEADER = "文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。"
 ADVICE_HEADER = "文書の読みやすさで、直すとよい箇所がある（知らせるだけで、止めない）。"
