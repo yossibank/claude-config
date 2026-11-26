@@ -122,12 +122,17 @@ design_case 2 "足す物の名前に無い役割の語は止める" "$role" $'ex
 design_case 0 "足す物の名前に入っている役割の語は通る" "$role" $'extension Case {\n    var trendRows: Int {\n        1\n    }\n}'
 design_case 0 "共通の表にある役割の語は通る" "$app/ios/Packages/DemoApp/Sources/Core/Case+Title.swift" $'extension Case {\n    var label: Int {\n        1\n    }\n}'
 design_case 0 "import する枠組みの名前の役割の語は通る" "$app/ios/Packages/DemoApp/Sources/Core/Case+CloudKit.swift" $'import CloudKit\n\nextension Case {\n    var label: Int {\n        1\n    }\n}'
+design_case 2 "表の外の例にだけある語は、import しなければ止める" "$app/ios/Packages/DemoApp/Sources/Core/Case+CloudKit.swift" $'extension Case {\n    var label: Int {\n        1\n    }\n}' "Case+CloudKit.swift:1: 拡張の役割の語は、足す物の名前か、名前の文書の表の語にする: +CloudKit"
 design_case 0 "版の役割の語は通る" "$app/ios/Packages/DemoApp/Sources/Core/Case+V1_2_0.swift" $'extension Case {\n    var label: Int {\n        1\n    }\n}'
 rm -rf "$app/ios/Packages/DemoApp"
 suffix="$app/ios/Packages/DemoApp/Sources/Features"
 design_case 2 "@Observable でない型の語尾の Model は止める" "$suffix/CaseModel.swift" $'struct CaseModel {}' "CaseModel.swift:1: 語尾の Model は、@Observable の画面のモデルだけに付ける: CaseModel"
 design_case 0 "@Observable のクラスの語尾の Model は通る" "$suffix/CaseModel.swift" $'@Observable\nfinal class CaseModel {}'
+design_case 0 "宣言と同じ行の @Observable も見る" "$suffix/CaseModel.swift" $'@Observable final class CaseModel {}'
+design_case 0 "ほかの属性と並んだ @Observable も見る" "$suffix/CaseModel.swift" $'@MainActor @Observable\nfinal class CaseModel {}'
 design_case 2 "View でない型の語尾の Row は止める" "$suffix/CaseRow.swift" $'struct CaseRow {}' "CaseRow.swift:1: 画面の部品の語尾は、View に適合する型だけに付ける: CaseRow"
+design_case 0 "同じファイルの extension で View に適合すれば通る" "$suffix/CaseRow.swift" $'struct CaseRow {}\n\nextension CaseRow: View {\n    var body: some View {\n        Text("a")\n    }\n}'
+design_case 0 "折り返した適合の一覧の View も見る" "$suffix/CaseRow.swift" $'struct CaseRow: Equatable,\n    View {}'
 design_case 0 "View の語尾の Row は通る" "$suffix/CaseRow.swift" $'struct CaseRow: View {}'
 rm -rf "$app/ios/Packages/DemoApp"
 design_case 2 "Kotlin で名前の語が違う型を並べれば止める" "$kotlin" $'class Case\n\nclass Helper' "Case.kt:3: private でない型の名前は、ファイルの名前の語で始める: Helper"

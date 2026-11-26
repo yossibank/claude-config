@@ -6,14 +6,15 @@ from git import git
 
 COMMON_DOC = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "docs", "app", "ios-naming.md")
 APP_DOC = os.path.join("docs", "architecture-naming.md")
-ROLE_WORD = re.compile(r"`\+(\w+)`")
+ROLE_WORD = re.compile(r"^\|\s*`\+(\w+)`", re.M)
 VERSION = re.compile(r"^V\d+(?:_\d+)*$")
 IMPORT = re.compile(r"^import\s+(\w+)")
 TYPE = re.compile(
     r"^(?:@\w+(?:\([^)]*\))?\s+)*(?:(public|package|internal|fileprivate|private)\s+)?"
     r"(?:(?:final|indirect|nonisolated)\s+)*(struct|class|enum|actor)\s+(\w+)([^{]*)"
 )
-OBSERVABLE = re.compile(r"^@Observable\b")
+OBSERVABLE = re.compile(r"@Observable\b")
+EXTENSION = re.compile(r"^(?:(?:public|package|internal|fileprivate|private)\s+)?extension\s+(\w+)\s*:")
 VIEW_SUFFIXES = ("View", "Sheet", "Card", "Row", "Tile", "Banner", "Drawer")
 VIEW_ROLES = re.compile(r"\b(?:View|ViewModifier|Shape|Layout|ButtonStyle|UIViewRepresentable|PreviewProvider)\b")
 MODEL_SUFFIX = "Model"
@@ -93,16 +94,39 @@ def module_of(path):
     return parts[parts.index("Sources") + 1] if "Sources" in parts[:-1] else ""
 
 
+def header_of(code, index):
+    parts = []
+    for line in code[index:]:
+        parts.append(line.split("{")[0])
+        if "{" in line:
+            break
+    return " ".join(parts)
+
+
+def attributes_of(code, index):
+    back = index
+    while back > 0 and code[back - 1].strip().startswith("@"):
+        back -= 1
+    return code[back : index + 1]
+
+
+def viewed_names(code):
+    found = ((index, EXTENSION.match(line)) for index, line in enumerate(code))
+    return {match.group(1) for index, match in found if match and VIEW_ROLES.search(header_of(code, index)[match.end() :])}
+
+
 def check_swift_suffix(path, code):
     if module_of(path) not in SCREEN_MODULES:
         return
+    viewed = viewed_names(code)
     for index, line in enumerate(code):
         found = TYPE.match(line)
         if not found or found.group(1) in ("private", "fileprivate"):
             continue
-        kind, name, rest = found.group(2), found.group(3), found.group(4)
-        observable = any(OBSERVABLE.match(code[back]) for back in range(max(index - 3, 0), index))
+        kind, name = found.group(2), found.group(3)
+        conformances = header_of(code, index)[found.end(3) :]
+        observable = any(OBSERVABLE.search(text) for text in attributes_of(code, index))
         if name.endswith(MODEL_SUFFIX) and not (kind == "class" and observable):
             yield index + 1, f"語尾の Model は、@Observable の画面のモデルだけに付ける: {name}"
-        elif name.endswith(VIEW_SUFFIXES) and not VIEW_ROLES.search(rest):
+        elif name.endswith(VIEW_SUFFIXES) and not (VIEW_ROLES.search(conformances) or name in viewed):
             yield index + 1, f"画面の部品の語尾は、View に適合する型だけに付ける: {name}"
