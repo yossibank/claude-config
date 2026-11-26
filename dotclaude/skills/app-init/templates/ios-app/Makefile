@@ -20,6 +20,7 @@ open:
 	open "$(CHECKOUT)/ios/__App__.xcworkspace"
 
 format:
+	python3 -I $(CLAUDE_CONFIG)/dotclaude/hooks/swift-layout-check.py --fix $$(git ls-files --cached --others --exclude-standard '*.swift')
 	mint run swiftformat .
 
 licenses:
@@ -47,6 +48,8 @@ verify:
 	scripts/verify.sh swift-style python3 -I $(CLAUDE_CONFIG)/dotclaude/hooks/swift-style-check.py $$(git ls-files --cached --others --exclude-standard '*.swift')
 	@test -f $(CLAUDE_CONFIG)/dotclaude/hooks/code-design-check.py || { echo "NG claude-config に code-design-check が無い: $(CLAUDE_CONFIG)"; exit 1; }
 	scripts/verify.sh code-design python3 -I $(CLAUDE_CONFIG)/dotclaude/hooks/code-design-check.py $$(git ls-files --cached --others --exclude-standard '*.swift' '*.kt')
+	@test -f $(CLAUDE_CONFIG)/dotclaude/hooks/swift-layout-check.py || { echo "NG claude-config に swift-layout-check が無い: $(CLAUDE_CONFIG)"; exit 1; }
+	scripts/verify.sh swift-layout python3 -I $(CLAUDE_CONFIG)/dotclaude/hooks/swift-layout-check.py $$(git ls-files --cached --others --exclude-standard '*.swift')
 	scripts/verify.sh screens-no-store sh -c 'grep -rnE "^(@testable )?import Store([[:space:]]|$$)" ios/Packages/__App__App/Sources/Features ios/Packages/__App__App/Sources/AppFeature; test $$? -eq 1'
 	scripts/verify.sh kit-test swift test --package-path ios/Packages/__App__Kit
 	scripts/verify.sh app-build $(XCODEBUILD) $(ANY_SIMULATOR) build

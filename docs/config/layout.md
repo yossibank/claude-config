@@ -64,6 +64,8 @@ flowchart TD
 | `dotclaude/skills/*/templates/**` | スキルのひな形 |
 | `lib/README.md`・`lib/*.py`・`lib/*.sh` | 持ち主が複数の共通の処理と、その一覧 |
 | `lib/*/*/*.jq`・`lib/*/*/*.py` | 持ち主が 1 つの中身。`lib/<種類>/<持ち主>/` に置く |
+| `lib/hooks/swift_layout_check/package/Package.resolved`・`lib/hooks/swift_layout_check/package/Package.swift` | swift-layout-check が組む、Swift のパッケージの定義 |
+| `lib/hooks/swift_layout_check/package/Sources/**` | そのパッケージのソース |
 | `tests/README.md` | テストの一覧 |
 | `tests/bin/*.sh`・`tests/hooks/*.sh`・`tests/skills/*.sh` | bin・フック・スキルのテスト |
 | `tests/support/*.sh` | テストの共通の処理 |

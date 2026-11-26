@@ -517,11 +517,11 @@ add_lib_folders() {
 }
 
 d=$(copy limit-folder-ok)
-add_lib_folders "$d" hooks pr_gate shell_check swift_format swift_style_check ctx_limit_read rules_require_read
+add_lib_folders "$d" hooks pr_gate shell_check swift_format swift_style_check ctx_limit_read
 expect_check "$d" limits OK "lib の子フォルダが上限ちょうどの 8 個"
 
 d=$(copy limit-folder-ng)
-add_lib_folders "$d" hooks pr_gate shell_check swift_format swift_style_check ctx_limit_read rules_require_read extra
+add_lib_folders "$d" hooks pr_gate shell_check swift_format swift_style_check ctx_limit_read rules_require_read
 expect_check "$d" limits 'lib/hooks/*/* の子フォルダが 9 個で、上限の 8 個を超えた' "lib の子フォルダが上限を超えた"
 
 d=$(copy limit-row)

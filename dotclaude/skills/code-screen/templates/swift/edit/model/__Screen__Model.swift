@@ -71,7 +71,16 @@ public extension __Screen__Model {
             self.state = state
         }
     }
+}
 
+extension __Screen__Model {
+    struct Dependencies {
+        let database: AppDatabase
+        let clock: ScreenClock
+    }
+}
+
+public extension __Screen__Model {
     func save() async {
         guard output.canSave else {
             return
@@ -94,6 +103,10 @@ public extension __Screen__Model {
     }
 }
 
+private extension __Screen__Model {
+    static let saveFailedMessage = "保存できませんでした"
+}
+
 public extension __Screen__Model.Output {
     var draft: __Item__Draft {
         __Item__Draft(name: state.name)
@@ -106,15 +119,4 @@ public extension __Screen__Model.Output {
     var isChanged: Bool {
         draft != input.baseline
     }
-}
-
-extension __Screen__Model {
-    struct Dependencies {
-        let database: AppDatabase
-        let clock: ScreenClock
-    }
-}
-
-private extension __Screen__Model {
-    static let saveFailedMessage = "保存できませんでした"
 }

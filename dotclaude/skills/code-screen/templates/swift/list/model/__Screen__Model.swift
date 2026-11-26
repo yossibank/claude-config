@@ -44,7 +44,15 @@ public extension __Screen__Model {
             self.input = input
         }
     }
+}
 
+extension __Screen__Model {
+    struct Dependencies {
+        let database: AppDatabase
+    }
+}
+
+public extension __Screen__Model {
     func run() async {
         await load()
         await observe()
@@ -68,22 +76,6 @@ public extension __Screen__Model {
     }
 }
 
-public extension __Screen__Model.Output {
-    var items: [__Item__] {
-        input.items ?? []
-    }
-
-    var isLoaded: Bool {
-        input.items != nil
-    }
-}
-
-extension __Screen__Model {
-    struct Dependencies {
-        let database: AppDatabase
-    }
-}
-
 private extension __Screen__Model {
     static let loadFailedMessage = "読み込めませんでした"
     static let removeFailedMessage = "消せませんでした"
@@ -98,5 +90,15 @@ private extension __Screen__Model {
         } catch {
             state.failureMessage = Self.loadFailedMessage
         }
+    }
+}
+
+public extension __Screen__Model.Output {
+    var items: [__Item__] {
+        input.items ?? []
+    }
+
+    var isLoaded: Bool {
+        input.items != nil
     }
 }

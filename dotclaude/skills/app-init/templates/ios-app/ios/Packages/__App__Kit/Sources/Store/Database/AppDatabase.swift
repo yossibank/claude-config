@@ -14,7 +14,9 @@ public extension AppDatabase {
     enum SetupError: Error {
         case appGroupUnavailable
     }
+}
 
+public extension AppDatabase {
     static func appGroup() throws -> AppDatabase {
         let path = try groupPath()
         let pool = try DatabasePool(path: path, configuration: configuration)
@@ -50,9 +52,7 @@ public extension AppDatabase {
 extension AppDatabase {
     static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
-
         migrator.registerMigration("v1", migrate: MigrationV001.migrate)
-
         return migrator
     }
 }
