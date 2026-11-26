@@ -16,6 +16,7 @@ MARKDOWN_LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
 BARE_LINK = re.compile(r"<https?://[^>]*>|https?://\S+")
 LINK = re.compile(f"{MARKDOWN_LINK.pattern}|{BARE_LINK.pattern}")
 LIST = re.compile(r"^([-*]|\d+\.)\s")
+MATH = "$$"
 FOR_CLAUDE = re.compile(r"(^|/)(CLAUDE|SKILL)\.md$|/(rules|agents|output-styles)/[^/]+\.md$")
 
 
@@ -110,14 +111,33 @@ def body_start(lines):
     return 0 if end is None else end + 1
 
 
+def math_marks(lines, marks):
+    inside = False
+    found = []
+    for raw, (mark, _) in zip(lines, marks):
+        text = raw.strip()
+        if mark is not None or not (inside or text.startswith(MATH)):
+            found.append(False)
+            continue
+        closes = text.endswith(MATH) and (inside or len(text) >= 2 * len(MATH))
+        inside = not closes
+        found.append(True)
+    return found
+
+
 def rows_of(lines):
     start = body_start(lines)
     rows = []
-    for number, (raw, (mark, _)) in enumerate(zip(lines[start:], fence_marks(lines[start:])), start + 1):
+    marks = fence_marks(lines[start:])
+    maths = math_marks(lines[start:], marks)
+    for number, (raw, (mark, _), math) in enumerate(zip(lines[start:], marks, maths), start + 1):
         if mark in ("open", "close"):
             rows.append(Row(number, "", "", "code"))
             continue
         if mark == "code":
+            continue
+        if math:
+            rows.append(Row(number, "", "", "math"))
             continue
         linked = without_links(raw)
         plain = CODE.sub("", linked)

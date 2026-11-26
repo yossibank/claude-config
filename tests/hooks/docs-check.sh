@@ -138,6 +138,15 @@ doc_case 0 "docs の外のファイルは 15KB を超えてもよい" README.md 
 doc_case 2 "docs の ## には絵文字を付ける" docs/x.md "$note"$'\n## 入れ方\n\nあ。' "頭に絵文字を 1 つ付ける"
 doc_case 0 "節の多い decisions は ## の絵文字を付けないでそろえてよい" docs/decisions/x.md "$note"$'\n## 入れ方\n\nあ。\n\n## 使い方\n\nい。'
 
+doc_case 0 "本文の絵文字の表の決定の絵文字は通る" docs/x.md "$note"$'\n| 決めたこと | 文書 |\n| --- | --- |\n| 📌 保存する | a |'
+doc_case 0 "人が読む文書は <kbd> を使える" spec/x.md "$note"$'\n<kbd>7</kbd> と <kbd>⌫</kbd> を押す。'
+doc_case 2 "Claude が読む文書に <kbd> を使わない" rules/x.md $'# t\n\n<kbd>7</kbd> を押す。' "使ってよい HTML ではない（<kbd>）"
+doc_case 0 "diff のブロックは通る" rules/x.md $'# t\n\nあ。\n\n```diff\n- 古い 名前,を、並べた、長い、行\n+ 新しい\n```'
+doc_case 0 "数式のブロックは文として数えない" docs/x.md "$note"$'\n$$\\text{純資産} = \\text{手元のお金} + \\text{投資} - \\text{借入} + \\text{とても長い語をここに並べる}_{1}$$\n\n$$\na_{1} + b_{2} = \\text{とても長い式をここに書いて六十字を超えるかどうかを確かめるための長い式の文字列である}\n$$\n\n数式の後の文。'
+doc_case 0 "脚注は通る" docs/x.md "$note"$'\n本文である[^1]。\n\n[^1]: 出典である。'
+doc_case 0 "チェックボックスは通る" docs/x.md "$note"$'\n- [x] 済んだ作業\n- [ ] 残りの作業'
+doc_case 0 "列のそろえは通る" docs/x.md "$note"$'\n| 状態 | 金額 |\n| :---: | ---: |\n| ✅ 完了 | 1,000 |'
+
 # --- 知らせるだけの検査 ---
 # <当たる 1 か 0> <ラベル> <名前> <中身> <知らせる文>。止めずに通し、知らせる文が出るか出ないかを比べる
 advice_case() {
@@ -214,6 +223,7 @@ print(md_doc.without_links("[名前](a.md) と <!-- c --> 終わり"))
 print([md_doc.kind(text) for text in ["", "# a", "| a |", "- a", "1. a", "> a", "あ。"]])
 lines = ["---", "title: x", "---", "# t", "", "本文。", "```sh", "ls", "```", "- 項目"]
 print([(row.number, row.what) for row in md_doc.rows_of(lines)])
+print([row.what for row in md_doc.rows_of(["$$a$$", "$$", "b", "$$", "c。", "```text", "$$", "```"])])
 print(md_doc.body_start(lines), md_doc.body_start(["# t"]))
 EOF
 )
@@ -222,6 +232,7 @@ True
 名前 と  終わり
 ['blank', 'heading', 'table', 'list', 'list', 'quote', 'body']
 [(4, 'heading'), (5, 'blank'), (6, 'body'), (7, 'code'), (9, 'code'), (10, 'list')]
+['math', 'math', 'math', 'math', 'body', 'code', 'code']
 3 0"
 
 finish
