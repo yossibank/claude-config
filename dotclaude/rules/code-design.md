@@ -71,6 +71,8 @@ Kotlin は、同じまとまりを次の形で書く。
 | 持ち物 | Swift | Kotlin |
 | --- | --- | --- |
 | モデル | `@State` の、型の名前が `Model` で終わる値。子のモデルも同じ | `remember { XModel(...) }` |
+| 流れ | `@State` の、型の名前が `Flow` で終わる値。モデルと同じまとまりを持ち、親のモデルの関数が作る | `remember { XFlow(...) }` |
+| 指の動きを追う型 | `@State` の、型の名前が `Drag` で終わる値。下の「画面だけの非同期」の型である | `remember { XDrag() }` |
 | 見た目の値 | `@State private var layout = Layout()`。型は、View の入れ子の `struct Layout` にする | `remember { Layout() }`。型は、画面のファイルの `class Layout` にする |
 | 仕組みの持ち物 | `@FocusState`・`@Namespace`・`@GestureState` | `rememberScrollState`・`rememberLazyListState`・`FocusRequester` など |
 | 外から受け取る物 | `@Environment`・`@Bindable var model`・`let model` | 引数と `CompositionLocal` |
@@ -80,7 +82,8 @@ Kotlin は、同じまとまりを次の形で書く。
 | 対象 | 決まり |
 | --- | --- |
 | 意味のある状態 | モデルの `state` に置く。出しているシート・確認中か・編集中か・選んでいる物・入力中の文字である |
-| `Layout` の中 | 寸法・位置・スクロールの型だけを置く。Bool・文字列・整数・ID・ドメインの型は置かない |
+| `Layout` の中 | 寸法・位置・スクロールの型と、動きの段階の型だけを置く。Bool・文字列・整数・ID・ドメインの型は置かない |
+| 動きの段階の型 | 見た目の動きの途中を表す、同じファイルの `enum`。名前を `Phase` で終え、画面の意味を持たせない |
 | Swift の寸法の型 | `CGFloat`・`CGSize`・`CGRect`・`CGPoint`・`CGVector`・`EdgeInsets`・`ScrollPosition`・`ScrollGeometry`。動きの進みは、`Double` と `Angle` で持つ |
 | Kotlin の寸法の型 | `Dp`・`DpSize`・`DpOffset`・`Float`・`Offset`・`IntOffset`・`Size`・`IntSize`・`Rect`・`IntRect`・`PaddingValues` |
 | 型の包み | 寸法の型の Optional・配列・集合と、値が寸法の型の辞書は置ける。辞書の鍵は問わない |
@@ -181,8 +184,8 @@ Kotlin は、同じまとまりを次の形で書く。
 | モデルの形 | Kotlin のモデルのクラスの `dependencies` が `private` か。まとまりか状態を持つクラスだけを見る | |
 | モデルの形 | Swift の `self` 以外の `.dependencies` の読み出しが無いか | |
 | モデルの形 | `.output.state`・`.output.input` の読み出しが無いか | |
-| 画面の形 | Swift の `@State` の型が、Optional と配列は中の型が、`Model` で終わる型か `Layout` か。`@Previewable` の行は除く | |
-| 画面の形 | Swift の `struct Layout` の保存プロパティが、寸法の型か。型を読み取れない値も止める | |
+| 画面の形 | Swift の `@State` の型が、`Model`・`Flow`・`Drag` で終わる型か `Layout` か。Optional と配列は中の型で見て、`@Previewable` の行は除く | |
+| 画面の形 | Swift の `struct Layout` の保存プロパティが、寸法の型か動きの段階の型か。段階の型は、同じファイルの `Phase` で終わる `enum` である | |
 | 画面の形 | Kotlin の `@Composable` のあるファイルの関数が、`mutableStateOf` の仲間を作っていないか。`@Preview` の関数は除く | |
 | 画面の形 | Kotlin の `class Layout` の本体のプロパティが、寸法の型か。型を読み取れない値も止め、コンストラクターの引数は見ない | |
 | 画面の形 | Swift の画面のファイルに、`Task {`・`Task(`・`Task.detached` が無いか | |
