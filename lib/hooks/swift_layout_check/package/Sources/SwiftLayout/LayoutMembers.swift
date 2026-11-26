@@ -84,14 +84,17 @@ extension LayoutMembers {
         }
 
         return members.compactMap { member in
-            Self.outsider(member).map {
+            Self.outsider(member, in: owner).map {
                 source.finding(at: member, "L3: 型の本体には、保存プロパティ・case・init だけを置く。\($0) は extension に出す")
             }
         }
     }
 
-    static func outsider(_ member: DeclSyntax) -> String? {
-        if member.isOverride {
+    static func outsider(
+        _ member: DeclSyntax,
+        in owner: DeclSyntax
+    ) -> String? {
+        if member.isOverride || owner.isInheritable && member.isOverridable {
             return nil
         }
 

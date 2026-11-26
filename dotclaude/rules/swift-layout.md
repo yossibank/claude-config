@@ -18,7 +18,7 @@ Swift を読み書きする時に読み込まれる決まり。ファイルの�
 | 1 | import | |
 | 2 | 型の本体 | 保存プロパティ・`case`・init・`body` |
 | 3 | 入れ子の型の宣言 | 型の宣言だけを置く extension |
-| 4 | 外に見せる値と関数 | `public extension` と、無印の `extension` |
+| 4 | 外に見せる値と関数 | `public extension`・`package extension` と、無印の `extension` |
 | 5 | 中だけの値と関数 | `private extension` |
 | 6 | 入れ子の型の中身 | `extension <親>.<入れ子>` |
 | 7 | 適合 | 実装のある適合の extension |
@@ -106,6 +106,7 @@ extension BackupModel.BackupFile: Identifiable {
 | --- | --- |
 | 観察の付いた保存プロパティ | `didSet`・`willSet` |
 | `override` の付いた宣言 | extension では上書きできない |
+| `final` でない class の関数・計算プロパティ・添字 | extension に出すと、子のクラスで上書きできない |
 | `CodingKeys` | `Codable` の鍵の enum |
 | SwiftUI が呼ぶ口 | `body`・`makeBody`・`makeUIView`・`path`・`placeSubviews`・`reduce`・`sizeThatFits`・`updateUIView` |
 | 名前空間の enum の中身 | `case` の無い enum は、中身を全部本体に書く |

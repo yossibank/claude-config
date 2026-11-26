@@ -9,7 +9,7 @@ final class LayoutOutsiders: SyntaxVisitor {
             return owner == nil ? .visitChildren : .skipChildren
         }
 
-        let found = node.members.map(\.decl).filter { LayoutMembers.outsider($0) != nil }
+        let found = node.members.map(\.decl).filter { LayoutMembers.outsider($0, in: parent) != nil }
 
         if !found.isEmpty {
             owner = parent

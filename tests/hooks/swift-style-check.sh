@@ -41,10 +41,6 @@ style_case 0 "1 行にすると 101 字になる宣言は折り返して通る" 
     ${long}: Int
 ) {}"
 
-style_case 2 "1 行の let と return の間に空行があれば止める" $'var a: Int {\n    let b = 1\n    let c = 2\n\n    return b + c\n}' "Case.swift:5: 1 行の let の並び"
-style_case 0 "return で始まる名前への代入は return と数えない" $'func a() {\n    let b = 1\n\n    returnValue = b\n}'
-style_case 0 "1 行の let と return を続けて書けば通る" $'var a: Int {\n    let b = 1\n    let c = 2\n    let d = 3\n    return b + c + d\n}'
-
 style_case 2 "同じ型の 1 行のビューの間に空行があれば止める" $'var a: some View {\n    VStack {\n        Text("a")\n\n        Text("b")\n    }\n}' "Case.swift:5: 同じ型の 1 行のビュー"
 style_case 0 "同じ型の 1 行のビューを続けて書けば通る" $'var a: some View {\n    HStack {\n        Text("a")\n        Text("b")\n    }\n}'
 style_case 2 "型が変わるビューの間に空行が無ければ止める" $'var a: some View {\n    HStack {\n        Text("a")\n        Spacer()\n    }\n}' "Case.swift:4: 型が変わるビュー"

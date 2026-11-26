@@ -12,7 +12,6 @@ INDENT = 4
 
 LOGICAL = re.compile(r"&&|\|\|")
 ASSIGN = re.compile(r"(?<![=!<>])=(?!=)")
-RETURN = re.compile(r"^return\b")
 ELSE_IF = re.compile(r"\belse\s+if\b")
 DECLARATION = re.compile(r"^\s*(?:[@\w]+(?:\([^)]*\))?\s+)*(?:func\s+[^\s(]+|init[?!]?|subscript)(?:<[^>]*>)?\($")
 CONTAINER = re.compile(
@@ -129,21 +128,6 @@ def blank_between(lines, first, second):
     return any(not lines[index].strip() for index in range(first[1] + 1, second[0]))
 
 
-def check_returns(code, lines):
-    for start, line in enumerate(code):
-        if not line.rstrip().endswith("{"):
-            continue
-        items = statements(code, lines, start, block_end(code, start))
-        if len(items) < 2 or any(first != last for first, last in items):
-            continue
-        heads = [code[first].strip() for first, _ in items]
-        if not RETURN.match(heads[-1]) or not all(head.startswith("let ") for head in heads[:-1]):
-            continue
-        for before, after in zip(items, items[1:]):
-            if blank_between(lines, before, after):
-                yield after[0] + 1, "1 行の let の並びと最後の 1 行の return だけのブロックには、空行を入れない"
-
-
 def check_views(code, lines):
     for start, line in enumerate(code):
         if not CONTAINER.match(line):
@@ -212,7 +196,6 @@ def check(path):
         *check_split_expressions(code),
         *check_else_if(code),
         *check_declarations(code, lines),
-        *check_returns(code, lines),
         *check_views(code, lines),
         *check_property_groups(code, lines),
     ]

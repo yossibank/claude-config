@@ -39,6 +39,8 @@ layout_case 2 "L3: 型の本体に計算プロパティを置けば止める" $'
 layout_case 2 "L3: case のある enum の本体に関数を置けば止める" $'enum Case {\n    case a\n\n    func b() {}\n}' "Case.swift:4: L3: 型の本体には"
 layout_case 2 "L3: 型の本体に入れ子の型を置けば止める" $'struct Case {\n    struct Row {}\n}' "Case.swift:2: L3: 型の本体には"
 layout_case 0 "L3: 保存プロパティ・didSet・init・body・CodingKeys・override は本体に置ける" $'final class Case: Base, View {\n    static let limit = 1\n\n    var a = 1 {\n        didSet {}\n    }\n\n    enum CodingKeys: String, CodingKey {\n        case a\n    }\n\n    init() {}\n\n    var body: some View {\n        Text("a")\n    }\n\n    override func b() {}\n}'
+layout_case 0 "L3: final でない class の関数・計算プロパティ・添字は本体に置ける" $'class Case {\n    var a: Int {\n        1\n    }\n\n    subscript(b: Int) -> Int {\n        b\n    }\n\n    func c() {}\n}'
+layout_case 2 "L3: final でない class でも、入れ子の型は止める" $'class Case {\n    struct Row {}\n}' "Case.swift:2: L3: 型の本体には"
 layout_case 0 "L3: case の無い enum は、名前空間として本体に書ける" $'enum Case {\n    static func a() {}\n}'
 layout_case 0 "L3: protocol の要求は見ない" $'protocol Case {\n    var a: Int { get }\n\n    func b()\n}'
 
@@ -93,7 +95,7 @@ fix_case() {
     bash "$hooks" swift-layout-check --fix "$base/Sources/Case.swift" </dev/null >/dev/null 2>&1
     out=$(bash "$hooks" swift-layout-check "$base/Sources/Case.swift" </dev/null 2>&1)
     match "--fix: ${label}（外れが無くなる）" "$?" "0"
-    check "--fix: ${label}（直した形）" grep -qF "$want" "$base/Sources/Case.swift"
+    check "--fix: ${label}（直した形）" bash -c '[[ $(<"$1") == *"$2"* ]]' _ "$base/Sources/Case.swift" "$want"
 }
 
 rm -f "$base/.claude/swift-layout-baseline.txt"
@@ -104,6 +106,9 @@ fix_case "同じ役割の extension をまとめる" $'struct Case {}\n\nextensi
 fix_case "extension を区画の順に並べ替える" $'struct Case {}\n\nprivate extension Case {\n    func a() {}\n}\n\nextension Case {\n    func b() {}\n}' $'extension Case {\n    func b() {}\n}\n\nprivate extension Case {'
 fix_case "部品と処理を分ける" $'struct Case {}\n\nprivate extension Case {\n    var count: Int {\n        1\n    }\n\n    var title: some View {\n        Text("a")\n    }\n}' $'        Text("a")\n    }\n}\n\nprivate extension Case {\n    var count: Int {'
 fix_case "本体の関数を extension に出し、public を extension に上げる" $'public struct Case {\n    public let a: Int\n\n    public func b() {}\n}' $'public extension Case {\n    func b() {}\n}'
+fix_case "internal の型の public は、無印の extension に出す" $'struct Case {\n    let a: Int\n\n    public func b() {}\n}' $'\nextension Case {\n    func b() {}\n}'
+fix_case "package の型の public は、package extension に出す" $'package struct Case {\n    package let a: Int\n\n    public func b() {}\n}' $'package extension Case {\n    func b() {}\n}'
+fix_case "public の型の package は、修飾子を残して public extension に出す" $'public struct Case {\n    public let a: Int\n\n    package func b() {}\n}' $'public extension Case {\n    package func b() {}\n}'
 fix_case "入れ子の型から出す時に、親の型の名前を補う" $'struct Case {}\n\nextension Case {\n    enum Kind {\n        case a\n    }\n\n    struct Row {\n        let kind: Kind\n\n        func same(_ other: Kind) -> Bool {\n            kind == other\n        }\n    }\n}' $'func same(_ other: Case.Kind) -> Bool {'
 fix_case "@available を、出した先の extension に付ける" $'@available(iOS 26.0, *)\nstruct Case {\n    let a: Int\n\n    func b() {}\n}' $'@available(iOS 26.0, *)\nextension Case {'
 fix_case "適合の extension の中の型は分けない" $'struct Case {}\n\nextension Case: Codable {\n    enum CodingKeys: String, CodingKey {\n        case a\n    }\n\n    func encode(to encoder: any Encoder) throws {}\n}' $'    enum CodingKeys: String, CodingKey {\n        case a\n    }\n\n    func encode'

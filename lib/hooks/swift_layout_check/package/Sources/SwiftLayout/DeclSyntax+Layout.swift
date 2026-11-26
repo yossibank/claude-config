@@ -56,6 +56,31 @@ extension DeclSyntax {
         modifierNames.contains("override")
     }
 
+    var isInheritable: Bool {
+        self.is(ClassDeclSyntax.self) && !modifierNames.contains("final")
+    }
+
+    var isOverridable: Bool {
+        let isComputed = self.as(VariableDeclSyntax.self).map { !$0.isStored } ?? false
+        return self.is(FunctionDeclSyntax.self) || self.is(SubscriptDeclSyntax.self) || isComputed
+    }
+
+    var accessRank: Int? {
+        if modifierNames.contains("public") || modifierNames.contains("open") {
+            return 2
+        }
+
+        if modifierNames.contains("package") {
+            return 1
+        }
+
+        if modifierNames.contains("internal") {
+            return 0
+        }
+
+        return isClosed ? -1 : nil
+    }
+
     var isPart: Bool {
         if let function = self.as(FunctionDeclSyntax.self) {
             return function.signature.returnClause?.type.isOpaque ?? false

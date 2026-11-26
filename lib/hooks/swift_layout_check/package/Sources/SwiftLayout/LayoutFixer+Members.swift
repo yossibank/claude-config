@@ -27,7 +27,7 @@ extension LayoutFixer {
 
         let column = source.converter.location(for: owner.positionAfterSkippingLeadingTrivia).column - 1
         let scope = names.scope(of: path)
-        let groups = grouped(finder.members, depth: column + indent.count, scope: scope)
+        let groups = grouped(finder.members, depth: column + indent.count, scope: scope, reach: reach(of: owner))
 
         guard !groups.isEmpty else {
             return []
@@ -43,7 +43,34 @@ extension LayoutFixer {
 }
 
 private extension LayoutFixer {
-    static let heads = ["public extension", "extension", "private extension"]
+    static func reach(of node: DeclSyntax) -> Int {
+        var reach = 2
+        var current: Syntax? = Syntax(node)
+
+        while let syntax = current {
+            if let decl = syntax.as(DeclSyntax.self), decl.typeName != nil {
+                reach = min(reach, decl.accessRank ?? defaultRank(of: decl))
+            }
+
+            current = syntax.parent
+        }
+
+        return reach
+    }
+
+    static func defaultRank(of node: DeclSyntax) -> Int {
+        var current = node.parent
+
+        while let syntax = current {
+            if let decl = syntax.as(DeclSyntax.self) {
+                return decl.is(ExtensionDeclSyntax.self) ? decl.accessRank ?? 0 : 0
+            }
+
+            current = syntax.parent
+        }
+
+        return 0
+    }
 
     static func top(of node: DeclSyntax) -> Syntax? {
         var current = Syntax(node)
@@ -83,15 +110,19 @@ private extension LayoutFixer {
     static func grouped(
         _ members: [DeclSyntax],
         depth: Int,
-        scope: [String: String]
+        scope: [String: String],
+        reach: Int
     ) -> [Group] {
+        let heads = [reach == 2 ? "public extension" : "package extension", "extension", "private extension"]
         var types = heads.map { Group(head: $0, members: []) }
         var values = types
 
         for member in members {
-            let slot = member.isOpen ? 0 : member.isClosed ? 2 : 1
+            let rank = member.accessRank ?? 0
+            let slot = member.isClosed ? 2 : rank >= 1 && reach >= 1 ? 0 : 1
+            let isDropped = member.isClosed || rank >= 1 && rank >= reach
 
-            guard let text = shifted(hoisted(member, scope: scope), by: depth - indent.count) else {
+            guard let text = shifted(hoisted(member, scope: scope, isDropped: isDropped), by: depth - indent.count) else {
                 return []
             }
 
@@ -107,11 +138,12 @@ private extension LayoutFixer {
 
     static func hoisted(
         _ member: DeclSyntax,
-        scope: [String: String]
+        scope: [String: String],
+        isDropped: Bool
     ) -> String {
-        let access: Set<String> = ["public", "private", "fileprivate"]
+        let access: Set<String> = ["public", "package", "private", "fileprivate"]
         let modifiers = member.asProtocol(WithModifiersSyntax.self)?.modifiers
-        let modifier = modifiers?.first { access.contains($0.name.text) && $0.detail == nil }
+        let modifier = modifiers?.first { isDropped && access.contains($0.name.text) && $0.detail == nil }
         let start = member.positionAfterSkippingLeadingTrivia.utf8Offset
         let qualifier = LayoutQualifier(scope: scope, start: start)
 
