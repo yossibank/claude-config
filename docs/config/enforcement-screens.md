@@ -19,7 +19,9 @@
 | 意味のある状態 | 検査 `check_swift_view`。`@State` の行だけを見る | 検査 `check_kotlin_view`。`mutableStateOf` の仲間だけを見る |
 | `Layout` の中・動きの段階の型 | 検査 `check_swift_layout`。型を読み取れない値も止め、段階の型は名前と同じファイルの宣言を見る | 検査 `check_kotlin_layout`。引数と getter は見ない |
 | Swift の寸法の型 | 検査 `check_swift_layout`。`SWIFT_METRICS` と比べる | Swift の決まりである |
-| Kotlin の寸法の型 | Kotlin の決まりである | 検査 `check_kotlin_layout`。`KOTLIN_METRICS` と比べる |
+| SwiftUI の寸法の型 | 検査 `check_swift_layout`。`SWIFT_METRICS` と比べる | Swift の決まりである |
+| Kotlin の dp の型 | Kotlin の決まりである | 検査 `check_kotlin_layout`。`KOTLIN_METRICS` と比べる |
+| Kotlin の px の型 | Kotlin の決まりである | 検査 `check_kotlin_layout`。`KOTLIN_METRICS` と比べる |
 | 型の包み | 検査 `check_swift_layout`。包みの中の型を見る | 検査 `check_kotlin_layout`。見方は Swift と同じである |
 | Kotlin の状態 | Kotlin の決まりである | 検査 `check_kotlin_view`。`@Composable` のあるファイルの関数を見る |
 

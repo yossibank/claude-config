@@ -113,15 +113,20 @@ def body_start(lines):
 
 def math_marks(lines, marks):
     inside = False
+    opened = 0
     found = []
-    for raw, (mark, _) in zip(lines, marks):
+    for index, (raw, (mark, _)) in enumerate(zip(lines, marks)):
         text = raw.strip()
         if mark is not None or not (inside or text.startswith(MATH)):
             found.append(False)
             continue
+        if not inside:
+            opened = index
         closes = text.endswith(MATH) and (inside or len(text) >= 2 * len(MATH))
         inside = not closes
         found.append(True)
+    if inside:
+        found[opened:] = [False] * (len(found) - opened)
     return found
 
 

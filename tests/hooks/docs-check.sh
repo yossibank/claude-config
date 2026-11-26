@@ -224,6 +224,7 @@ print([md_doc.kind(text) for text in ["", "# a", "| a |", "- a", "1. a", "> a", 
 lines = ["---", "title: x", "---", "# t", "", "本文。", "```sh", "ls", "```", "- 項目"]
 print([(row.number, row.what) for row in md_doc.rows_of(lines)])
 print([row.what for row in md_doc.rows_of(["$$a$$", "$$", "b", "$$", "c。", "```text", "$$", "```"])])
+print([row.what for row in md_doc.rows_of(["$$a$$", "$$ 閉じない", "b。"])])
 print(md_doc.body_start(lines), md_doc.body_start(["# t"]))
 EOF
 )
@@ -233,6 +234,7 @@ True
 ['blank', 'heading', 'table', 'list', 'list', 'quote', 'body']
 [(4, 'heading'), (5, 'blank'), (6, 'body'), (7, 'code'), (9, 'code'), (10, 'list')]
 ['math', 'math', 'math', 'math', 'body', 'code', 'code']
+['math', 'body', 'body']
 3 0"
 
 finish
