@@ -4,20 +4,29 @@ import SwiftSyntax
 
 struct LayoutSource {
     let stem: String
+    let text: String
     let tree: SourceFileSyntax
     let converter: SourceLocationConverter
+
+    init(
+        path: String,
+        text: String
+    ) {
+        let name = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+        let tree = Parser.parse(source: text)
+
+        self.stem = name
+        self.text = text
+        self.tree = tree
+        self.converter = SourceLocationConverter(fileName: path, tree: tree)
+    }
 
     init?(path: String) {
         guard let text = try? String(contentsOfFile: path, encoding: .utf8) else {
             return nil
         }
 
-        let name = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
-        let tree = Parser.parse(source: text)
-
-        self.stem = name
-        self.tree = tree
-        self.converter = SourceLocationConverter(fileName: path, tree: tree)
+        self.init(path: path, text: text)
     }
 }
 
@@ -54,8 +63,39 @@ extension LayoutSource {
 
     func finding(
         at node: some SyntaxProtocol,
-        _ message: String
+        _ message: String,
+        blank: Bool? = nil
     ) -> LayoutFinding {
-        LayoutFinding(line: line(of: node), message: message)
+        let edit = blank.flatMap { blankEdit(before: node, inserts: $0) }
+        return LayoutFinding(line: line(of: node), message: message, edit: edit)
+    }
+
+    func blankEdit(
+        before node: some SyntaxProtocol,
+        inserts: Bool
+    ) -> LayoutEdit? {
+        let trivia = node.leadingTrivia.description
+        let start = node.position.utf8Offset
+
+        guard trivia.allSatisfy(\.isWhitespace) else {
+            return nil
+        }
+
+        if inserts {
+            return LayoutEdit(start: start, end: start, text: "\n")
+        }
+
+        let indent = trivia.split(separator: "\n", omittingEmptySubsequences: false).last ?? ""
+        let end = node.positionAfterSkippingLeadingTrivia.utf8Offset
+
+        return LayoutEdit(start: start, end: end, text: "\n" + indent)
+    }
+
+    func slice(
+        from start: AbsolutePosition,
+        to end: AbsolutePosition
+    ) -> String {
+        let bytes = Array(text.utf8)[start.utf8Offset..<end.utf8Offset]
+        return String(decoding: bytes, as: UTF8.self)
     }
 }

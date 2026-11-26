@@ -3,14 +3,30 @@ import Foundation
 @main
 enum LayoutCommand {
     static func main() {
-        for path in CommandLine.arguments.dropFirst() {
-            guard let source = LayoutSource(path: path) else {
-                continue
-            }
+        let arguments = Array(CommandLine.arguments.dropFirst())
+        let fixes = arguments.first == "--fix"
+        let paths = Array(arguments.dropFirst(fixes ? 1 : 0))
+        let names = LayoutNames(viewMode: .sourceAccurate)
 
-            for finding in findings(in: source) {
-                print("\(path):\(finding.line): \(finding.message)")
+        if fixes {
+            paths.compactMap(LayoutSource.init).forEach { names.walk($0.tree) }
+        }
+
+        for path in paths {
+            if fixes {
+                LayoutFixer.fix(path: path, names: names)
+            } else if let source = LayoutSource(path: path) {
+                report(source, path: path)
             }
+        }
+    }
+
+    static func report(
+        _ source: LayoutSource,
+        path: String
+    ) {
+        for finding in findings(in: source) {
+            print("\(path):\(finding.line): \(finding.message)")
         }
     }
 

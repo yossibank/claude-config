@@ -86,4 +86,26 @@ printf 'struct Case {}\n' >"$base/Sources/Case.swift"
 out=$(bash "$hooks" swift-layout-check "$base/Sources/Case.swift" </dev/null 2>&1)
 match "直った外れが基準線に残っていたら NG にする" "$?:$(grep -c '行を消す' <<<"$out")" "2:1"
 
+# <ラベル> <直す前の中身> <直した後に含む文> で、--fix が外れを無くし、文を含むかを見る
+fix_case() {
+    local label=$1 text=$2 want=$3 out
+    printf '%s\n' "$text" >"$base/Sources/Case.swift"
+    bash "$hooks" swift-layout-check --fix "$base/Sources/Case.swift" </dev/null >/dev/null 2>&1
+    out=$(bash "$hooks" swift-layout-check "$base/Sources/Case.swift" </dev/null 2>&1)
+    match "--fix: ${label}（外れが無くなる）" "$?" "0"
+    check "--fix: ${label}（直した形）" grep -qF "$want" "$base/Sources/Case.swift"
+}
+
+rm -f "$base/.claude/swift-layout-baseline.txt"
+fix_case "要らない空行を消す" $'enum Case {\n    static func a() {\n        b()\n\n        c()\n    }\n}' $'        b()\n        c()'
+fix_case "要る空行を足す" $'enum Case {\n    static func a() {\n        let b = 1\n        c(b)\n        d()\n        e()\n    }\n}' $'        let b = 1\n\n        c(b)'
+fix_case "型の宣言と関数の混ざった extension を分ける" $'struct Case {}\n\nextension Case {\n    struct Row {}\n\n    func a() {}\n}' $'extension Case {\n    func a() {}\n}'
+fix_case "同じ役割の extension をまとめる" $'struct Case {}\n\nextension Case {\n    func a() {}\n}\n\nextension Case {\n    func b() {}\n}' $'    func a() {}\n\n    func b() {}'
+fix_case "extension を区画の順に並べ替える" $'struct Case {}\n\nprivate extension Case {\n    func a() {}\n}\n\nextension Case {\n    func b() {}\n}' $'extension Case {\n    func b() {}\n}\n\nprivate extension Case {'
+fix_case "部品と処理を分ける" $'struct Case {}\n\nprivate extension Case {\n    var count: Int {\n        1\n    }\n\n    var title: some View {\n        Text("a")\n    }\n}' $'        Text("a")\n    }\n}\n\nprivate extension Case {\n    var count: Int {'
+fix_case "本体の関数を extension に出し、public を extension に上げる" $'public struct Case {\n    public let a: Int\n\n    public func b() {}\n}' $'public extension Case {\n    func b() {}\n}'
+fix_case "入れ子の型から出す時に、親の型の名前を補う" $'struct Case {}\n\nextension Case {\n    enum Kind {\n        case a\n    }\n\n    struct Row {\n        let kind: Kind\n\n        func same(_ other: Kind) -> Bool {\n            kind == other\n        }\n    }\n}' $'func same(_ other: Case.Kind) -> Bool {'
+fix_case "@available を、出した先の extension に付ける" $'@available(iOS 26.0, *)\nstruct Case {\n    let a: Int\n\n    func b() {}\n}' $'@available(iOS 26.0, *)\nextension Case {'
+fix_case "適合の extension の中の型は分けない" $'struct Case {}\n\nextension Case: Codable {\n    enum CodingKeys: String, CodingKey {\n        case a\n    }\n\n    func encode(to encoder: any Encoder) throws {}\n}' $'    enum CodingKeys: String, CodingKey {\n        case a\n    }\n\n    func encode'
+
 finish

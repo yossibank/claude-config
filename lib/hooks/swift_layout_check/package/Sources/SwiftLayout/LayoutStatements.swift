@@ -116,7 +116,7 @@ private extension LayoutStatements {
         in items: [CodeBlockItemSyntax],
         _ message: String
     ) -> [LayoutFinding] {
-        items.dropFirst().filter(source.hasBlankLine).map { source.finding(at: $0, message) }
+        items.dropFirst().filter(source.hasBlankLine).map { source.finding(at: $0, message, blank: false) }
     }
 
     func gap(
@@ -128,15 +128,15 @@ private extension LayoutStatements {
         let hasBlank = source.hasBlankLine(before: item)
 
         if before == .block || after == .block {
-            return hasBlank ? nil : source.finding(at: item, "L7: 複数行の文の前後には、空行を入れる")
+            return hasBlank ? nil : source.finding(at: item, "L7: 複数行の文の前後には、空行を入れる", blank: true)
         }
 
         if before != after {
-            return hasBlank ? nil : source.finding(at: item, "L7: 段落（準備・実行・出口）が変わる所には、空行を入れる")
+            return hasBlank ? nil : source.finding(at: item, "L7: 段落（準備・実行・出口）が変わる所には、空行を入れる", blank: true)
         }
 
         let isLoose = hasBlank && !isInit
 
-        return isLoose ? source.finding(at: item, "L7: 同じ段落の 1 行の文の間に、空行を入れない") : nil
+        return isLoose ? source.finding(at: item, "L7: 同じ段落の 1 行の文の間に、空行を入れない", blank: false) : nil
     }
 }

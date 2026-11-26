@@ -2,9 +2,7 @@ import SwiftSyntax
 
 extension DeclSyntax {
     var isType: Bool {
-        self.is(StructDeclSyntax.self) || self.is(ClassDeclSyntax.self)
-            || self.is(EnumDeclSyntax.self) || self.is(ActorDeclSyntax.self)
-            || self.is(ProtocolDeclSyntax.self)
+        typeName != nil || self.is(TypeAliasDeclSyntax.self)
     }
 
     var typeName: String? {
@@ -38,6 +36,20 @@ extension DeclSyntax {
     var isOpen: Bool {
         modifierNames.contains("public") || modifierNames.contains("open")
             || modifierNames.contains("package")
+    }
+
+    var isLocal: Bool {
+        var current = parent
+
+        while let node = current {
+            if node.is(CodeBlockSyntax.self) || node.is(ClosureExprSyntax.self) {
+                return true
+            }
+
+            current = node.parent
+        }
+
+        return false
     }
 
     var isOverride: Bool {

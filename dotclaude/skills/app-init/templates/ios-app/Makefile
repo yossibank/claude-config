@@ -20,6 +20,7 @@ open:
 	open "$(CHECKOUT)/ios/__App__.xcworkspace"
 
 format:
+	python3 -I $(CLAUDE_CONFIG)/dotclaude/hooks/swift-layout-check.py --fix $$(git ls-files --cached --others --exclude-standard '*.swift')
 	mint run swiftformat .
 
 licenses:

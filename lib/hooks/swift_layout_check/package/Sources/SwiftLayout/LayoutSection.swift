@@ -46,7 +46,8 @@ extension LayoutSection {
     }
 
     var mixesTypes: Bool {
-        members.contains(where: \.isType) && members.contains { !$0.isType }
+        let isMixed = members.contains(where: \.isType) && members.contains { !$0.isType }
+        return isMixed && slot != .conformance
     }
 
     var hasParts: Bool {

@@ -24,7 +24,7 @@ final class LayoutMembers: SyntaxVisitor {
     }
 }
 
-private extension LayoutMembers {
+extension LayoutMembers {
     static let maxDepth = 3
     static let maxLines = 60
 
@@ -79,18 +79,18 @@ private extension LayoutMembers {
     ) -> [LayoutFinding] {
         let isNamespace = owner.is(EnumDeclSyntax.self) && !members.contains { $0.is(EnumCaseDeclSyntax.self) }
 
-        guard owner.typeName != nil, !owner.is(ProtocolDeclSyntax.self), !isNamespace else {
+        guard owner.typeName != nil, !owner.is(ProtocolDeclSyntax.self), !isNamespace, !owner.isLocal else {
             return []
         }
 
         return members.compactMap { member in
-            outsider(member).map {
+            Self.outsider(member).map {
                 source.finding(at: member, "L3: 型の本体には、保存プロパティ・case・init だけを置く。\($0) は extension に出す")
             }
         }
     }
 
-    func outsider(_ member: DeclSyntax) -> String? {
+    static func outsider(_ member: DeclSyntax) -> String? {
         if member.isOverride {
             return nil
         }
@@ -117,14 +117,14 @@ private extension LayoutMembers {
             let isMultiline = source.isMultiline(before) || source.isMultiline(after)
 
             if isMultiline {
-                return hasBlank ? sandwiched(before, after) : source.finding(at: after, "L6: 複数行の宣言の前後には、空行を入れる")
+                return hasBlank ? sandwiched(before, after) : source.finding(at: after, "L6: 複数行の宣言の前後には、空行を入れる", blank: true)
             }
 
             guard hasBlank, let group = storedGroup(of: before), group == storedGroup(of: after) else {
                 return nil
             }
 
-            return source.finding(at: after, "L6: 同じまとまりの 1 行の宣言の間に、空行を入れない")
+            return source.finding(at: after, "L6: 同じまとまりの 1 行の宣言の間に、空行を入れない", blank: false)
         }
     }
 

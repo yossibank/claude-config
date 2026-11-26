@@ -48,6 +48,15 @@ def run(paths):
     return findings
 
 
+def fix_swift_layout(paths):
+    if not paths:
+        return
+    if is_stale():
+        build()
+    for start in range(0, len(paths), CHUNK):
+        subprocess.run([BINARY, "--fix", *paths[start : start + CHUNK]], check=True)
+
+
 def check_swift_layout(paths, can_build):
     if not paths:
         return {}, ""
