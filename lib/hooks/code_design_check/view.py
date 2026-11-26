@@ -5,11 +5,11 @@ from hooks.code_design_check.state import KOTLIN_TOP, block_end, next_code
 
 PART_LIBRARY = "designsystem"
 HELD_SUFFIXES = ("Model", "Flow", "Drag")
-PHASE = re.compile(r"^\s*(?:private\s+|fileprivate\s+)?enum\s+(\w+Phase)\b")
 SWIFT_METRICS = {"CGFloat", "CGSize", "CGRect", "CGPoint", "CGVector", "EdgeInsets", "ScrollPosition", "ScrollGeometry", "Double", "Angle"}
 KOTLIN_METRICS = {"Dp", "DpSize", "DpOffset", "Float", "Offset", "IntOffset", "Size", "IntSize", "Rect", "IntRect", "PaddingValues"}
 ATTRIBUTES = r"(?:@\w+(?:\([^)]*\))?\s+)*"
 SWIFT_ACCESS = r"(?:(?:public|package|internal|fileprivate|private)(?:\(set\))?\s+)*"
+PHASE = re.compile(r"^\s*" + ATTRIBUTES + SWIFT_ACCESS + r"enum\s+(\w+Phase)\b")
 SWIFT_VALUE = r"\s+(?P<name>\w+)\s*(?::\s*(?P<type>[^={]+?))?\s*(?:=\s*(?P<value>[^{]*?))?\s*$"
 SWIFT_STATE = re.compile(r"^\s*" + ATTRIBUTES + r"@State\s+" + SWIFT_ACCESS + "var" + SWIFT_VALUE)
 SWIFT_PREVIEW = re.compile(r"@Previewable\b")
