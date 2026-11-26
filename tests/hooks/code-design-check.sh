@@ -557,6 +557,46 @@ cp "$gradle/featuremodels/src/main/kotlin/model/CaseModel.kt" "$gradle/app/src/m
 design_case 2 "Kotlin で画面と同じモジュールにモデルがあれば、input への代入を止める" "$gradle/app/src/main/kotlin/view/CaseView.kt" "$writes" "CaseView.kt:2: モデルの input に、モデルの外から書かない"
 rm -rf "$gradle/app" "$gradle/featuremodels"
 
+# --- 画面の部品 ---
+# <まとまり> <宣言の行> の、入れ子の @Observable のクラスを 1 つ持つ Swift のモデル
+nested() {
+    printf '%s' $'extension Case {\n    @MainActor\n    @Observable\n    final class '"$1"$' {\n        '"$2"$'\n    }\n}'
+}
+# <まとまり> <宣言の行> の、入れ子のクラスを 1 つ持つ Kotlin のモデル
+kotlin_nested() {
+    printf '%s' $'class Case {\n    val state = State()\n\n    class '"$1"$' {\n        '"$2"$'\n            private set\n    }\n}'
+}
+parts="$features/Case+State.swift"
+shown="Case の State で、表示中のものを Bool で持たない"
+loaded="に、読んだ印の Bool を置かない"
+running="Case の State に、実行中の印を手で書かない"
+design_case 2 "State の isShowing の Bool は Shown を使うよう止める" "$parts" "$(nested State 'public var isShowingHelp = false')" "Case+State.swift:5: ${shown}: isShowingHelp。シート・確認・メニューは Shown の 1 つの値で持つ"
+design_case 2 "State の is〜Presented の Bool も止める" "$parts" "$(nested State 'var isSheetPresented: Bool')" "${shown}: isSheetPresented"
+design_case 2 "State の確認中の Bool も止める" "$parts" "$(nested State 'public var isConfirmingDelete = false')" "${shown}: isConfirmingDelete"
+design_case 2 "State の show〜Sheet の Bool も止める" "$parts" "$(nested State 'var showDeleteAlert = false')" "${shown}: showDeleteAlert"
+design_case 0 "State の開閉の Bool は、シートの名前でなければ通す" "$parts" "$(nested State 'public var isScheduleOpen = false')"
+design_case 0 "State の表示の設定の Bool は通す" "$parts" "$(nested State 'public var showsCents = false')"
+design_case 0 "State の Shown は通す" "$parts" "$(nested State 'public var presented = Shown<Presented>()')"
+design_case 0 "表示中のものの計算プロパティは通す" "$parts" "$(nested State $'var isShowingHelp: Bool {\n            presented.isShowing(.help)\n        }')"
+design_case 0 "Input の表示の名前の Bool は見ない" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var isShowingHelp = false')"
+design_case 2 "Input の isLoaded は Loadable を使うよう止める" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var isLoaded = false')" "Case+Input.swift:5: Case の Input ${loaded}: isLoaded。値と一緒に Loadable で持つ"
+design_case 2 "Input の is〜Failed の読み込みの Bool も止める" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var isListFailed: Bool = false')" "Case の Input ${loaded}: isListFailed"
+design_case 2 "State の isLoaded も止める" "$parts" "$(nested State 'private(set) var isLoaded = false')" "Case の State ${loaded}: isLoaded"
+design_case 0 "State の、ほかの画面の読み込みを待つ合図は通す" "$parts" "$(nested State 'private(set) var isHomeLoaded = false')"
+design_case 0 "Input の Loadable は通す" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var list: Loadable<[Item]> = .loading')"
+design_case 0 "保存の失敗の Bool は、読み込みでなければ通す" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var isSaveFailed = false')"
+design_case 2 "State の isSaving は ModelTask を使うよう止める" "$parts" "$(nested State 'public internal(set) var isSaving = false')" "Case+State.swift:5: ${running}: isSaving。ModelTask で持ち、isRunning で読む"
+design_case 2 "State の working の Bool も止める" "$parts" "$(nested State 'private(set) var working: Bool = false')" "${running}: working"
+design_case 0 "State の、どの処理かを持つ値は通す" "$parts" "$(nested State 'public internal(set) var working: Work?')"
+design_case 0 "State の ModelTask は通す" "$parts" "$(nested State 'let saving = ModelTask()')"
+design_case 0 "入れ子でない @Observable のクラスは見ない" "$swift" $'@Observable\nfinal class Case {\n    var isSaving = false\n    var isShowingHelp = false\n}'
+rm -f "$parts" "$features/Case+Input.swift"
+design_case 2 "Kotlin の State の isShowing の Boolean を止める" "$kotlin" "$(kotlin_nested State 'var isShowingHelp: Boolean by mutableStateOf(false)')" "Case.kt:5: ${shown}: isShowingHelp"
+design_case 2 "Kotlin の Input の isLoaded を止める" "$kotlin" "$(kotlin_nested Input 'var isLoaded by mutableStateOf(false)')" "Case.kt:5: Case の Input ${loaded}: isLoaded"
+design_case 2 "Kotlin の State の isSaving を止める" "$kotlin" "$(kotlin_nested State 'var isSaving by mutableStateOf(false)')" "Case.kt:5: ${running}: isSaving"
+design_case 0 "Kotlin の State の開閉の Boolean は通す" "$kotlin" "$(kotlin_nested State 'var isScheduleOpen: Boolean by mutableStateOf(false)')"
+design_case 0 "Kotlin の Output の読み込みの印は見ない" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val isLoaded: Boolean\n            get() = true\n    }\n}'
+
 # --- 基準線 ---
 base="$work/base"
 mkdir -p "$base/Sources"

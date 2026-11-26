@@ -213,6 +213,9 @@ Kotlin は、同じまとまりを次の形で書く。
 | 画面の形 | Kotlin の画面の関数が、スコープから `.launch {`・`.async {` で始めていないか | |
 | 今の時刻と今日 | `Date()`・`Instant.now()` などを、引数やプロパティの既定値に書いていないか | |
 | 今の時刻と今日 | 時刻を返す関数の既定値に、`Date.init`・`{ .now }`・`Instant::now` などを書いていないか | |
+| 画面の部品 | 入れ子の `State` の Bool に、`isShowing〜`・`isConfirming〜` などが無いか | |
+| 画面の部品 | 入れ子の `Input` の Bool に、`isLoaded`・`is〜ListFailed` などが無いか | |
+| 画面の部品 | 入れ子の `State` の Bool に、`isSaving`・`isWorking`・`working` などが無いか | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
 
@@ -245,6 +248,12 @@ Kotlin は、同じまとまりを次の形で書く。
 - スコープを作る物は、`rememberCoroutineScope`・`CoroutineScope(` を見る。`MainScope(` と `GlobalScope` も見る。
 - Kotlin のコルーチンは、`@Preview` の関数を除く。`.launch {` と `.async {` は、クラスの中を見ない。
 - `LaunchedEffect` と、その中の受け手の無い `launch {`、波かっこの続かない `launch(` は通す。
+- 画面の部品は、入れ子の `State` と `Input` の、保存プロパティだけを見る。
+- 表示の名前は、`show〜Sheet` のような、シートなどの語で終わる物も見る。`isScheduleOpen` は通す。
+- `State` の読んだ印は、`isLoaded`・`isLoadFailed`・`is〜ListFailed` だけを見る。`isHomeLoaded` のような合図は通す。
+- 実行中の名前は、型が Bool の物だけを見る。どの処理かを持つ `working: Work?` は通す。
+- `ScreenEditable` の印は見ない。シートの `enum` のような、印の無い型で許す物を見分けられないためである。
+- 画面から `state` への書き込みは見ない。印の型への書き込みは、画面に許されているためである。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
 - 型の保存プロパティ・init の引数の並び・`self.x = x` だけの行は、データの宣言なので数えない。
 - 注釈の行は、複数行の引数も含め、データの宣言として数えない。

@@ -10,7 +10,7 @@
 
 | テスト | 確かめること |
 | --- | --- |
-| [code-design-check.sh](hooks/code-design-check.sh) | 大きさ・名前・状態の数・モデルの形・画面の形・同じ形の外れで止め、上限ちょうどとテストのファイルは通すか。verify から呼ぶ時は、外れと想定外の失敗を NG で止めるか |
+| [code-design-check.sh](hooks/code-design-check.sh) | 大きさ・名前・状態の数・モデルの形・画面の形・画面の部品・同じ形の外れで止め、上限ちょうどとテストのファイルは通すか。verify から呼ぶ時は、外れと想定外の失敗を NG で止めるか |
 | [ctx-limit-read.sh](hooks/ctx-limit-read.sh) | 大きいファイルを範囲なしで読む時だけ止めるか |
 | [docs-check.sh](hooks/docs-check.sh) | 文書の決まりに外れた時に止め、合う時は通すか |
 | [kotlin-layout-check.sh](hooks/kotlin-layout-check.sh) | 決まりの番号ごとに、外れで止め、決まりどおりの形は通すか。上限ちょうど・基準線・見ないフォルダの扱いと、`--fix` が外れを無くすか |

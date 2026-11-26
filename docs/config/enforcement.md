@@ -32,9 +32,9 @@
 | --- | --- | --- |
 | 一緒に動く値 | 検査 `check_swift_state`。`@Observable` のクラスの `var` の数だけを見る | 検査 `check_kotlin_state`・`check_kotlin_parts`。`mutableStateOf` の `var` の数だけを見る |
 | 両立しない状態 | 検査 `check_swift_state`。Bool の数だけを見る | 検査 `check_kotlin_parts`。まとまりのモデルの `State` の Boolean だけを見る |
-| 表示中のもの | レビューのみ | レビューのみ |
+| 表示中のもの | 検査 `check_swift_flags`。入れ子の `State` の Bool の名前を見る | 検査 `check_kotlin_flags`。見方は Swift と同じ |
 | 段階のある処理 | レビューのみ | レビューのみ |
-| 読み込んだ値 | レビューのみ | レビューのみ |
+| 読み込んだ値 | 検査 `check_swift_flags`。入れ子の `Input` の Bool の名前を見る | 検査 `check_kotlin_flags`。見方は Swift と同じ |
 | 入力の下書き | レビューのみ | レビューのみ |
 | 派生する値 | 検査 `check_swift_state`。`didSet` と `willSet` の数だけを見る | レビューのみ |
 | 値を覚える | レビューのみ | レビューのみ |
@@ -155,6 +155,10 @@ DesignSystem のフォルダは、`is_part_library` が検査から外す。`@Pr
 | 画面の寿命の読み込み | レビューのみ。`.task` の中身は見ない | レビューのみ。`LaunchedEffect` の中身は見ない |
 | 画面だけの非同期 | 検査 `check_swift_effect`。`Task<…>?` の保存プロパティへの代入と `cancel()` の有無を見る | 検査 `check_kotlin_effect`。許す形は無く、`LaunchedEffect` か `pointerInput` の中に書く |
 | DesignSystem の部品の非同期 | 許す決まりなので、守るものが無い | 許す決まりなので、守るものが無い |
+
+### 画面の部品
+
+実行中の印と、表示中のもの・読んだ印の Bool は、`flags.py` の検査が名前で止める。ほかの部品は、レビューのみで守る。
 
 ### 重複
 
