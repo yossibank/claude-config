@@ -125,6 +125,7 @@ CC_HOOKS_OFF="pr-gate,rules-require-read" claude
 | [bin/config-install.sh](../../bin/config-install.sh) | 入れる時 | `~/.claude` からリンクを張り、settings.json の案を作る |
 | [bin/docs-section.sh](../../bin/docs-section.sh) | 文書を読む時 | 見出しの一覧か、指定した節だけを出す |
 | [bin/docs-tech-icons.py](../../bin/docs-tech-icons.py) | README の技術のアイコンを作る時 | Simple Icons のロゴを取り、アイコンを並べた SVG を書く |
+| [bin/pr-merge.sh](../../bin/pr-merge.sh) | launchd が 30 分ごとに。入れる時は `install <リポジトリ>...` | PR を番号の順に squash でマージし、競合は `claude -p` に解かせて確認を通してからマージする。止めた時は、PR にコメントとラベル `auto-merge-stopped` を付け、通知を出す |
 
 ## 🔧 環境変数
 
