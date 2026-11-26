@@ -21,6 +21,21 @@ long_function() {
     printf '%s' "${out}"$'    }\n}'
 }
 
+# <分岐の数> の 1 行の分岐だけの switch の表を持つ、名前空間の enum。<2 行の分岐> に 1 を渡すと、2 行の分岐を 1 つ混ぜる
+switch_table() {
+    local out=$'enum Case {\n    static func a(i: Int) -> Int {\n        switch i {\n' i
+    for ((i = 0; i < $1; i++)); do out+="        case ${i}: ${i}"$'\n'; done
+    [ "${2:-0}" = 1 ] && out+=$'        case -1:\n            -1\n'
+    printf '%s' "${out}"$'        default: 0\n        }\n    }\n}'
+}
+
+# <分岐の数> の 1 行の分岐だけの switch の表を返す、計算プロパティ
+switch_getter() {
+    local out=$'enum Case {\n    case a\n}\n\nextension Case {\n    var b: Int {\n        switch self {\n' i
+    for ((i = 0; i < $1; i++)); do out+="        case .a: ${i}"$'\n'; done
+    printf '%s' "${out}"$'        }\n    }\n}'
+}
+
 layout_case 2 "L1: private extension の後に無印の extension を置けば止める" $'struct Case {}\n\nprivate extension Case {\n    var a: Int {\n        1\n    }\n}\n\nextension Case {\n    var b: Int {\n        2\n    }\n}' "Case.swift:9: L1: extension の順が違う。「外に見せる値と関数」は「private extension」より前に置く"
 layout_case 0 "L1: 型の宣言・public・無印・private・入れ子・適合の順なら通る" $'struct Case {}\n\nextension Case {\n    struct Row {}\n}\n\npublic extension Case {\n    var a: Int {\n        1\n    }\n}\n\nextension Case {\n    var b: Int {\n        2\n    }\n}\n\nprivate extension Case {\n    var c: Int {\n        3\n    }\n}\n\nextension Case.Row {\n    var d: Int {\n        4\n    }\n}\n\nextension Case: Identifiable {\n    var id: Int {\n        5\n    }\n}'
 layout_case 2 "L1: 入れ子の型の private extension の後に無印を置けば止める" $'struct Case {}\n\nextension Case {\n    struct Row {}\n}\n\nprivate extension Case.Row {\n    var a: Int {\n        1\n    }\n}\n\nextension Case.Row {\n    var b: Int {\n        2\n    }\n}' "Case.swift:13: L1: extension は public・無印・private の順に置く"
@@ -71,6 +86,9 @@ layout_case 0 "L7: 1 行のクロージャと 1 行の case は見ない" $'func
 
 layout_case 2 "L8: 61 行の関数は止める" "$(long_function 61)" "Case.swift:2: L8: 1 つの関数は 60 行までにする"
 layout_case 0 "L8: 60 行ちょうどの関数は通る" "$(long_function 60)"
+layout_case 0 "L8: 全部の分岐が 1 行の switch の表は、長くても通る" "$(switch_table 70)"
+layout_case 0 "L8: 全部の分岐が 1 行の switch の表を返す計算プロパティは、長くても通る" "$(switch_getter 70)"
+layout_case 2 "L8: 2 行の分岐が 1 つでもある switch は、表と見ない" "$(switch_table 70 1)" "Case.swift:2: L8: 1 つの関数は 60 行までにする"
 
 hook_case swift-layout-check 0 "Tests のフォルダの下は見ない" "$work/Tests/Case.swift" $'struct Case {\n    func a() {}\n}'
 hook_case swift-layout-check 0 ".claude の下は見ない" "$app/.claude/Case.swift" $'struct Case {\n    func a() {}\n}'
