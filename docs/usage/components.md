@@ -67,7 +67,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | [code-design-check](../../dotclaude/hooks/code-design-check.py) | 💬 知らせる | `.swift` と `.kt` を Edit・Write した後。swift-style-check か kotlin-style-check の後に順に走る | `dotclaude/rules/code-design.md` の、数で分かる決まりに合わない時。大きさ・名前・状態の数・モデルの形・画面の形・同じ形を見て、アプリの基準線にある外れは通す |
 | [ctx-limit-read](../../dotclaude/hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
-| [docs-check](../../dotclaude/hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `dotclaude/rules/docs-*.md` に合わない時 |
+| [docs-check](../../dotclaude/hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `dotclaude/rules/docs-*.md` に合わない時。読みやすさの外れ（表の行の長さ、アラートの中の箇条書き、語の並べ方、大きさ）は止めずに知らせる |
 | [kotlin-layout-check](../../dotclaude/hooks/kotlin-layout-check.py) | 💬 知らせる | `.kt` を Edit・Write した後。code-design-check の後に順に走る | `dotclaude/rules/kotlin-layout.md` の決まりに合わない時。区画・入れ子の深さ・空行・関数の長さ・Composable の本体の順を見て、基準線にある外れは通す |
 | [kotlin-style-check](../../dotclaude/hooks/kotlin-style-check.py) | 💬 知らせる | `.kt` を Edit・Write した後 | `.kt` が、整形で直らない `dotclaude/rules/kotlin-*.md` の空行に合わない時 |
 | [pr-gate](../../dotclaude/hooks/pr-gate.py) | 🛑 止める | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時。cd と `git -C` の先が変数でも止める |

@@ -259,15 +259,19 @@ def advise(path):
     return findings(path, ADVICE)
 
 
-def tell(text):
+def tell(text, problems):
     if len(sys.argv) > 1:
         print(text)
+        if problems:
+            notify(problems)
         return
     context = {"hookEventName": "PostToolUse", "additionalContext": text}
-    print(json.dumps({"systemMessage": text, "hookSpecificOutput": context}, ensure_ascii=False))
+    message = "\n".join(filter(None, [text, problems]))
+    print(json.dumps({"systemMessage": message, "hookSpecificOutput": context}, ensure_ascii=False))
 
 
 def main():
+    advice_text = ""
     try:
         paths = target_paths(".md")
         report = [f"{path}:{n}: {m}" for path in paths for n, m in check(path)]
@@ -277,10 +281,13 @@ def main():
             print("\n".join([HEADER, *report, *notes]), file=sys.stderr)
             sys.exit(2)
         if advice:
-            tell("\n".join([ADVICE_HEADER, *advice]))
+            advice_text = "\n".join([ADVICE_HEADER, *advice])
     finally:
-        for problem in rule_problems():
-            notify(f"docs-check: {problem}")
+        problems = "\n".join(f"docs-check: {problem}" for problem in rule_problems())
+        if advice_text:
+            tell(advice_text, problems)
+        elif problems:
+            notify(problems)
 
 
 if __name__ == "__main__":
