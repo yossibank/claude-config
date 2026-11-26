@@ -305,8 +305,8 @@ git -C "$d" mv -q dotclaude/hooks/swift-format.py dotclaude/hooks/format-swift.p
 expect_audit "$d" "名前の接頭語が接頭語の表に無い: format-swift.py" "表に無い接頭語のフック"
 
 d=$(copy prefix-place)
-mv "$d/bin/docs-section.sh" "$d/bin/pr-section.sh"
-expect_audit "$d" "接頭語 pr- は bin に使わない" "使う所の違う接頭語"
+mv "$d/bin/docs-section.sh" "$d/bin/store-section.sh"
+expect_audit "$d" "接頭語 store- は bin に使わない" "使う所の違う接頭語"
 
 d=$(copy verb-ok)
 replace "$d/docs/config/development.md" '| `record`・`render`・' '| `glue`・`record`・`render`・'

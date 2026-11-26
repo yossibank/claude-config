@@ -32,6 +32,7 @@
 | [config-install.sh](bin/config-install.sh) | 一時の HOME で、ほかのフックと実体を残して入れられるか |
 | [docs-section.sh](bin/docs-section.sh) | 見出しの一覧と節を出せるか |
 | [docs-tech-icons.sh](bin/docs-tech-icons.sh) | 引数の形を確かめ、アイコンを並べた SVG を書くか |
+| [pr-merge.sh](bin/pr-merge.sh) | 番号の順にマージし、競合を解いて確認を通してから push するか。落ちた時・解けない時・テスト中・同じ中身の 2 回目に止めるか、ラベルの付け外しと plist を入れるか |
 
 ### スキルのテスト
 
