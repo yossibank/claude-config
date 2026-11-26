@@ -95,6 +95,7 @@ README と `docs/`・`spec/` を読み書きする時に読み込まれる決ま
 | 脚注 | `[^1]` で、出典や細かい補足を本文の外に出す。1 つの文書で 5 つまでにする |
 | 数式 | 計算の決まりは `$$` のブロックにし、語は `\text{…}` で書く |
 | キー | テンキーやキーの割り当ての仕様で、キーを `<kbd>` で囲む |
+| 色見本 | テーマの色は、下の「色見本」の SVG で見せる |
 | スクリーンショット | 画面の仕様に置く。置き場所と出し方は `docs-app.md` の「画面の仕様の形」にある |
 
 状態の図の色は、失敗と警告を赤系、完了を緑系、途中を黄系にする。表で足りるものは図にしない。
@@ -118,6 +119,20 @@ $$\text{純資産} = \text{手元のお金} + \text{投資} - \text{借入}$$
 
 ```sh
 python3 -I ~/Applications/AI/claude-config/bin/docs-tech-icons.py docs/images/tech.svg apple:000000:iOS:18+ swift:F05138:Swift:6
+```
+
+## 色見本
+
+テーマの色は、色の四角と名前・値を並べた 1 枚の SVG で見せる。
+
+| 決まり | 中身 |
+| --- | --- |
+| 作り方 | `bin/docs-color-swatches.py` で `docs/images/` に SVG を作る |
+| 色の渡し方 | 名前とライトの値を並べ、ダークの値があれば続ける |
+| 列 | ダークの値を 1 つでも渡すと、ライトとダークの 2 列にする |
+
+```sh
+python3 -I ~/Applications/AI/claude-config/bin/docs-color-swatches.py docs/images/colors.svg 背景:FFFFFF:1C1C1E 文字:1C1C1E:F2F2F7
 ```
 
 ## README の形
