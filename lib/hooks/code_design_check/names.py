@@ -17,7 +17,7 @@ OBSERVABLE = re.compile(r"@Observable\b")
 EXTENSION = re.compile(r"^(?:(?:public|package|internal|fileprivate|private)\s+)?extension\s+(\w+)\s*:")
 VIEW_SUFFIXES = ("View", "Sheet", "Card", "Row", "Tile", "Banner", "Drawer")
 VIEW_ROLES = re.compile(r"\b(?:View|ViewModifier|Shape|Layout|ButtonStyle|UIViewRepresentable|PreviewProvider)\b")
-MODEL_SUFFIX = "Model"
+MODEL_SUFFIXES = ("Model", "Flow", "Drag")
 SCREEN_MODULES = ("FeatureModels", "Features", "AppFeature")
 WORD = re.compile(r"[A-Z]+(?![a-z])|[A-Z]?[a-z0-9]+")
 DECLARED = re.compile(r"\b(?:func|var|let|case|struct|class|enum|actor|protocol|typealias)\s+`?(\w+)")
@@ -126,7 +126,8 @@ def check_swift_suffix(path, code):
         kind, name = found.group(2), found.group(3)
         conformances = header_of(code, index)[found.end(3) :]
         observable = any(OBSERVABLE.search(text) for text in attributes_of(code, index))
-        if name.endswith(MODEL_SUFFIX) and not (kind == "class" and observable):
-            yield index + 1, f"語尾の Model は、@Observable の画面のモデルだけに付ける: {name}"
+        suffix = next((end for end in MODEL_SUFFIXES if name.endswith(end)), None)
+        if suffix and not (kind == "class" and observable):
+            yield index + 1, f"語尾の {suffix} は、@Observable のクラスだけに付ける: {name}"
         elif name.endswith(VIEW_SUFFIXES) and not (VIEW_ROLES.search(conformances) or name in viewed):
             yield index + 1, f"画面の部品の語尾は、View に適合する型だけに付ける: {name}"

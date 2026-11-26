@@ -4,10 +4,12 @@ import re
 from hooks.code_design_check.state import KOTLIN_TOP, block_end, next_code
 
 PART_LIBRARY = "designsystem"
+HELD_SUFFIXES = ("Model", "Flow", "Drag")
 SWIFT_METRICS = {"CGFloat", "CGSize", "CGRect", "CGPoint", "CGVector", "EdgeInsets", "ScrollPosition", "ScrollGeometry", "Double", "Angle"}
 KOTLIN_METRICS = {"Dp", "DpSize", "DpOffset", "Float", "Offset", "IntOffset", "Size", "IntSize", "Rect", "IntRect", "PaddingValues"}
 ATTRIBUTES = r"(?:@\w+(?:\([^)]*\))?\s+)*"
 SWIFT_ACCESS = r"(?:(?:public|package|internal|fileprivate|private)(?:\(set\))?\s+)*"
+PHASE = re.compile(r"^\s*" + ATTRIBUTES + SWIFT_ACCESS + r"enum\s+(\w+Phase)\b")
 SWIFT_VALUE = r"\s+(?P<name>\w+)\s*(?::\s*(?P<type>[^={]+?))?\s*(?:=\s*(?P<value>[^{]*?))?\s*$"
 SWIFT_STATE = re.compile(r"^\s*" + ATTRIBUTES + r"@State\s+" + SWIFT_ACCESS + "var" + SWIFT_VALUE)
 SWIFT_PREVIEW = re.compile(r"@Previewable\b")
@@ -91,6 +93,7 @@ def swift_layouts(code):
 
 
 def check_swift_layout(code):
+    phases = {found.group(1) for line in code if (found := PHASE.match(line))}
     for start, end, indent in swift_layouts(code):
         pattern = re.compile("^" + indent + "    " + SWIFT_MEMBER)
         for index in range(start + 1, end):
@@ -100,8 +103,8 @@ def check_swift_layout(code):
             name, kind = found.group("name"), swift_kind(found)
             if not kind:
                 yield index + 1, f"Layout の値には、型を書く: {name}。置けるのは、寸法・位置・スクロールの型だけである"
-            elif swift_leaf(kind) not in SWIFT_METRICS:
-                yield index + 1, f"Layout に置けるのは、寸法・位置・スクロールの型だけにする: {name}。意味のある状態は、モデルの state に移す"
+            elif swift_leaf(kind) not in SWIFT_METRICS and bare(swift_leaf(kind)) not in phases:
+                yield index + 1, f"Layout に置けるのは、寸法・位置・スクロールの型と、動きの段階の型だけにする: {name}。意味のある状態は、モデルの state に移す"
 
 
 def metric_holders(code):
@@ -125,13 +128,13 @@ def check_swift_view(path, code):
             continue
         kind = swift_kind(found)
         name = bare(swift_leaf(kind))
-        if name.endswith("Model") or name == "Layout" or name.endswith(".Layout"):
+        if name.endswith(HELD_SUFFIXES) or name == "Layout" or name.endswith(".Layout"):
             continue
         if kind and (swift_leaf(kind) in SWIFT_METRICS or name in holders):
             fix = "見た目の値は、入れ子の struct Layout にまとめる"
         else:
             fix = "意味のある状態は、モデルの state に移す"
-        yield index + 1, f"View の @State に置けるのは、モデルと layout だけにする: {found.group('name')}。{fix}"
+        yield index + 1, f"View の @State に置けるのは、モデル・流れ・指の動きの型と layout だけにする: {found.group('name')}。{fix}"
     yield from check_swift_layout(code)
 
 

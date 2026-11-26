@@ -42,7 +42,8 @@ extension LayoutSection {
 
     var roleKey: String {
         let clause = node.as(ExtensionDeclSyntax.self)?.genericWhereClause?.trimmedDescription ?? ""
-        return "\(path) \(slot.rawValue) \(access) \(clause)"
+        let declares = slot == .nested && !members.isEmpty && members.allSatisfy(\.isType)
+        return "\(path) \(slot.rawValue) \(access) \(declares) \(clause)"
     }
 
     var mixesTypes: Bool {

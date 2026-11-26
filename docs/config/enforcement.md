@@ -126,10 +126,10 @@ kakeibot で、画面のモジュールに違反を書いてコンパイルし�
 
 | 決まり | Swift | Kotlin |
 | --- | --- | --- |
-| モデル | 検査 `check_swift_view`。`@State` の型の名前の終わりだけを見る | レビューのみ。`remember` の中身は見ない |
+| モデル・流れ・指の動きを追う型 | 検査 `check_swift_view`。`@State` の型の名前の終わりだけを見る | レビューのみ。`remember` の中身は見ない |
 | 見た目の値 | 検査 `check_swift_view`。寸法の型の `@State` は、`Layout` にまとめるよう知らせる | 検査 `check_kotlin_view`。寸法の型の `mutableStateOf` は、`Layout` にまとめるよう知らせる |
 | 意味のある状態 | 検査 `check_swift_view`。`@State` の行だけを見る | 検査 `check_kotlin_view`。`mutableStateOf` の仲間だけを見る |
-| `Layout` の中 | 検査 `check_swift_layout`。型を読み取れない値も止める | 検査 `check_kotlin_layout`。引数と getter は見ない |
+| `Layout` の中・動きの段階の型 | 検査 `check_swift_layout`。型を読み取れない値も止め、段階の型は名前と同じファイルの宣言を見る | 検査 `check_kotlin_layout`。引数と getter は見ない |
 | Swift の寸法の型 | 検査 `check_swift_layout`。`SWIFT_METRICS` と比べる | Swift の決まりである |
 | Kotlin の寸法の型 | Kotlin の決まりである | 検査 `check_kotlin_layout`。`KOTLIN_METRICS` と比べる |
 | 型の包み | 検査 `check_swift_layout`。包みの中の型を見る | 検査 `check_kotlin_layout`。見方は Swift と同じである |
