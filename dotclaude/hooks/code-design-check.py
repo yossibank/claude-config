@@ -18,6 +18,7 @@ from hooks.code_design_check.files import (  # noqa: E402
     is_tooling,
 )
 from hooks.code_design_check.modules import is_open_to  # noqa: E402
+from hooks.code_design_check.names import check_swift_role, check_swift_suffix  # noqa: E402
 from hooks.code_design_check.shape import check_kotlin_shape, check_swift_shape  # noqa: E402
 from hooks.code_design_check.state import (  # noqa: E402
     KOTLIN_NOW,
@@ -59,6 +60,8 @@ def swift_checker(paths):
             findings += [
                 *check_swift_name(path, code),
                 *check_swift_types(path, code),
+                *check_swift_role(path, code, clones.root_of(os.path.realpath(path))),
+                *check_swift_suffix(path, code),
                 *check_folder(path, ".swift", folders),
                 *check_parts(path, code, clones.root_of(os.path.realpath(path))),
                 *check_swift_state(code),

@@ -117,6 +117,24 @@ design_case 0 "private な型は並べて通る" "$swift" $'struct Case {}\n\npr
 design_case 0 "ファイルの名前で始まる型は並べて通る" "$swift" $'struct Case {}\n\nstruct CaseRow {}'
 design_case 0 "拡張のファイルは、役割の名前で始まる型も通る" "$work/Case+Role.swift" $'extension Case {}\n\nstruct RoleValue {}'
 design_case 0 "入れ子の型は見ない" "$swift" $'struct Case {\n    struct Helper {}\n}'
+role="$app/ios/Packages/DemoApp/Sources/Core/Case+Trend.swift"
+design_case 2 "足す物の名前に無い役割の語は止める" "$role" $'extension Case {\n    var total: Int {\n        1\n    }\n}' "Case+Trend.swift:1: 拡張の役割の語は、足す物の名前か、名前の文書の表の語にする: +Trend"
+design_case 0 "足す物の名前に入っている役割の語は通る" "$role" $'extension Case {\n    var trendRows: Int {\n        1\n    }\n}'
+design_case 0 "共通の表にある役割の語は通る" "$app/ios/Packages/DemoApp/Sources/Core/Case+Title.swift" $'extension Case {\n    var label: Int {\n        1\n    }\n}'
+design_case 0 "import する枠組みの名前の役割の語は通る" "$app/ios/Packages/DemoApp/Sources/Core/Case+CloudKit.swift" $'import CloudKit\n\nextension Case {\n    var label: Int {\n        1\n    }\n}'
+design_case 2 "表の外の例にだけある語は、import しなければ止める" "$app/ios/Packages/DemoApp/Sources/Core/Case+CloudKit.swift" $'extension Case {\n    var label: Int {\n        1\n    }\n}' "Case+CloudKit.swift:1: 拡張の役割の語は、足す物の名前か、名前の文書の表の語にする: +CloudKit"
+design_case 0 "版の役割の語は通る" "$app/ios/Packages/DemoApp/Sources/Core/Case+V1_2_0.swift" $'extension Case {\n    var label: Int {\n        1\n    }\n}'
+rm -rf "$app/ios/Packages/DemoApp"
+suffix="$app/ios/Packages/DemoApp/Sources/Features"
+design_case 2 "@Observable でない型の語尾の Model は止める" "$suffix/CaseModel.swift" $'struct CaseModel {}' "CaseModel.swift:1: 語尾の Model は、@Observable の画面のモデルだけに付ける: CaseModel"
+design_case 0 "@Observable のクラスの語尾の Model は通る" "$suffix/CaseModel.swift" $'@Observable\nfinal class CaseModel {}'
+design_case 0 "宣言と同じ行の @Observable も見る" "$suffix/CaseModel.swift" $'@Observable final class CaseModel {}'
+design_case 0 "ほかの属性と並んだ @Observable も見る" "$suffix/CaseModel.swift" $'@MainActor @Observable\nfinal class CaseModel {}'
+design_case 2 "View でない型の語尾の Row は止める" "$suffix/CaseRow.swift" $'struct CaseRow {}' "CaseRow.swift:1: 画面の部品の語尾は、View に適合する型だけに付ける: CaseRow"
+design_case 0 "同じファイルの extension で View に適合すれば通る" "$suffix/CaseRow.swift" $'struct CaseRow {}\n\nextension CaseRow: View {\n    var body: some View {\n        Text("a")\n    }\n}'
+design_case 0 "折り返した適合の一覧の View も見る" "$suffix/CaseRow.swift" $'struct CaseRow: Equatable,\n    View {}'
+design_case 0 "View の語尾の Row は通る" "$suffix/CaseRow.swift" $'struct CaseRow: View {}'
+rm -rf "$app/ios/Packages/DemoApp"
 design_case 2 "Kotlin で名前の語が違う型を並べれば止める" "$kotlin" $'class Case\n\nclass Helper' "Case.kt:3: private でない型の名前は、ファイルの名前の語で始める: Helper"
 design_case 0 "Kotlin でファイルの名前の語で始まる型は通る" "$work/AppDatabaseBudget.kt" $'class AppDatabaseBudget\n\nclass BudgetWriteException'
 design_case 0 "Kotlin の private な型は並べて通る" "$kotlin" $'class Case\n\nprivate class Helper'
@@ -395,7 +413,7 @@ design_case 2 "View を拡張するファイルの Task も止める" "$features
 design_case 2 "extension View のファイルの Task も止める" "$features/CaseNotice.swift" $'extension View {\n    func notice(_ model: CaseModel) -> some View {\n        onTapGesture {\n            Task {}\n        }\n    }\n}' "CaseNotice.swift:4: $effect"
 design_case 2 "ViewModifier の Task も止める" "$features/CaseLift.swift" $'struct CaseLift: ViewModifier {\n    func lift() {\n        Task {}\n    }\n}' "CaseLift.swift:3: $effect"
 design_case 0 "View でない型だけのファイルの Task は見ない" "$features/CaseModel.swift" $'@Observable\nfinal class CaseModel {\n    func perform() {\n        Task {\n            await save()\n        }\n    }\n}'
-design_case 0 "View でない型を拡張するファイルの Task は見ない" "$features/CaseModel+Pro.swift" $'extension CaseModel {\n    func watch() {\n        Task {}\n    }\n}'
+design_case 0 "View でない型を拡張するファイルの Task は見ない" "$features/CaseModel+Actions.swift" $'extension CaseModel {\n    func watch() {\n        Task {}\n    }\n}'
 design_case 0 "View の外の Task? の保存プロパティに入れて取り消す Task は通る" "$features/CaseScroll.swift" "$(scroller $'    private var task: Task<Void, Never>?' $'        task?.cancel()\n        task = nil')"
 design_case 0 "@ObservationIgnored の保存プロパティと self. の代入も通る" "$features/CaseScroll.swift" "$(scroller $'    @ObservationIgnored private var task: Task<Void, Never>? = nil' $'        self.task?.cancel()' | sed 's/        task = Task/        self.task = Task/')"
 design_case 0 "型引数の中の Task は通る" "$view" "$(screen $'    let tasks = Dictionary<UUID, Task<Void, Never>>()\n    let all = Set<Task<Void, Never>>()')"
@@ -482,8 +500,8 @@ design_case 2 "Kotlin の画面から input の一覧に足せば止める" "$ko
 sources="$app/ios/Packages/CaseApp/Sources"
 mkdir -p "$sources/FeatureModels" "$sources/Features"
 printf '@Observable\npublic final class CaseModel {\n    public let input: Input\n\n    let dependencies: Dependencies\n}\n' >"$sources/FeatureModels/CaseModel.swift"
-writes=$'struct CaseView {\n    func choose() {\n        model.input.count = 1\n    }\n}'
-reads=$'struct CaseView {\n    var body: some View {\n        Child(database: model.dependencies.database)\n    }\n}'
+writes=$'struct CaseView: View {\n    func choose() {\n        model.input.count = 1\n    }\n}'
+reads=$'struct CaseView: View {\n    var body: some View {\n        Child(database: model.dependencies.database)\n    }\n}'
 design_case 0 "モデルが別のモジュールにある画面は、input への書き込みを型に任せる" "$sources/Features/CaseView.swift" "$writes"
 design_case 0 "モデルが別のモジュールにある画面は、dependencies の読み出しを型に任せる" "$sources/Features/CaseView.swift" "$reads"
 design_case 2 "モデルのモジュールの中では、ほかのモデルの input への書き込みを止める" "$sources/FeatureModels/OtherModel.swift" $'final class OtherModel {\n    func choose() {\n        model.input.count = 1\n    }\n}' "OtherModel.swift:3: モデルの input に、モデルの外から書かない"
