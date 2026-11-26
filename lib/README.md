@@ -56,8 +56,10 @@
 | [hooks/code_design_check/shape.py](hooks/code_design_check/shape.py) | モデルの宣言（DB と時計の持ち方・`Input` と `dependencies` の見せる範囲）の検査 |
 | [hooks/code_design_check/state.py](hooks/code_design_check/state.py) | モデルの状態の数・モデルの形・今の時刻の検査 |
 | [hooks/code_design_check/view.py](hooks/code_design_check/view.py) | 画面の形（`@State`・`Layout`・Composable の中の状態）の検査 |
-| [hooks/docs_check/advice.py](hooks/docs_check/advice.py) | 知らせるだけの読みやすさの検査（表の行の長さ、アラートの中の箇条書き、語の並べ方、大きさ） |
+| [hooks/docs_check/advice.py](hooks/docs_check/advice.py) | 知らせるだけの検査（「の」の続き、大きさ） |
 | [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
+| [hooks/docs_check/marks.py](hooks/docs_check/marks.py) | decisions の理由と却下の表、取り消し線、文字の色の検査 |
+| [hooks/docs_check/readability.py](hooks/docs_check/readability.py) | 読みやすさの検査（表の行の長さ、アラートの中の箇条書き、語の並べ方） |
 | [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
 | [hooks/kotlin_layout_check/runner.py](hooks/kotlin_layout_check/runner.py) | ktlint の jar に当てて検査のコマンドを組み、走らせて、外れの行を読む |
 | [hooks/swift_layout_check/runner.py](hooks/swift_layout_check/runner.py) | 検査のコマンドを組み、走らせて、外れの行を読む |

@@ -21,7 +21,6 @@ doc_case 2 "一文が 61 字なら止める" README.md $'# t\n\nあああああ�
 doc_case 2 "段落は 3 文まで" README.md $'# t\n\n一つ目。二つ目。三つ目。四つ目。'
 doc_case 0 "一文の読点は 3 つまで通る" README.md $'# t\n\nあ、い、う、えを使う。'
 doc_case 2 "一文の読点が 4 つあれば止める" README.md $'# t\n\nあ、い、う、え、おを使う。' "読点は 3 つまで"
-doc_case 0 "句点の無い語の並びの読点では止めない" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | あ、い、う、え、お |'
 doc_case 2 "表のセルは 2 文まで" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | 一つ。二つ。三つ。 |'
 # --- 絵文字と ## の見出し ---
 doc_case 2 "Claude が読む文書に絵文字を使わない" rules/x.md $'# t\n\n✅ 済んだ。'
@@ -89,7 +88,7 @@ doc_case 0 "節の名前と一部だけ重なる表は止めない" rules/x.md $
 doc_case 0 "節の名前で属性を比べる 3 列の表は止めない" rules/x.md $'# t\n\n比べる。\n\n| 画面 | タブ | 会員 |\n| --- | --- | --- |\n| ホーム | 1 | 全員 |\n| 設定 | 4 | 全員 |\n\n## ホーム\n\nう。\n\n## 設定\n\nえ。'
 doc_case 2 "## の見出しに同じ絵文字を 2 度使わない" README.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 🚀 使い方\n\nい。' "同じ絵文字を 2 度使わない（🚀）"
 doc_case 2 "2 列の表の 1 列目に同じ値を繰り返さない" rules/x.md $'# t\n\n決まりは次のとおり。\n\n| 場面 | 決まり |\n| --- | --- |\n| 作る時 | あ |\n| 作る時 | い |' "1 列目に同じ値を繰り返さない（作る時）"
-doc_case 0 "決定の文書は理由の行を重ねてよい" docs/decisions/x.md "$note"$'\n## 📏 保存\n\n**決定：保存する。**\n\n| 項目 | 内容 |\n| --- | --- |\n| 理由 | あ |\n| 理由 | い |'
+doc_case 0 "決定の文書は理由の行を重ねてよい" docs/decisions/x.md "$note"$'\n## 📏 保存\n\n**決定：保存する。**\n\n| 項目 | 内容 |\n| --- | --- |\n| 💡 理由 | あ |\n| 💡 理由 | い |'
 doc_case 0 "条件を組み合わせる 3 列の表は 1 列目が重なってよい" rules/x.md $'# t\n\n案は次のとおり。\n\n| 決まり | 回数 | 案 |\n| --- | --- | --- |\n| 無い | 2 回 | 足す |\n| 無い | 1 回 | 待つ |'
 doc_case 0 "別の表なら 1 列目が同じでもよい" rules/x.md $'# t\n\n一つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 1 |\n\n二つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 2 |'
 
@@ -138,6 +137,39 @@ doc_case 0 "docs の外のファイルは 15KB を超えてもよい" README.md 
 doc_case 2 "docs の ## には絵文字を付ける" docs/x.md "$note"$'\n## 入れ方\n\nあ。' "頭に絵文字を 1 つ付ける"
 doc_case 0 "節の多い decisions は ## の絵文字を付けないでそろえてよい" docs/decisions/x.md "$note"$'\n## 入れ方\n\nあ。\n\n## 使い方\n\nい。'
 
+# --- 読みやすさの検査（止める） ---
+cell=$(printf 'あ%.0s' {1..55})
+doc_case 2 "表の 1 行が 200 字を超えれば止める" rules/x.md $'# t\n\nあ。\n\n| a | b | c | d | e |\n| --- | --- | --- | --- | --- |\n| x | '"$cell | $cell | $cell | $cell |" "200 字を超えている"
+doc_case 0 "表の 1 行が 200 字までなら通る" rules/x.md $'# t\n\nあ。\n\n| a | b | c | d |\n| --- | --- | --- | --- |\n| x | '"$cell | $cell | $cell |"
+doc_case 2 "1 つのセルのリンクが 4 つなら止める" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| x | [a](a.md)・[b](b.md)・[c](c.md)・[d](d.md) |' "リンクは 3 つまで"
+doc_case 0 "1 つのセルのリンクが 3 つなら通る" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| x | [a](a.md)・[b](b.md)・[c](c.md) |'
+items=$'> - 一\n> - 二\n> - 三\n> - 四\n> - 五\n> - 六\n> - 七\n> - 八'
+doc_case 2 "アラートの中の 9 項目の箇条書きを止める" rules/x.md $'# t\n\nあ。\n\n> [!IMPORTANT]\n'"$items"$'\n> - 九' "8 項目までにする（9 項目）"
+doc_case 0 "アラートの中の 8 項目の箇条書きは通る" rules/x.md $'# t\n\nあ。\n\n> [!IMPORTANT]\n'"$items"$'\n\n> 引用\n> - 九'
+doc_case 2 "句点の無い項目の読点が 4 つなら止める" rules/x.md $'# t\n\nあ。\n\n- あ、い、う、え、お\n- か\n- き' "句点の無い項目やセルも、読点は 3 つまで"
+doc_case 2 "句点の無い表のセルの読点も数える" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | あ、い、う、え、お |' "句点の無い項目やセルも、読点は 3 つまで"
+doc_case 0 "句点の無い項目の読点が 3 つなら通る" rules/x.md $'# t\n\nあ。\n\n- あ、い、う、え\n- か\n- き'
+doc_case 2 "「・」で 7 語を並べれば止める" rules/x.md $'# t\n\nあ・い・う・え・お・か・きを使う。' "6 つまでにする（7 語）"
+doc_case 0 "「・」で 6 語までなら通る" rules/x.md $'# t\n\nあ・い・う・え・お・かを使う。'
+doc_case 2 "2 列の表の 1 列目の頭に同じコードが続けば止める" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `make` の整形 | 2 |' "同じコードを続けない（\`make\`）"
+doc_case 0 "1 列目の頭のコードが違えば通る" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `git` の整形 | 2 |'
+doc_case 0 "決定の文書は 1 列目の頭のコードを見ない" docs/decisions/x.md "$note"$'\n## 📏 保存\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `make` の整形 | 2 |'
+
+# --- 人が読む文書の新しい表現 ---
+decision=$'**決定：保存する。**\n\n| 項目 | 内容 |\n| :---: | --- |\n| 💡 理由 | 速い |'
+doc_case 0 "理由と却下の表は通る" docs/decisions/x.md "$note"$'\n## 保存\n\n'"$decision"$'\n| ❌ 却下 | ~~毎回読む~~ 遅い |\n| ❌ 却下 | ~~書かない~~ 消える |'
+doc_case 2 "却下の行に取り消し線の案が無ければ止める" docs/decisions/x.md "$note"$'\n## 保存\n\n'"$decision"$'\n| ❌ 却下 | 毎回読む（遅い） |' "~~案の名前~~ 却下の理由"
+doc_case 2 "却下の行に理由が無ければ止める" docs/decisions/x.md "$note"$'\n## 保存\n\n'"$decision"$'\n| ❌ 却下 | ~~毎回読む~~ |' "~~案の名前~~ 却下の理由"
+doc_case 2 "却下の行に案を 2 つ書かない" docs/decisions/x.md "$note"$'\n## 保存\n\n'"$decision"$'\n| ❌ 却下 | ~~毎回読む~~ 遅い。~~書かない~~ 消える |' "案を 1 つだけ書く"
+doc_case 2 "理由の行を却下の行より後に置かない" docs/decisions/x.md "$note"$'\n## 保存\n\n| 項目 | 内容 |\n| :---: | --- |\n| ❌ 却下 | ~~毎回読む~~ 遅い |\n| 💡 理由 | 速い |' "理由の行は、却下の行より前"
+doc_case 2 "理由の行の 1 列目に絵文字を付ける" docs/decisions/x.md "$note"$'\n## 保存\n\n| 項目 | 内容 |\n| --- | --- |\n| 理由 | 速い |' "1 列目は \`💡 理由\`"
+doc_case 2 "却下の行の 1 列目を別の言葉にしない" docs/decisions/x.md "$note"$'\n## 保存\n\n'"$decision"$'\n| ❌ 却下した案 | ~~毎回読む~~ 遅い |' "（❌ 却下した案）"
+doc_case 0 "決定の文書の外は理由の行の形を見ない" docs/x.md "$note"$'\n## 📏 保存\n\n| 項目 | 内容 |\n| --- | --- |\n| 理由 | 速い |'
+doc_case 2 "却下の行のほかに取り消し線を引かない" docs/x.md "$note"$'\n~~古い~~ 新しい。' "取り消し線は、decisions の却下の行"
+doc_case 2 "決定の文書の理由の行にも取り消し線を引かない" docs/decisions/x.md "$note"$'\n## 保存\n\n| 項目 | 内容 |\n| :---: | --- |\n| 💡 理由 | ~~遅い~~ 速い |' "取り消し線は、decisions の却下の行"
+doc_case 0 "コードの中の取り消し線は見ない" rules/x.md $'# t\n\n`~~案~~` と書く。'
+doc_case 2 "文字の色を使わない" docs/x.md "$note"$'\n$\\color{red}{赤}$ である。' "文字の色"
+doc_case 2 "_ の斜体も使わない" docs/x.md "$note"$'\n_強調_ した。' "斜体を使わない"
 doc_case 0 "本文の絵文字の表の決定の絵文字は通る" docs/x.md "$note"$'\n| 決めたこと | 文書 |\n| --- | --- |\n| 📌 保存する | a |'
 doc_case 0 "人が読む文書は <kbd> を使える" spec/x.md "$note"$'\n<kbd>7</kbd> と <kbd>⌫</kbd> を押す。'
 doc_case 2 "Claude が読む文書に <kbd> を使わない" rules/x.md $'# t\n\n<kbd>7</kbd> を押す。' "使ってよい HTML ではない（<kbd>）"
@@ -161,35 +193,20 @@ advice_case() {
         ng "docs-check: ${label}（終了コード ${status}、当たるかは ${hit}、文は「${want}」）" "$out"
     fi
 }
-cell=$(printf 'あ%.0s' {1..55})
-advice_case 1 "表の 1 行が 200 字を超えれば知らせる" rules/x.md $'# t\n\nあ。\n\n| a | b | c | d | e |\n| --- | --- | --- | --- | --- |\n| x | '"$cell | $cell | $cell | $cell |" "200 字を超えている"
-advice_case 0 "表の 1 行が 200 字までなら知らせない" rules/x.md $'# t\n\nあ。\n\n| a | b | c | d |\n| --- | --- | --- | --- |\n| x | '"$cell | $cell | $cell |" "200 字を超えている"
-advice_case 1 "1 つのセルのリンクが 4 つなら知らせる" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| x | [a](a.md)・[b](b.md)・[c](c.md)・[d](d.md) |' "リンクは 3 つまで"
-advice_case 0 "1 つのセルのリンクが 3 つなら知らせない" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| x | [a](a.md)・[b](b.md)・[c](c.md) |' "リンクは 3 つまで"
-items=$'> - 一\n> - 二\n> - 三\n> - 四\n> - 五\n> - 六\n> - 七\n> - 八'
-advice_case 1 "アラートの中の 9 項目の箇条書きを知らせる" rules/x.md $'# t\n\nあ。\n\n> [!IMPORTANT]\n'"$items"$'\n> - 九' "8 項目までにする（9 項目）"
-advice_case 0 "アラートの中の 8 項目の箇条書きは知らせない" rules/x.md $'# t\n\nあ。\n\n> [!IMPORTANT]\n'"$items"$'\n\n> 引用\n> - 九' "8 項目までにする"
-advice_case 1 "句点の無い項目の読点が 4 つなら知らせる" rules/x.md $'# t\n\nあ。\n\n- あ、い、う、え、お\n- か\n- き' "句点の無い項目やセルも、読点は 3 つまで"
-advice_case 1 "句点の無い表のセルの読点も数える" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | あ、い、う、え、お |' "句点の無い項目やセルも、読点は 3 つまで"
-advice_case 0 "句点の無い項目の読点が 3 つなら知らせない" rules/x.md $'# t\n\nあ。\n\n- あ、い、う、え\n- か\n- き' "句点の無い項目やセル"
-advice_case 1 "「・」で 7 語を並べれば知らせる" rules/x.md $'# t\n\nあ・い・う・え・お・か・きを使う。' "6 つまでにする（7 語）"
-advice_case 0 "「・」で 6 語までなら知らせない" rules/x.md $'# t\n\nあ・い・う・え・お・かを使う。' "「・」で並べる語"
 advice_case 1 "「の」が 4 回続けば知らせる" rules/x.md $'# t\n\n引数の写しのパッケージのフォルダの中を書き換える。' "「の」を 4 回以上続けない"
 advice_case 0 "「・」や「と」で区切った「の」は続きに数えない" rules/x.md $'# t\n\n画面の言葉・文書の言葉と、コードの型の名前を使う。' "「の」を 4 回以上続けない"
 advice_case 0 "「なの」は「の」に数えない" rules/x.md $'# t\n\n行の順が縦の順と同じなのかを見る。' "「の」を 4 回以上続けない"
 near=$(printf '%014000d' 0)
 advice_case 1 "docs の 1 ファイルが上限の 9 割を超えれば知らせる" docs/x.md "$note"$'\n```text\n'"$near"$'\n```' "9 割を超えた"
 advice_case 0 "docs の外のファイルは 9 割を超えても知らせない" README.md $'# t\n\nあ。\n\n```text\n'"$near"$'\n```' "9 割を超えた"
-advice_case 1 "2 列の表の 1 列目の頭に同じコードが続けば知らせる" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `make` の整形 | 2 |' "同じコードを続けない（\`make\`）"
-advice_case 0 "1 列目の頭のコードが違えば知らせない" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `git` の整形 | 2 |' "同じコードを続けない"
-advice_case 0 "決定の文書は 1 列目の頭のコードを見ない" docs/decisions/x.md "$note"$'\n## 📏 保存\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `make` の整形 | 2 |' "同じコードを続けない"
-printf '# t\n\nあ・い・う・え・お・か・きを使う。\n' >"$work/docs-case/rules/x.md"
+chain=$'# t\n\n引数の写しのパッケージのフォルダの中を書き換える。\n'
+printf '%s' "$chain" >"$work/docs-case/rules/x.md"
 out=$(file_call "$work/docs-case/rules/x.md" | bash "$hooks" docs-check 2>/dev/null)
 match "docs-check: 知らせる文は Claude にも additionalContext で渡す" "$out" '*"additionalContext": "文書の読みやすさで*'
-hook_case docs-check 2 "止める箇所がある時は、知らせる文も止める文に添える" "$work/docs-case/rules/x.md" $'# t\n\n設定を読みます。あ・い・う・え・お・か・きを使う。' "知らせるだけで、止めない"
-printf '# t\n\nあ・い・う・え・お・か・きを使う。\n' >"$work/docs-case/rules/x.md"
+hook_case docs-check 2 "止める箇所がある時は、知らせる文も止める文に添える" "$work/docs-case/rules/x.md" $'# t\n\n設定を読みます。引数の写しのパッケージのフォルダの中を書き換える。' "知らせるだけで、止めない"
+printf '%s' "$chain" >"$work/docs-case/rules/x.md"
 out=$(python3 -I "$root/dotclaude/hooks/docs-check.py" "$work/docs-case/rules/x.md" 2>&1)
-match "docs-check: 引数でファイルを渡した時は、知らせる文を JSON にしない" "$out" "文書の読みやすさで*rules/x.md:3: 「・」で並べる語*"
+match "docs-check: 引数でファイルを渡した時は、知らせる文を JSON にしない" "$out" "文書の読みやすさで*rules/x.md:3: 「の」を*"
 
 # --- 読めない・壊れた入力 ---
 printf '# t\n\nあ。\n' >"$work/unreadable.md"
