@@ -50,6 +50,7 @@
 | [hooks/code_design_check/effect.py](hooks/code_design_check/effect.py) | 画面のファイルの見分けと、画面が始める `Task` の検査 |
 | [hooks/code_design_check/files.py](hooks/code_design_check/files.py) | ファイルの大きさ・名前と型・フォルダの中の数・共通の部品の一覧の検査 |
 | [hooks/code_design_check/modules.py](hooks/code_design_check/modules.py) | ファイルのモジュールと、そのモジュールが `input`・`dependencies` を持つモデルを置くかの見分け |
+| [hooks/code_design_check/names.py](hooks/code_design_check/names.py) | 拡張の役割の語と、画面の部品の語尾の検査 |
 | [hooks/code_design_check/shape.py](hooks/code_design_check/shape.py) | モデルの宣言（DB と時計の持ち方・`Input` と `dependencies` の見せる範囲）の検査 |
 | [hooks/code_design_check/state.py](hooks/code_design_check/state.py) | モデルの状態の数・モデルの形・今の時刻の検査 |
 | [hooks/code_design_check/view.py](hooks/code_design_check/view.py) | 画面の形（`@State`・`Layout`・Composable の中の状態）の検査 |

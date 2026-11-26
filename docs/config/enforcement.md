@@ -192,4 +192,4 @@ DesignSystem のフォルダは、`is_part_library` が検査から外す。`@Pr
 | 数値 | レビューのみ | レビューのみ |
 | 層の境目 | 型。下のターゲットは上を import できず、文言を下の層に書くことだけはレビューで見る | 未確認 |
 | ファイルの大きさ | 検査 `check_length`。テストのファイルも見る | 検査 `check_length`。テストのファイルも見る |
-| ファイルと型 | 検査 `check_swift_name`・`check_swift_types` | 検査 `check_kotlin_types`。ファイルと同じ名前の型があるかは見ない |
+| ファイルと型 | 検査 `check_swift_name`・`check_swift_types`。語は `names.py` の検査が見る | 検査 `check_kotlin_types`。ファイルと同じ名前の型があるかは見ない |

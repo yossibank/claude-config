@@ -34,10 +34,25 @@
 | 語 | 足すもの | 例 |
 | --- | --- | --- |
 | `+Actions` | 画面の操作。複数形にする | `CategoryListView+Actions` |
+| `+Input` | モデルの入れ子の `Input` の中身 | `EntryModel+Input` |
+| `+Load` | モデルの読み込み | `RecurringEditModel+Load` |
 | `+Message` | エラーと問題の文 | `DraftProblem+Message` |
+| `+Output` | モデルの入れ子の `Output` の中身 | `EntryModel+Output` |
 | `+Record` | 表の行への適合 | `Entry+Record` |
+| `+Screen` | 子のモデルと画面に渡す物を作る関数 | `EntryModel+Screen` |
+| `+Sheets` | 画面から開くシートの種類と振り分け。複数形にする | `EntrySheet+Sheets` |
+| `+State` | モデルの入れ子の `State` の中身 | `EntryModel+State` |
 | `+Text` | 値から組み立てる文 | `BudgetUsage+Text` |
 | `+Title` | 選択肢と種類の表示名 | `WalletKind+Title` |
+
+表に無い語は、そのファイルが足す物の名前に入っている語にする。`AssetsView+Trend` は、`trendContent` を足すので通る。code-design-check が確かめる。
+
+次の語は、表に無くても使える。
+
+- お知らせの版（`+V1_2_0`）
+- import する枠組みの名前（`+CloudKit`）
+- ほかのファイルと同じ名前（`AppDatabase+EntryTag`）
+- 2 つ以上のファイルで使う話題の語
 
 複数の型をまたぐ文言は、拡張にせず `<頭>Text` の名前空間の enum に置く。例は `PeriodText` である。
 
