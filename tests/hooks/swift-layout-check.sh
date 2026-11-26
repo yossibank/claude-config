@@ -30,6 +30,7 @@ layout_case 2 "L1: #Preview の後に宣言を置けば止める" $'struct Case 
 
 layout_case 2 "L2: 入れ子の型の宣言と関数を同じ extension に置けば止める" $'struct Case {}\n\nextension Case {\n    struct Row {}\n\n    var a: Int {\n        1\n    }\n}' "Case.swift:3: L2: 入れ子の型の宣言と、値・関数を同じ extension に置かない"
 layout_case 2 "L2: 同じ役割の extension が 2 つあれば止める" $'struct Case {}\n\nextension Case {\n    var a: Int {\n        1\n    }\n}\n\nextension Case {\n    var b: Int {\n        2\n    }\n}' "Case.swift:9: L2: 同じ役割の extension が 2 つある"
+layout_case 0 "L2: 入れ子の型の中の型の宣言と、値の extension は別の役割と見る" $'struct Case {}\n\nextension Case {\n    struct Row {}\n}\n\nextension Case.Row {\n    enum Kind {\n        case a\n    }\n}\n\nextension Case.Row {\n    var a: Int {\n        1\n    }\n}'
 layout_case 0 "L2: where の違う extension は、別の役割と見る" $'struct Case<A> {}\n\nextension Case where A == Int {\n    var a: Int {\n        1\n    }\n}\n\nextension Case where A == String {\n    var b: Int {\n        2\n    }\n}'
 layout_case 2 "L2: 部品と処理を 1 つの private extension に置けば止める" $'struct Case {}\n\nprivate extension Case {\n    var title: some View {\n        Text("a")\n    }\n\n    var count: Int {\n        1\n    }\n}' "Case.swift:3: L2: 画面の部品と処理を、別の private extension に分ける"
 layout_case 2 "L2: 処理を部品より先に置けば止める" $'struct Case {}\n\nprivate extension Case {\n    var count: Int {\n        1\n    }\n}\n\nprivate extension Case {\n    var title: some View {\n        Text("a")\n    }\n}' "Case.swift:9: L2: 画面の部品と処理を、別の private extension に分ける"
