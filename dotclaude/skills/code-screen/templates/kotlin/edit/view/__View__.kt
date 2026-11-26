@@ -46,7 +46,7 @@ fun __View__(
     ) {
         TextField(
             value = model.state.name,
-            onValueChange = { model.state.name = it },
+            onValueChange = { model.state.rename(it) },
         )
 
         Text(text = model.state.failureMessage.orEmpty())
@@ -55,7 +55,7 @@ fun __View__(
             TextButton(
                 onClick = {
                     if (model.output.isChanged) {
-                        model.state.isConfirmingDiscard = true
+                        model.state.prompt.show(__Screen__Model.Prompt.Discard)
                     } else {
                         onClose()
                     }
@@ -76,9 +76,9 @@ fun __View__(
         }
     }
 
-    if (model.state.isConfirmingDiscard) {
+    if (model.state.prompt.isShowing(__Screen__Model.Prompt.Discard)) {
         DiscardDialog(
-            onKeep = { model.state.isConfirmingDiscard = false },
+            onKeep = { model.state.prompt.close(__Screen__Model.Prompt.Discard) },
             onDiscard = onClose,
         )
     }

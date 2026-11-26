@@ -22,7 +22,7 @@ public struct __View__: View {
 
     public var body: some View {
         VStack(spacing: 16) {
-            TextField("名前", text: Bindable(model.state).name)
+            TextField("名前", text: Bindable(model.state).fields.name)
                 .focused($isNameFocused)
 
             Text(model.state.failureMessage ?? "")
@@ -32,7 +32,7 @@ public struct __View__: View {
         .padding(16)
         .confirmationDialog(
             "保存せずに閉じますか",
-            isPresented: Bindable(model.state).isConfirmingDiscard
+            isPresented: Bindable(model.state).prompt[.discard]
         ) {
             Button("保存せずに閉じる", role: .destructive) {
                 dismiss()
@@ -67,7 +67,7 @@ private extension __View__ {
 private extension __View__ {
     func close() {
         if model.output.isChanged {
-            model.state.isConfirmingDiscard = true
+            model.state.prompt.show(.discard)
         } else {
             dismiss()
         }

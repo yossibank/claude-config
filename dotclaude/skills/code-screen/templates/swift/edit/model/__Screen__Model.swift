@@ -30,16 +30,25 @@ public extension __Screen__Model {
     @MainActor
     @Observable
     final class State {
-        public var name: String
-        public var failureMessage: String?
-        public var isConfirmingDiscard = false
+        public var fields: Fields
+        public var prompt = Shown<Prompt>()
 
-        public internal(set) var isSaving = false
+        public internal(set) var failureMessage: String?
         public internal(set) var outcome = ScreenOutcome<__Item__>()
 
+        public let saving = ModelTask()
+
         init(name: String) {
-            self.name = name
+            self.fields = Fields(name: name)
         }
+    }
+
+    struct Fields: ScreenEditable {
+        public var name: String
+    }
+
+    enum Prompt: Hashable, Sendable {
+        case discard
     }
 
     @MainActor
@@ -86,19 +95,18 @@ public extension __Screen__Model {
             return
         }
 
-        state.isSaving = true
-
         do {
-            let saved = try await dependencies.database.save__Item__(
-                output.draft,
-                editing: input.editing?.id,
-                at: dependencies.clock.now
-            )
+            let saved = try await state.saving.attempt {
+                try await dependencies.database.save__Item__(
+                    output.draft,
+                    editing: input.editing?.id,
+                    at: dependencies.clock.now
+                )
+            }
 
             state.outcome.send(saved)
         } catch {
             state.failureMessage = Self.saveFailedMessage
-            state.isSaving = false
         }
     }
 }
@@ -109,11 +117,11 @@ private extension __Screen__Model {
 
 public extension __Screen__Model.Output {
     var draft: __Item__Draft {
-        __Item__Draft(name: state.name)
+        __Item__Draft(name: state.fields.name)
     }
 
     var canSave: Bool {
-        draft.problems.isEmpty && !state.isSaving
+        draft.problems.isEmpty && !state.saving.isRunning && state.outcome.value == nil
     }
 
     var isChanged: Bool {

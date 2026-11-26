@@ -24,16 +24,16 @@ public extension __Screen__Model {
     @MainActor
     @Observable
     final class State {
-        public var failureMessage: String?
-        public var editing: __Item__?
+        public var editing = Shown<__Item__.ID>()
 
+        public internal(set) var failureMessage: String?
         public internal(set) var outcome = ScreenOutcome<__Item__>()
     }
 
     @MainActor
     @Observable
     final class Input {
-        public internal(set) var items: [__Item__]?
+        public internal(set) var items: Loadable<[__Item__]> = .loading
     }
 
     @MainActor
@@ -60,8 +60,9 @@ public extension __Screen__Model {
 
     func load() async {
         do {
-            input.items = try await dependencies.database.__item__List()
+            input.items = .loaded(try await dependencies.database.__item__List())
         } catch {
+            input.items = .failed
             state.failureMessage = Self.loadFailedMessage
         }
     }
@@ -83,7 +84,7 @@ private extension __Screen__Model {
     func observe() async {
         do {
             for try await items in dependencies.database.__item__ListUpdates() {
-                input.items = items
+                input.items = .loaded(items)
             }
         } catch is CancellationError {
             return
@@ -95,10 +96,10 @@ private extension __Screen__Model {
 
 public extension __Screen__Model.Output {
     var items: [__Item__] {
-        input.items ?? []
+        input.items.value ?? []
     }
 
     var isLoaded: Bool {
-        input.items != nil
+        input.items.isLoaded
     }
 }

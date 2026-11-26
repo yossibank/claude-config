@@ -55,6 +55,12 @@ DB を同期で呼ぶアプリは、ひな形の同期の版を使う。見張�
 | `ScreenPerforming` | 画面がモデルの async の関数を呼ぶ口。`perform` が `Task` を始める | `FeatureModels/Shared/Model/` |
 | `ScreenOutcome` | 保存できた・消した、の結果。モデルが `state` に置く | `FeatureModels/Shared/Model/` |
 | `onOutcome` | 画面が `ScreenOutcome` の変化を 1 か所で受ける modifier | `Features/Shared/Model/` |
+| `ScreenEditable` | 画面が書いてよい値の型の印。`State` の画面から書ける値は、この印の型だけにする | `FeatureModels/Shared/Model/` |
+| `Shown` | 表示中のシート・確認・メニューを、1 つの値で持つ | `FeatureModels/Shared/Model/` |
+| `ModelTask` | 保存などの実行中の印。二度押しは、呼ぶ側が `isRunning` で止める | `FeatureModels/Shared/Model/` |
+| `Loadable` | 読み込み中・読めた・失敗を、1 つの値で持つ | `FeatureModels/Shared/Model/` |
+
+ほかの画面の部品と使い方は、`dotclaude/rules/code-design.md` の「画面の部品」にある。
 
 画面は、`Store` を import しない。守らせる仕組みは、次のとおりである。
 

@@ -59,7 +59,7 @@ private extension __View__ {
     func row(_ item: __Item__) -> some View {
         HStack(spacing: 8) {
             Button(item.name) {
-                model.state.editing = item
+                model.state.editing.show(item.id)
             }
 
             Spacer()

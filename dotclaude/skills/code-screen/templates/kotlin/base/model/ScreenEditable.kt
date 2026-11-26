@@ -1,0 +1,3 @@
+package __modelPackage__
+
+interface ScreenEditable

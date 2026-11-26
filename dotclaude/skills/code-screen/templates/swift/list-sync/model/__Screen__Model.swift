@@ -26,9 +26,9 @@ public extension __Screen__Model {
     @MainActor
     @Observable
     final class State {
-        public var failureMessage: String?
-        public var editing: __Item__?
+        public var editing = Shown<__Item__.ID>()
 
+        public internal(set) var failureMessage: String?
         public internal(set) var outcome = ScreenOutcome<__Item__>()
     }
 

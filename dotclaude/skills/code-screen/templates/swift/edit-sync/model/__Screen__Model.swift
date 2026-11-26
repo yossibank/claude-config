@@ -30,15 +30,23 @@ public extension __Screen__Model {
     @MainActor
     @Observable
     final class State {
-        public var name: String
-        public var failureMessage: String?
-        public var isConfirmingDiscard = false
+        public var fields: Fields
+        public var prompt = Shown<Prompt>()
 
+        public internal(set) var failureMessage: String?
         public internal(set) var outcome = ScreenOutcome<__Item__>()
 
         init(name: String) {
-            self.name = name
+            self.fields = Fields(name: name)
         }
+    }
+
+    struct Fields: ScreenEditable {
+        public var name: String
+    }
+
+    enum Prompt: Hashable, Sendable {
+        case discard
     }
 
     @MainActor
@@ -109,7 +117,7 @@ private extension __Screen__Model {
 
 public extension __Screen__Model.Output {
     var draft: __Item__Draft {
-        __Item__Draft(name: state.name)
+        __Item__Draft(name: state.fields.name)
     }
 
     var canSave: Bool {
