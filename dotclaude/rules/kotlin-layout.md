@@ -52,7 +52,7 @@ private const val header = "日付,金額"
 
 | 順 | 区画 | 置くもの |
 | --- | --- | --- |
-| 1 | 保存プロパティと要求 | 初めの値か委譲を持つプロパティ。画面のモデルは `state`・`input`・`output`・`dependencies` の順。`interface` と `abstract` の、本体の無いプロパティと関数も、ここに置く |
+| 1 | 保存プロパティと要求 | 初めの値か委譲を持つプロパティと、`interface`・`abstract` の本体の無い宣言。画面のモデルは `state`・`input`・`output`・`dependencies` の順 |
 | 2 | init と副コンストラクタ | `init` と `constructor` |
 | 3 | 入れ子の型 | `State`・`Input`・`Output`・`Dependencies` は、値と同じ順 |
 | 4 | 計算プロパティと関数 | `override` が先。続けて公開・internal・private の順 |
