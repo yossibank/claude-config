@@ -160,11 +160,57 @@ extension LayoutMembers {
             let isCode = member.is(FunctionDeclSyntax.self) || member.is(InitializerDeclSyntax.self)
                 || member.as(VariableDeclSyntax.self)?.isStored == false
 
-            guard isCode, source.lineCount(of: member) > Self.maxLines else {
+            guard isCode, source.lineCount(of: member) > Self.maxLines, !isTable(member) else {
                 return nil
             }
 
             return source.finding(at: member, "L8: 1 つの関数は \(Self.maxLines) 行までにする")
         }
+    }
+
+    /// 関数と計算プロパティの本体が、全部の分岐が 1 行の switch だけでできた表か。
+    func isTable(_ member: DeclSyntax) -> Bool {
+        let items: CodeBlockItemListSyntax?
+
+        if let function = member.as(FunctionDeclSyntax.self) {
+            items = function.body?.statements
+        } else if let variable = member.as(VariableDeclSyntax.self), variable.bindings.count == 1 {
+            items = Self.getter(of: variable.bindings.first?.accessorBlock)
+        } else {
+            items = nil
+        }
+
+        guard let items, items.count == 1, let table = items.first.flatMap(Self.switchExpression(of:)) else {
+            return false
+        }
+
+        return !table.cases.isEmpty && table.cases.allSatisfy { element in
+            element.is(SwitchCaseSyntax.self) && !source.isMultiline(element)
+        }
+    }
+
+    static func getter(of block: AccessorBlockSyntax?) -> CodeBlockItemListSyntax? {
+        switch block?.accessors {
+        case let .getter(items):
+            items
+
+        case let .accessors(list):
+            list.count == 1 && list.first?.accessorSpecifier.text == "get" ? list.first?.body?.statements : nil
+
+        case nil:
+            nil
+        }
+    }
+
+    static func switchExpression(of item: CodeBlockItemSyntax) -> SwitchExprSyntax? {
+        var node = Syntax(item.item)
+
+        if let statement = node.as(ExpressionStmtSyntax.self) {
+            node = Syntax(statement.expression)
+        } else if let exit = node.as(ReturnStmtSyntax.self), let value = exit.expression {
+            node = Syntax(value)
+        }
+
+        return node.as(SwitchExprSyntax.self)
     }
 }
