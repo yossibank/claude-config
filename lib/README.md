@@ -29,12 +29,12 @@
 | --- | --- |
 | [bin/config_audit/agents.py](bin/config_audit/agents.py) | エージェントと rules の検査 |
 | [bin/config_audit/code.py](bin/config_audit/code.py) | シェルと Python の書き方、lib を読む行、bin の入口の検査 |
-| [bin/config_audit/docs.py](bin/config_audit/docs.py) | README の形、リンク、パス、台帳、語の使い方、文書の決まりの検査 |
+| [bin/config_audit/docs.py](bin/config_audit/docs.py) | README の形・リンク・パス・台帳・語の使い方・文書の決まりの検査 |
 | [bin/config_audit/files.py](bin/config_audit/files.py) | 追跡しているファイルの一覧と読み込み、名前の付け方の表の読み方 |
 | [bin/config_audit/layout.py](bin/config_audit/layout.py) | 置ける場所、分ける合図の上限、入れる処理の検査 |
 | [bin/config_audit/names.py](bin/config_audit/names.py) | 名前の頭と動詞、lib の持ち主、環境変数、テストと対象の対応の検査 |
 | [bin/config_audit/settings.py](bin/config_audit/settings.py) | settings のフックの呼び方と登録、許可とフックの並びの検査 |
-| [bin/config_audit/skills.py](bin/config_audit/skills.py) | スキルの項目、節、参照先、許可、使われていないスクリプトの検査 |
+| [bin/config_audit/skills.py](bin/config_audit/skills.py) | スキルの項目・節・参照先・許可と、使われていないスクリプトの検査 |
 | [bin/config_audit/templates.py](bin/config_audit/templates.py) | ひな形が呼ぶファイル、置き換える印、ひな形の CLAUDE.md の検査 |
 | [bin/config_install/settings.jq](bin/config_install/settings.jq) | 今の settings.json に、入れるフックと許可を混ぜた案を作る |
 | [bin/docs_section/sections.py](bin/docs_section/sections.py) | 見出しを読み、節を切り出す |
@@ -55,6 +55,7 @@
 | [hooks/code_design_check/shape.py](hooks/code_design_check/shape.py) | モデルの宣言（DB と時計の持ち方・`Input` と `dependencies` の見せる範囲）の検査 |
 | [hooks/code_design_check/state.py](hooks/code_design_check/state.py) | モデルの状態の数・モデルの形・今の時刻の検査 |
 | [hooks/code_design_check/view.py](hooks/code_design_check/view.py) | 画面の形（`@State`・`Layout`・Composable の中の状態）の検査 |
+| [hooks/docs_check/advice.py](hooks/docs_check/advice.py) | 知らせるだけの読みやすさの検査（表の行の長さ、アラートの中の箇条書き、語の並べ方、大きさ） |
 | [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
 | [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
 | [hooks/kotlin_layout_check/runner.py](hooks/kotlin_layout_check/runner.py) | ktlint の jar に当てて検査のコマンドを組み、走らせて、外れの行を読む |
