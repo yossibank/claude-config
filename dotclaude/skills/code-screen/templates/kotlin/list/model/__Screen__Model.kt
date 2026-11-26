@@ -54,7 +54,7 @@ class __Screen__Model(
     }
 
     suspend fun load() {
-        attempt(failure = loadFailed) {
+        attempt(failure = loadFailed, onFailure = { input.items = Loadable.Failed }) {
             input.items = Loadable.Loaded(dependencies.database.__item__List())
         }
     }
@@ -74,6 +74,7 @@ class __Screen__Model(
 
     private suspend fun attempt(
         failure: String,
+        onFailure: () -> Unit = {},
         action: suspend () -> Unit,
     ) {
         try {
@@ -81,6 +82,7 @@ class __Screen__Model(
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
+            onFailure()
             state.failureMessage = failure
         }
     }
