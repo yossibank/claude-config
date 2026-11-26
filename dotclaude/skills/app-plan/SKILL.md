@@ -13,8 +13,8 @@ allowed-tools: Bash(python3 -I ${CLAUDE_SKILL_DIR}/scripts/*)
 
 | 入力 | 中身 |
 | --- | --- |
-| `$ARGUMENTS` の 1 つ目 | 題材 |
-| `$ARGUMENTS` の 2 つ目 | アプリの名前（英小文字）。省いたら人に聞く |
+| 1 つ目の `$ARGUMENTS` | 題材 |
+| 2 つ目の `$ARGUMENTS` | アプリの名前（英小文字）。省いたら人に聞く |
 
 ## 手順
 

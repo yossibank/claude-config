@@ -97,7 +97,7 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | 文書 | 読む時 | 中身 |
 | --- | --- | --- |
 | [bin/README.md](bin/README.md) | 入口のスクリプトを探す時 | 名前の頭のまとまりと、一覧のある文書 |
-| [docs/README.md](docs/README.md) | 文書を探す時 | フォルダの役割と、claude-config の文書を読む順 |
+| [docs/README.md](docs/README.md) | 文書を読む順を決める時 | docs のフォルダの役割と、場面ごとの読む順 |
 | [docs/app/ios-naming.md](docs/app/ios-naming.md) | ファイルを足す・名前を付ける時 | iOS アプリのフォルダとファイルの名前、迷いやすい置き場所 |
 | [docs/app/ios-architecture.md](docs/app/ios-architecture.md) | 構成を決める時 | iOS アプリのフォルダ、依存の向き、テスト |
 | [docs/app/ios-screens.md](docs/app/ios-screens.md) | 画面を足す・起動の流れを変える時 | iOS アプリの画面とモデルの分け方、土台の型、起動と外からの入口 |
@@ -110,6 +110,8 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/usage/setup.md](docs/usage/setup.md) | 入れる時 | config-install.sh がすること、settings.json の混ぜ方 |
 | [docs/usage/skills.md](docs/usage/skills.md) | スキルを選ぶ時 | スキルを使う順と一覧 |
 | [dotclaude/README.md](dotclaude/README.md) | 配るものを探す時 | 配るものの種類と、一覧のある文書 |
+| [dotclaude/rules/docs-core.md](dotclaude/rules/docs-core.md) | 文書を書く時 | 文書の運用・文・表現 |
+| [dotclaude/rules/docs-human.md](dotclaude/rules/docs-human.md) | 人が読む文書を書く時 | README と docs の見た目、README の形 |
+| [dotclaude/rules/docs-app.md](dotclaude/rules/docs-app.md) | アプリの文書を書く時 | アプリの文書ごとの役割と、足す条件 |
 | [lib/README.md](lib/README.md) | 共通の処理を探す時 | lib の名前の頭と持ち主の子フォルダ、ファイルの一覧 |
 | [tests/README.md](tests/README.md) | テストを探す時 | テストと、テストの共通の処理の一覧 |
-| [dotclaude/rules/docs-core.md](dotclaude/rules/docs-core.md)・[dotclaude/rules/docs-human.md](dotclaude/rules/docs-human.md)・[dotclaude/rules/docs-app.md](dotclaude/rules/docs-app.md) | 文書を書く時 | 文書の運用・文・表現、人が読む文書の形、アプリの文書の役割 |

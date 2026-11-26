@@ -43,7 +43,7 @@ ${CLAUDE_SKILL_DIR}/scripts/render-snapshots.sh <パッケージのフォルダ>
 | --- | --- | --- |
 | `SnapshotTests.swift` | いつも | 描く場合と大きさ。出力先は `__OUT__` と書き、`render-snapshots.sh` が置き換える |
 | `targets.txt` | いつも | テストが依存するターゲットを、1 行に 1 つ書く。ほかのパッケージの製品は `<製品>:<パッケージ>` |
-| `patch.py` | 外から渡せない値を差し替える時 | 引数の写しのパッケージのフォルダの中を書き換える。`@Environment(\.widgetFamily)` を引数に変えるなど |
+| `patch.py` | 外から渡せない値を差し替える時 | `sys.argv[1]` に渡る、写しの中のパッケージのフォルダを書き換える。`@Environment(\.widgetFamily)` を引数に変えるなど |
 
 ## 画面の名前
 
