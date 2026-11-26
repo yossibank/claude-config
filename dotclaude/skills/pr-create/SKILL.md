@@ -122,6 +122,8 @@ reviewer には、ワークツリーのパスと base のブランチ名だけ�
 gh pr create --base <base> --title <タイトル> --body-file <本文のファイル>
 ```
 
+人が「下書きで」と言った時だけ、`--draft` を足す。
+
 ## 報告
 
 PR の URL か、`compare` の URL を返す。あわせて、通した確認と、未検証の項目を書く。
