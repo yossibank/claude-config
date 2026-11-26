@@ -21,7 +21,8 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 | [dotclaude/rules/kotlin-compose.md](../../dotclaude/rules/kotlin-compose.md) | 画面と部品のフォルダ、`*View.kt` | kotlin-core | Composable の分け方、要素の並べ方 |
 | [dotclaude/rules/kotlin-core.md](../../dotclaude/rules/kotlin-core.md) | Kotlin | | 宣言の置き方、改行、空行、ファイル、ktlint の設定 |
 | [dotclaude/rules/kotlin-test.md](../../dotclaude/rules/kotlin-test.md) | `src/test/`・`src/<対象>Test/` の Kotlin | kotlin-core | テストの名前と空行 |
-| [dotclaude/rules/swift-core.md](../../dotclaude/rules/swift-core.md) | Swift | | 宣言の置き方、改行、空行、ファイル |
+| [dotclaude/rules/swift-core.md](../../dotclaude/rules/swift-core.md) | Swift | | プロパティのまとまり、改行、ファイル |
+| [dotclaude/rules/swift-layout.md](../../dotclaude/rules/swift-layout.md) | Swift | swift-core | ファイルの区画、extension の分け方、宣言と文の空行 |
 | [dotclaude/rules/swift-test.md](../../dotclaude/rules/swift-test.md) | `Tests/`・`<名前>Tests/` の Swift | swift-core | テストの空行と型の置き方 |
 | [dotclaude/rules/swift-ui.md](../../dotclaude/rules/swift-ui.md) | 画面と部品のフォルダ、`*View.swift` | swift-core | `View` の分け方、ビューの並べ方 |
 
@@ -41,6 +42,7 @@ flowchart LR
     editAfter -->|.swift だけ| swift["swift-format"]
     swift --> swiftStyle["swift-style-check"]
     swiftStyle --> design["code-design-check"]
+    design -->|.swift だけ| layout["swift-layout-check"]
     editAfter -->|.kt だけ| kotlinStyle["kotlin-style-check"]
     editAfter -->|.kt だけ| design
     editAfter -->|.sh だけ| shell["shell-check"]
@@ -71,6 +73,7 @@ flowchart LR
 | [rules-require-read](../../dotclaude/hooks/rules-require-read.py) | 🛑 止める | rules の `.md` の Read と、Edit・Write の前 | 当たる rules を、この会話でまだ読まずに編集する時 |
 | [shell-check](../../dotclaude/hooks/shell-check.py) | 💬 知らせる | `.sh` を Edit・Write した後 | `.sh` の `bash -n` と、変数の直後の全角 |
 | [swift-format](../../dotclaude/hooks/swift-format.py) | 🧹 整える | `.swift` を Edit・Write した後。`.swiftformat` が無ければ動かない | `.swift` を、Mintfile の swiftformat で整える |
+| [swift-layout-check](../../dotclaude/hooks/swift-layout-check.py) | 💬 知らせる | `.swift` を Edit・Write した後。code-design-check の後に順に走る | `dotclaude/rules/swift-layout.md` の決まりに合わない時。ファイルの区画・extension の役割・型の本体・宣言と文の空行・関数の長さを見て、アプリの基準線にある外れは通す |
 | [swift-style-check](../../dotclaude/hooks/swift-style-check.py) | 💬 知らせる | `.swift` を Edit・Write した後。swift-format の後に順に走る | `.swift` が、整形で直らない `dotclaude/rules/swift-*.md` の決まりに合わない時。改行・空行・`else if` の条件の数を見る |
 
 ### 返事の言葉を見る範囲

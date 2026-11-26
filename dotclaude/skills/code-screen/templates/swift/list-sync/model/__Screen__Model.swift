@@ -46,7 +46,15 @@ public extension __Screen__Model {
             self.input = input
         }
     }
+}
 
+extension __Screen__Model {
+    struct Dependencies {
+        let database: AppDatabase
+    }
+}
+
+public extension __Screen__Model {
     func refresh() {
         do {
             input.items = try dependencies.database.__item__List()
@@ -68,19 +76,13 @@ public extension __Screen__Model {
     }
 }
 
+private extension __Screen__Model {
+    static let loadFailedMessage = "読み込めませんでした"
+    static let removeFailedMessage = "消せませんでした"
+}
+
 public extension __Screen__Model.Output {
     var isEmpty: Bool {
         input.items.isEmpty
     }
-}
-
-extension __Screen__Model {
-    struct Dependencies {
-        let database: AppDatabase
-    }
-}
-
-private extension __Screen__Model {
-    static let loadFailedMessage = "読み込めませんでした"
-    static let removeFailedMessage = "消せませんでした"
 }

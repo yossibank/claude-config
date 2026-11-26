@@ -43,7 +43,16 @@ public extension HomeModel {
             self.input = input
         }
     }
+}
 
+extension HomeModel {
+    struct Dependencies {
+        let database: AppDatabase
+        let clock: ScreenClock
+    }
+}
+
+public extension HomeModel {
     func load() async {
         do {
             input.migrations = try await dependencies.database.appliedMigrations()
@@ -55,6 +64,10 @@ public extension HomeModel {
     }
 }
 
+private extension HomeModel {
+    static let loadFailedMessage = "読み込めませんでした"
+}
+
 public extension HomeModel.Output {
     var isLoaded: Bool {
         input.migrations != nil
@@ -63,15 +76,4 @@ public extension HomeModel.Output {
     var schemaVersion: Int {
         input.migrations?.count ?? 0
     }
-}
-
-extension HomeModel {
-    struct Dependencies {
-        let database: AppDatabase
-        let clock: ScreenClock
-    }
-}
-
-private extension HomeModel {
-    static let loadFailedMessage = "読み込めませんでした"
 }

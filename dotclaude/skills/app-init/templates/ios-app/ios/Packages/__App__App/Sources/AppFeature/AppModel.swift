@@ -5,7 +5,6 @@ import Observation
 @Observable
 final class AppModel: ScreenPerforming {
     let state = State()
-
     let dependencies: Dependencies
 
     init(open: @escaping @Sendable () async throws -> ScreenParts) {
@@ -29,7 +28,9 @@ extension AppModel {
     struct Dependencies {
         let open: @Sendable () async throws -> ScreenParts
     }
+}
 
+extension AppModel {
     func open() async {
         guard case .opening = state.launch else {
             return

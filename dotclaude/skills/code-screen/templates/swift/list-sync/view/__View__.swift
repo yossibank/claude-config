@@ -63,10 +63,6 @@ private extension __View__ {
             }
     }
 
-    var emptyMessage: String {
-        model.output.isEmpty ? "まだありません" : ""
-    }
-
     func row(_ item: __Item__) -> some View {
         HStack(spacing: 8) {
             Button(item.name) {
@@ -80,5 +76,11 @@ private extension __View__ {
             }
         }
         .padding(.horizontal, 16)
+    }
+}
+
+private extension __View__ {
+    var emptyMessage: String {
+        model.output.isEmpty ? "まだありません" : ""
     }
 }

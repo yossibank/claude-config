@@ -11,9 +11,11 @@
 | `bin/config_audit/` | [config-audit.py](../bin/config-audit.py) だけが読む中身。`check_` で始まる関数が、検査として走る |
 | `bin/config_install/` | [config-install.sh](../bin/config-install.sh) だけが読む中身 |
 | `bin/docs_section/` | [docs-section.sh](../bin/docs-section.sh) だけが読む中身 |
+| `code_` | コードのファイルの見分け方 |
 | `hook_` | フックの共通の処理 |
 | `hooks/code_design_check/` | [code-design-check.py](../dotclaude/hooks/code-design-check.py) だけが読む中身 |
 | `hooks/docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
+| `hooks/swift_layout_check/` | [swift-layout-check.py](../dotclaude/hooks/swift-layout-check.py) だけが読む中身 |
 | `md_` | Markdown の読み方 |
 | `kotlin_`・`store_`・`swift_` | その分類の共通の処理 |
 | 無し | 分類をまたぐ共通の処理 |
@@ -36,13 +38,14 @@
 | [bin/config_install/settings.jq](bin/config_install/settings.jq) | 今の settings.json に、入れるフックと許可を混ぜた案を作る |
 | [bin/docs_section/sections.py](bin/docs_section/sections.py) | 見出しを読み、節を切り出す |
 | [build_log.sh](build_log.sh) | ビルドや確認のログから、エラーと失敗の行を重ねずに出す |
+| [code_files.py](code_files.py) | テストと道具のファイルの見分け、リポジトリの根 |
 | [dates.py](dates.py) | 日本時間、月の形、記録の日時の月 |
 | [git.py](git.py) | タイムアウト付きの git、リポジトリの根、ワークツリーの置き場所 |
 | [git.sh](git.sh) | リポジトリの根、ワークツリーの置き場所、ブランチと変えたファイルの調べ方 |
+| [hook_baseline.py](hook_baseline.py) | アプリの基準線の読み書き、外れを見分ける鍵、基準線と比べた報告 |
 | [hook_io.py](hook_io.py) | フックの入力の読み方、止め方と知らせ方、例外を受ける入口 |
 | [hook_messages.py](hook_messages.py) | フックが止める時の文の書き出し |
 | [hook_state.py](hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除 |
-| [hooks/code_design_check/baseline.py](hooks/code_design_check/baseline.py) | アプリの基準線の読み書きと、外れを見分ける鍵 |
 | [hooks/code_design_check/clones.py](hooks/code_design_check/clones.py) | 名前を伏せた行の形と、別のファイルと同じ形の検査 |
 | [hooks/code_design_check/effect.py](hooks/code_design_check/effect.py) | 画面のファイルの見分けと、画面が始める `Task` の検査 |
 | [hooks/code_design_check/files.py](hooks/code_design_check/files.py) | ファイルの大きさ・名前と型・フォルダの中の数・共通の部品の一覧の検査 |
@@ -52,6 +55,7 @@
 | [hooks/code_design_check/view.py](hooks/code_design_check/view.py) | 画面の形（`@State`・`Layout`・Composable の中の状態）の検査 |
 | [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
 | [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
+| [hooks/swift_layout_check/runner.py](hooks/swift_layout_check/runner.py) | 検査のコマンドを組み、走らせて、外れの行を読む |
 | [kotlin_source.py](kotlin_source.py) | Kotlin のコードから、コメント・文字列・文字の中身を空白にする |
 | [loader.py](loader.py) | claude-config の根と、場所を指して `.py` を読む処理 |
 | [md_blocks.py](md_blocks.py) | Markdown の frontmatter、見出し、表、コードの囲み |

@@ -5,40 +5,26 @@ paths:
 
 # Swift の書き方
 
-Swift を読み書きする時に読み込まれる決まり。宣言の置き方・名前を付ける値・改行と空行・警告・ファイルとフォルダを決める。
+Swift を読み書きする時に読み込まれる決まり。保存プロパティのまとめ方・1 行の長さと折り返し・`let` を作る時・警告の扱い・ファイルの名前を決める。
 
 | ほかの決まり | 置き場所 |
 | --- | --- |
+| ファイルの区画・extension の分け方・空行 | `swift-layout.md` |
 | SwiftUI の画面 | `swift-ui.md` |
 | テスト | `swift-test.md` |
 | 整形で直る決まり | リポジトリの SwiftFormat。設定は最後の節の表に合わせる |
 
-## 宣言の置き方
+## プロパティのまとまり
 
-型の中身は、次の決まりで置く。
+保存プロパティは、次の決まりでまとめる。型の本体に置ける物と extension の分け方は、`swift-layout.md` にある。
 
-- 型の本体には、保存プロパティ・公開する init・クラスの指定イニシャライザ・`body` だけを置く。`body` は init の後に置く。
-- ほかは `public extension`・`extension`・`private extension` の順に分けて置く。
-- 保存プロパティも公開する init も無い型は、extension に分けず、中身を本体に書く。名前空間の `enum` もこれに当たる。
-- 本体と extension の中は、入れ子の型・プロパティ・init・関数の順に並べる。入れ子の型は、置く extension の先頭に置く。
+- 本体と extension の中は、プロパティ・init・関数の順に並べる。
 - プロパティ・init・関数のそれぞれの中は、public から private の順に並べる。
 - プロパティは、アクセスの範囲が同じものでまとめる。範囲は `public`・`public private(set)`・`private` などである。
 - プロパティラッパー（`@State`・`@Environment` など）も、同じものでまとめる。
 - `static`・`nonisolated` などの修飾子も、同じものでまとめる。`nonisolated` のものは、同じアクセスの範囲の先頭に置く。
 - 保存プロパティは、`var` と `let` でもまとまりを分ける。
 - 保存プロパティのまとまり（アクセスの範囲・`var` と `let`・プロパティラッパー）が変わる所には、空行を入れる。`static` は、`static` どうしでまとまりとする。swift-style-check が確かめる。
-- 同じまとまりの中では、1 行の宣言を続けて並べ、複数行の宣言の間に挟まない。新しく置く時は、1 行の宣言を先に、複数行の宣言を後に置く。
-- 強制アンラップと `precondition` を使わず、正しい値だけを作れる型や init で表す。
-
-適合は、種類で書く場所を変える。
-
-| 適合の種類 | 書く場所 |
-| --- | --- |
-| 中身を書かない適合（`Sendable`・`Equatable`・`Hashable`・`Error` など） | 宣言 |
-| `View`・`App`・`Widget` など | 宣言 |
-| メソッドやプロパティを実装する適合 | 適合ごとに分けた `extension`。最後に置く |
-| 保存プロパティも公開する init も無い型の適合 | 宣言に書き、実装を本体に置く |
-| 上の型の適合のうち `private` な実装 | `private extension` |
 
 ## 改行
 
@@ -147,50 +133,6 @@ if let item {
 - 込み入った式は、`let` で名前を付けてから `return` する。
 - 1 回しか使わず引数にも渡さない値には、`let` を作らない。メソッドをつなぐ起点や `guard`・`if` の条件は、その場に書く。
 
-## 空行
-
-空行は、次の決まりで入れる。「ブロック」は、`{ }` の中の文の並びを指す。
-
-- 1 行の文が 3 つまでのブロックは、空行を入れずに続けて書く。種類が変わっても入れない。init の本体は除く。
-- 1 行の `let` の並びと、最後の 1 行の `return` だけのブロックは、数によらず空行を入れない。swift-style-check が確かめる。
-- それより長いブロックの文は、下の表の種類でまとめる。
-- 種類が変わるところには、空行を入れる。同じ種類の 1 行の文どうしの間には、空行を入れない。
-- 同じ種類の呼び出しでも、対象が変わるところには空行を入れる。同じ役割の呼び出しは、まとめて続けて書く。
-- `super` の呼び出しと、元の delegate に渡す呼び出しは、ほかの文と空行で分ける。短いブロックでも分ける。
-- `let` は、前の代入の結果を使わないなら、代入より前にまとめる。計算プロパティや副作用を通して使う時も「使う」に入る。確かめられない時は動かさない。
-- 複数行にわたる文（`let` を含む）がある時は、その前後と `return` の前に空行を入れる。
-- 並んで同じ役割をする代入と呼び出しは、1 つでも複数行にわたるなら、すべての間に空行を入れる。`let` の並びは除く。
-- 型の中のプロパティの宣言も、複数行にわたるものは前後に空行を入れる。1 行の宣言どうしは、同じまとまりなら空行を入れずにまとめる。
-- init は、`let` で作る値・プロパティラッパーへの代入・ほかの代入の順に並べる。まとまりの間に空行を入れる。プロパティラッパーへの代入は `_model = ...` の形である。
-- `guard` が続く時も、`guard` どうしの間に空行を入れる。
-
-文の種類は、次のとおりである。
-
-| 種類 | 含むもの |
-| --- | --- |
-| `let` | |
-| `var` | |
-| 代入 | |
-| 呼び出し | `await` の文と、結果を捨てる `_ = ...` も含む |
-| 制御文 | `guard`・`if`・`for`・`switch`・`do`・`defer` |
-| `return` | |
-
-短いブロックと `super` は、次の形で書く。
-
-```swift
-var palette: ThemePalette {
-    let isDark = colorScheme == .dark
-    return look.palette(isDark: isDark)
-}
-
-override func didMoveToWindow() {
-    super.didMoveToWindow()
-
-    observeStyle()
-    apply()
-}
-```
-
 ## 警告
 
 コンパイラの警告を出さない実装にする。次の決まりで書いて確かめる。
@@ -248,6 +190,6 @@ xcodebuild build -workspace <workspace> -scheme <scheme> 2>&1 | grep 'warning:' 
 | `--max-width` | `100` | 1 行は 100 字まで |
 | `--organize-types` | `extension` を含める | 本体と extension の中の並び |
 | `--wrap-conditions` | `preserve` | `if` と `guard` の条件の形 |
-| `--line-between-guards` | `true` | `guard` どうしの間の空行 |
+| `--line-between-guards` | `true` | `swift-layout.md` の、複数行の文の前後の空行 |
 | `wrapMultilineFunctionChains` | 外す | 末尾のクロージャにつなぐ呼び出し |
 | `blankLineAfterSwitchCase` | 入れる | `case` の間の空行 |
