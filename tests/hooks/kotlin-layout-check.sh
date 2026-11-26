@@ -114,6 +114,11 @@ printf 'class Case {\n    init {\n        a()\n    }\n\n    val b = 1\n}\n' >"$b
 bash "$hooks" kotlin-layout-check --fix "$base/src/Case.kt" </dev/null >/dev/null 2>&1
 check "--fix: 値を作る順が変わる並べ替えはしない" grep -q $'^    init {' <(head -2 "$base/src/Case.kt")
 
+printf 'class Case {\r\n    fun a() {\r\n        b()\r\n    }\r\n    fun c() {\r\n        d()\r\n    }\r\n}\r\n' >"$base/src/Case.kt"
+bash "$hooks" kotlin-layout-check --fix "$base/src/Case.kt" </dev/null >/dev/null 2>&1
+check "--fix: CRLF のファイルは、CRLF のまま直す" bash -c '! grep -q $'"'"'[^\r]$'"'"' "$1"' _ "$base/src/Case.kt"
+check "--fix: CRLF のファイルにも空行を足す" grep -qx $'\r' "$base/src/Case.kt"
+
 layout_case 0 "K3: interface の本体の無い要求は、保存プロパティと同じ先頭に置ける" $'interface Case {\n    val icon: Int\n\n    fun validate()\n\n    fun total(): Int = icon + 1\n}'
 layout_case 2 "K3: interface の要求を、既定の実装の後に置けば止める" $'interface Case {\n    fun total(): Int = icon + 1\n\n    val icon: Int\n}' "K3: クラスの中の順が違う。「保存プロパティと要求」は「公開の関数と計算プロパティ」より前に置く"
 

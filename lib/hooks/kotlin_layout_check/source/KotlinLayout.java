@@ -30,13 +30,14 @@ public final class KotlinLayout {
         StringBuilder out = new StringBuilder();
 
         for (String path : paths) {
-            String text = Files.readString(Path.of(path)).replace("\r\n", "\n");
+            String raw = Files.readString(Path.of(path));
+            String text = raw.replace("\r\n", "\n");
 
             if (fixes) {
                 String fixed = LayoutFixer.fix(path, text, factory);
 
                 if (!fixed.equals(text)) {
-                    Files.writeString(Path.of(path), fixed);
+                    Files.writeString(Path.of(path), raw.contains("\r\n") ? fixed.replace("\n", "\r\n") : fixed);
                 }
 
                 continue;
