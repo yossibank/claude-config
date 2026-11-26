@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -15,12 +16,19 @@ from hooks.docs_check.headings import (  # noqa: E402
     heading_level,
     section_titles,
 )
-from hooks.docs_check.rows import BOLD, check_list_endings, check_rows, check_short_lists  # noqa: E402
-from hook_io import block_on_findings, notify, run_hook, target_paths  # noqa: E402
+from hooks.docs_check.advice import (  # noqa: E402
+    SIZE_LIMIT,
+    check_alert_lists,
+    check_phrases,
+    check_size_near,
+    check_table_first_code,
+    check_table_rows,
+)
+from hooks.docs_check.rows import BOLD, check_list_endings, check_rows, check_short_lists, tables  # noqa: E402
+from hook_io import notify, run_hook, target_paths  # noqa: E402
 from md_blocks import fence_marks  # noqa: E402
 from md_doc import CODE, LINK, body_start, read_doc, rule_problems, without_links  # noqa: E402
 
-SIZE_LIMIT = 15_000
 ALERTS = ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"]
 SHIELDS = "https://img.shields.io/"
 INLINE_CODE_LIMIT = 40
@@ -43,25 +51,6 @@ def check_size(doc):
     if doc.in_docs and size > SIZE_LIMIT:
         return [(1, f"docs の 1 ファイルが {SIZE_LIMIT // 1000}KB を超えている（{size // 1000}KB）。節ごとに分ける")]
     return []
-
-
-def table_cells(line):
-    return [cell.strip() for cell in line.replace("\\|", "\0").strip().strip("|").split("|")]
-
-
-def tables(doc):
-    current = []
-    for index, row in enumerate(doc.rows):
-        if row.what != "table":
-            if current:
-                yield current
-            current = []
-            continue
-        if index == 0 or doc.rows[index - 1].what != "table" or set(row.text.strip()) <= set("|-: "):
-            continue
-        current.append((row.number, table_cells(doc.lines[row.number - 1])))
-    if current:
-        yield current
 
 
 def check_table_first_column(doc):
@@ -213,6 +202,10 @@ def always(doc):
     return True
 
 
+def outside_decisions(doc):
+    return "/docs/decisions/" not in doc.path
+
+
 def opens_with_sentence(doc):
     return doc.for_claude or doc.readme
 
@@ -222,7 +215,7 @@ CHECKS = [
     (always, check_headings),
     (always, check_heading_names),
     (lambda doc: doc.human, check_heading_emoji_repeats),
-    (lambda doc: "/docs/decisions/" not in doc.path, check_table_first_column),
+    (outside_decisions, check_table_first_column),
     (always, check_table_toc),
     (always, check_prose_toc),
     (always, check_sections),
@@ -240,19 +233,61 @@ CHECKS = [
 ]
 
 
-def check(path):
+ADVICE = [
+    (always, check_size_near),
+    (always, check_table_rows),
+    (outside_decisions, check_table_first_code),
+    (always, check_alert_lists),
+    (always, check_phrases),
+]
+HEADER = "文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。"
+ADVICE_HEADER = "文書の読みやすさで、直すとよい箇所がある（知らせるだけで、止めない）。"
+
+
+def findings(path, checks):
     if MEMORY.search(path) or HANDOFF.search(path):
         return []
     doc = read_doc(path)
-    return sorted(found for applies, run in CHECKS if applies(doc) for found in run(doc))
+    return sorted(found for applies, run in checks if applies(doc) for found in run(doc))
+
+
+def check(path):
+    return findings(path, CHECKS)
+
+
+def advise(path):
+    return findings(path, ADVICE)
+
+
+def tell(text, problems):
+    if len(sys.argv) > 1:
+        print(text)
+        if problems:
+            notify(problems)
+        return
+    context = {"hookEventName": "PostToolUse", "additionalContext": text}
+    message = "\n".join(filter(None, [text, problems]))
+    print(json.dumps({"systemMessage": message, "hookSpecificOutput": context}, ensure_ascii=False))
 
 
 def main():
+    advice_text = ""
     try:
-        block_on_findings("文書の決まり（rules/docs-*.md）に合わない箇所がある。直す。", target_paths(".md"), check)
+        paths = target_paths(".md")
+        report = [f"{path}:{n}: {m}" for path in paths for n, m in check(path)]
+        advice = [f"{path}:{n}: {m}" for path in paths for n, m in advise(path)]
+        if report:
+            notes = [ADVICE_HEADER, *advice] if advice else []
+            print("\n".join([HEADER, *report, *notes]), file=sys.stderr)
+            sys.exit(2)
+        if advice:
+            advice_text = "\n".join([ADVICE_HEADER, *advice])
     finally:
-        for problem in rule_problems():
-            notify(f"docs-check: {problem}")
+        problems = "\n".join(f"docs-check: {problem}" for problem in rule_problems())
+        if advice_text:
+            tell(advice_text, problems)
+        elif problems:
+            notify(problems)
 
 
 if __name__ == "__main__":

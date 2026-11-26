@@ -16,7 +16,7 @@ App Store に出す前に要るものをそろえて確かめ、アーカイブ�
 | ファイル | ひな形 | 中身 |
 | --- | --- | --- |
 | `ios/<App>/PrivacyInfo.xcprivacy` | `${CLAUDE_SKILL_DIR}/../app-init/templates/ios-app/ios/__App__/PrivacyInfo.xcprivacy` | 理由の申告が要る API と、集めるデータ |
-| `store/ja/*.txt` | `${CLAUDE_SKILL_DIR}/templates/ja/` | 名前、サブタイトル、キーワード、説明、宣伝文、更新の説明、サポートとプライバシーポリシーの URL |
+| `store/ja/*.txt` | `${CLAUDE_SKILL_DIR}/templates/ja/` | 名前・サブタイトル・キーワード・説明・宣伝文・更新の説明と、サポートとプライバシーポリシーの URL |
 | `store/screenshots/` | | 6.9 インチの PNG |
 | `store/custom-pages.json` | | カスタムプロダクトページの案。作る時だけ置く |
 

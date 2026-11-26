@@ -112,4 +112,4 @@ python3 -I ~/Applications/AI/claude-config/bin/docs-tech-icons.py docs/images/te
 
 | 置ける | 置けない |
 | --- | --- |
-| 表、図、画像、コードブロック、箇条書き、リンクだけの行 | 文の段落、アラート |
+| 表・図・画像・コードブロック・箇条書き・リンクだけの行 | 文の段落、アラート |

@@ -33,8 +33,8 @@
 | 対象 | 順 |
 | --- | --- |
 | docs の表と一覧 | 名前の順。手順・段階・重さのように順に意味がある時は、その順 |
-| `dotclaude/settings.json` の許可 | 道具の名前の順。同じ道具は、コマンドの名前と引数の順 |
-| `dotclaude/settings.json` のフック | イベントは処理の順（Pre → Post → Stop）、matcher と、その中のフックは名前の順。matcher の無い項目は先頭に置く |
+| 許可（`dotclaude/settings.json`） | 道具の名前の順。同じ道具は、コマンドの名前と引数の順 |
+| フック（`dotclaude/settings.json`） | イベントは処理の順（Pre → Post → Stop）、matcher と、その中のフックは名前の順。matcher の無い項目は先頭に置く |
 
 ### 接頭語の表
 
@@ -68,8 +68,8 @@
 | `find`・`list` | 手元から合うものを 1 つ出す、並べる |
 | `search` | 外の API に検索を頼み、合うものを並べる |
 | `check`・`classify`・`count`・`hash` | 確かめる、分ける、数える、指紋を取る |
-| `record`・`render`・`take`・`tile`・`write` | 録る、描く、撮る、並べる、書く |
-| `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る、片付ける、置き換える、振り分ける、走らせる |
+| `record`・`render`・`take`・`tile`・`write` | 録る・描く・撮る・並べる・書く |
+| `archive`・`prune`・`replace`・`route`・`run` | アーカイブを作る・片付ける・置き換える・振り分ける・走らせる |
 | `send` | 外に送る |
 | `wait` | 整うまで待つ |
 

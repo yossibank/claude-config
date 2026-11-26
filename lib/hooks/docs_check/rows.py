@@ -135,15 +135,40 @@ def check_marks(doc, row):
     return found
 
 
+def table_cells(line):
+    return [cell.strip() for cell in line.replace("\\|", "\0").strip().strip("|").split("|")]
+
+
+def is_separator(row):
+    return set(row.text.strip()) <= set("|-: ")
+
+
+def tables(doc):
+    current = []
+    for index, row in enumerate(doc.rows):
+        if row.what != "table":
+            if current:
+                yield current
+            current = []
+            continue
+        if index == 0 or doc.rows[index - 1].what != "table" or is_separator(row):
+            continue
+        current.append((row.number, table_cells(doc.lines[row.number - 1])))
+    if current:
+        yield current
+
+
+def pieces_of(row):
+    body = re.sub(r"<[^>]*>", "", row.spoken.strip())
+    if row.what == "table":
+        return [cell for cell in body.strip("|").split("|") if not re.fullmatch(r"\s*:?-+:?\s*", cell)]
+    return [re.sub(r"^(>\s*)?([-*]|\d+\.)?\s*", "", body).replace("**", "")]
+
+
 def check_length(row):
-    number, spoken, what = row.number, row.spoken, row.what
+    number, what = row.number, row.what
     found = []
-    body = re.sub(r"<[^>]*>", "", spoken.strip())
-    if what == "table":
-        pieces = [cell for cell in body.strip("|").split("|") if not re.fullmatch(r"\s*:?-+:?\s*", cell)]
-    else:
-        pieces = [re.sub(r"^(>\s*)?([-*]|\d+\.)?\s*", "", body).replace("**", "")]
-    for piece in pieces:
+    for piece in pieces_of(row):
         parts = sentences_of(piece)
         for sentence in parts:
             if len(sentence.strip()) + 1 > SENTENCE_LIMIT:

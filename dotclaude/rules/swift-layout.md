@@ -30,7 +30,7 @@ Swift を読み書きする時に読み込まれる決まり。ファイルの�
 | 番号 | 対象 | 決まり |
 | --- | --- | --- |
 | L1 | 区画の順 | 区画は、表の順に並べる。区画 3・4・6 の中は、public・無印・private の順にする |
-| L1 | 置く場所 | ほかの型の extension は、このファイルの型の区画の後に置く。`#Preview` は最後に置く |
+| L1 | 置く場所 | ほかの型の extension は、ファイルが宣言する型の区画より後に置く。`#Preview` は最後に置く |
 | L2 | 中身の種類 | 入れ子の型の宣言と、値・関数を同じ extension に置かない |
 | L2 | 数 | 同じ型・同じ区画・同じアクセスの extension は、1 つにまとめる。`where` の違いと、区画 6 の型の宣言だけの extension は、別に数える |
 | L2 | 画面 | 画面の `private extension` は、部品と処理の 2 つに分け、部品を先に置く |
@@ -108,7 +108,8 @@ extension BackupModel.BackupFile: Identifiable {
 | `override` の付いた宣言 | extension では上書きできない |
 | `final` でない class の関数・計算プロパティ・添字 | extension に出すと、子のクラスで上書きできない |
 | `CodingKeys` | `Codable` の鍵の enum |
-| SwiftUI が呼ぶ口 | `body`・`makeBody`・`makeUIView`・`path`・`placeSubviews`・`reduce`・`sizeThatFits`・`updateUIView` |
+| SwiftUI が呼ぶ口（`View`・`Shape`・スタイル・`PreferenceKey`） | `body`・`makeBody`・`path`・`reduce` |
+| SwiftUI が呼ぶ口（`Layout`・`UIViewRepresentable`） | `placeSubviews`・`sizeThatFits`・`makeUIView`・`updateUIView` |
 | 名前空間の enum の中身 | `case` の無い enum は、中身を全部本体に書く |
 
 強制アンラップと `precondition` を使わず、正しい値だけを作れる型や init で表す。
