@@ -38,6 +38,7 @@ ALERT = re.compile(r"^>\s*\[!([A-Za-z]+)\]")
 TREE = re.compile(r"[├└]──")
 DECORATION = re.compile(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|!\[[^\]]*\]\([^)]*\)|</?[A-Za-z][A-Za-z0-9]*(\s[^>]*)?/?>")
 TREE_NOTE = re.compile(r"#|\s{2,}\S")
+HTML_TABLE_ROW = re.compile(r"^\s*<(tr|th|td)[\s>]")
 COMMAND = re.compile(
     r"^(\./|~/|/|\$\{|(make|git|gh|python3?|bash|sh|zsh|npx|npm|xcodebuild|xcrun|swift|jq|curl|rsync|mint|brew|pre-commit|claude)\s)"
 )
@@ -182,7 +183,7 @@ def check_readme_body(doc):
             in_section = in_section or heading_level(text) >= 2
         elif what == "quote" and ALERT.match(text.strip()):
             found.append((number, "README にはアラートを使わない"))
-        elif what == "body" and in_section and not is_decoration(line) and not is_link_only(line):
+        elif what == "body" and in_section and not is_decoration(line) and not is_link_only(line) and not HTML_TABLE_ROW.match(line):
             found.append((number, "README の節には文の段落を書かない。表・図・画像・箇条書きにする"))
     return found
 

@@ -63,6 +63,8 @@ doc_case 0 "技術のアイコンの SVG は置ける" README.md $'# t\n\nあ。
 doc_case 2 "README に shields.io のバッジを使わない" README.md $'# t\n\nあ。\n\n'"$shields" "shields.io のバッジは使わない"
 doc_case 2 "README にアラートを使わない" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n> [!NOTE]\n> 要る。' "README にはアラートを使わない"
 doc_case 2 "README の節に文の段落を書かない" README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n次のコマンドで入れる。' "文の段落を書かない"
+doc_case 0 "README の節に画像を並べる HTML の表は置ける" README.md $'# t\n\nあ。\n\n## ✨ 機能\n\n<table>\n<tr><th>ホーム</th><th>記録</th></tr>\n<tr>\n<td><img src="a.png" width="200" alt="ホームを見る"></td>\n</tr>\n</table>'
+doc_case 2 "README の HTML の表の外の文は止める" README.md $'# t\n\nあ。\n\n## ✨ 機能\n\n<p>次のコマンドで入れる。</p>' "文の段落を書かない"
 doc_case 0 "README の節にリンクだけの行と箇条書きは置ける" README.md $'# t\n\nあ。\n\n## 📚 文書\n\n[a](a.md) ・ [b](b.md)\n\n- りんご\n- みかん\n- ぶどう'
 doc_case 0 "Claude が読む文書の短いコードは通る" rules/x.md $'# t\n\nあ。\n\n`git log` で見る。'
 doc_case 2 "Claude が読む文書の文の中に長いコマンドを書かない" rules/x.md $'# t\n\nあ。\n\n- `git log --oneline --graph a..b -- x y z w` を走らせる。' "長いコマンドを書かない"
