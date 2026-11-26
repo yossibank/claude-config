@@ -15,6 +15,7 @@
 | `hook_` | フックの共通の処理 |
 | `hooks/code_design_check/` | [code-design-check.py](../dotclaude/hooks/code-design-check.py) だけが読む中身 |
 | `hooks/docs_check/` | [docs-check.py](../dotclaude/hooks/docs-check.py) だけが読む中身 |
+| `hooks/kotlin_layout_check/` | [kotlin-layout-check.py](../dotclaude/hooks/kotlin-layout-check.py) だけが読む中身。検査の Java のソースは `source/` に置く |
 | `hooks/swift_layout_check/` | [swift-layout-check.py](../dotclaude/hooks/swift-layout-check.py) だけが読む中身 |
 | `md_` | Markdown の読み方 |
 | `kotlin_`・`store_`・`swift_` | その分類の共通の処理 |
@@ -56,6 +57,7 @@
 | [hooks/code_design_check/view.py](hooks/code_design_check/view.py) | 画面の形（`@State`・`Layout`・Composable の中の状態）の検査 |
 | [hooks/docs_check/headings.py](hooks/docs_check/headings.py) | 見出しと目次の検査 |
 | [hooks/docs_check/rows.py](hooks/docs_check/rows.py) | 文・箇条書き・表の行ごとの検査 |
+| [hooks/kotlin_layout_check/runner.py](hooks/kotlin_layout_check/runner.py) | ktlint の jar に当てて検査のコマンドを組み、走らせて、外れの行を読む |
 | [hooks/swift_layout_check/runner.py](hooks/swift_layout_check/runner.py) | 検査のコマンドを組み、走らせて、外れの行を読む |
 | [kotlin_source.py](kotlin_source.py) | Kotlin のコードから、コメント・文字列・文字の中身を空白にする |
 | [loader.py](loader.py) | claude-config の根と、場所を指して `.py` を読む処理 |

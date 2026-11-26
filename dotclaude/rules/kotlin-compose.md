@@ -15,7 +15,7 @@ Compose の画面と部品を読み書きする時に読み込まれる決まり
 
 Composable の関数は、次の決まりで書く。
 
-- 画面の部品は、同じファイルの `private` な Composable に分ける。公開する Composable の後に置く。
+- 画面の部品は、同じファイルの `private` な Composable に分ける。置く順は `kotlin-layout.md` の K1 にある。
 - 状態の変え方と保存などの操作は、画面のモデルに置く。モデルは `ViewModel` か状態のクラスである。
 - Composable が持てる物は、`code-design.md` の「画面の形」に従う。関数の中で `mutableStateOf` を作らない。
 - 1 つの要素だけで 1 か所でしか使わない部品は、関数に分けずにその場に書く。ボタン 1 つ、`Switch` 1 つなどである。
@@ -23,7 +23,7 @@ Composable の関数は、次の決まりで書く。
 - 受けた `modifier` は、いちばん外の要素に渡す。
 - 動きを受けるラムダの引数は、`on<動き>` と名付ける。
 - 中身を受けるラムダの `content` は、最後の引数にする。
-- `@Preview` は、ファイルの最後に置く。
+- 本体の中の順は、`kotlin-layout.md` の K9 にある。`@Preview` を置く所は K1 にある。
 - 余白・間隔・角の丸みは、4 の倍数の `dp` にする。2 以下の細かい調整と、大きさ（`size`）・ずらし（`offset`）・線の太さは除く。
 - 要素を並べるところは、`Spacer` も含め、要素の間に空行を入れる。`Column`・`Row`・`Box` などである。kotlin-style-check が確かめる。
 - 同じ Composable の 1 行の呼び出しだけが続く時は、空行を入れない。kotlin-style-check が確かめる。

@@ -29,5 +29,6 @@ claude-config を変えたら、`make verify` を通す。
 | 種類 | 対象の置き場所に合わせて、`hooks`・`bin`・`skills` のどれかにする |
 | 対応 | テストと対象が 1 対 1 でないと、config-audit が `NG` にする |
 | 道具 | `rsync` と `jq` が要る。code-screen と swift-layout-check のテストは、`swift` も要る |
+| Kotlin の道具 | kotlin-layout-check のテストは、`ktlint` と JDK も要る。JDK は `javac` を持つ Java 17 以上にする |
 | 上限 | 上限のあるものは、上限ちょうどが通るテストも置く |
 | 一覧 | テストと共通の処理の一覧は、[tests/README.md](../../tests/README.md) にある。テストを足したら、その表に行を足す |

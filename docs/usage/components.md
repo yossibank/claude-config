@@ -19,7 +19,8 @@ CLAUDE.md はいつも読み込まれる。rules は、当たるファイルを�
 | [dotclaude/rules/docs-core.md](../../dotclaude/rules/docs-core.md) | `.md` | | 運用、文、表現、守らせる仕組み |
 | [dotclaude/rules/docs-human.md](../../dotclaude/rules/docs-human.md) | README・`docs/`・`spec/` | docs-core | 冒頭、見出しの絵文字、技術のアイコン、README の形 |
 | [dotclaude/rules/kotlin-compose.md](../../dotclaude/rules/kotlin-compose.md) | 画面と部品のフォルダ、`*View.kt` | kotlin-core | Composable の分け方、要素の並べ方 |
-| [dotclaude/rules/kotlin-core.md](../../dotclaude/rules/kotlin-core.md) | Kotlin | | 宣言の置き方、改行、空行、ファイル、ktlint の設定 |
+| [dotclaude/rules/kotlin-core.md](../../dotclaude/rules/kotlin-core.md) | Kotlin | | 宣言のまとめ方、改行、ファイル、ktlint の設定 |
+| [dotclaude/rules/kotlin-layout.md](../../dotclaude/rules/kotlin-layout.md) | Kotlin | kotlin-core | ファイルとクラスの中の区画、宣言と文の空行、Composable の本体の順 |
 | [dotclaude/rules/kotlin-test.md](../../dotclaude/rules/kotlin-test.md) | `src/test/`・`src/<対象>Test/` の Kotlin | kotlin-core | テストの名前と空行 |
 | [dotclaude/rules/swift-core.md](../../dotclaude/rules/swift-core.md) | Swift | | プロパティのまとまり、改行、ファイル |
 | [dotclaude/rules/swift-layout.md](../../dotclaude/rules/swift-layout.md) | Swift | swift-core | ファイルの区画、extension の分け方、宣言と文の空行 |
@@ -44,7 +45,8 @@ flowchart LR
     swiftStyle --> design["code-design-check"]
     design -->|.swift だけ| layout["swift-layout-check"]
     editAfter -->|.kt だけ| kotlinStyle["kotlin-style-check"]
-    editAfter -->|.kt だけ| design
+    kotlinStyle --> design
+    design -->|.kt だけ| kotlinLayout["kotlin-layout-check"]
     editAfter -->|.sh だけ| shell["shell-check"]
     editAfter --> detect
     bashBefore["Bash の前"] --> detect
@@ -57,15 +59,16 @@ flowchart LR
     classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
     classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
     class limit,require,gate,japanese block
-    class design,docs,kotlinStyle,swiftStyle,shell,detect inform
+    class design,docs,kotlinLayout,kotlinStyle,layout,swiftStyle,shell,detect inform
     class swift tidy
 ```
 
 | フック | 動き | 呼ばれる時 | 動く条件 |
 | --- | --- | --- | --- |
-| [code-design-check](../../dotclaude/hooks/code-design-check.py) | 💬 知らせる | `.swift` と `.kt` を Edit・Write した後。`.swift` は swift-style-check の後に順に走る | `dotclaude/rules/code-design.md` の、数で分かる決まりに合わない時。大きさ・名前・状態の数・モデルの形・画面の形・同じ形を見て、アプリの基準線にある外れは通す |
+| [code-design-check](../../dotclaude/hooks/code-design-check.py) | 💬 知らせる | `.swift` と `.kt` を Edit・Write した後。swift-style-check か kotlin-style-check の後に順に走る | `dotclaude/rules/code-design.md` の、数で分かる決まりに合わない時。大きさ・名前・状態の数・モデルの形・画面の形・同じ形を見て、アプリの基準線にある外れは通す |
 | [ctx-limit-read](../../dotclaude/hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
 | [docs-check](../../dotclaude/hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `dotclaude/rules/docs-*.md` に合わない時 |
+| [kotlin-layout-check](../../dotclaude/hooks/kotlin-layout-check.py) | 💬 知らせる | `.kt` を Edit・Write した後。code-design-check の後に順に走る | `dotclaude/rules/kotlin-layout.md` の決まりに合わない時。区画・入れ子の深さ・空行・関数の長さ・Composable の本体の順を見て、基準線にある外れは通す |
 | [kotlin-style-check](../../dotclaude/hooks/kotlin-style-check.py) | 💬 知らせる | `.kt` を Edit・Write した後 | `.kt` が、整形で直らない `dotclaude/rules/kotlin-*.md` の空行に合わない時 |
 | [pr-gate](../../dotclaude/hooks/pr-gate.py) | 🛑 止める | Bash の前 | pr-create の `run-check.sh` の確認の前に、push や `gh pr create` をする時。cd と `git -C` の先が変数でも止める |
 | [reply-require-japanese](../../dotclaude/hooks/reply-require-japanese.py) | 🛑 止める | 返事を終える前（Stop）と、すべての道具の前 | 返事の地の文が、コードと URL を除いて英語の時。道具の前では今のターンの一つ前の一言を見て、同じ一言では二度止めない |
