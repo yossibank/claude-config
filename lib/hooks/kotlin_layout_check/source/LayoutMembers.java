@@ -61,7 +61,7 @@ final class LayoutMembers {
 
     /** クラスの中の区画の番号。区画に当たらない宣言は -1。 */
     static int rank(KtDeclaration member) {
-        if (LayoutDecls.isStored(member)) {
+        if (LayoutDecls.isStored(member) || isRequirement(member)) {
             return 0;
         }
 
@@ -84,9 +84,22 @@ final class LayoutMembers {
         return -1;
     }
 
+    /** interface と abstract の、本体の無いプロパティと関数。実装する側が満たす要求。 */
+    static boolean isRequirement(KtDeclaration member) {
+        if (member instanceof KtProperty property) {
+            return LayoutDecls.isAbstract(property) && !property.hasModifier(KtTokens.OVERRIDE_KEYWORD) && property.getGetter() == null;
+        }
+
+        if (member instanceof KtNamedFunction function) {
+            return !function.hasBody() && !function.hasModifier(KtTokens.OVERRIDE_KEYWORD);
+        }
+
+        return false;
+    }
+
     static String label(int rank) {
         return switch (rank) {
-            case 0 -> "保存プロパティ";
+            case 0 -> "保存プロパティと要求";
             case 1 -> "init と副コンストラクタ";
             case 2 -> "入れ子の型";
             case 30 -> "override の関数と計算プロパティ";

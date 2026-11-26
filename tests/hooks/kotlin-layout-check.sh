@@ -37,8 +37,8 @@ layout_case 0 "K1: const・型・ほかの型・公開・private・private の�
 layout_case 2 "K2: 拡張だけのファイルで、internal の後に公開を置けば止める" $'internal fun Case.a() = 1\n\nfun Case.b() = 2' "Case.kt:3: K2: 拡張だけのファイルは、公開・internal・private の順に並べる"
 layout_case 0 "K2: 公開・internal・private の順なら通る" $'fun Case.a() = 1\n\ninternal fun Case.b() = 2\n\nprivate fun Case.c() = 3'
 
-layout_case 2 "K3: 関数の後に保存プロパティを置けば止める" $'class Case {\n    fun a() = 1\n\n    val b = 2\n}' "Case.kt:4: K3: クラスの中の順が違う。「保存プロパティ」は「公開の関数と計算プロパティ」より前に置く"
-layout_case 2 "K3: 入れ子の型の後に保存プロパティを置けば止める" $'class Case {\n    class Row\n\n    val a = 1\n}' "Case.kt:4: K3: クラスの中の順が違う。「保存プロパティ」は「入れ子の型」より前に置く"
+layout_case 2 "K3: 関数の後に保存プロパティを置けば止める" $'class Case {\n    fun a() = 1\n\n    val b = 2\n}' "Case.kt:4: K3: クラスの中の順が違う。「保存プロパティと要求」は「公開の関数と計算プロパティ」より前に置く"
+layout_case 2 "K3: 入れ子の型の後に保存プロパティを置けば止める" $'class Case {\n    class Row\n\n    val a = 1\n}' "Case.kt:4: K3: クラスの中の順が違う。「保存プロパティと要求」は「入れ子の型」より前に置く"
 layout_case 2 "K3: private の関数の後に公開の関数を置けば止める" $'class Case {\n    private fun a() = 1\n\n    fun b() = 2\n}' "Case.kt:4: K3: クラスの中の順が違う。「公開の関数と計算プロパティ」は「private の関数と計算プロパティ」より前に置く"
 layout_case 2 "K3: 画面のモデルの値の順が違えば止める" $'class Case {\n    val output = 1\n    val state = 2\n}' "Case.kt:3: K3: 画面のモデルの値は、state・input・output・dependencies の順に並べる"
 layout_case 2 "K3: まとまりの型の順が違えば止める" $'class Case {\n    class Output\n\n    class State\n}' "Case.kt:4: K3: まとまりの型は、State・Input・Output・Dependencies の順に並べる"
@@ -113,5 +113,8 @@ fix_case "クラスの中を並べ替える" $'class Case {\n    private fun a()
 printf 'class Case {\n    init {\n        a()\n    }\n\n    val b = 1\n}\n' >"$base/src/Case.kt"
 bash "$hooks" kotlin-layout-check --fix "$base/src/Case.kt" </dev/null >/dev/null 2>&1
 check "--fix: 値を作る順が変わる並べ替えはしない" grep -q $'^    init {' <(head -2 "$base/src/Case.kt")
+
+layout_case 0 "K3: interface の本体の無い要求は、保存プロパティと同じ先頭に置ける" $'interface Case {\n    val icon: Int\n\n    fun validate()\n\n    fun total(): Int = icon + 1\n}'
+layout_case 2 "K3: interface の要求を、既定の実装の後に置けば止める" $'interface Case {\n    fun total(): Int = icon + 1\n\n    val icon: Int\n}' "K3: クラスの中の順が違う。「保存プロパティと要求」は「公開の関数と計算プロパティ」より前に置く"
 
 finish
