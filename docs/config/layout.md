@@ -64,6 +64,7 @@ flowchart TD
 | `dotclaude/skills/*/templates/**` | スキルのひな形 |
 | `lib/README.md`・`lib/*.py`・`lib/*.sh` | 持ち主が複数の共通の処理と、その一覧 |
 | `lib/*/*/*.jq`・`lib/*/*/*.py` | 持ち主が 1 つの中身。`lib/<種類>/<持ち主>/` に置く |
+| `lib/hooks/kotlin_layout_check/source/*.java` | kotlin-layout-check が組む、Java のソース |
 | `lib/hooks/swift_layout_check/package/Package.resolved`・`lib/hooks/swift_layout_check/package/Package.swift` | swift-layout-check が組む、Swift のパッケージの定義 |
 | `lib/hooks/swift_layout_check/package/Sources/**` | そのパッケージのソース |
 | `tests/README.md` | テストの一覧 |
@@ -91,6 +92,7 @@ flowchart TD
 | `lib/*` | 同じ頭 | 8 | 中身を分類で割り、頭を分ける |
 | `lib/bin/*/*` | 子フォルダ | 8 | 分け方を決め直し、置ける場所の表を直す |
 | `lib/hooks/*/*` | 子フォルダ | 8 | 分け方を決め直し、置ける場所の表を直す |
+| `lib/hooks/kotlin_layout_check/source/*.java` | 全部 | 15 | 決まりの番号ごとの子フォルダに分け、置ける場所の表と runner.py を直す |
 | `tests/bin/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 | `tests/hooks/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |
 | `tests/skills/*.sh` | 全部 | 30 | 分け方を決め直し、置ける場所の表と Makefile を直す |

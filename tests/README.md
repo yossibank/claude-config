@@ -13,6 +13,7 @@
 | [code-design-check.sh](hooks/code-design-check.sh) | 大きさ・名前・状態の数・モデルの形・画面の形・同じ形の外れで止め、上限ちょうどとテストのファイルは通すか。verify から呼ぶ時は、外れと想定外の失敗を NG で止めるか |
 | [ctx-limit-read.sh](hooks/ctx-limit-read.sh) | 大きいファイルを範囲なしで読む時だけ止めるか |
 | [docs-check.sh](hooks/docs-check.sh) | 文書の決まりに外れた時に止め、合う時は通すか |
+| [kotlin-layout-check.sh](hooks/kotlin-layout-check.sh) | 決まりの番号ごとに、外れで止め、決まりどおりの形は通すか。上限ちょうど・基準線・見ないフォルダの扱いと、`--fix` が外れを無くすか |
 | [kotlin-style-check.sh](hooks/kotlin-style-check.sh) | 整形で直らない空行の外れで止め、文字列・文字・コメントの中は見ないか |
 | [pr-gate.sh](hooks/pr-gate.sh) | 確認の記録が無い時や、確認の後に変えた時に push と PR を止めるか |
 | [reply-require-japanese.sh](hooks/reply-require-japanese.sh) | 今のターンの英語の返事と途中の一言だけを止め、コード・短い英語・止めた後の 2 回目は通すか |
