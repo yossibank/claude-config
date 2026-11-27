@@ -10,7 +10,7 @@
 | --- | --- |
 | [CLAUDE.md](CLAUDE.md)・[output-styles/](output-styles/)・[rules/](rules/) | [components.md](../docs/usage/components.md#-決まり) |
 | [agents/](agents/) | [components.md](../docs/usage/components.md#-エージェント) |
-| [hooks/](hooks/) | [components.md](../docs/usage/components.md#-フック) |
+| [hooks/](hooks/) | [hooks.md](../docs/usage/hooks.md) |
 | [settings.json](settings.json) | [setup.md](../docs/usage/setup.md) |
 | [skills/](skills/) | [skills.md](../docs/usage/skills.md) |
 

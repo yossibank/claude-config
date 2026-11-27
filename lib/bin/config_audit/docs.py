@@ -9,7 +9,7 @@ from md_doc import body_emojis, heading_emojis, read_doc, readme_order
 
 
 LEDGERS = [os.path.join(ROOT, "docs", "config", "improvements.md")]
-COMPONENT_DOCS = ["components.md", "skills.md"]
+COMPONENT_DOCS = ["components.md", "hooks.md", "skills.md"]
 LEDGER_SECTION = "## 📝 残っている改善"
 BACKTICKED = re.compile(r"`([^`]+)`")
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
