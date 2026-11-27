@@ -40,7 +40,7 @@
 | 派生する値 | 検査 `check_swift_state`。`didSet` と `willSet` の数だけを見る | レビューのみ |
 | 値を覚える | レビューのみ | レビューのみ |
 | 今の時刻と今日 | 検査 `check_now`。既定値の値と、今の時刻を作る関数を見て、名前を付けた関数と時計の既定値は見ない | 検査 `check_now`。値は `Instant`・`LocalDate`・`LocalDateTime` だけを見て、関数は Swift と同じに見る |
-| 書き換える範囲 | 検査 `check_swift_writes`。入れ子の `State` の `public var` の型が `ScreenEditable` かを見る | 検査 `check_kotlin_writes`。入れ子の `State` の、set を閉じない `mutableStateOf` の型を見る |
+| 書き換える範囲 | 検査 `check_swift_slots`。入れ子の `State` の `public var` が、`fields` と `presented` だけかを見る | 検査 `check_kotlin_slots`。入れ子の `State` の `var` が、`private set` かを見る |
 
 ### モデルの形
 

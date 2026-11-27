@@ -48,7 +48,17 @@ DesignSystem のフォルダは、`is_part_library` が検査から外す。`@Pr
 
 ### 画面の部品
 
-実行中の印と、表示中のもの・読んだ印の Bool は、`flags.py` の検査が名前で止める。`State` で画面が書ける値が `ScreenEditable` の型だけかは、`editable.py` の検査が型で止める。ほかの部品は、レビューのみで守る。
+実行中の印と、表示中のもの・読んだ印の Bool は、`flags.py` の検査が名前で止める。`State` の枠は、`slots.py` の検査が名前で止める。
+
+| 決まり | Swift | Kotlin |
+| --- | --- | --- |
+| 枠の名前と型 | 検査 `check_swift_slots`。書かれた型か初めの値の呼び出しの、頭の名前だけを見る | 検査 `check_kotlin_slots`。`mutableStateOf` の中の値も読み、見方は Swift と同じである |
+| 書く範囲 | 検査 `check_swift_slots`。`(set)` を閉じない `public var` を見る | 検査 `check_kotlin_slots`。`private` でも `private set` でもない `var` を見る |
+| `fields` の中身 | 検査 `check_unread_fields`。同じモジュールの画面でないファイルの `fields.<名前>` を探す | 検査 `check_unread_fields`。`@Composable` の無いファイルを探す |
+| `Fields`・`Presented` の印 | レビューのみ。`ScreenEditable` への適合は見ない | レビューのみ |
+| 枠に入らない値の行き先 | レビューのみ | レビューのみ |
+
+ほかの部品は、レビューのみで守る。
 
 ### 重複
 

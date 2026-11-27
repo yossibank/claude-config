@@ -576,7 +576,7 @@ design_case 2 "State の確認中の Bool も止める" "$parts" "$(nested State
 design_case 2 "State の show〜Sheet の Bool も止める" "$parts" "$(nested State 'var showDeleteAlert = false')" "${shown}: showDeleteAlert"
 design_case 0 "State の開閉の Bool は、シートの名前でなければ通す" "$parts" "$(nested State 'public internal(set) var isScheduleOpen = false')"
 design_case 0 "State の表示の設定の Bool は通す" "$parts" "$(nested State 'public internal(set) var showsCents = false')"
-design_case 0 "State の Shown は通す" "$parts" "$(nested State 'public var presented = Shown<Presented>()')"
+design_case 0 "State の presented は通す" "$parts" "$(nested State 'public var presented = Presented()')"
 design_case 0 "表示中のものの計算プロパティは通す" "$parts" "$(nested State $'var isShowingHelp: Bool {\n            presented.isShowing(.help)\n        }')"
 design_case 0 "Input の表示の名前の Bool は見ない" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var isShowingHelp = false')"
 design_case 2 "Input の isLoaded は Loadable を使うよう止める" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var isLoaded = false')" "Case+Input.swift:5: Case の Input ${loaded}: isLoaded。値と一緒に Loadable で持つ"
@@ -597,41 +597,62 @@ design_case 2 "Kotlin の State の isSaving を止める" "$kotlin" "$(kotlin_n
 design_case 0 "Kotlin の State の開閉の Boolean は通す" "$kotlin" "$(kotlin_nested State 'var isScheduleOpen: Boolean by mutableStateOf(false)')"
 design_case 0 "Kotlin の Output の読み込みの印は見ない" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val isLoaded: Boolean\n            get() = true\n    }\n}'
 
-# --- 画面が書ける値 ---
-# 印の宣言は、渡すファイルの隣に置く。1 ファイルだけ渡しても、隣のファイルから適合を集める
-marks="$features/CaseMarks.swift"
-printf '%s\n' 'public protocol ScreenEditable: Equatable, Sendable {}' 'public struct Shown<' '    Value: Equatable & Sendable' '>: ScreenEditable {}' 'extension Case {' '    struct Fields: Equatable {}' '    struct Draft {}' '}' 'extension Case.Fields: ScreenEditable {}' 'extension Optional: ScreenEditable where Wrapped: ScreenEditable {}' >"$marks"
-printf 'struct Elsewhere {}\n' >"$work/Elsewhere.swift"
-writes="Case の State で、画面が書ける値は ScreenEditable の型だけにする"
-design_case 2 "State の public var の Int を止める" "$parts" "$(nested State 'public var count = 0')" "Case+State.swift:5: ${writes}: count（Int）。ほかの値は internal(set) にして、State の関数で書く"
-design_case 2 "ScreenEditable に適合しない型の初期値を止める" "$parts" "$(nested State 'public var draft = Draft()')" "${writes}: draft（Draft）"
-design_case 2 "適合しない型の Optional を止める" "$parts" "$(nested State 'public var picked: Case.Draft?')" "${writes}: picked（Case.Draft?）"
-design_case 2 "標準の型の配列を止める" "$parts" "$(nested State 'public var names: [String] = []')" "${writes}: names（[String]）"
-design_case 0 "拡張で ScreenEditable に適合する Fields は通す" "$parts" "$(nested State 'public var fields = Fields()')"
-design_case 0 "ジェネリクスの Shown は通す" "$parts" "$(nested State 'public var presented = Shown<Sheet>()')"
-design_case 0 "where で適合する Optional は、中身が適合すれば通す" "$parts" "$(nested State 'public var fields: Fields?')"
-design_case 0 "State の internal(set) は通す" "$parts" "$(nested State 'public internal(set) var count = 0')"
-design_case 0 "State の private(set) は通す" "$parts" "$(nested State 'public private(set) var draft = Draft()')"
+# --- State の枠 ---
+slots="Case の State で、画面が書く public var は fields と presented だけにする"
+slot="Case の State の枠"
+design_case 2 "State の、枠でない public var を止める" "$parts" "$(nested State 'public var count = 0')" "Case+State.swift:5: ${slots}: count。ほかは public let か public internal(set) にして、モデルが書く"
+design_case 2 "State の、presented の外の Shown の public var も止める" "$parts" "$(nested State 'public var prompt = Shown<Prompt>()')" "${slots}: prompt"
+design_case 0 "State の fields と presented の public var は通す" "$parts" "$(nested State $'public var fields = Fields()\n        public var presented = Presented()')"
+design_case 0 "State の internal(set) の var は通す" "$parts" "$(nested State 'public internal(set) var count = 0')"
+design_case 0 "State の public let は通す" "$parts" "$(nested State 'public let notices: Notices')"
 design_case 0 "public でない State の var は見ない" "$parts" "$(nested State 'var count = 0')"
-design_case 0 "State の計算プロパティは見ない" "$parts" "$(nested State $'public var total: Int {\n            1\n        }')"
-design_case 0 "宣言の見つからない型は止めない" "$parts" "$(nested State 'public var today: LocalDate')"
-design_case 0 "隣でないファイルにある宣言は、分からないので止めない" "$parts" "$(nested State 'public var other = Elsewhere()')"
-rm -f "$parts" "$marks" "$work/Elsewhere.swift"
+design_case 0 "State の public の計算プロパティは見ない" "$parts" "$(nested State $'public var total: Int {\n            1\n        }')"
+design_case 2 "fields が Fields の型でなければ止める" "$parts" "$(nested State 'public var fields = Draft()')" "Case+State.swift:5: ${slot} fields は Fields の型にする（今は Draft）。枠の名前は、決まった型の値だけに使う"
+design_case 2 "presented が Shown なら止める" "$parts" "$(nested State 'public var presented = Shown<Sheet>()')" "${slot} presented は Presented の型にする（今は Shown<Sheet>）"
+design_case 2 "枠の Optional を止める" "$parts" "$(nested State 'public var presented: Presented?')" "${slot} presented は Presented の型にする（今は Presented?）"
+design_case 2 "モデルが書く枠の型も見る" "$parts" "$(nested State 'public internal(set) var task: Task<Void, Never>?')" "${slot} task は ModelTask の型にする"
+design_case 0 "枠の型が合えば通す。入れ子の型の名前とジェネリクスも頭で見る" "$parts" "$(nested State $'public var fields: Case.Fields\n        public internal(set) var outcome = ScreenOutcome<Item>()\n        public let notices: Notices\n        public let task = ModelTask()\n        public let submodels = Submodels()')"
+design_case 0 "型を読めない枠は見ない" "$parts" "$(nested State 'public var fields = .init()')"
+rm -f "$parts"
 # <宣言の行> の、State を 1 つ持つ Kotlin のモデル
 kotlin_state() {
     printf '%s' $'class Case {\n    val state = State()\n\n    class State {\n        '"$1"$'\n    }\n}'
 }
-printf '%s\n' 'interface ScreenEditable' '' 'class Shown<Value : Any>(' '    current: Value? = null,' ') : ScreenEditable' '' 'class Fields(val name: String = "") : ScreenEditable' '' 'class Draft' >"$work/CaseMarks.kt"
-design_case 2 "Kotlin の State の、set の無い Int を止める" "$kotlin" "$(kotlin_state 'var count by mutableStateOf(0)')" "Case.kt:5: ${writes}: count（Int）。ほかの値は private set にして、State の関数で書く"
-design_case 2 "Kotlin の State の、適合しない型を止める" "$kotlin" "$(kotlin_state 'var draft: Draft by mutableStateOf(Draft())')" "${writes}: draft（Draft）"
-design_case 2 "Kotlin の State の、適合する型の null になる値を止める" "$kotlin" "$(kotlin_state 'var fields: Fields? by mutableStateOf(null)')" "${writes}: fields（Fields?）"
-design_case 0 "Kotlin の State の、ScreenEditable の値は通す" "$kotlin" "$(kotlin_state 'var fields by mutableStateOf(Fields())')"
-design_case 0 "Kotlin の State の、ジェネリクスの Shown は通す" "$kotlin" "$(kotlin_state 'var shown: Shown<Sheet> by mutableStateOf(Shown())')"
-design_case 0 "Kotlin の State の、internal set は通す" "$kotlin" "$(kotlin_state $'var count by mutableStateOf(0)\n            internal set')"
-design_case 0 "Kotlin の State の、private の var は通す" "$kotlin" "$(kotlin_state 'private var count by mutableStateOf(0)')"
-design_case 0 "Kotlin の State の、複数行の初期値の後ろの private set は通す" "$kotlin" "$(kotlin_state $'var draft: Draft by mutableStateOf(\n            Draft(),\n        )\n            private set')"
-design_case 0 "Kotlin の State の、宣言の見つからない型は止めない" "$kotlin" "$(kotlin_state 'var today: LocalDate by mutableStateOf(today)')"
-rm -f "$work/CaseMarks.kt"
+design_case 2 "Kotlin の State の、set を閉じない var を止める" "$kotlin" "$(kotlin_state 'var count by mutableStateOf(0)')" "Case.kt:5: Case の State の var は private set にする: count。画面が書く値は、State の関数（updateFields・present など）を通す"
+design_case 2 "Kotlin の State の、internal set の var も止める" "$kotlin" "$(kotlin_state $'var today: LocalDate by mutableStateOf(today)\n            internal set')" "Case の State の var は private set にする: today"
+design_case 2 "Kotlin の State の、引数の var も止める" "$kotlin" $'class Case {\n    val state = State(0)\n\n    class State(\n        var count: Int,\n    ) {\n        val task = ModelTask()\n    }\n}' "Case.kt:5: Case の State の var は private set にする: count"
+design_case 0 "Kotlin の State の、private set の var は通す" "$kotlin" "$(kotlin_state $'var fields: Fields by mutableStateOf(Fields())\n            private set')"
+design_case 0 "Kotlin の State の、private の var は通す" "$kotlin" "$(kotlin_state 'private var count = 0')"
+design_case 0 "Kotlin の State の、複数行の初めの値の後ろの private set は通す" "$kotlin" "$(kotlin_state $'var fields: Fields by mutableStateOf(\n            Fields(),\n        )\n            private set')"
+design_case 2 "Kotlin の State の、枠の型が違えば止める" "$kotlin" "$(kotlin_state 'val presented = Shown<Prompt>()')" "Case.kt:5: ${slot} presented は Presented の型にする（今は Shown<Prompt>）"
+design_case 2 "Kotlin の State の、mutableStateOf の中の型も読む" "$kotlin" "$(kotlin_state $'var fields by mutableStateOf(Draft())\n            private set')" "${slot} fields は Fields の型にする（今は Draft）"
+design_case 0 "Kotlin の State の、枠の型が合えば通す" "$kotlin" "$(kotlin_state $'val presented = Presented()\n        val notices = Notices(wait)\n        val task = ModelTask()\n        val outcome = ScreenOutcome<Item>()')"
+design_case 0 "Kotlin の State の、引数の枠の型も読む" "$kotlin" $'class Case {\n    val state = State(ModelTask())\n\n    class State(\n        val task: ModelTask,\n    ) {\n        val outcome = ScreenOutcome<Item>()\n    }\n}'
+
+# --- fields の読み出し ---
+# 同じモジュールの、画面でないファイルの fields.<名前> を読んだと見る
+module="$work/slots/Sources/Models"
+mkdir -p "$module"
+printf '%s\n' '@MainActor' '@Observable' 'final class Case {' '    let state = State()' '}' >"$module/Case.swift"
+printf '%s\n' 'extension Case.Output {' '    var draft: Draft {' '        Draft(name: state.fields.name)' '    }' '}' >"$module/Case+Output.swift"
+printf '%s\n' 'import SwiftUI' '' 'struct CaseView: View {' '    let model: CaseModel' '' '    var body: some View {' '        Text(model.state.fields.memo)' '    }' '}' >"$module/CaseView.swift"
+unread="Fields の memo を、モデルのファイルが fields.memo として読んでいない"
+fields() {
+    printf '%s' $'extension Case {\n    struct Fields: ScreenEditable {\n        public var name: String\n        public var memo: String\n'"${1:-}"$'    }\n}'
+}
+design_case 2 "モデルが読まない fields の値を止める。画面の読みは数えない" "$module/Case+Fields.swift" "$(fields)" "Case+Fields.swift:4: ${unread}。fields には、モデルが読む入力と選んでいる物だけを置く。表示中のものは presented に置く"
+design_case 0 "Fields の計算プロパティが使う値は、読んだと見る" "$module/Case+Fields.swift" "$(fields $'\n        var trimmed: String {\n            memo.trimmed\n        }\n')"
+printf '%s\n' 'extension Case {' '    func save() {' '        print(state.fields.memo)' '    }' '}' >"$module/Case+Save.swift"
+design_case 0 "別のモデルのファイルが読めば通す" "$module/Case+Fields.swift" "$(fields)"
+rm -f "$module/Case+Save.swift"
+design_case 0 "ScreenEditable の無い Fields は見ない" "$module/Case+Fields.swift" $'extension Case {\n    struct Fields {\n        var memo: String\n    }\n}'
+android="$work/slots/featuremodels"
+mkdir -p "$android/src/main/kotlin"
+touch "$android/build.gradle.kts"
+printf '%s\n' 'class CaseOutput(private val state: CaseModel.State) {' '    val draft: Draft' '        get() = Draft(name = state.fields.name)' '}' >"$android/src/main/kotlin/CaseOutput.kt"
+design_case 2 "Kotlin のモデルが読まない fields の値を止める" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val name: String,\n    val memo: String,\n) : ScreenEditable' "CaseFields.kt:3: ${unread}"
+design_case 0 "Kotlin の、ScreenEditable の無い data class Fields は見ない" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val memo: String,\n)'
+rm -rf "$work/slots"
 
 # --- 基準線 ---
 base="$work/base"
