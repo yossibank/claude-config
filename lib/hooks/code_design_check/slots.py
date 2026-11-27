@@ -235,8 +235,54 @@ def check_unread_fields(path, code):
                 yield index + 1, f"Fields の {name} を、モデルのファイルが fields.{name} として読んでいない。fields には、モデルが読む入力と選んでいる物だけを置く。表示中のものは presented に置く"
 
 
+PART_SLOTS = (
+    (re.compile(r"ErrorNotice"), "notices.error"),
+    (re.compile(r"UndoNotice(?:<.*>)?"), "notices.<意味の名前>"),
+    (re.compile(r"Shown(?:<.*>)?"), "presented.<意味の名前>"),
+    (re.compile(r"\w*Model(?:<.*>)?|AmountCalculator"), "submodels.<意味の名前>"),
+)
+PART_MESSAGE = "{owner} の State の直下に、部品の型を置かない: {name}（{kind}）。{slot} に置く。同じ役目の値を 2 通りで書かないため"
+KOTLIN_GETTER = re.compile(r"^\s*(?:(?:public|internal|private|protected)\s+)?get\b")
+
+
+def part_slot(kind):
+    """部品の型なら、置く枠を返す。Optional と配列は中の型で見る。"""
+    leaf = bare_leaf(kind)
+    return next((slot for pattern, slot in PART_SLOTS if pattern.fullmatch(leaf)), None)
+
+
+def check_swift_parts(code):
+    """入れ子の State の直下の保存プロパティに、ErrorNotice・UndoNotice・Shown・中に持つモデルを置いていないか。"""
+    for start, end, part, indent in observable_classes(code):
+        if not indent or part != "State":
+            continue
+        owner = swift_owner(code, start)
+        for index, found in swift_members(code, start, end, indent):
+            name = found.group("name")
+            kind = swift_kind(found.group("type"), found.group("value"))
+            if name not in SLOTS and kind and (slot := part_slot(kind)):
+                yield index + 1, PART_MESSAGE.format(owner=owner, name=name, kind=kind, slot=slot)
+
+
+def check_kotlin_parts(code):
+    """入れ子の class State の val と var に、部品の型を置いていないか。get() の読み口は見ない。"""
+    owner = kotlin_owner(code)
+    for start, end, part in kotlin_parts(code):
+        if part != "State":
+            continue
+        for index in range(start + 1, end):
+            found = KOTLIN_MEMBER.match(code[index])
+            if not found or re.search(r"\bget\s*\(", code[index]) or KOTLIN_GETTER.match(next_code(code, index)):
+                continue
+            name = found.group("name")
+            kind = kotlin_kind(found.group("type"), found.group("rest"), code, index)
+            if name not in SLOTS and kind and (slot := part_slot(kind)):
+                yield index + 1, PART_MESSAGE.format(owner=owner, name=name, kind=kind, slot=slot)
+
+
 SWIFT_BARE = {"Bool", "Int", "Double", "String", "Date"}
 KOTLIN_BARE = {"Boolean", "Int", "Long", "Double", "String", "LocalDate"}
+IDENTIFIER = re.compile(r"\w*ID|Identifier<.*>")
 SWIFT_HIDDEN = re.compile(r"^(?:@\w+\s+)*@ObservationIgnored\b.*\bprivate\b(?!\()")
 KOTLIN_STATE_VAR = re.compile(
     r"^        (?:(?:public|internal|private|protected|override)\s+)*var\s+(?P<name>\w+)\s*(?::\s*(?P<type>[^=]+?))?"
@@ -245,8 +291,14 @@ KOTLIN_STATE_VAR = re.compile(
 KOTLIN_LITERAL_KINDS = {"Int": "Int", "Long": "Long", "Double": "Double", "Float": "Float"}
 BARE_MESSAGE = (
     "{owner} の State の直下に、裸の値を置かない: {name}（{kind}）。"
-    "外から来る値は input、計算できる値は output、表示中のものは presented に送り、残りは意味の名前の値の型に包む"
+    "外から来る値は input、計算できる値は output、表示中のものは presented、画面で選ぶ物は fields に送り、残りは意味の名前の値の型に包む"
 )
+
+
+def is_bare(kind, bare):
+    """Optional・配列・Set を外した中の型が、Bool・数・文字列・日付か ID の型か。"""
+    leaf = bare_leaf(kind)
+    return leaf in bare or bool(IDENTIFIER.fullmatch(leaf))
 
 
 def literal_kind(value, swift):
@@ -265,9 +317,9 @@ def literal_kind(value, swift):
     if swift and re.fullmatch(r"Date\(.*\)", value):
         return "Date"
     if swift:
-        found = re.match(r"\[(\w+)\]\(\)$|Set<(\w+)>\(\)$", value)
+        found = re.match(r"\[([\w.]+)\]\(\)$|Set<([\w.]+)>\(\)$", value)
         return f"[{next(group for group in found.groups() if group)}]" if found else None
-    found = re.match(r"(?:emptyList|emptySet|listOf|setOf)<(\w+)>\(", value)
+    found = re.match(r"(?:emptyList|emptySet|listOf|setOf)<([\w.]+)>\(", value)
     return f"List<{found.group(1)}>" if found else None
 
 
@@ -289,7 +341,7 @@ def bare_leaf(kind):
 
 
 def check_swift_bare(code):
-    """入れ子の State の直下の保存プロパティに、Bool・数・文字列・日付と、その Optional・配列・Set を置いていないか。"""
+    """入れ子の State の直下の保存プロパティに、Bool・数・文字列・日付・ID の型と、その Optional・配列・Set を置いていないか。"""
     for start, end, part, indent in observable_classes(code):
         if not indent or part != "State":
             continue
@@ -299,12 +351,12 @@ def check_swift_bare(code):
             if SWIFT_HIDDEN.search((above + " " if re.fullmatch(r"(?:@\w+\s*)+", above) else "") + code[index].strip()):
                 continue
             kind = (found.group("type") or "").strip() or literal_kind(found.group("value"), swift=True)
-            if kind and bare_leaf(kind) in SWIFT_BARE:
+            if kind and is_bare(kind, SWIFT_BARE):
                 yield index + 1, BARE_MESSAGE.format(owner=owner, name=found.group("name"), kind=kind)
 
 
 def check_kotlin_bare(code):
-    """入れ子の class State の mutableStateOf の var に、Boolean・数・文字列・日付と、その null・List・Set を置いていないか。"""
+    """入れ子の class State の mutableStateOf の var に、Boolean・数・文字列・日付・ID の型と、その null・List・Set を置いていないか。"""
     owner = kotlin_owner(code)
     for start, end, part in kotlin_parts(code):
         if part != "State":
@@ -320,5 +372,5 @@ def check_kotlin_bare(code):
                 or (found.group("generic") or "").strip()
                 or literal_kind(value, swift=False)
             )
-            if kind and bare_leaf(kind) in KOTLIN_BARE:
+            if kind and is_bare(kind, KOTLIN_BARE):
                 yield index + 1, BARE_MESSAGE.format(owner=owner, name=found.group("name"), kind=kind)

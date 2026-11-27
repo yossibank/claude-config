@@ -70,10 +70,11 @@ Swift と Kotlin のコードを読み書きする時に読み込まれる決ま
 
 | 置ける物 | 決まり |
 | --- | --- |
-| 枠と部品の型 | 枠と、`ObservationRound` などの部品の型 |
+| 枠と部品の型 | 枠と、`ObservationRound` などの部品の型。枠に置く部品の型は、下の「画面の部品」の表のとおり枠の中だけに置く |
 | 振る舞いを持つ値の型 | 1 つの概念を 1 つのプロパティで持つ。書く範囲は、Swift は `private(set)` か `internal(set)` にする |
 | Kotlin の書く範囲 | 振る舞いを持つ値の型も、`private set` にする |
-| 裸の値 | 置かない。`Bool`・数・文字列・日付と、その Optional・配列・Set は、上の行き先に送る |
+| 裸の値 | 置かない。`Bool`・数・文字列・日付・ID の型と、その Optional・配列・Set は、上の行き先に送る |
+| ID の型 | `…ID`・`Identifier<…>` も裸の値と見る。画面で選ぶ物は `fields` に置き、モデルだけが決める物は値の型に包む |
 
 Kotlin は、同じまとまりを次の形で書く。
 
@@ -149,6 +150,11 @@ Kotlin は、同じまとまりを次の形で書く。
 | 置く枠 | 要る枠だけを置く。小さいモデルは、`fields` と `notices` だけのように省いてよい |
 | 中身が 1 つの枠 | 1 つでも型で包む（例: `presented.sheet`）。どのモデルも同じ読み方にするため |
 | 枠の名前 | 表の名前は、表の型の値だけに使う。Optional にもしない |
+| 部品の型 | 次の 3 行の型は、`State` の直下に置かず、枠の中に置く。同じ役目の値を 2 通りで書かないため |
+| 知らせの部品 | `ErrorNotice` は `notices.error` に置く。`UndoNotice<…>` は `notices` に意味の名前で置く |
+| 表示の部品 | `Shown<…>` は、`presented` に意味の名前で置く |
+| 中に持つモデル | 名前が `Model` で終わる型と `AmountCalculator` は、`submodels` に意味の名前で置く |
+| 共通の読み口 | `NoticeHolding` などが求める値は、`notices.error` を返す計算プロパティで渡してよい |
 | Swift の書く範囲 | 画面が書く `fields`・`presented` だけを `public var` にする。ほかは `public let` か `public internal(set) var` にする |
 | Kotlin の書く範囲 | `var` はどれも `private set` にする。画面は、`updateFields` などの `State` の関数か、`Shown` の関数で書く |
 | 名前をそろえる | iOS と Android で、枠と中の値に同じ名前を使う |
@@ -267,7 +273,8 @@ Kotlin は、同じまとまりを次の形で書く。
 | 画面の部品 | Kotlin の入れ子の `State` の `var` が、`private` か `private set` か。引数の `var` も見る | |
 | 画面の部品 | 入れ子の `State` で、枠の名前を持つ値が枠の型か。`fields` は `Fields` のように見る | |
 | 画面の部品 | `ScreenEditable` の `Fields` の値を、同じモジュールの画面でないファイルが `fields.<名前>` で読むか | |
-| 画面の部品 | 入れ子の `State` の直下に、`Bool`・数・文字列・日付が無いか。その Optional・配列・Set も見る | |
+| 画面の部品 | 入れ子の `State` の直下に、`Bool`・数・文字列・日付・ID の型が無いか。その Optional・配列・Set も見る | |
+| 画面の部品 | 入れ子の `State` の直下に、部品の型が無いか。`ErrorNotice`・`UndoNotice`・`Shown`・中に持つモデルを見る | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
 
@@ -312,6 +319,11 @@ Kotlin は、同じまとまりを次の形で書く。
 - Kotlin は、`Fields` の本体・拡張・`with(fields)` の中で使う語も、読んだと見る。
 - 裸の値は、書かれた型か、`0`・`false`・`""`・`[String]()` などの初めの値で読む。`let` と `(set)` の別は問わない。
 - `@ObservationIgnored` の `private` の値は、仕組みの内側なので見ない。Kotlin は、`mutableStateOf` の `var` だけを見る。
+- ID の型は、Optional・配列・Set を外した中の型の名前が `ID` で終わる型と、`Identifier<…>` である。`[Item.ID: Mark]` のような辞書と、ID を中に持つ値の型は見ない。
+- 部品の型は、書かれた型か、初めの値の呼び出しの名前で読む。Optional と配列は中の型で見る。
+- 部品の型は、`State` の直下の保存プロパティだけを見る。Kotlin は、本体と引数の `val` と `var` を見る。
+- `notices`・`presented`・`submodels` などの枠の型の中は見ない。計算プロパティと `get()` の読み口も見ない。
+- 枠の名前を持つ値は、枠の型の検査が見るので、部品の型としては数えない。
 - 画面から `state` への書き込みは見ない。`fields` と `presented` への書き込みは、画面に許されているためである。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
 - 型の保存プロパティ・init の引数の並び・`self.x = x` だけの行は、データの宣言なので数えない。
