@@ -173,5 +173,6 @@ paths:
 - lib の子フォルダが持ち主の種類と名前か、持ち主が 1 つの中身が lib の直下に無いか
 - `CC_` の環境変数が、`docs/usage/components.md` の表と合うか
 - `.sh` の頭の `set`、`.sh` の中の Python、`assert`、ワークツリーの置き場所の直書き
+- コードと設定のコメント（`code-check-comments` のフックと同じ検査）
 - `.py` が lib を読む行の形
 - 編集を受けるフックの matcher、フックの登録、許可とフックの並び

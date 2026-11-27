@@ -28,7 +28,6 @@ replace() {
     replace_text "$1" "$1" "$2" "$3"
 }
 
-# 台帳の「残っている改善」の見出しの直後に行を足す。今の台帳の行に頼らずに場所の列を試す
 add_ledger_row() {
     local file=$1 tmp
     tmp=$(mktemp)

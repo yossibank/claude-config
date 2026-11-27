@@ -98,7 +98,6 @@ check "render-snapshots: 描けなかった時は、前の PNG を消さない" 
 check "render-snapshots: 全ログを残す" test -f "${lock%.lock}/.build/ui-snapshot.log"
 
 
-# 描けた時の道: xcodebuild が PNG を書いたことにする
 fake_command xcodebuild "
 if [[ \$1 == -list ]]; then
     echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
@@ -128,7 +127,6 @@ printf png >"$work/out/keep.png"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG PNG が描かれなかった" "render-snapshots: テストが通っても PNG が無ければ NG" bash "$render" "$package" "$set_dir" "$work/out"
 check "render-snapshots: PNG が描かれなかった時は、前の PNG を消さない" test -s "$work/out/keep.png"
 
-# PNG を書けずに落ちた時は 1 回だけ描き直す
 fake_command xcodebuild "
 if [[ \$1 == -list ]]; then
     echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'
@@ -156,7 +154,6 @@ exit 65"
 CC_UI_DEVICE=MINE CC_UI_WORK_DIR="$work/copies" expect "NG テストが通らなかった" "render-snapshots: ほかの理由で落ちたら描き直さない" bash "$render" "$package" "$set_dir" "$work/out"
 match "render-snapshots: ほかの理由では 1 回だけ走らせる" "$(cat "$work/xcb.count")" "1"
 
-# 別のタイムゾーンで描き直して比べる
 fake_command xcodebuild "
 if [[ \$1 == -list ]]; then
     echo '{\"workspace\":{\"schemes\":[\"Kit-Package\"]}}'

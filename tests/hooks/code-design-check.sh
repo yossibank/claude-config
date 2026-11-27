@@ -11,14 +11,12 @@ design_case() {
     hook_case code-design-check "$expect" "$label" "$path" "$text" "$want"
 }
 
-# <数> <行> を、数だけ並べる
 repeat() {
     local count=$1 line=$2 out="" i
     for ((i = 0; i < count; i++)); do out+="${line}"$'\n'; done
     printf '%s' "$out"
 }
 
-# <保存プロパティの数> <Bool の数> <didSet の数> の @Observable のクラス
 model() {
     local out=$'@Observable\nfinal class Case {\n' i
     for ((i = 0; i < $1; i++)); do out+="    var value${i}: Int = 0"$'\n'; done
@@ -28,21 +26,18 @@ model() {
     printf '%s' "$out"
 }
 
-# <数> の mutableStateOf を持つクラス
 states() {
     local out=$'class Case {\n' i
     for ((i = 0; i < $1; i++)); do out+="    var value${i} by mutableStateOf(0)"$'\n'; done
     printf '%s' "${out}}"
 }
 
-# <型の名前> <行の数> <変数の頭> で、形が同じで名前だけ違う中身を作る
 body() {
     local out="struct $1 {"$'\n' i
     for ((i = 1; i < $2; i++)); do out+="    let $3${i} = make$3(${i})"$'\n'; done
     printf '%s' "${out}}"
 }
 
-# <型の名前> <変数の頭> の、保存プロパティと init だけを持つ Swift の struct
 record() {
     local out="public struct $1: Sendable {"$'\n' names=(id title note amount date) i
     for i in "${names[@]}"; do out+="    public let $2${i}: String"$'\n'; done
@@ -53,7 +48,6 @@ record() {
     printf '%s' "${out}    }"$'\n}'
 }
 
-# <型の名前> <変数の頭> の、同じ並びの引数を持つ Kotlin の data class
 data_class() {
     local out="data class $1(" names=(id title note amount date) i
     out+=$'\n'
@@ -61,14 +55,12 @@ data_class() {
     printf '%s' "${out}    var flag: Boolean = false"$'\n)'
 }
 
-# <型の名前> <変数の頭> の、保存プロパティの間に同じ処理の本体がある struct
 mixed() {
     local out="struct $1 {"$'\n    let '"$2"$'Id: String\n    func run() {\n' i
     for ((i = 1; i < 22; i++)); do out+="        let $2${i} = make$2(${i})"$'\n'; done
     printf '%s' "${out}    }"$'\n    let '"$2"$'Name: String\n}'
 }
 
-# <型の名前> <表の名前> の、注釈の付いた列と、本体の無い関数を持つ Kotlin の Room の宣言
 room() {
     local out=$'@Entity(\n    tableName = "'"$2"$'",\n    foreignKeys = [\n        ForeignKey(\n            entity = IconRecord::class,\n            parentColumns = ["id"],\n            childColumns = ["icon_id"],\n        ),\n    ],\n)\n'
     out+="data class $1("$'\n    @PrimaryKey val id: String,\n    @ColumnInfo(name = "icon_id") val iconId: String,\n    @ColumnInfo(name = "sort_order") val sortOrder: Int,\n)\n\n@Dao\ninterface '"$1"$'Dao {\n'
@@ -80,7 +72,6 @@ room() {
     printf '%s' "${out}}"
 }
 
-# <プロトコルの名前> <要求の頭> の、関数の要求だけを持つ Swift の protocol
 requirements() {
     local out="protocol $1 {"$'\n' i
     local params=("" "a: Int" "a: Int, b: Int" "a: Int, b: Int, c: Int") effects=("" " throws" " async" " async throws" " mutating")
@@ -91,14 +82,12 @@ requirements() {
 swift="$work/Case.swift"
 kotlin="$work/Case.kt"
 
-# --- ファイルの長さ ---
 design_case 0 "400 行ちょうどの Swift は通る" "$swift" "struct Case {"$'\n'"$(repeat 398 '    // a')"$'\n}'
 design_case 2 "401 行の Swift は止める" "$swift" "struct Case {"$'\n'"$(repeat 399 '    // a')"$'\n}' "Case.swift:401: 1 つのファイルは 400 行まで"
 design_case 0 "400 行ちょうどの Kotlin は通る" "$kotlin" "class Case {"$'\n'"$(repeat 398 '    // a')"$'\n}'
 design_case 2 "401 行の Kotlin は止める" "$kotlin" "class Case {"$'\n'"$(repeat 399 '    // a')"$'\n}' "Case.kt:401: 1 つのファイルは 400 行まで"
 design_case 2 "テストのファイルも長さは見る" "$work/Tests/CaseTests.swift" "struct CaseTests {"$'\n'"$(repeat 399 '    // a')"$'\n}' "400 行まで"
 
-# --- ファイルの名前と型 ---
 design_case 0 "ファイルと同じ名前の型があれば通る" "$swift" 'struct Case {}'
 design_case 2 "ファイルと同じ名前の型が無ければ止める" "$swift" 'struct Other {}' "Case.swift:1: ファイルの名前は、中の型の名前にする: Case"
 design_case 2 "拡張だけのファイルに + が無ければ止める" "$swift" 'extension Other {}' "ファイルの名前は、中の型の名前にする"
@@ -111,7 +100,6 @@ design_case 2 "入れ子の型の拡張で親を省けば止める" "$work/Walle
 design_case 0 "配列の拡張は Array の名前で通る" "$work/Array+Detail.swift" 'extension [String?] {}'
 design_case 0 "テストのファイルの名前は見ない" "$work/Tests/Other.swift" 'struct Sample {}'
 
-# --- 1 つのファイルに置く型 ---
 design_case 2 "名前の頭が違う型を並べれば止める" "$swift" $'struct Case {}\n\nstruct Helper {}' "Case.swift:3: private でない型の名前は、ファイルの名前 Case で始める: Helper"
 design_case 0 "private な型は並べて通る" "$swift" $'struct Case {}\n\nprivate struct Helper {}'
 design_case 0 "ファイルの名前で始まる型は並べて通る" "$swift" $'struct Case {}\n\nstruct CaseRow {}'
@@ -139,7 +127,6 @@ design_case 2 "Kotlin で名前の語が違う型を並べれば止める" "$kot
 design_case 0 "Kotlin でファイルの名前の語で始まる型は通る" "$work/AppDatabaseBudget.kt" $'class AppDatabaseBudget\n\nclass BudgetWriteException'
 design_case 0 "Kotlin の private な型は並べて通る" "$kotlin" $'class Case\n\nprivate class Helper'
 
-# --- フォルダの中の頭が同じファイル ---
 heads="$work/heads"
 mkdir -p "$heads"
 for i in A B C D E F G H I J K L M N O P Q R S; do echo "struct Head${i}x {}" >"$heads/Head${i}x.swift"; done
@@ -151,7 +138,6 @@ rm "$heads/HeadLast.swift"
 echo 'struct OtherLast {}' >"$heads/OtherLast.swift"
 design_case 0 "頭が違うファイルは別に数える" "$heads/HeadMain.swift" 'struct HeadMain {}'
 
-# --- モデルの状態 ---
 design_case 0 "保存プロパティが 12 個ちょうどなら通る" "$swift" "$(model 12 0 0)"
 design_case 2 "保存プロパティが 13 個なら止める" "$swift" "$(model 13 0 0)" "Case.swift:15: Case の保存プロパティの var は 12 個まで"
 design_case 0 "Bool の保存プロパティが 3 個ちょうどなら通る" "$swift" "$(model 0 3 0)"
@@ -162,7 +148,6 @@ design_case 0 "@Observable でない型の保存プロパティは数えない" 
 design_case 0 "mutableStateOf が 12 個ちょうどなら通る" "$kotlin" "$(states 12)"
 design_case 2 "mutableStateOf が 13 個なら止める" "$kotlin" "$(states 13)" "Case.kt:14: Case の mutableStateOf の var は 12 個まで"
 
-# --- 今の時刻の既定値 ---
 design_case 2 "引数の既定値に Date() を書けば止める" "$swift" $'struct Case {\n    func save(at now: Date = Date()) {}\n}' "Case.swift:2: 今の時刻を引数やプロパティの既定値にしない"
 design_case 2 "引数の既定値に .now を書いても止める" "$swift" $'struct Case {\n    func save(at now: Date = .now) {}\n}' "今の時刻を"
 design_case 0 "時刻を必須の引数で受ければ通る" "$swift" $'struct Case {\n    func save(at now: Date) {}\n}'
@@ -182,7 +167,6 @@ design_case 2 "Kotlin の既定値に Clock.System::now と LocalDate::now を�
 design_case 2 "Kotlin の既定値の複数行のラムダが今の時刻を作れば止める" "$kotlin" $'class Case(\n    private val today: () -> LocalDate = {\n        LocalDate.now(ZoneId.systemDefault())\n    },\n)' "Case.kt:2: $now"
 design_case 0 "Kotlin で時刻を返す関数を必須の引数で受け、呼ぶ側が渡せば通る" "$kotlin" $'class Case(\n    private val now: () -> Instant,\n    private val onSave: (Instant) -> Unit = {},\n)\n\nfun live() = Case(now = { Instant.now() })\n\nfun other() = Case(now = Clock.System::now)\n\nfun clock(): () -> Instant = Instant::now\n\nval open: suspend () -> AppDatabase = {\n    AppDatabase.file(now = Instant.now())\n}'
 
-# --- 別のファイルと同じ形 ---
 features="$app/ios/Features"
 body First 20 first >"$features/First.swift"
 git -C "$app" add ios/Features/First.swift
@@ -244,7 +228,6 @@ defaults First first >"$features/Defaults.kt"
 git -C "$app" add ios/Features/Defaults.kt
 design_case 2 "interface の中の式の本体を持つ関数が同じ並びなら止める" "$features/Fallbacks.kt" "$(defaults Fallbacks second)" "Fallbacks.kt:"
 
-# <先頭の行> <変数の頭> の、先頭の行の後に同じ処理の本体が続く Swift・Kotlin の中身
 after_head() {
     local out="$1"$'\n' i
     for ((i = 1; i < 21; i++)); do out+="    let $2${i} = ${i}"$'\n'; done
@@ -265,7 +248,6 @@ after_head $'struct Holder {\n    class var kind: Int {' first >"$features/Holde
 git -C "$app" add ios/Features/Holder.swift
 design_case 2 "class var の後の関数の本体は、同じ形に数える" "$features/Keeper.swift" "$(after_head $'struct Keeper {\n    class var kind: Int {' second)" "Keeper.swift:1: ここから 20 行以上が、ios/Features/Holder.swift:1 と同じ形"
 
-# --- 共通の部品の一覧 ---
 shared="$app/ios/Features/Shared/Model"
 design_case 0 "一覧の文書が無ければ、Shared のプロトコルを見ない" "$shared/ScreenModel.swift" 'protocol ScreenModel {}'
 printf '# 共通の部品\n\n`SettingsBoardModel` を使う。\n' >"$app/docs/architecture-parts.md"
@@ -274,7 +256,6 @@ design_case 0 "一覧にある Shared のプロトコルは通る" "$shared/Sett
 design_case 0 "Shared の外のプロトコルは見ない" "$app/ios/Features/Screens/HomeSource.swift" 'protocol HomeSource {}'
 design_case 0 "git の外のファイルは、同じ形を見ない" "$work/Second.swift" "$(body Second 20 second)"
 
-# --- make verify から呼ぶ時 ---
 printf 'struct Case {}\n' >"$work/Named.swift"
 out=$(bash "$hooks" code-design-check "$work/Named.swift" </dev/null 2>&1)
 match "verify から呼ぶ時は、外れの行の頭に NG を付けて止める" "$?:$(grep -c '^NG .*Named.swift:1: ファイルの名前は' <<<"$out")" "2:1"
@@ -296,7 +277,6 @@ mkdir -p "$nested"
 git -C "$nested" init -q
 design_case 2 ".claude の下にできたワークツリーの中は見る" "$nested/Case.swift" "struct Case {"$'\n'"$(repeat 399 '    // a')"$'\n}' "Case.swift:401: 1 つのファイルは 400 行まで"
 
-# --- 4 つのまとまりのモデル ---
 grouped=$'@Observable\nfinal class Case {\n    let state: State\n    let input: Input\n    let output: Output\n\n    private let dependencies: Dependencies\n}'
 design_case 0 "4 つのまとまりの let だけのモデルは通す" "$swift" "$grouped"
 design_case 2 "まとまりのモデルの直下に var があれば止める" "$swift" $'@Observable\nfinal class Case {\n    let state: State\n\n    var count = 0\n}' "Case.swift:5: Case は 4 つのまとまりのモデルなので、保存プロパティの var を直下に置かない（今は 1 個）"
@@ -344,7 +324,6 @@ design_case 2 "output 越しに state を読めば止める" "$features/CaseView
 rm -f "$features/CaseView.swift"
 design_case 2 "Kotlin で output 越しに input を読めば止める" "$kotlin" $'class Case {\n    fun title(model: Other): String = model.output.input.title\n}' "Case.kt:2: output 越しに state と input を読まない"
 
-# <State の var の数> <Boolean の数> の、4 つのまとまりの Kotlin のモデル
 grouped() {
     local out=$'class Case(database: AppDatabase) {\n    val state = State()\n    val input = Input()\n    val output = Output(input, state)\n\n    class State {\n' i
     for ((i = 0; i < $1; i++)); do out+="        var value${i}: Amount by mutableStateOf(Amount())"$'\n            private set\n'; done
@@ -370,9 +349,7 @@ design_case 0 "Kotlin で dependencies の時計から受け取れば通る" "$k
 design_case 2 "Kotlin の画面から input に書けば止める" "$kotlin" $'class Case {\n    fun choose(model: Other) {\n        model.input.count = 1\n    }\n}' "Case.kt:3: モデルの input に、モデルの外から書かない"
 design_case 0 "Kotlin のモデルが自分の input に書くのは通る" "$kotlin" $'class Case {\n    fun load() {\n        input.count = 1\n        this.input.count = 2\n        this@Case.input.count = 3\n    }\n}'
 
-# --- 画面の形 ---
 view="$features/CaseView.swift"
-# <View の中の行> を持つ Swift の View
 screen() {
     printf 'struct CaseView: View {\n%s\n}' "$1"
 }
@@ -403,9 +380,7 @@ design_case 0 "DesignSystem の部品の @State は見ない" "$app/ios/DesignSy
 design_case 0 "テストの View の @State は見ない" "$app/ios/FeaturesTests/CaseViewTests.swift" $'struct CaseViewTests: View {\n    @State private var isOn = false\n}'
 rm -f "$features/CaseLift.swift" "$features/CaseView+Layout.swift"
 
-# --- 画面の非同期 ---
 effect="画面で Task を始めない。モデルの口から始め、結果は state の変化で受ける"
-# <Task を入れる変数の宣言> <取り消しの行> の、View でない型と ViewModifier が同じファイルにある画面だけの非同期
 scroller() {
     printf '@Observable\nfinal class CaseScroll {\n%s\n\n    func follow() {\n        task = Task {\n            await run()\n        }\n    }\n\n    func stop() {\n%s\n    }\n}\n\nprivate struct CaseScrollModifier: ViewModifier {}' "$1" "$2"
 }
@@ -432,7 +407,6 @@ design_case 0 "テストの View の Task は見ない" "$app/ios/FeaturesTests/
 rm -f "$view" "$features"/Case{Lift,Notice,Model,Model+Pro,Scroll,View+Actions}.swift
 
 compose="$features/CaseView.kt"
-# <関数の中の行> を持つ Kotlin の Composable
 composable() {
     printf '@Composable\nfun CaseView(model: CaseModel) {\n%s\n}' "$1"
 }
@@ -468,7 +442,6 @@ design_case 0 "designsystem の部品のコルーチンは見ない" "$app/andro
 design_case 0 "テストの Composable のコルーチンは見ない" "$app/android/src/test/CaseViewTest.kt" "$(composable $'    val scope = rememberCoroutineScope()\n    scope.launch { }')"
 rm -f "$compose" "$features/CaseFlow.kt"
 
-# --- まとまりの宣言 ---
 design_case 2 "まとまりを全部 var で持てば止める" "$swift" $'@Observable\nfinal class Case {\n    var state: State\n    var input = Input()\n\n    private let dependencies: Dependencies\n}' "Case.swift:3: Case のまとまりは let で持つ: state"
 design_case 2 "let のまとまりに var のまとまりが混じれば止める" "$swift" $'@Observable\nfinal class Case {\n    let state: State\n    public var output: Case.Output\n}' "Case.swift:4: Case のまとまりは let で持つ: output"
 design_case 0 "state という名前の var が 1 つだけのクラスは、まとまりのモデルと見ない" "$swift" $'@Observable\nfinal class Case {\n    var state: State = .idle\n    var count = 0\n}'
@@ -500,7 +473,6 @@ design_case 2 "Kotlin の Output で Instant.now() を作れば止める" "$kotl
 design_case 2 "Kotlin で dependencies を持つモデルが LocalDate.now() を作れば止める" "$kotlin" $'class Case {\n    suspend fun save() {\n        dependencies.database.save(on = LocalDate.now())\n    }\n}' "Case.kt:3: dependencies を持つモデルで、今の時刻を作らない"
 design_case 2 "Kotlin の画面から input の一覧に足せば止める" "$kotlin" $'class Case {\n    fun choose(model: Other) {\n        model.input.items.add(1)\n    }\n}' "Case.kt:3: モデルの input に、モデルの外から書かない"
 
-# --- モデルを別のモジュールに置いたアプリ ---
 sources="$app/ios/Packages/CaseApp/Sources"
 mkdir -p "$sources/FeatureModels" "$sources/Features"
 printf '@Observable\npublic final class CaseModel {\n    public let input: Input\n\n    let dependencies: Dependencies\n}\n' >"$sources/FeatureModels/CaseModel.swift"
@@ -557,12 +529,9 @@ cp "$gradle/featuremodels/src/main/kotlin/model/CaseModel.kt" "$gradle/app/src/m
 design_case 2 "Kotlin で画面と同じモジュールにモデルがあれば、input への代入を止める" "$gradle/app/src/main/kotlin/view/CaseView.kt" "$writes" "CaseView.kt:2: モデルの input に、モデルの外から書かない"
 rm -rf "$gradle/app" "$gradle/featuremodels"
 
-# --- 画面の部品 ---
-# <まとまり> <宣言の行> の、入れ子の @Observable のクラスを 1 つ持つ Swift のモデル
 nested() {
     printf '%s' $'extension Case {\n    @MainActor\n    @Observable\n    final class '"$1"$' {\n        '"$2"$'\n    }\n}'
 }
-# <まとまり> <宣言の行> の、入れ子のクラスを 1 つ持つ Kotlin のモデル
 kotlin_nested() {
     printf '%s' $'class Case {\n    val state = State()\n\n    class '"$1"$' {\n        '"$2"$'\n            private set\n    }\n}'
 }
@@ -597,7 +566,6 @@ design_case 2 "Kotlin の State の isSaving を止める" "$kotlin" "$(kotlin_n
 design_case 2 "Kotlin の State の開閉の Boolean は、裸の値として止める" "$kotlin" "$(kotlin_nested State 'var isScheduleOpen: Boolean by mutableStateOf(false)')" "Case の State の直下に、裸の値を置かない: isScheduleOpen（Boolean）"
 design_case 0 "Kotlin の Output の読み込みの印は見ない" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val isLoaded: Boolean\n            get() = true\n    }\n}'
 
-# --- State の枠 ---
 slots="Case の State で、画面が書く public var は fields と presented だけにする"
 slot="Case の State の枠"
 design_case 2 "State の、枠でない public var を止める" "$parts" "$(nested State 'public var count = 0')" "Case+State.swift:5: ${slots}: count。ほかは public let か public internal(set) にして、モデルが書く"
@@ -642,7 +610,6 @@ design_case 0 "部品の型を返す読み口は見ない" "$parts" "$(nested St
 design_case 0 "State でない入れ子のクラスの部品の型は見ない" "$features/Case+Input.swift" "$(nested Input 'let child: ChildModel')"
 rm -f "$features/Case+Input.swift"
 rm -f "$parts"
-# <宣言の行> の、State を 1 つ持つ Kotlin のモデル
 kotlin_state() {
     printf '%s' $'class Case {\n    val state = State()\n\n    class State {\n        '"$1"$'\n    }\n}'
 }
@@ -674,8 +641,6 @@ design_case 2 "Kotlin の State の、引数の部品の型も止める" "$kotli
 design_case 0 "Kotlin の State の、枠の中の部品の型は見ない" "$kotlin" "$(kotlin_state $'val notices = Notices(wait)\n\n        class Notices(wait: ScreenWait) {\n            val error = ErrorNotice(wait)\n        }')"
 design_case 0 "Kotlin の State の、get() の読み口は見ない" "$kotlin" "$(kotlin_state $'override val errorNotice: ErrorNotice\n            get() = notices.error\n        val error: ErrorNotice get() = notices.error')"
 
-# --- fields の読み出し ---
-# 同じモジュールの、画面でないファイルの fields.<名前> を読んだと見る
 module="$work/slots/Sources/Models"
 mkdir -p "$module"
 printf '%s\n' '@MainActor' '@Observable' 'final class Case {' '    let state = State()' '}' >"$module/Case.swift"
@@ -705,7 +670,6 @@ rm -f "$android/src/main/kotlin/CaseDraft.kt"
 design_case 0 "Kotlin の、ScreenEditable の無い data class Fields は見ない" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val memo: String,\n)'
 rm -rf "$work/slots"
 
-# --- 基準線 ---
 base="$work/base"
 mkdir -p "$base/Sources"
 git -C "$base" init -q

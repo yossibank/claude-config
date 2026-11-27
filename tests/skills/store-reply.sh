@@ -261,7 +261,6 @@ EOF
 )
 check "write_json: 書いたファイルは 0644 にする" test "$mode" == 0o644
 
-# 署名の DER を読む処理（lib/store_api.py）
 der=$(python3 -I - "$root" 2>&1 <<'EOF'
 import base64
 import os

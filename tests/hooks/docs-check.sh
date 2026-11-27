@@ -11,7 +11,6 @@ doc_case() {
     hook_case docs-check "$expect" "$label" "$work/docs-case/$name" "$text" "$want"
 }
 mkdir -p "$work/docs-case/.git"
-# --- 文・段落・読点の数 ---
 doc_case 0 "短い文は通る" README.md $'# t\n\n短い文である。'
 doc_case 0 "直下ではない README には文の段落を書ける" sub/README.md $'# t\n\nあ。\n\n## 🚀 入れ方\n\n次のコマンドで入れる。'
 doc_case 2 "コードも一文の字数に数える" README.md $'# t\n\n`/very/long/path/that/goes/on/and/on/and/on/and/on/x.sh` を走らせて結果を確かめる。'
@@ -22,14 +21,12 @@ doc_case 2 "段落は 3 文まで" README.md $'# t\n\n一つ目。二つ目。�
 doc_case 0 "一文の読点は 3 つまで通る" README.md $'# t\n\nあ、い、う、えを使う。'
 doc_case 2 "一文の読点が 4 つあれば止める" README.md $'# t\n\nあ、い、う、え、おを使う。' "読点は 3 つまで"
 doc_case 2 "表のセルは 2 文まで" README.md $'# t\n\n表は次のとおり。\n\n| a | b |\n| --- | --- |\n| x | 一つ。二つ。三つ。 |'
-# --- 絵文字と ## の見出し ---
 doc_case 2 "Claude が読む文書に絵文字を使わない" rules/x.md $'# t\n\n✅ 済んだ。'
 doc_case 0 "人が読む文書は表の絵文字を使える" README.md $'# t\n\n✅ 済んだ。'
 doc_case 2 "人が読む文書でも表に無い絵文字は使わない" README.md $'# t\n\n🎉 済んだ。'
 doc_case 2 "README の ## には絵文字を付ける" README.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 doc_case 2 "## の見出しの絵文字をそろえる" docs/x.md $'# t\n\n## 🚀 入れ方\n\nあ。\n\n## 決まり\n\nい。'
 
-# --- README と docs の形・タイトル直後・アラート ---
 note=$'# t\n\n> [!NOTE]\n> 分かる。\n'
 shields='![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)'
 icons='<img src="docs/images/tech.svg" alt="技術">'
@@ -94,7 +91,6 @@ doc_case 0 "決定の文書は理由の行を重ねてよい" docs/decisions/x.m
 doc_case 0 "条件を組み合わせる 3 列の表は 1 列目が重なってよい" rules/x.md $'# t\n\n案は次のとおり。\n\n| 決まり | 回数 | 案 |\n| --- | --- | --- |\n| 無い | 2 回 | 足す |\n| 無い | 1 回 | 待つ |'
 doc_case 0 "別の表なら 1 列目が同じでもよい" rules/x.md $'# t\n\n一つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 1 |\n\n二つ目の表。\n\n| a | b |\n| --- | --- |\n| x | 2 |'
 
-# --- 箇条書きと見出しの付け方 ---
 doc_case 2 "箇条書きを 1 項目に使わない" rules/x.md $'# t\n\nあ。\n\n- 一つだけの項目である。' "箇条書きを 1 項目に使わない"
 doc_case 2 "箇条書きを 2 項目に使わない" README.md $'# t\n\nあ。\n\n- りんご\n- みかん' "箇条書きを 2 項目に使わない"
 doc_case 2 "入れ子の 2 項目の箇条書きも止める" rules/x.md $'# t\n\nあ。\n\n1. 手順である。\n   - 語句\n   - 語句\n2. 次の手順である。' "箇条書きを 2 項目に使わない"
@@ -108,7 +104,6 @@ doc_case 2 "表のセルの敬体も止める" README.md $'# t\n\nあ。\n\n| a 
 doc_case 0 "コードの囲み・引用・インラインコードの敬体は止めない" rules/x.md $'# t\n\n`返します。` を出す。\n\n> 送ります。\n\n```text\nありがとうございます。\n```'
 doc_case 0 "「でした」で終わる常体は止めない" rules/x.md $'# t\n\n広い探索を自分でした。'
 
-# --- 一覧・敬体・HTML・斜体・スペース ---
 doc_case 0 "項目の下の字下げした段落とコードの囲みで一覧を切らない" README.md $'# t\n\nあ。\n\n- 一つ目\n\n  補足。\n\n  ```sh\n  ls\n  ```\n\n- 二つ目\n- 三つ目'
 doc_case 0 "冒頭の [!NOTE] のリンクだけの行は数えない" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> [README](../README.md)・[開発](development.md)'
 doc_case 2 "冒頭の [!NOTE] のリンクを含む文は数える" docs/x.md $'# t\n\n> [!NOTE]\n> 一つ。\n> 二つ。\n> 三つ。\n> 詳しくは [README](../README.md) にある。' "冒頭の [!NOTE] は 3 行まで"
@@ -139,7 +134,6 @@ doc_case 0 "docs の外のファイルは 15KB を超えてもよい" README.md 
 doc_case 2 "docs の ## には絵文字を付ける" docs/x.md "$note"$'\n## 入れ方\n\nあ。' "頭に絵文字を 1 つ付ける"
 doc_case 0 "節の多い decisions は ## の絵文字を付けないでそろえてよい" docs/decisions/x.md "$note"$'\n## 入れ方\n\nあ。\n\n## 使い方\n\nい。'
 
-# --- 読みやすさの検査（止める） ---
 cell=$(printf 'あ%.0s' {1..55})
 doc_case 2 "表の 1 行が 200 字を超えれば止める" rules/x.md $'# t\n\nあ。\n\n| a | b | c | d | e |\n| --- | --- | --- | --- | --- |\n| x | '"$cell | $cell | $cell | $cell |" "200 字を超えている"
 doc_case 0 "表の 1 行が 200 字までなら通る" rules/x.md $'# t\n\nあ。\n\n| a | b | c | d |\n| --- | --- | --- | --- |\n| x | '"$cell | $cell | $cell |"
@@ -157,7 +151,6 @@ doc_case 2 "2 列の表の 1 列目の頭に同じコードが続けば止める
 doc_case 0 "1 列目の頭のコードが違えば通る" rules/x.md $'# t\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `git` の整形 | 2 |'
 doc_case 0 "決定の文書は 1 列目の頭のコードを見ない" docs/decisions/x.md "$note"$'\n## 📏 保存\n\nあ。\n\n| a | b |\n| --- | --- |\n| `make` の検査 | 1 |\n| `make` の整形 | 2 |'
 
-# --- 人が読む文書の新しい表現 ---
 decision=$'**決定：保存する。**\n\n| 項目 | 内容 |\n| :---: | --- |\n| 💡 理由 | 速い |'
 doc_case 0 "理由と却下の表は通る" docs/decisions/x.md "$note"$'\n## 保存\n\n'"$decision"$'\n| ❌ 却下 | ~~毎回読む~~ 遅い |\n| ❌ 却下 | ~~書かない~~ 消える |'
 doc_case 2 "却下の行に取り消し線の案が無ければ止める" docs/decisions/x.md "$note"$'\n## 保存\n\n'"$decision"$'\n| ❌ 却下 | 毎回読む（遅い） |' "~~案の名前~~ 却下の理由"
@@ -181,8 +174,6 @@ doc_case 0 "脚注は通る" docs/x.md "$note"$'\n本文である[^1]。\n\n[^1]
 doc_case 0 "チェックボックスは通る" docs/x.md "$note"$'\n- [x] 済んだ作業\n- [ ] 残りの作業'
 doc_case 0 "列のそろえは通る" docs/x.md "$note"$'\n| 状態 | 金額 |\n| :---: | ---: |\n| ✅ 完了 | 1,000 |'
 
-# --- 知らせるだけの検査 ---
-# <当たる 1 か 0> <ラベル> <名前> <中身> <知らせる文>。止めずに通し、知らせる文が出るか出ないかを比べる
 advice_case() {
     local hit=$1 label=$2 path="$work/docs-case/$3" text=$4 want=$5 out status
     mkdir -p "$(dirname "$path")"
@@ -210,7 +201,6 @@ printf '%s' "$chain" >"$work/docs-case/rules/x.md"
 out=$(python3 -I "$root/dotclaude/hooks/docs-check.py" "$work/docs-case/rules/x.md" 2>&1)
 match "docs-check: 引数でファイルを渡した時は、知らせる文を JSON にしない" "$out" "文書の読みやすさで*rules/x.md:3: 「の」を*"
 
-# --- 読めない・壊れた入力 ---
 printf '# t\n\nあ。\n' >"$work/unreadable.md"
 chmod 000 "$work/unreadable.md"
 run docs-check 0 "docs-check: 読めないファイルは、落ちずに知らせて通す" "$(file_call "$work/unreadable.md")"
@@ -230,7 +220,6 @@ EOF
 match "docs-check: rules の表が読めない時は、検査を飛ばしたと systemMessage で知らせる" "$out" '*"systemMessage": "docs-check: /nonexistent/docs-core.md を読めない*'
 
 
-# --- lib の直接のテスト（md_doc） ---
 out=$(python3 -I - "$root" 2>&1 <<'EOF'
 import os
 exec(os.environ["PY_PRELUDE"])

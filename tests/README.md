@@ -10,6 +10,7 @@
 
 | テスト | 確かめること |
 | --- | --- |
+| [code-check-comments.sh](hooks/code-check-comments.sh) | コードと設定のコメントで止め、文字列・ヒアドキュメントの中と道具への指定は通すか。verify から呼ぶ時は NG で止めるか |
 | [code-design-check.sh](hooks/code-design-check.sh) | 大きさ・名前・状態の数と、モデル・画面・部品の形と、同じ形の外れで止め、上限ちょうどとテストのファイルは通すか。verify から呼ぶ時は、外れと想定外の失敗を NG で止めるか |
 | [ctx-limit-read.sh](hooks/ctx-limit-read.sh) | 大きいファイルを範囲なしで読む時だけ止めるか |
 | [docs-check.sh](hooks/docs-check.sh) | 文書の決まりに外れた時に止め、合う時は通すか |

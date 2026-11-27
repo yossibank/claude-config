@@ -1,5 +1,3 @@
-# <アプリ> <async|sync> で、画面のひな形が決めてかかる型を持つ、仮の Swift パッケージを作る
-# Core は Stamp と StampDraft、Store は GRDB を使わないメモリの AppDatabase を持つ
 screen_package() {
     local package=$1/ios/Packages/DemoApp calls=$2
     mkdir -p "$package/Sources/Core" "$package/Sources/Store"
@@ -79,7 +77,6 @@ public extension StampDraft {
 EOF
 }
 
-# 非同期の版の DB。関数は async で、一覧の見張りは AsyncSequence で返す
 screen_package_store_async() {
     cat <<'EOF'
 import Core
@@ -163,7 +160,6 @@ extension Storage {
 EOF
 }
 
-# 同期の版の DB。関数はどれも同期で、見張りを持たない
 screen_package_store_sync() {
     cat <<'EOF'
 import Core

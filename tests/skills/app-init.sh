@@ -66,7 +66,6 @@ hooks="$root/dotclaude/hooks"
 export TMPDIR="$work/state/"
 mkdir -p "$TMPDIR"
 
-# <アプリ> <フック>... で、アプリの make verify と同じファイルを検査に通す
 checked() {
     local app=$1 hook files=()
     shift
@@ -76,7 +75,6 @@ checked() {
     done
 }
 
-# <アプリ> で、Makefile の verify が画面の import Store を止める 1 行を、そのまま走らせる
 no_store() {
     local line
     line=$(grep -F 'verify.sh screens-no-store' "$1/Makefile") || return 1

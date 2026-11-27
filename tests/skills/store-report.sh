@@ -8,7 +8,6 @@ scripts="$root/dotclaude/skills/store-report/scripts"
 offline
 unset ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_PATH ASC_VENDOR_NUMBER
 
-# 分析のレポートの API（依頼・レポート・インスタンス・区切り）を、決まった中身で返す
 read -r -d '' ANALYTICS_FAKE_PY <<'PY' || true
 import gzip
 
@@ -191,7 +190,6 @@ check "write-report: 評価が取れなければ WARNING の行に書く" grep -
 check "write-report: 数字でないアプリの ID は通信せずに NG にする" grep -q "bar の評価は取れなかった（NG アプリの ID は数字で書く: abc）" <<<"$out"
 check "write-report: 取れなかった欄は — にする" grep -q '^| foo | — | — | — | — | — | — | — | — |$' <<<"$out"
 
-# 公開の境界（URL と応答）だけを差し替えて、表の数字まで通す
 ok_apps="$work/ok-apps"
 make_apps "$ok_apps" foo=123
 fake_report() {

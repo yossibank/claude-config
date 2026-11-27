@@ -68,7 +68,6 @@ jq -s -f "$root/lib/bin/config_install/settings.jq" "$settings" "$dotclaude/sett
 mv -f "$settings.tmp" "$settings.new"
 jq '.permissions.allow' "$dotclaude/settings.json" >|"$installed.new"
 
-# キーと配列の並びをそろえてから比べる。並びだけの違いでは置き換えを勧めない
 canonical='def canon: if type == "object" then to_entries | sort_by(.key) | map(.value |= canon) | from_entries elif type == "array" then map(canon) | sort_by(tojson) else . end; canon'
 jq "$canonical" "$settings" >|"$settings.old.sorted"
 jq "$canonical" "$settings.new" >|"$settings.new.sorted"

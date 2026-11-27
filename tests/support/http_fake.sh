@@ -1,8 +1,3 @@
-# 外との通信の境界（urllib.request.urlopen）を差し替える Python の部品と、App Store Connect の鍵
-# 使い方: export HTTP_FAKE_PY して、ドライバーの Python で exec(os.environ["HTTP_FAKE_PY"]) する。
-# install(route) の route は (メソッド, URL, 本文) を受け取り、JSON にできる値を返す。
-# 知らない URL は None を返す。URLError にして unknown に積むので、ドライバーが「UNKNOWN」を出す。
-# (コード, 文) の組を返すと HTTPError になる。
 read -r -d '' HTTP_FAKE_PY <<'PY' || true
 import io, json, urllib.error, urllib.request
 
@@ -53,7 +48,6 @@ def report_unknown():
 PY
 export HTTP_FAKE_PY
 
-# 署名できる App Store Connect の鍵を作って、ASC_* に入れる
 asc_keys() {
     openssl ecparam -name prime256v1 -genkey -noout -out "$work/asc-key.pem" 2>/dev/null
     export ASC_ISSUER_ID=issuer ASC_KEY_ID=key ASC_KEY_PATH="$work/asc-key.pem"

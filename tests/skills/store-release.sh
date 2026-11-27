@@ -141,7 +141,6 @@ expect "環境変数が無い" "create-custom-pages: --dry-run 無しで ASC_* �
 
 asc_keys
 
-# 引数: 案のあるリポジトリ、シナリオ（unapproved・existing・new）
 run_pages() {
     python3 -I - "$root" "$pages" "$repo" "$1" 2>&1 <<'EOF'
 import os

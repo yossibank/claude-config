@@ -82,6 +82,86 @@
         "hooks": [
           {
             "type": "command",
+            "if": "Edit(//**/*.kt)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.kt)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.kts)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.kts)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.sh)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.sh)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.swift)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.swift)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.toml)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.toml)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.yaml)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.yaml)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/*.yml)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/*.yml)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Edit(//**/Makefile)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
+            "if": "Write(//**/Makefile)",
+            "command": "bash \"$HOME/.claude/hooks/run.sh\" code-check-comments"
+          },
+          {
+            "type": "command",
             "if": "Edit(//**/*.md)",
             "command": "bash \"$HOME/.claude/hooks/run.sh\" docs-check"
           },

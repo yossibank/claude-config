@@ -1,5 +1,5 @@
-def mask(text):
-    """コメント・文字列・文字の中身を空白にし、行ごとの文字数を変えずに行の一覧で返す。"""
+def mask(text, comments=None):
+    """コメント・文字列・文字の中身を空白にし、行ごとの文字数を変えずに行の一覧で返す。comments を渡すと、コメントの行の番号と中身を足す。"""
     out = []
     stack = []
     block = 0
@@ -24,11 +24,13 @@ def mask(text):
             if text.startswith("//", i):
                 end = text.find("\n", i)
                 end = len(text) if end < 0 else end
+                note(comments, text, i, end)
                 out.append(" " * (end - i))
                 i = end
                 continue
             if text.startswith("/*", i):
                 block = 1
+                note(comments, text, i, text.find("\n", i))
                 out.append("  ")
                 i += 2
                 continue
@@ -83,3 +85,8 @@ def mask(text):
             out.append("\n" if c == "\n" else " ")
         i += 1
     return "".join(out).split("\n")
+
+
+def note(comments, text, start, end):
+    if comments is not None:
+        comments.append((text.count("\n", 0, start) + 1, text[start : end if end >= 0 else len(text)]))
