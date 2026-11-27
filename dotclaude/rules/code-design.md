@@ -309,6 +309,7 @@ Kotlin は、同じまとまりを次の形で書く。
 - `Fields` の読み出しは、宣言の行に `ScreenEditable` を書いた `Fields` だけを見る。Kotlin は、閉じかっこの行で見る。
 - 同じモジュールの画面でないファイルの `fields.<名前>` を、読んだと見る。モジュールを見分けられない時は、同じフォルダを見る。
 - Swift は、`Fields` の拡張と計算プロパティで使う語も、読んだと見る。
+- Kotlin は、`Fields` の本体・拡張・`with(fields)` の中で使う語も、読んだと見る。
 - 裸の値は、書かれた型か、`0`・`false`・`""`・`[String]()` などの初めの値で読む。`let` と `(set)` の別は問わない。
 - `@ObservationIgnored` の `private` の値は、仕組みの内側なので見ない。Kotlin は、`mutableStateOf` の `var` だけを見る。
 - 画面から `state` への書き込みは見ない。`fields` と `presented` への書き込みは、画面に許されているためである。

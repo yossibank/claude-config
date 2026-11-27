@@ -42,6 +42,8 @@ KOTLIN_CLASS = re.compile(r"^(?:(?:public|internal|private|abstract|open|data|se
 KOTLIN_FIELDS = re.compile(r"^(\s*)(?:(?:public|internal|private)\s+)?data\s+class\s+Fields\s*\(")
 KOTLIN_PARAMETER = re.compile(r"\b(?:val|var)\s+(\w+)\s*:")
 FIELDS_READ = re.compile(r"\bfields[?!]?\.(\w+)")
+KOTLIN_FIELDS_EXTENSION = re.compile(r"^(\s*)(?:(?:public|internal|private)\s+)?(?:fun|val|var)\s+(?:<[^>]*>\s+)?(?:\w+\.)*Fields\.")
+KOTLIN_WITH_FIELDS = re.compile(r"^(\s*).*\bwith\s*\([\w.?!]*\bfields\)\s*\{\s*$")
 
 
 def swift_kind(kind, value):
@@ -182,6 +184,22 @@ def own_uses(code):
     return words
 
 
+def kotlin_own_uses(code):
+    """Fields の本体・Fields の拡張・with(fields) の中で使う語。Fields を通して読む値は、モデルが読んでいると見る。"""
+    words = set()
+    for index, line in enumerate(code):
+        if found := KOTLIN_FIELDS.match(line):
+            close = next((at for at in range(index + 1, len(code)) if code[at].startswith(found.group(1) + ")")), index) if line.rstrip().endswith("(") else index
+            if code[close].rstrip().endswith("{"):
+                words |= {word for at in range(close + 1, block_end(code, close, found.group(1))) for word in re.findall(r"\w+", code[at])}
+        elif found := KOTLIN_FIELDS_EXTENSION.match(line) or KOTLIN_WITH_FIELDS.match(line):
+            end = block_end(code, index, found.group(1)) if line.rstrip().endswith("{") else index + 1
+            words |= {word for at in range(index, end) for word in re.findall(r"\w+", code[at])}
+            if not line.rstrip().endswith("{") and index + 1 < len(code) and code[index + 1].startswith(found.group(1) + "    "):
+                words |= set(re.findall(r"\w+", code[index + 1]))
+    return words
+
+
 @functools.cache
 def model_reads(folder, suffix):
     """フォルダの下の、画面でないファイルが fields.<名前> で読む名前と、Fields が自分で使う語を返す。"""
@@ -199,6 +217,7 @@ def model_reads(folder, suffix):
             code = kotlin_source.mask(text)
             if any(COMPOSABLE.search(line) for line in code):
                 continue
+            reads |= kotlin_own_uses(code)
         reads |= {name for line in code for name in FIELDS_READ.findall(line)}
     return frozenset(reads)
 

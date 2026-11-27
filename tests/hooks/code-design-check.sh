@@ -671,6 +671,12 @@ mkdir -p "$android/src/main/kotlin"
 touch "$android/build.gradle.kts"
 printf '%s\n' 'class CaseOutput(private val state: CaseModel.State) {' '    val draft: Draft' '        get() = Draft(name = state.fields.name)' '}' >"$android/src/main/kotlin/CaseOutput.kt"
 design_case 2 "Kotlin のモデルが読まない fields の値を止める" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val name: String,\n    val memo: String,\n) : ScreenEditable' "CaseFields.kt:3: ${unread}"
+design_case 0 "Kotlin の Fields の本体が使う値は、読んだと見る" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val name: String,\n    val memo: String,\n) : ScreenEditable {\n    val trimmed: String get() = memo.trim()\n}'
+printf '%s\n' 'fun Fields.toDraft(): Draft {' '    return Draft(memo)' '}' >"$android/src/main/kotlin/CaseDraft.kt"
+design_case 0 "Kotlin の Fields の拡張関数が使う値は、読んだと見る" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val name: String,\n    val memo: String,\n) : ScreenEditable'
+printf '%s\n' 'fun save(state: CaseModel.State) {' '    with(state.fields) {' '        print(memo)' '    }' '}' >"$android/src/main/kotlin/CaseDraft.kt"
+design_case 0 "Kotlin の with(fields) の中で使う値は、読んだと見る" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val name: String,\n    val memo: String,\n) : ScreenEditable'
+rm -f "$android/src/main/kotlin/CaseDraft.kt"
 design_case 0 "Kotlin の、ScreenEditable の無い data class Fields は見ない" "$android/src/main/kotlin/CaseFields.kt" $'data class Fields(\n    val memo: String,\n)'
 rm -rf "$work/slots"
 
