@@ -5,10 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import __core__.__Item__
 import __draft__.__Item__Draft
+import __base__.ErrorNotice
 import __base__.ModelTask
 import __base__.ScreenClock
+import __base__.ScreenEditable
 import __base__.ScreenOutcome
 import __base__.ScreenPerforming
+import __base__.ScreenWait
 import __base__.Shown
 import __store__.AppDatabase
 import kotlinx.coroutines.CancellationException
@@ -16,9 +19,10 @@ import kotlinx.coroutines.CancellationException
 class __Screen__Model(
     database: AppDatabase,
     clock: ScreenClock,
+    wait: ScreenWait,
     editing: __Item__?,
 ) : ScreenPerforming {
-    val state = State(name = editing?.name.orEmpty())
+    val state = State(name = editing?.name.orEmpty(), wait = wait)
     val input = Input(editing)
     val output = Output(input, state)
 
@@ -26,24 +30,37 @@ class __Screen__Model(
 
     class State(
         name: String,
+        wait: ScreenWait,
     ) {
+        val presented = Presented()
+        val notices = Notices(wait)
+        val task = ModelTask()
         val outcome = ScreenOutcome<__Item__>()
-        val prompt = Shown<Prompt>()
-        val saving = ModelTask()
 
-        var name: String by mutableStateOf(name)
+        var fields: Fields by mutableStateOf(Fields(name = name))
             private set
 
-        var failureMessage: String? by mutableStateOf(null)
-            internal set
-
-        fun rename(name: String) {
-            this.name = name
+        fun updateFields(change: Fields.() -> Fields) {
+            fields = fields.change()
         }
+    }
+
+    data class Fields(
+        val name: String,
+    ) : ScreenEditable
+
+    class Presented : ScreenEditable {
+        val prompt = Shown<Prompt>()
     }
 
     enum class Prompt {
         Discard,
+    }
+
+    class Notices(
+        wait: ScreenWait,
+    ) {
+        val error = ErrorNotice(wait)
     }
 
     class Input(
@@ -57,10 +74,10 @@ class __Screen__Model(
         private val state: State,
     ) {
         val draft: __Item__Draft
-            get() = __Item__Draft(name = state.name)
+            get() = __Item__Draft(name = state.fields.name)
 
         val canSave: Boolean
-            get() = draft.problems.isEmpty() && !state.saving.isRunning && state.outcome.value == null
+            get() = draft.problems.isEmpty() && !state.task.isRunning && state.outcome.value == null
 
         val isChanged: Boolean
             get() = draft != input.baseline
@@ -77,7 +94,7 @@ class __Screen__Model(
         }
 
         try {
-            val saved = state.saving.attempt {
+            val saved = state.task.attempt {
                 dependencies.database.save__Item__(
                     draft = output.draft,
                     editing = input.editing,
@@ -89,7 +106,7 @@ class __Screen__Model(
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
-            state.failureMessage = saveFailed
+            state.notices.error.show(saveFailed)
         }
     }
 }

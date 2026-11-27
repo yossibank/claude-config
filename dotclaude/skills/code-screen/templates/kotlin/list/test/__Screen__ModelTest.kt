@@ -3,11 +3,13 @@ package __testPackage__
 import androidx.compose.runtime.snapshots.Snapshot
 import __core__.__Item__
 import __draft__.__Item__Draft
+import __base__.ScreenWait
 import __modelPackage__.__Screen__Model
 import __store__.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.Test
@@ -20,7 +22,7 @@ import kotlin.test.assertTrue
 class __Screen__ModelTest {
     @Test
     fun showsNothingBeforeLoading() = runTest {
-        val model = __Screen__Model(database = AppDatabase.inMemory())
+        val model = listModel(AppDatabase.inMemory())
 
         assertTrue(model.output.items.isEmpty())
         assertFalse(model.output.isLoaded)
@@ -30,19 +32,19 @@ class __Screen__ModelTest {
     fun loadsSavedItems() = runTest {
         val database = AppDatabase.inMemory()
         database.save(name = "見本")
-        val model = __Screen__Model(database = database)
+        val model = listModel(database)
 
         model.load()
 
         assertEquals(listOf("見本"), model.output.items.map { it.name })
         assertTrue(model.output.isLoaded)
-        assertNull(model.state.failureMessage)
+        assertNull(model.state.notices.error.message)
     }
 
     @Test
     fun followsChanges() = runTest {
         val database = AppDatabase.inMemory()
-        val model = __Screen__Model(database = database)
+        val model = listModel(database)
 
         backgroundScope.launch { model.run() }
         database.save(name = "見本")
@@ -55,7 +57,7 @@ class __Screen__ModelTest {
     fun removesAndSendsOutcome() = runTest {
         val database = AppDatabase.inMemory()
         val saved = database.save(name = "見本")
-        val model = __Screen__Model(database = database)
+        val model = listModel(database)
         model.load()
 
         model.remove(saved)
@@ -70,6 +72,11 @@ private const val waitMillis = 5L
 private const val waitRounds = 1_000
 
 private val now: Instant = Instant.ofEpochSecond(1_791_000_000)
+
+private fun TestScope.listModel(database: AppDatabase) = __Screen__Model(
+    database = database,
+    wait = ScreenWait(scope = backgroundScope, sleep = {}),
+)
 
 private suspend fun AppDatabase.save(name: String): __Item__ = save__Item__(
     draft = __Item__Draft(name = name),

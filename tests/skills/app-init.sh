@@ -84,7 +84,7 @@ no_store() {
     (cd "$1" && eval "${line//\$\$/\$}")
 }
 
-for name in ScreenClock ScreenOutcome ScreenParts ScreenPerforming ScreenEditable Shown ModelTask Loadable; do
+for name in ScreenClock ScreenOutcome ScreenParts ScreenPerforming ScreenEditable Shown ModelTask Loadable ScreenWait ErrorNotice; do
     check "土台: $name を、code-screen のひな形と同じ中身で置く" cmp -s "$models/Shared/Model/$name.swift" "$screen_base/model/$name.swift"
     check "土台: $name の名前が、共通の部品の一覧にある" grep -q "^| \`$name\` " "$demo/docs/architecture-parts.md"
 done

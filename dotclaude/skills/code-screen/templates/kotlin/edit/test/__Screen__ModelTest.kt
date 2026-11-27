@@ -3,8 +3,10 @@ package __testPackage__
 import __core__.__Item__
 import __draft__.__Item__Draft
 import __base__.ScreenClock
+import __base__.ScreenWait
 import __modelPackage__.__Screen__Model
 import __store__.AppDatabase
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import java.time.Instant
@@ -17,7 +19,7 @@ class __Screen__ModelTest {
     @Test
     fun refusesToSaveWithoutName() = runTest {
         val database = AppDatabase.inMemory()
-        val model = database.editModel(editing = null)
+        val model = editModel(database, editing = null)
 
         model.save()
 
@@ -29,21 +31,21 @@ class __Screen__ModelTest {
     @Test
     fun savesAndSendsOutcome() = runTest {
         val database = AppDatabase.inMemory()
-        val model = database.editModel(editing = null)
-        model.state.rename("見本")
+        val model = editModel(database, editing = null)
+        model.state.updateFields { copy(name = "見本") }
 
         model.save()
 
         assertEquals("見本", model.state.outcome.value?.name)
         assertEquals(listOf("見本"), database.__item__List().map { it.name })
-        assertNull(model.state.failureMessage)
+        assertNull(model.state.notices.error.message)
     }
 
     @Test
     fun savesOnceWhenSavedTwice() = runTest {
         val database = AppDatabase.inMemory()
-        val model = database.editModel(editing = null)
-        model.state.rename("見本")
+        val model = editModel(database, editing = null)
+        model.state.updateFields { copy(name = "見本") }
 
         model.save()
         model.save()
@@ -56,8 +58,8 @@ class __Screen__ModelTest {
     fun savesEditedItemInPlace() = runTest {
         val database = AppDatabase.inMemory()
         val saved = database.save(name = "見本")
-        val model = database.editModel(editing = saved)
-        model.state.rename("直した見本")
+        val model = editModel(database, editing = saved)
+        model.state.updateFields { copy(name = "直した見本") }
 
         model.save()
 
@@ -68,12 +70,12 @@ class __Screen__ModelTest {
     fun reportsChangeAgainstOpenedDraft() = runTest {
         val database = AppDatabase.inMemory()
         val saved = database.save(name = "見本")
-        val model = database.editModel(editing = saved)
+        val model = editModel(database, editing = saved)
 
         val opened = model.output.isChanged
-        model.state.rename("直した見本")
+        model.state.updateFields { copy(name = "直した見本") }
         val typed = model.output.isChanged
-        model.state.rename("見本")
+        model.state.updateFields { copy(name = "見本") }
 
         assertFalse(opened)
         assertTrue(typed)
@@ -83,9 +85,13 @@ class __Screen__ModelTest {
 
 private val now: Instant = Instant.ofEpochSecond(1_791_000_000)
 
-private fun AppDatabase.editModel(editing: __Item__?) = __Screen__Model(
-    database = this,
+private fun TestScope.editModel(
+    database: AppDatabase,
+    editing: __Item__?,
+) = __Screen__Model(
+    database = database,
     clock = ScreenClock.fixed(now),
+    wait = ScreenWait(scope = backgroundScope, sleep = {}),
     editing = editing,
 )
 

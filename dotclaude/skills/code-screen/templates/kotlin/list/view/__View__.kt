@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import __core__.__Item__
 import __modelPackage__.__Screen__Model
+import __base__.ScreenWait
 import __base__.perform
 import __viewBase__.OnOutcome
 import __store__.AppDatabase
@@ -34,7 +35,7 @@ fun __View__(
     onRemove: (__Item__) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val model = remember(database) { __Screen__Model(database = database) }
+    val model = remember(database) { __Screen__Model(database = database, wait = ScreenWait.system) }
     val layout = remember { Layout() }
     val density = LocalDensity.current
 
@@ -52,14 +53,14 @@ fun __View__(
             items(model.output.items) { item ->
                 ItemRow(
                     item = item,
-                    onOpen = { model.state.editing.show(item) },
+                    onOpen = { model.state.presented.editing.show(item) },
                     onRemove = { model.perform { it.remove(item) } },
                 )
             }
         }
 
         Text(
-            text = model.state.failureMessage.orEmpty(),
+            text = model.state.notices.error.message ?: model.output.statusMessage.orEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)

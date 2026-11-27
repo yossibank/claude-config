@@ -31,7 +31,7 @@ Swift と Kotlin のコードを読み書きする時に読み込まれる決ま
 
 | まとまり | 型 | 持つもの |
 | --- | --- | --- |
-| `state` | `@Observable` のクラス `State` | 人の操作で変わる値と、表示中のもの |
+| `state` | `@Observable` のクラス `State` | 人の操作で変わる値と、表示中のもの。中は「画面の部品」の枠で組む |
 | `input` | `@Observable` のクラス `Input` | DB から来る値と、最初に渡されて変わらない値。DB から読んで人が選んで保存する値も、ここに置く |
 | `output` | クラス `Output` | `input` と `state` から計算で出す値 |
 | `dependencies` | 構造体 `Dependencies` | DB と時計 |
@@ -55,11 +55,31 @@ Swift と Kotlin のコードを読み書きする時に読み込まれる決ま
 | `Output` と時刻 | 日付で足りる時は、`state` の今日を使う。時刻が要る時は、モデルの関数が引数で渡す |
 | 見せない持ち物 | 進行中の処理や頼み直しの控えは、見張らない値にする。画面から触れない所に置く |
 
+`State` の枠に入らない値は、種類で行き先を決める。
+
+| 値の種類 | 例 | 行き先 |
+| --- | --- | --- |
+| 外から渡される値 | `today` | `input` |
+| ほかの値から計算できる値 | 合計・出してよいか | `output` |
+| 表示中のものの一部 | 光らせる項目 | `presented` |
+| 時間で消える物 | 消した検索履歴の取り消し | `notices` |
+| 一緒に変わる値 | 期間の位置と進む向き | 振る舞いを持つ値の型。`State` の直下に 1 つ置く |
+| 1 つだけの途中の値 | 待っている日付 | 意味の名前の値の型（例: `PendingDay`）。enum の値は、先に `presented` などを考える |
+
+`State` の直下には、次の物だけを置く。
+
+| 置ける物 | 決まり |
+| --- | --- |
+| 枠と部品の型 | 枠と、`ObservationRound` などの部品の型 |
+| 振る舞いを持つ値の型 | 1 つの概念を 1 つのプロパティで持つ。書く範囲は、Swift は `private(set)` か `internal(set)` にする |
+| Kotlin の書く範囲 | 振る舞いを持つ値の型も、`private set` にする |
+| 裸の値 | 置かない。`Bool`・数・文字列・日付と、その Optional・配列・Set は、上の行き先に送る |
+
 Kotlin は、同じまとまりを次の形で書く。
 
 | まとまり | Kotlin の形 |
 | --- | --- |
-| `state` | 入れ子の `class State`。値は `mutableStateOf` の `var` で持つ |
+| `state` | 入れ子の `class State`。値は `private set` の `mutableStateOf` の `var` か、部品の `val` で持つ |
 | `input` | 入れ子の `class Input`。値は `internal set` の `mutableStateOf` で持ち、集まりは書き換えられない型にする |
 | `output` | 入れ子の `class Output`。`derivedStateOf` はここに置き、計算は拡張に分けてよい |
 | `dependencies` | `private val` で持ち、型は `private class Dependencies` にする。モデルの関数だけが使う |
@@ -111,15 +131,40 @@ Kotlin は、同じまとまりを次の形で書く。
 
 画面のモデルの決まった並びは、アプリの `Shared` の部品で書く。部品は、iOS と Android で同じ名前と意味にする。
 
+`State` は、決まった名前の枠だけで組む。どのモデルも同じ読み方になり、検査は名前で見る。
+
+| 枠 | 型 | 書く人 | 入れる物 |
+| --- | --- | --- | --- |
+| `fields` | `Fields`。`ScreenEditable` の struct で、Kotlin は data class | 画面 | 入力と選んでいる物。モデルが読む物に限る |
+| `presented` | `Presented`。`Shown` を名前付きで並べた `ScreenEditable` の型 | 画面 | シート・確認・パネル・開いている行など、表示中のもの全部 |
+| `notices` | `Notices`。`ErrorNotice`・`UndoNotice` を名前付きで並べた型 | モデル | 時間で消える知らせ全部。エラーは `notices.error` に置く |
+| `task` | `ModelTask` | モデル | 実行中の印と、二度押しの防ぎ |
+| `outcome` | `ScreenOutcome<Outcome>` | モデル | 画面への結果 |
+| `submodels` | `Submodels`。`State` が持つ小さいモデルを並べた struct | モデル | 電卓・アイコンの編集などのモデル |
+
+枠は、次の決まりで書く。枠に入らない値の行き先は、「モデルの形」の表にある。
+
+| 対象 | 決まり |
+| --- | --- |
+| 置く枠 | 要る枠だけを置く。小さいモデルは、`fields` と `notices` だけのように省いてよい |
+| 中身が 1 つの枠 | 1 つでも型で包む（例: `presented.sheet`）。どのモデルも同じ読み方にするため |
+| 枠の名前 | 表の名前は、表の型の値だけに使う。Optional にもしない |
+| Swift の書く範囲 | 画面が書く `fields`・`presented` だけを `public var` にする。ほかは `public let` か `public internal(set) var` にする |
+| Kotlin の書く範囲 | `var` はどれも `private set` にする。画面は、`updateFields` などの `State` の関数か、`Shown` の関数で書く |
+| 名前をそろえる | iOS と Android で、枠と中の値に同じ名前を使う |
+
+枠の中身と、ほかの決まった並びは、次の部品で書く。
+
 | 部品 | 使う所 | 使わない形 |
 | --- | --- | --- |
-| `ScreenEditable` | 画面が書いてよい値の型の印。`State` で画面から書ける値は、この印の型だけにする | 印の無い型の `public var`。Swift は `internal(set)`、Kotlin は `private set` にし、`State` の関数で書く |
-| `Shown<Value>` | 表示中のシート・確認・メニューを、1 つの値で持つ | 種類ごとの Bool。1 つの値と Bool の組 |
-| `ModelTask` | 保存などの実行中の印と、二度押しの防ぎ | `isSaving`・`isWorking` などの手書きの Bool |
+| `ScreenEditable` | 画面が書いてよい値の型の印。`Fields` と `Presented` に付ける | 印の無い型を、画面に書かせる |
+| `Shown<Value>` | 表示中のシート・確認・メニューを、1 つの値で持つ。`presented` に名前付きで並べる | 種類ごとの Bool。1 つの値と Bool の組 |
+| `ModelTask` | 保存などの実行中の印と、二度押しの防ぎ。`task` の枠に置く | `isSaving`・`isWorking` などの手書きの Bool |
+| `ErrorNotice` | 時間で消えるエラーの知らせ。`notices.error` に置く | `failureMessage` などの文字を、`State` に置く |
 | `EditFlow`・`EditFlowSource` | 編集シートの閉じる・捨てる確認・保存・隠す・消すと、その結果 | 編集のモデルごとに書く、確認と保存の流れ |
 | `editSheet`・`EditSheet` | 画面で、編集シートの確認一式と結果を受ける | 編集の画面ごとに並べる確認 |
 | `Loadable<Value>` | 読み込み中・読めた・失敗を、1 つの値で持つ | 値と、`isLoaded`・`isListFailed` などの印の組 |
-| `UndoNotice<Item>`・`ScreenWait` | 取り消しの知らせの値と、消すまでの時間を、モデルが持つ | 画面で時間を数える |
+| `UndoNotice<Item>`・`ScreenWait` | 取り消しの知らせの値と、消すまでの時間を、モデルが持つ。`notices` に置く | 画面で時間を数える |
 | `ObservationRound` | DB の見張りをやり直す回。回が進むと、見張りを始め直す | 見張りごとの、やり直しの印 |
 | `TabScreen` | タブの外枠と、読めなかった時の画面 | タブごとに書く外枠 |
 | 子の結果の受け口 | 子の画面の結果を、親のモデルの関数（`receive(...)`）で受ける | 画面が親の `state` に直に書く |
@@ -218,7 +263,11 @@ Kotlin は、同じまとまりを次の形で書く。
 | 画面の部品 | 入れ子の `State` の Bool に、`isShowing〜`・`isConfirming〜` などが無いか | |
 | 画面の部品 | 入れ子の `Input` の Bool に、`isLoaded`・`is〜ListFailed` などが無いか | |
 | 画面の部品 | 入れ子の `State` の Bool に、`isSaving`・`isWorking`・`working` などが無いか | |
-| 画面の部品 | 入れ子の `State` で、画面が書ける値の型が `ScreenEditable` か。Swift は `public var`、Kotlin は set を閉じない `mutableStateOf` を見る | |
+| 画面の部品 | Swift の入れ子の `State` の `public var` が、`fields` と `presented` だけか。`(set)` を閉じた物は除く | |
+| 画面の部品 | Kotlin の入れ子の `State` の `var` が、`private` か `private set` か。引数の `var` も見る | |
+| 画面の部品 | 入れ子の `State` で、枠の名前を持つ値が枠の型か。`fields` は `Fields` のように見る | |
+| 画面の部品 | `ScreenEditable` の `Fields` の値を、同じモジュールの画面でないファイルが `fields.<名前>` で読むか | |
+| 画面の部品 | 入れ子の `State` の直下に、`Bool`・数・文字列・日付が無いか。その Optional・配列・Set も見る | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
 
@@ -255,11 +304,15 @@ Kotlin は、同じまとまりを次の形で書く。
 - 表示の名前は、`show〜Sheet` のような、シートなどの語で終わる物も見る。`isScheduleOpen` は通す。
 - `State` の読んだ印は、`isLoaded`・`isLoadFailed`・`is〜ListFailed` だけを見る。`isHomeLoaded` のような合図は通す。
 - 実行中の名前は、型が Bool の物だけを見る。どの処理かを持つ `working: Work?` は通す。
-- 画面が書ける値の型は、書かれた型か、初めの値の呼び出しの名前で読む。`Shown<…>` のようなジェネリクスは、頭の名前で見る。
-- `ScreenEditable` の適合は、渡したファイルとその隣のファイルの、型の宣言と拡張から集める。
-- 宣言の見つからない型は、適合が分からないので止めない。標準の型と、集めた範囲で印の無い型を止める。
-- Swift の Optional・配列・辞書と、`where` で条件の付く適合は、中の型で見る。
-- 画面から `state` への書き込みは見ない。印の型への書き込みは、画面に許されているためである。
+- 枠の型は、書かれた型か、初めの値の呼び出しの名前で読む。ジェネリクスは頭の名前で見て、読めない値は見ない。
+- 枠の型が `Fields` などの名前かだけを見る。`Fields` と `Presented` が `ScreenEditable` に適合するかは見ない。
+- `Fields` の読み出しは、宣言の行に `ScreenEditable` を書いた `Fields` だけを見る。Kotlin は、閉じかっこの行で見る。
+- 同じモジュールの画面でないファイルの `fields.<名前>` を、読んだと見る。モジュールを見分けられない時は、同じフォルダを見る。
+- Swift は、`Fields` の拡張と計算プロパティで使う語も、読んだと見る。
+- Kotlin は、`Fields` の本体・拡張・`with(fields)` の中で使う語も、読んだと見る。
+- 裸の値は、書かれた型か、`0`・`false`・`""`・`[String]()` などの初めの値で読む。`let` と `(set)` の別は問わない。
+- `@ObservationIgnored` の `private` の値は、仕組みの内側なので見ない。Kotlin は、`mutableStateOf` の `var` だけを見る。
+- 画面から `state` への書き込みは見ない。`fields` と `presented` への書き込みは、画面に許されているためである。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
 - 型の保存プロパティ・init の引数の並び・`self.x = x` だけの行は、データの宣言なので数えない。
 - 注釈の行は、複数行の引数も含め、データの宣言として数えない。

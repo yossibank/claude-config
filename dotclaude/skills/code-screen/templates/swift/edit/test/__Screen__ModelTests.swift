@@ -33,7 +33,7 @@ struct __Screen__ModelTests {
 
         #expect(model.state.outcome.value?.name == "見本")
         #expect(stored.map(\.name) == ["見本"])
-        #expect(model.state.failureMessage == nil)
+        #expect(model.state.notices.error.message == nil)
     }
 
     @Test

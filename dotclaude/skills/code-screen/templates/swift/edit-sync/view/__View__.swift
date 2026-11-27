@@ -25,14 +25,14 @@ public struct __View__: View {
             TextField("名前", text: Bindable(model.state).fields.name)
                 .focused($isNameFocused)
 
-            Text(model.state.failureMessage ?? "")
+            Text(model.state.notices.error.message ?? "")
 
             buttons
         }
         .padding(16)
         .confirmationDialog(
             "保存せずに閉じますか",
-            isPresented: Bindable(model.state).prompt[.discard]
+            isPresented: Bindable(model.state).presented.prompt[.discard]
         ) {
             Button("保存せずに閉じる", role: .destructive) {
                 dismiss()
@@ -64,7 +64,7 @@ private extension __View__ {
 private extension __View__ {
     func close() {
         if model.output.isChanged {
-            model.state.prompt.show(.discard)
+            model.state.presented.prompt.show(.discard)
         } else {
             dismiss()
         }

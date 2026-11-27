@@ -11,9 +11,9 @@ struct __Screen__ModelTests {
         let setup = try Setup()
         let model = __Screen__Model(parts: setup.parts)
 
-        #expect(model.input.items.isEmpty)
+        #expect(model.output.items.isEmpty)
         #expect(model.output.isEmpty)
-        #expect(model.state.failureMessage == nil)
+        #expect(model.state.notices.error.message == nil)
     }
 
     @Test
@@ -22,7 +22,7 @@ struct __Screen__ModelTests {
         try setup.save("見本")
         let model = __Screen__Model(parts: setup.parts)
 
-        #expect(model.input.items.map(\.name) == ["見本"])
+        #expect(model.output.items.map(\.name) == ["見本"])
         #expect(!model.output.isEmpty)
     }
 
@@ -32,11 +32,11 @@ struct __Screen__ModelTests {
         let model = __Screen__Model(parts: setup.parts)
 
         try setup.save("見本")
-        let before = model.input.items
+        let before = model.output.items
         model.refresh()
 
         #expect(before.isEmpty)
-        #expect(model.input.items.map(\.name) == ["見本"])
+        #expect(model.output.items.map(\.name) == ["見本"])
     }
 
     @Test
@@ -63,7 +63,7 @@ struct __Screen__ModelTests {
         let stored = try setup.database.__item__List()
 
         #expect(model.state.outcome.value?.id == saved.id)
-        #expect(model.input.items.isEmpty)
+        #expect(model.output.items.isEmpty)
         #expect(stored.isEmpty)
     }
 }

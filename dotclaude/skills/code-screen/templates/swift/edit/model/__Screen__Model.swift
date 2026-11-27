@@ -16,7 +16,7 @@ public final class __Screen__Model: ScreenPerforming {
         editing item: __Item__? = nil
     ) {
         let name = item?.name ?? ""
-        let state = State(name: name)
+        let state = State(name: name, wait: parts.wait)
         let input = Input(editing: item, baseline: __Item__Draft(name: name))
 
         self.state = state
@@ -31,15 +31,19 @@ public extension __Screen__Model {
     @Observable
     final class State {
         public var fields: Fields
-        public var prompt = Shown<Prompt>()
+        public var presented = Presented()
 
-        public internal(set) var failureMessage: String?
         public internal(set) var outcome = ScreenOutcome<__Item__>()
 
-        public let saving = ModelTask()
+        public let notices: Notices
+        public let task = ModelTask()
 
-        init(name: String) {
+        init(
+            name: String,
+            wait: ScreenWait
+        ) {
             self.fields = Fields(name: name)
+            self.notices = Notices(wait: wait)
         }
     }
 
@@ -47,8 +51,21 @@ public extension __Screen__Model {
         public var name: String
     }
 
+    struct Presented: ScreenEditable {
+        public var prompt = Shown<Prompt>()
+    }
+
     enum Prompt: Hashable, Sendable {
         case discard
+    }
+
+    @MainActor
+    struct Notices {
+        public let error: ErrorNotice
+
+        init(wait: ScreenWait) {
+            self.error = ErrorNotice(wait: wait)
+        }
     }
 
     @MainActor
@@ -96,7 +113,7 @@ public extension __Screen__Model {
         }
 
         do {
-            let saved = try await state.saving.attempt {
+            let saved = try await state.task.attempt {
                 try await dependencies.database.save__Item__(
                     output.draft,
                     editing: input.editing?.id,
@@ -106,7 +123,7 @@ public extension __Screen__Model {
 
             state.outcome.send(saved)
         } catch {
-            state.failureMessage = Self.saveFailedMessage
+            state.notices.error.show(Self.saveFailedMessage)
         }
     }
 }
@@ -121,7 +138,7 @@ public extension __Screen__Model.Output {
     }
 
     var canSave: Bool {
-        draft.problems.isEmpty && !state.saving.isRunning && state.outcome.value == nil
+        draft.problems.isEmpty && !state.task.isRunning && state.outcome.value == nil
     }
 
     var isChanged: Bool {
