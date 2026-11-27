@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > どのスキルを、どの順に、誰が呼ぶかが分かる。
-> フックやエージェントは [components.md](components.md) にある。
+> フックは [hooks.md](hooks.md)、エージェントは [components.md](components.md) にある。
 
 ## 🗓️ 使う順
 

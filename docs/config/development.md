@@ -131,7 +131,7 @@
 4. lib に足した時は、[lib/README.md](../../lib/README.md) の表に行を足す。
 5. フックは、`dotclaude/settings.json` にも登録する。書き方は [スクリプトの書き方](#-スクリプトの書き方) の表にある。環境変数を足した時は、[components.md](../usage/components.md#-環境変数) の表に行を足す。
 6. `tests/<種類>/<名前>.sh` を足し、[tests/README.md](../../tests/README.md) の表に行を足す。
-7. [components.md](../usage/components.md) か [skills.md](../usage/skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
+7. [components.md](../usage/components.md)・[hooks.md](../usage/hooks.md)・[skills.md](../usage/skills.md) の表に行を足す。スキルは、skills.md の使う順の図にも足す。
 8. 文書を足したり書き換えたりする時は、[docs-core](../../dotclaude/rules/docs-core.md)・[docs-human](../../dotclaude/rules/docs-human.md)・[docs-app](../../dotclaude/rules/docs-app.md) の決まりに従う。
 9. [testing.md](testing.md#-動かし方) の `make verify` を通す。
 10. 止める検査を足す時は、[止める検査の入れ方](#-止める検査の入れ方) の順で PR を分ける。

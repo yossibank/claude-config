@@ -9,7 +9,7 @@ Claude Code の全リポジトリに共通の決まりを、`~/.claude` から�
 | 部品 | できること | 一覧 |
 | --- | --- | --- |
 | 決まり | 文書・Swift・報告の書き方を、当たるファイルを触る時に読み込ませる | [components.md](docs/usage/components.md#-決まり) |
-| フック | 決まりを読まずに進めた時や、確認の前に出そうとした時に止める、または書き方の外れを知らせる | [components.md](docs/usage/components.md#-フック) |
+| フック | 決まりを読まずに進めた時や、確認の前に出そうとした時に止める、または書き方の外れを知らせる | [hooks.md](docs/usage/hooks.md) |
 | スキル | 企画・PR・App Store・手入れを、決まった手順で進める | [skills.md](docs/usage/skills.md) |
 | エージェント | 探す・作る・確かめる仕事を、重さに合うモデルに任せる | [components.md](docs/usage/components.md#-エージェント) |
 | ひな形 | ビルドとテストが通る iOS アプリのリポジトリを作る | [ios-app](dotclaude/skills/app-init/templates/ios-app/) |
@@ -107,7 +107,8 @@ git clone https://github.com/yossibank/claude-config ~/Applications/AI/claude-co
 | [docs/config/improvements.md](docs/config/improvements.md) | claude-config を調べ直す時 | まだ直していない改善と、直さないと決めたこと |
 | [docs/config/layout.md](docs/config/layout.md) | ファイルを置く・分ける時 | フォルダの分け方、置ける場所、数が増えた時に分ける合図 |
 | [docs/config/testing.md](docs/config/testing.md) | claude-config を確かめる時 | make のコマンド・テストの置き方 |
-| [docs/usage/components.md](docs/usage/components.md) | 部品を知る時 | 決まり・フック・エージェント・スクリプト・環境変数 |
+| [docs/usage/components.md](docs/usage/components.md) | 部品を知る時 | 決まり・エージェント・スクリプト・環境変数 |
+| [docs/usage/hooks.md](docs/usage/hooks.md) | フックを知る時 | フックが呼ばれる時と動き、無効にする方法 |
 | [docs/usage/setup.md](docs/usage/setup.md) | 入れる時 | config-install.sh がすること、settings.json の混ぜ方 |
 | [docs/usage/skills.md](docs/usage/skills.md) | スキルを選ぶ時 | スキルを使う順と一覧 |
 | [dotclaude/README.md](dotclaude/README.md) | 配るものを探す時 | 配るものの種類と、一覧のある文書 |
