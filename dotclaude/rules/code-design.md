@@ -218,6 +218,7 @@ Kotlin は、同じまとまりを次の形で書く。
 | 画面の部品 | 入れ子の `State` の Bool に、`isShowing〜`・`isConfirming〜` などが無いか | |
 | 画面の部品 | 入れ子の `Input` の Bool に、`isLoaded`・`is〜ListFailed` などが無いか | |
 | 画面の部品 | 入れ子の `State` の Bool に、`isSaving`・`isWorking`・`working` などが無いか | |
+| 画面の部品 | 入れ子の `State` で、画面が書ける値の型が `ScreenEditable` か。Swift は `public var`、Kotlin は set を閉じない `mutableStateOf` を見る | |
 | 2 つ目を書く | 名前だけが違う同じ形の行が、別のファイルと続けて重なる数。テストと通し番号のファイルは除く | 19 行 |
 | 括った後 | Swift の `Shared` のプロトコルが、共通の部品の一覧にあるか。一覧がある時だけ見る | |
 
@@ -254,7 +255,10 @@ Kotlin は、同じまとまりを次の形で書く。
 - 表示の名前は、`show〜Sheet` のような、シートなどの語で終わる物も見る。`isScheduleOpen` は通す。
 - `State` の読んだ印は、`isLoaded`・`isLoadFailed`・`is〜ListFailed` だけを見る。`isHomeLoaded` のような合図は通す。
 - 実行中の名前は、型が Bool の物だけを見る。どの処理かを持つ `working: Work?` は通す。
-- `ScreenEditable` の印は見ない。シートの `enum` のような、印の無い型で許す物を見分けられないためである。
+- 画面が書ける値の型は、書かれた型か、初めの値の呼び出しの名前で読む。`Shown<…>` のようなジェネリクスは、頭の名前で見る。
+- `ScreenEditable` の適合は、渡したファイルとその隣のファイルの、型の宣言と拡張から集める。
+- 宣言の見つからない型は、適合が分からないので止めない。標準の型と、集めた範囲で印の無い型を止める。
+- Swift の Optional・配列・辞書と、`where` で条件の付く適合は、中の型で見る。
 - 画面から `state` への書き込みは見ない。印の型への書き込みは、画面に許されているためである。
 - 同じ形は名前を伏せて比べるので、名前を変えただけの写しも当たる。
 - 型の保存プロパティ・init の引数の並び・`self.x = x` だけの行は、データの宣言なので数えない。

@@ -48,6 +48,7 @@
 | [hook_messages.py](hook_messages.py) | フックが止める時の文の書き出し |
 | [hook_state.py](hook_state.py) | 状態フォルダの場所と名前、古い状態ファイルの掃除 |
 | [hooks/code_design_check/clones.py](hooks/code_design_check/clones.py) | 名前を伏せた行の形と、別のファイルと同じ形の検査 |
+| [hooks/code_design_check/editable.py](hooks/code_design_check/editable.py) | 入れ子の `State` で画面が書ける値が、`ScreenEditable` の型かの検査 |
 | [hooks/code_design_check/effect.py](hooks/code_design_check/effect.py) | 画面のファイルの見分けと、画面が始める `Task` の検査 |
 | [hooks/code_design_check/files.py](hooks/code_design_check/files.py) | ファイルの大きさ・名前と型・フォルダの中の数・共通の部品の一覧の検査 |
 | [hooks/code_design_check/flags.py](hooks/code_design_check/flags.py) | 入れ子の `State` と `Input` の、共通の部品で持つべき Bool の検査 |

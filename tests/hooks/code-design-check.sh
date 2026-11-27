@@ -347,8 +347,8 @@ design_case 2 "Kotlin で output 越しに input を読めば止める" "$kotlin
 # <State の var の数> <Boolean の数> の、4 つのまとまりの Kotlin のモデル
 grouped() {
     local out=$'class Case(database: AppDatabase) {\n    val state = State()\n    val input = Input()\n    val output = Output(input, state)\n\n    class State {\n' i
-    for ((i = 0; i < $1; i++)); do out+="        var value${i}: Int by mutableIntStateOf(0)"$'\n'; done
-    for ((i = 0; i < $2; i++)); do out+="        var flag${i}: Boolean by mutableStateOf(false)"$'\n'; done
+    for ((i = 0; i < $1; i++)); do out+="        var value${i}: Int by mutableIntStateOf(0)"$'\n            private set\n'; done
+    for ((i = 0; i < $2; i++)); do out+="        var flag${i}: Boolean by mutableStateOf(false)"$'\n            private set\n'; done
     out+=$'    }\n\n    class Input {\n        var list: List<Int> by mutableStateOf(emptyList())\n            internal set\n    }\n\n    class Output(\n        private val input: Input,\n        private val state: State,\n    ) {\n        val total: Int\n            get() = input.list.sum()\n    }\n}'
     printf '%s' "$out"
 }
@@ -574,8 +574,8 @@ design_case 2 "State の isShowing の Bool は Shown を使うよう止める" 
 design_case 2 "State の is〜Presented の Bool も止める" "$parts" "$(nested State 'var isSheetPresented: Bool')" "${shown}: isSheetPresented"
 design_case 2 "State の確認中の Bool も止める" "$parts" "$(nested State 'public var isConfirmingDelete = false')" "${shown}: isConfirmingDelete"
 design_case 2 "State の show〜Sheet の Bool も止める" "$parts" "$(nested State 'var showDeleteAlert = false')" "${shown}: showDeleteAlert"
-design_case 0 "State の開閉の Bool は、シートの名前でなければ通す" "$parts" "$(nested State 'public var isScheduleOpen = false')"
-design_case 0 "State の表示の設定の Bool は通す" "$parts" "$(nested State 'public var showsCents = false')"
+design_case 0 "State の開閉の Bool は、シートの名前でなければ通す" "$parts" "$(nested State 'public internal(set) var isScheduleOpen = false')"
+design_case 0 "State の表示の設定の Bool は通す" "$parts" "$(nested State 'public internal(set) var showsCents = false')"
 design_case 0 "State の Shown は通す" "$parts" "$(nested State 'public var presented = Shown<Presented>()')"
 design_case 0 "表示中のものの計算プロパティは通す" "$parts" "$(nested State $'var isShowingHelp: Bool {\n            presented.isShowing(.help)\n        }')"
 design_case 0 "Input の表示の名前の Bool は見ない" "$features/Case+Input.swift" "$(nested Input 'public internal(set) var isShowingHelp = false')"
@@ -596,6 +596,42 @@ design_case 2 "Kotlin の Input の isLoaded を止める" "$kotlin" "$(kotlin_n
 design_case 2 "Kotlin の State の isSaving を止める" "$kotlin" "$(kotlin_nested State 'var isSaving by mutableStateOf(false)')" "Case.kt:5: ${running}: isSaving"
 design_case 0 "Kotlin の State の開閉の Boolean は通す" "$kotlin" "$(kotlin_nested State 'var isScheduleOpen: Boolean by mutableStateOf(false)')"
 design_case 0 "Kotlin の Output の読み込みの印は見ない" "$kotlin" $'class Case {\n    val output = Output()\n\n    class Output {\n        val isLoaded: Boolean\n            get() = true\n    }\n}'
+
+# --- 画面が書ける値 ---
+# 印の宣言は、渡すファイルの隣に置く。1 ファイルだけ渡しても、隣のファイルから適合を集める
+marks="$features/CaseMarks.swift"
+printf '%s\n' 'public protocol ScreenEditable: Equatable, Sendable {}' 'public struct Shown<' '    Value: Equatable & Sendable' '>: ScreenEditable {}' 'extension Case {' '    struct Fields: Equatable {}' '    struct Draft {}' '}' 'extension Case.Fields: ScreenEditable {}' 'extension Optional: ScreenEditable where Wrapped: ScreenEditable {}' >"$marks"
+printf 'struct Elsewhere {}\n' >"$work/Elsewhere.swift"
+writes="Case の State で、画面が書ける値は ScreenEditable の型だけにする"
+design_case 2 "State の public var の Int を止める" "$parts" "$(nested State 'public var count = 0')" "Case+State.swift:5: ${writes}: count（Int）。ほかの値は internal(set) にして、State の関数で書く"
+design_case 2 "ScreenEditable に適合しない型の初期値を止める" "$parts" "$(nested State 'public var draft = Draft()')" "${writes}: draft（Draft）"
+design_case 2 "適合しない型の Optional を止める" "$parts" "$(nested State 'public var picked: Case.Draft?')" "${writes}: picked（Case.Draft?）"
+design_case 2 "標準の型の配列を止める" "$parts" "$(nested State 'public var names: [String] = []')" "${writes}: names（[String]）"
+design_case 0 "拡張で ScreenEditable に適合する Fields は通す" "$parts" "$(nested State 'public var fields = Fields()')"
+design_case 0 "ジェネリクスの Shown は通す" "$parts" "$(nested State 'public var presented = Shown<Sheet>()')"
+design_case 0 "where で適合する Optional は、中身が適合すれば通す" "$parts" "$(nested State 'public var fields: Fields?')"
+design_case 0 "State の internal(set) は通す" "$parts" "$(nested State 'public internal(set) var count = 0')"
+design_case 0 "State の private(set) は通す" "$parts" "$(nested State 'public private(set) var draft = Draft()')"
+design_case 0 "public でない State の var は見ない" "$parts" "$(nested State 'var count = 0')"
+design_case 0 "State の計算プロパティは見ない" "$parts" "$(nested State $'public var total: Int {\n            1\n        }')"
+design_case 0 "宣言の見つからない型は止めない" "$parts" "$(nested State 'public var today: LocalDate')"
+design_case 0 "隣でないファイルにある宣言は、分からないので止めない" "$parts" "$(nested State 'public var other = Elsewhere()')"
+rm -f "$parts" "$marks" "$work/Elsewhere.swift"
+# <宣言の行> の、State を 1 つ持つ Kotlin のモデル
+kotlin_state() {
+    printf '%s' $'class Case {\n    val state = State()\n\n    class State {\n        '"$1"$'\n    }\n}'
+}
+printf '%s\n' 'interface ScreenEditable' '' 'class Shown<Value : Any>(' '    current: Value? = null,' ') : ScreenEditable' '' 'class Fields(val name: String = "") : ScreenEditable' '' 'class Draft' >"$work/CaseMarks.kt"
+design_case 2 "Kotlin の State の、set の無い Int を止める" "$kotlin" "$(kotlin_state 'var count by mutableStateOf(0)')" "Case.kt:5: ${writes}: count（Int）。ほかの値は private set にして、State の関数で書く"
+design_case 2 "Kotlin の State の、適合しない型を止める" "$kotlin" "$(kotlin_state 'var draft: Draft by mutableStateOf(Draft())')" "${writes}: draft（Draft）"
+design_case 2 "Kotlin の State の、適合する型の null になる値を止める" "$kotlin" "$(kotlin_state 'var fields: Fields? by mutableStateOf(null)')" "${writes}: fields（Fields?）"
+design_case 0 "Kotlin の State の、ScreenEditable の値は通す" "$kotlin" "$(kotlin_state 'var fields by mutableStateOf(Fields())')"
+design_case 0 "Kotlin の State の、ジェネリクスの Shown は通す" "$kotlin" "$(kotlin_state 'var shown: Shown<Sheet> by mutableStateOf(Shown())')"
+design_case 0 "Kotlin の State の、internal set は通す" "$kotlin" "$(kotlin_state $'var count by mutableStateOf(0)\n            internal set')"
+design_case 0 "Kotlin の State の、private の var は通す" "$kotlin" "$(kotlin_state 'private var count by mutableStateOf(0)')"
+design_case 0 "Kotlin の State の、複数行の初期値の後ろの private set は通す" "$kotlin" "$(kotlin_state $'var draft: Draft by mutableStateOf(\n            Draft(),\n        )\n            private set')"
+design_case 0 "Kotlin の State の、宣言の見つからない型は止めない" "$kotlin" "$(kotlin_state 'var today: LocalDate by mutableStateOf(today)')"
+rm -f "$work/CaseMarks.kt"
 
 # --- 基準線 ---
 base="$work/base"
