@@ -231,7 +231,7 @@ ios/
 | `DesignSystem/Components/` | 部品の種類ごとのフォルダ |
 | `DesignSystem/Theme/` | 色・角の丸み・字体・文字の大きさ |
 | `FeatureModels/Screens/` | 画面のモデル。フォルダは `Features/Screens/` と同じ形にする |
-| `FeatureModels/Shared/` | 複数の画面で使うモデルと値の型。土台の型は `Model/` に置く |
+| `FeatureModels/Shared/` | 複数の画面で使うモデルと値の型。土台の型と、`state` の枠の部品は `Model/` に置く |
 | `Features/Screens/` | 画面ごとのフォルダ。タブの画面は `Tabs/` の下 |
 | `Features/Shared/` | 複数の画面で使う部品。役割ごとのフォルダ |
 | `FeaturesTests/` | 画面のモデルのテスト。`FeatureModels` と `Store` を読む |
@@ -243,7 +243,7 @@ ios/
 
 | ターゲット | 受け持つこと | 知らないこと |
 | --- | --- | --- |
-| FeatureModels | 画面のモデル。DB の読み書きと、画面に出す値の計算 | 画面の見た目、タブ、通知、ウィジェット |
+| FeatureModels | 画面のモデル。DB の読み書き、画面に出す値の計算、知らせを消す時を数えること | 画面の見た目、タブ、通知、ウィジェット |
 | Features | 1 つ 1 つの画面の表示と操作 | DB・ほかの画面・タブ・通知・ウィジェット |
 | AppFeature | タブ・シート・移動・起動時の処理と、通知とウィジェットへの反映 | DB、各画面の中身 |
 

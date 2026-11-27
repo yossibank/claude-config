@@ -31,7 +31,7 @@ Swift と Kotlin のコードを読み書きする時に読み込まれる決ま
 
 | まとまり | 型 | 持つもの |
 | --- | --- | --- |
-| `state` | `@Observable` のクラス `State` | 人の操作で変わる値と、表示中のもの |
+| `state` | `@Observable` のクラス `State` | 人の操作で変わる値と、表示中のもの。中は「画面の部品」の枠で組む |
 | `input` | `@Observable` のクラス `Input` | DB から来る値と、最初に渡されて変わらない値。DB から読んで人が選んで保存する値も、ここに置く |
 | `output` | クラス `Output` | `input` と `state` から計算で出す値 |
 | `dependencies` | 構造体 `Dependencies` | DB と時計 |
@@ -55,11 +55,22 @@ Swift と Kotlin のコードを読み書きする時に読み込まれる決ま
 | `Output` と時刻 | 日付で足りる時は、`state` の今日を使う。時刻が要る時は、モデルの関数が引数で渡す |
 | 見せない持ち物 | 進行中の処理や頼み直しの控えは、見張らない値にする。画面から触れない所に置く |
 
+`State` の枠に入らない値は、種類で行き先を決める。
+
+| 値の種類 | 例 | 行き先 |
+| --- | --- | --- |
+| 外から渡される値 | `today` | `input` |
+| ほかの値から計算できる値 | 合計・出してよいか | `output` |
+| 表示中のものの一部 | 光らせる項目 | `presented` |
+| 時間で消える物 | 消した検索履歴の取り消し | `notices` |
+| どれでもない、モデルだけが書く途中の値 | 待っている日付・閉じ始めた印 | `State` の直下。Swift は `internal(set)`、Kotlin は `private set` にする |
+| 途中の値の包み | | 作らない。途中の値をまとめる struct を、枠のほかに足さない |
+
 Kotlin は、同じまとまりを次の形で書く。
 
 | まとまり | Kotlin の形 |
 | --- | --- |
-| `state` | 入れ子の `class State`。値は `mutableStateOf` の `var` で持つ |
+| `state` | 入れ子の `class State`。値は `private set` の `mutableStateOf` の `var` か、部品の `val` で持つ |
 | `input` | 入れ子の `class Input`。値は `internal set` の `mutableStateOf` で持ち、集まりは書き換えられない型にする |
 | `output` | 入れ子の `class Output`。`derivedStateOf` はここに置き、計算は拡張に分けてよい |
 | `dependencies` | `private val` で持ち、型は `private class Dependencies` にする。モデルの関数だけが使う |
@@ -111,15 +122,40 @@ Kotlin は、同じまとまりを次の形で書く。
 
 画面のモデルの決まった並びは、アプリの `Shared` の部品で書く。部品は、iOS と Android で同じ名前と意味にする。
 
+`State` は、決まった名前の枠だけで組む。どのモデルも同じ読み方になり、検査は名前で見る。
+
+| 枠 | 型 | 書く人 | 入れる物 |
+| --- | --- | --- | --- |
+| `fields` | `Fields`。`ScreenEditable` の struct で、Kotlin は data class | 画面 | 入力と選んでいる物。モデルが読む物に限る |
+| `presented` | `Presented`。`Shown` を名前付きで並べた `ScreenEditable` の型 | 画面 | シート・確認・パネル・開いている行など、表示中のもの全部 |
+| `notices` | `Notices`。`ErrorNotice`・`UndoNotice` を名前付きで並べた型 | モデル | 時間で消える知らせ全部。エラーは `notices.error` に置く |
+| `task` | `ModelTask` | モデル | 実行中の印と、二度押しの防ぎ |
+| `outcome` | `ScreenOutcome<Outcome>` | モデル | 画面への結果 |
+| `submodels` | `Submodels`。`State` が持つ小さいモデルを並べた struct | モデル | 電卓・アイコンの編集などのモデル |
+
+枠は、次の決まりで書く。枠に入らない値の行き先は、「モデルの形」の表にある。
+
+| 対象 | 決まり |
+| --- | --- |
+| 置く枠 | 要る枠だけを置く。小さいモデルは、`fields` と `notices` だけのように省いてよい |
+| 中身が 1 つの枠 | 1 つでも型で包む（例: `presented.sheet`）。どのモデルも同じ読み方にするため |
+| 枠の名前 | 表の名前は、表の型の値だけに使う。Optional にもしない |
+| Swift の書く範囲 | 画面が書く `fields`・`presented` だけを `public var` にする。ほかは `public let` か `public internal(set) var` にする |
+| Kotlin の書く範囲 | `var` はどれも `private set` にする。画面は、`updateFields` などの `State` の関数か、`Shown` の関数で書く |
+| 名前をそろえる | iOS と Android で、枠と中の値に同じ名前を使う |
+
+枠の中身と、ほかの決まった並びは、次の部品で書く。
+
 | 部品 | 使う所 | 使わない形 |
 | --- | --- | --- |
-| `ScreenEditable` | 画面が書いてよい値の型の印。`State` で画面から書ける値は、この印の型だけにする | 印の無い型の `public var`。Swift は `internal(set)`、Kotlin は `private set` にし、`State` の関数で書く |
-| `Shown<Value>` | 表示中のシート・確認・メニューを、1 つの値で持つ | 種類ごとの Bool。1 つの値と Bool の組 |
-| `ModelTask` | 保存などの実行中の印と、二度押しの防ぎ | `isSaving`・`isWorking` などの手書きの Bool |
+| `ScreenEditable` | 画面が書いてよい値の型の印。`Fields` と `Presented` に付ける | 印の無い型を、画面に書かせる |
+| `Shown<Value>` | 表示中のシート・確認・メニューを、1 つの値で持つ。`presented` に名前付きで並べる | 種類ごとの Bool。1 つの値と Bool の組 |
+| `ModelTask` | 保存などの実行中の印と、二度押しの防ぎ。`task` の枠に置く | `isSaving`・`isWorking` などの手書きの Bool |
+| `ErrorNotice` | 時間で消えるエラーの知らせ。`notices.error` に置く | `failureMessage` などの文字を、`State` に置く |
 | `EditFlow`・`EditFlowSource` | 編集シートの閉じる・捨てる確認・保存・隠す・消すと、その結果 | 編集のモデルごとに書く、確認と保存の流れ |
 | `editSheet`・`EditSheet` | 画面で、編集シートの確認一式と結果を受ける | 編集の画面ごとに並べる確認 |
 | `Loadable<Value>` | 読み込み中・読めた・失敗を、1 つの値で持つ | 値と、`isLoaded`・`isListFailed` などの印の組 |
-| `UndoNotice<Item>`・`ScreenWait` | 取り消しの知らせの値と、消すまでの時間を、モデルが持つ | 画面で時間を数える |
+| `UndoNotice<Item>`・`ScreenWait` | 取り消しの知らせの値と、消すまでの時間を、モデルが持つ。`notices` に置く | 画面で時間を数える |
 | `ObservationRound` | DB の見張りをやり直す回。回が進むと、見張りを始め直す | 見張りごとの、やり直しの印 |
 | `TabScreen` | タブの外枠と、読めなかった時の画面 | タブごとに書く外枠 |
 | 子の結果の受け口 | 子の画面の結果を、親のモデルの関数（`receive(...)`）で受ける | 画面が親の `state` に直に書く |

@@ -29,12 +29,12 @@ flowchart LR
 | 置き場所 | `FeatureModels` の、画面と同じ名前のフォルダに置く。テストは `FeaturesTests` に置く |
 | 受け取るもの | DB と時計を包んだ `ScreenParts` を、init の引数で受け取る |
 | ほかの画面を開く | 開く関数は、Core の型だけを使う（`open<画面>(<型>.ID)`） |
-| 子の画面 | 開いている画面は、親のモデルの `state` の 1 つの値で持つ。子のモデルは、親のモデルの関数が作る |
+| 子の画面 | 開いている画面は、親のモデルの `state.presented` の 1 つの値で持つ。子のモデルは、親のモデルの関数が作る |
 | 設定の一覧 | 項目の enum を持つ。移る先は AppFeature が決める |
 | DB を見張る | `ValueObservation` で見張る。保存すると、見張っている画面が自動で変わる |
 | 見張りの書き方 | 画面のモデルが共通で持つ `observe(_:failure:receive:)` で書く。読めなかった時は、エラーのバナーに出す |
 | 最初の読み込み | 見張りと一緒に `run()` にまとめる。1 回だけ読む値を先に読み、見張りは並べて動かす |
-| 状態とモデルの形 | `dotclaude/rules/code-design.md` に従う。数の上限は、code-design-check が確かめる |
+| 状態とモデルの形 | `dotclaude/rules/code-design.md` に従う。`state` は、「画面の部品」の枠で組む |
 | 同じ種類の画面 | 一覧や編集の画面が 2 つ目になる時に、共通のプロトコルと部品に括ってから足す |
 
 新しい画面は、`code-screen` のスキルのひな形から足す。モデル・画面・テストが、この形で置かれる。
@@ -50,14 +50,16 @@ DB を同期で呼ぶアプリは、ひな形の同期の版を使う。見張�
 
 | 型・関数 | 役割 | 置き場所 |
 | --- | --- | --- |
-| `ScreenParts` | DB と時計を包んで、画面からモデルへ渡す。中の DB は `FeatureModels` だけが読む | `FeatureModels/Shared/Model/` |
+| `ScreenParts` | DB・時計・待ちを包んで、画面からモデルへ渡す。中の DB は `FeatureModels` だけが読む | `FeatureModels/Shared/Model/` |
 | `ScreenClock` | モデルの時計。今の時刻は、ここから受け取る | `FeatureModels/Shared/Model/` |
 | `ScreenPerforming` | 画面がモデルの async の関数を呼ぶ口。`perform` が `Task` を始める | `FeatureModels/Shared/Model/` |
 | `ScreenOutcome` | 保存できた・消した、の結果。モデルが `state` に置く | `FeatureModels/Shared/Model/` |
 | `onOutcome` | 画面が `ScreenOutcome` の変化を 1 か所で受ける modifier | `Features/Shared/Model/` |
-| `ScreenEditable` | 画面が書いてよい値の型の印。`State` の画面から書ける値は、この印の型だけにする | `FeatureModels/Shared/Model/` |
-| `Shown` | 表示中のシート・確認・メニューを、1 つの値で持つ | `FeatureModels/Shared/Model/` |
-| `ModelTask` | 保存などの実行中の印。二度押しは、呼ぶ側が `isRunning` で止める | `FeatureModels/Shared/Model/` |
+| `ScreenEditable` | 画面が書いてよい値の型の印。`state` の `fields` と `presented` の型に付ける | `FeatureModels/Shared/Model/` |
+| `Shown` | 表示中のシート・確認・メニューを、1 つの値で持つ。`presented` に名前付きで並べる | `FeatureModels/Shared/Model/` |
+| `ModelTask` | 保存などの実行中の印。`task` に置き、二度押しは呼ぶ側が `isRunning` で止める | `FeatureModels/Shared/Model/` |
+| `ScreenWait` | 知らせを消すまでの待ち。`ScreenParts` が持ち、テストでは差し替える | `FeatureModels/Shared/Model/` |
+| `ErrorNotice` | 時間で消えるエラーの知らせ。`notices.error` に置く | `FeatureModels/Shared/Model/` |
 | `Loadable` | 読み込み中・読めた・失敗を、1 つの値で持つ | `FeatureModels/Shared/Model/` |
 
 ほかの画面の部品と使い方は、`dotclaude/rules/code-design.md` の「画面の部品」にある。
