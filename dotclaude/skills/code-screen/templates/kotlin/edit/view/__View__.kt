@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import __core__.__Item__
 import __modelPackage__.__Screen__Model
 import __base__.ScreenClock
+import __base__.ScreenWait
 import __base__.perform
 import __viewBase__.OnOutcome
 import __store__.AppDatabase
@@ -32,6 +33,7 @@ fun __View__(
         __Screen__Model(
             database = database,
             clock = ScreenClock.system,
+            wait = ScreenWait.system,
             editing = editing,
         )
     }
@@ -45,17 +47,17 @@ fun __View__(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         TextField(
-            value = model.state.name,
-            onValueChange = { model.state.rename(it) },
+            value = model.state.fields.name,
+            onValueChange = { name -> model.state.updateFields { copy(name = name) } },
         )
 
-        Text(text = model.state.failureMessage.orEmpty())
+        Text(text = model.state.notices.error.message.orEmpty())
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             TextButton(
                 onClick = {
                     if (model.output.isChanged) {
-                        model.state.prompt.show(__Screen__Model.Prompt.Discard)
+                        model.state.presented.prompt.show(__Screen__Model.Prompt.Discard)
                     } else {
                         onClose()
                     }
@@ -76,9 +78,9 @@ fun __View__(
         }
     }
 
-    if (model.state.prompt.isShowing(__Screen__Model.Prompt.Discard)) {
+    if (model.state.presented.prompt.isShowing(__Screen__Model.Prompt.Discard)) {
         DiscardDialog(
-            onKeep = { model.state.prompt.close(__Screen__Model.Prompt.Discard) },
+            onKeep = { model.state.presented.prompt.close(__Screen__Model.Prompt.Discard) },
             onDiscard = onClose,
         )
     }

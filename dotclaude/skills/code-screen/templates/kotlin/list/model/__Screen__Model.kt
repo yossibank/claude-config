@@ -4,29 +4,42 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import __core__.__Item__
+import __base__.ErrorNotice
 import __base__.Loadable
+import __base__.ScreenEditable
 import __base__.ScreenOutcome
 import __base__.ScreenPerforming
+import __base__.ScreenWait
 import __base__.Shown
 import __store__.AppDatabase
 import kotlinx.coroutines.CancellationException
 
 class __Screen__Model(
     database: AppDatabase,
+    wait: ScreenWait,
 ) : ScreenPerforming {
-    val state = State()
+    val state = State(wait)
     val input = Input()
     val output = Output(input)
 
     private val dependencies = Dependencies(database)
 
-    class State {
+    class State(
+        wait: ScreenWait,
+    ) {
+        val presented = Presented()
+        val notices = Notices(wait)
         val outcome = ScreenOutcome<__Item__>()
+    }
 
+    class Presented : ScreenEditable {
         val editing = Shown<__Item__>()
+    }
 
-        var failureMessage: String? by mutableStateOf(null)
-            internal set
+    class Notices(
+        wait: ScreenWait,
+    ) {
+        val error = ErrorNotice(wait)
     }
 
     class Input {
@@ -83,7 +96,7 @@ class __Screen__Model(
             throw error
         } catch (_: Exception) {
             onFailure()
-            state.failureMessage = failure
+            state.notices.error.show(failure)
         }
     }
 }

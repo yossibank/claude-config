@@ -26,7 +26,7 @@ struct HomeModelTests {
 
         #expect(model.output.isLoaded)
         #expect(model.output.schemaVersion == 1)
-        #expect(model.state.failureMessage == nil)
+        #expect(model.state.notices.error.message == nil)
         #expect(model.state.outcome.value == Setup.now)
     }
 
@@ -38,8 +38,8 @@ struct HomeModelTests {
 
         await model.load()
 
-        #expect(!model.output.isLoaded)
-        #expect(model.state.failureMessage != nil)
+        #expect(model.output.isFailed)
+        #expect(model.state.notices.error.message != nil)
         #expect(model.state.outcome.value == nil)
     }
 }

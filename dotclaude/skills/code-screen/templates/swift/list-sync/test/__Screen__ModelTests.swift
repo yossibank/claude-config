@@ -13,7 +13,7 @@ struct __Screen__ModelTests {
 
         #expect(model.input.items.isEmpty)
         #expect(model.output.isEmpty)
-        #expect(model.state.failureMessage == nil)
+        #expect(model.state.notices.error.message == nil)
     }
 
     @Test

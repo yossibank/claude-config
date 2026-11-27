@@ -46,7 +46,7 @@ extension __View__ {
 
 private extension __View__ {
     var header: some View {
-        Text(model.state.failureMessage ?? "")
+        Text(model.state.notices.error.message ?? "")
             .frame(maxWidth: .infinity)
             .padding(16)
             .onGeometryChange(for: CGFloat.self) { proxy in
@@ -59,7 +59,7 @@ private extension __View__ {
     func row(_ item: __Item__) -> some View {
         HStack(spacing: 8) {
             Button(item.name) {
-                model.state.editing.show(item.id)
+                model.state.presented.editing.show(item.id)
             }
 
             Spacer()

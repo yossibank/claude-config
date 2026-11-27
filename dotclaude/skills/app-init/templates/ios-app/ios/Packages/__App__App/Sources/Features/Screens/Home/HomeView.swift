@@ -46,11 +46,11 @@ extension HomeView {
 private extension HomeView {
     @ViewBuilder
     var status: some View {
-        if let message = model.state.failureMessage {
+        if let message = model.state.notices.error.message {
             Text(message)
         } else if model.output.isLoaded {
             Text("データの版 \(model.output.schemaVersion)")
-        } else {
+        } else if !model.output.isFailed {
             ProgressView()
         }
     }

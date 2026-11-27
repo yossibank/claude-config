@@ -64,8 +64,8 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | 3 | 画面が読む値と、書く操作 | 計算は Core に、読み書きは Store に置く。モデルに SQL や集計を書かない |
 | 4 | 形と、渡す名前 | 同じ形の 2 つ目を中身を書かずに置くと、同じ形の検査が止める |
 | 5 | `state`・`input`・`output` に置く値 | 人が変える値は `state`、DB から来る値は `input`、計算は `output` に置く。使わないまとまりは消す |
-| 5 | `state` の型 | 画面が書く値は、`ScreenEditable` の型（入力の `Fields`・`Shown`）にする。ほかは `internal(set)` にする |
-| 5 | 結果の型 | 結果は、できた時だけ `state` の `outcome` に 1 回置く。何種類もある時は、1 つの `enum` にする |
+| 5 | `state` の枠 | `rules/code-design.md` の枠で組む。画面が書く値は `fields` と `presented` に置き、ほかはモデルが書く |
+| 5 | 結果の型 | 結果は、できた時だけ `state.outcome` に 1 回置く。何種類もある時は、1 つの `enum` にする |
 | 6 | 確かめる筋書き | DB はメモリに開き、時計は固定する。Kotlin の `perform` は Main が要るので、テストはモデルの関数を直接呼ぶ |
 | 7 | `Layout` に置く見た目の値 | 意味のある状態を、画面の `@State` や `remember` に置かない。使わない `Layout` は消す |
 | 7 | 入口と出口 | ボタンからは `perform` で呼ぶ。結果は、`onOutcome`（Kotlin は `OnOutcome`）の 1 か所で受ける |
@@ -91,7 +91,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | DB の変化 | 見張り（`AsyncSequence`）で受ける | 画面が `refresh()` を呼び直す |
 | 一覧の値 | 読むまで `nil` で、`output` が空の配列にする | 最初から配列で、画面は `input` を読む |
 | 保存と削除 | async の関数を `perform` で呼ぶ | 同期の関数を、ボタンから直接呼ぶ |
-| 二重の保存 | `state` の `ModelTask` の `isRunning` と、送った結果で止める | 保存した下書きを `input` に置き、変更が無ければ止める |
+| 二重の保存 | `state.task` の `isRunning` と、送った結果で止める | 保存した下書きを `input` に置き、変更が無ければ止める |
 | 口 | モデルは `ScreenPerforming` である | 口を持たない。土台に `ScreenPerforming` が無くても置ける |
 | 一覧の値の段階 | `Loadable` で持つ | 最初から読んだ配列なので、`Loadable` を使わない |
 
@@ -141,7 +141,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | DB の関数 | `<item>List`・`<item>ListUpdates`・`save<Item>`・`delete<Item>` |
 | 同期の版の DB の関数 | 同じ名前で、`async` が付かない。`<item>ListUpdates` は使わない |
 | メモリの DB | `AppDatabase.inMemory()` |
-| 失敗の知らせ | `state` の `failureMessage` の文字。アプリに知らせの型があれば、それに替える |
+| 失敗の知らせ | `state.notices.error` の `ErrorNotice`。アプリに知らせの型があれば、それに替える |
 | Kotlin の DB の関数 | クラスの関数として呼ぶ。拡張の関数なら、import を足す |
 
 ## 土台
@@ -155,6 +155,8 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | 画面が結果を受ける所 | `onOutcome`（Kotlin は `OnOutcome`） | Swift・Kotlin |
 | モデルの時計 | `ScreenClock` | Swift・Kotlin |
 | 画面が中を開けずに渡す、DB の入れ物 | `ScreenParts` | Swift |
+| 知らせを消すまでの待ち | `ScreenWait` | Swift・Kotlin |
+| 時間で消えるエラーの知らせ | `ErrorNotice` | Swift・Kotlin |
 | 画面が書いてよい値の型の印 | `ScreenEditable` | Swift・Kotlin |
 | 表示中のシート・確認・メニュー | `Shown` | Swift・Kotlin |
 | 保存などの実行中の印 | `ModelTask` | Swift・Kotlin |
@@ -168,7 +170,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | 一覧にも、コードにも無い | 人に確かめてから、形 `base` で土台だけを足す。土台は、画面と別の commit にする |
 | 土台を足した | 共通の部品の一覧に行を足す。口と結果の決まりを、画面の組み立ての文書に書く |
 | 役割の一部だけがある | 止めて、人に聞く。足りない型を、推測で作らない |
-| 画面の部品（`ScreenEditable`・`Shown`・`ModelTask`・`Loadable`）だけが無い | 人に確かめてから、形 `base` で無い物だけを足す |
+| `ScreenEditable` などの画面の部品だけが無い | 人に確かめてから、形 `base` で無い物だけを足す |
 
 モジュールの名前の `Core`・`Store` と、DB の型の `AppDatabase` も、同じ書き方で替えられる。
 

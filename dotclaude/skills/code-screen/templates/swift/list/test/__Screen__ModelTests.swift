@@ -25,7 +25,7 @@ struct __Screen__ModelTests {
 
         #expect(model.output.items.map(\.name) == ["見本"])
         #expect(model.output.isLoaded)
-        #expect(model.state.failureMessage == nil)
+        #expect(model.state.notices.error.message == nil)
     }
 
     @Test

@@ -21,7 +21,7 @@ KOTLIN_SOURCE = re.compile(r"/src/[^/]+/(?:kotlin|java)/(.+)$")
 KOTLIN_PACKAGE = re.compile(r"^package\s+([\w.]+)", re.M)
 IMPORT = re.compile(r"^(?:@testable )?import ")
 KOTLIN_LAST = ("java.", "javax.", "kotlin.")
-PARTS = ("ScreenEditable", "Shown", "ModelTask", "Loadable")
+PARTS = ("ScreenEditable", "Shown", "ModelTask", "Loadable", "ScreenWait", "ErrorNotice")
 BASE = {
     "swift": ("ScreenParts", "ScreenClock", "ScreenPerforming", "ScreenOutcome", "onOutcome", *PARTS),
     "kotlin": ("ScreenClock", "ScreenPerforming", "ScreenOutcome", "OnOutcome", *PARTS),

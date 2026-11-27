@@ -16,7 +16,7 @@ public final class __Screen__Model {
         editing item: __Item__? = nil
     ) {
         let name = item?.name ?? ""
-        let state = State(name: name)
+        let state = State(name: name, wait: parts.wait)
         let input = Input(editing: item, baseline: __Item__Draft(name: name))
 
         self.state = state
@@ -31,13 +31,18 @@ public extension __Screen__Model {
     @Observable
     final class State {
         public var fields: Fields
-        public var prompt = Shown<Prompt>()
+        public var presented = Presented()
 
-        public internal(set) var failureMessage: String?
         public internal(set) var outcome = ScreenOutcome<__Item__>()
 
-        init(name: String) {
+        public let notices: Notices
+
+        init(
+            name: String,
+            wait: ScreenWait
+        ) {
             self.fields = Fields(name: name)
+            self.notices = Notices(wait: wait)
         }
     }
 
@@ -45,8 +50,21 @@ public extension __Screen__Model {
         public var name: String
     }
 
+    struct Presented: ScreenEditable {
+        public var prompt = Shown<Prompt>()
+    }
+
     enum Prompt: Hashable, Sendable {
         case discard
+    }
+
+    @MainActor
+    struct Notices {
+        public let error: ErrorNotice
+
+        init(wait: ScreenWait) {
+            self.error = ErrorNotice(wait: wait)
+        }
     }
 
     @MainActor
@@ -106,7 +124,7 @@ public extension __Screen__Model {
             input.baseline = draft
             state.outcome.send(saved)
         } catch {
-            state.failureMessage = Self.saveFailedMessage
+            state.notices.error.show(Self.saveFailedMessage)
         }
     }
 }

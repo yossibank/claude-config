@@ -148,7 +148,7 @@ mkdir -p "$named/ios/Packages/DemoApp/Sources/Features/Shared"
 git -C "$named" init -q
 shared="$named/ios/Packages/DemoApp/Sources/Features/Shared"
 printf 'struct AppParts {}\nstruct ScreenClock {}\nprotocol Performing {}\nstruct ScreenOutcome<Value> {}\n' >"$shared/AppParts.swift"
-printf 'protocol ScreenEditable {}\nstruct Shown<Value> {}\nfinal class ModelTask {}\nenum Loadable<Value> {}\n' >"$shared/ScreenEditable.swift"
+printf 'protocol ScreenEditable {}\nstruct Shown<Value> {}\nfinal class ModelTask {}\nenum Loadable<Value> {}\nstruct ScreenWait {}\nfinal class ErrorNotice {}\n' >"$shared/ScreenEditable.swift"
 printf 'import SwiftUI\n\nextension View {\n    func onOutcome() {}\n}\n' >"$shared/View+Outcome.swift"
 features="$named/ios/Packages/DemoApp/Sources/Features/Screens/Stamps"
 same_module() {
@@ -172,7 +172,7 @@ plain="$work/plain"
 mkdir -p "$plain/ios/Packages/DemoApp/Sources/FeatureModels/Shared" "$plain/ios/Packages/DemoApp/Sources/Features/Shared"
 git -C "$plain" init -q
 printf 'struct ScreenParts {}\nstruct ScreenClock {}\nstruct ScreenOutcome<Value> {}\n' >"$plain/ios/Packages/DemoApp/Sources/FeatureModels/Shared/ScreenParts.swift"
-printf 'protocol ScreenEditable {}\nstruct Shown<Value> {}\n' >"$plain/ios/Packages/DemoApp/Sources/FeatureModels/Shared/ScreenEditable.swift"
+printf 'protocol ScreenEditable {}\nstruct Shown<Value> {}\nstruct ScreenWait {}\nfinal class ErrorNotice {}\n' >"$plain/ios/Packages/DemoApp/Sources/FeatureModels/Shared/ScreenEditable.swift"
 cp "$shared/View+Outcome.swift" "$plain/ios/Packages/DemoApp/Sources/Features/Shared/View+Outcome.swift"
 expect "NG 土台の型か関数が無い: ScreenPerforming" "create-screen: 非同期の版は、口が無ければ NG" swift_screen "$plain" list "$stamps" Screen=StampList Item=Stamp
 expect OK "create-screen: 同期の版は、口が無くても置ける" swift_screen "$plain" list "$stamps" Screen=StampList Item=Stamp Database=sync

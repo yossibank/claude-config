@@ -5,7 +5,7 @@ import Store
 @MainActor
 @Observable
 public final class __Screen__Model: ScreenPerforming {
-    public let state = State()
+    public let state: State
     public let input: Input
     public let output: Output
 
@@ -14,6 +14,7 @@ public final class __Screen__Model: ScreenPerforming {
     public init(parts: ScreenParts) {
         let input = Input()
 
+        self.state = State(wait: parts.wait)
         self.input = input
         self.output = Output(input: input)
         self.dependencies = Dependencies(database: parts.database)
@@ -24,10 +25,28 @@ public extension __Screen__Model {
     @MainActor
     @Observable
     final class State {
-        public var editing = Shown<__Item__.ID>()
+        public var presented = Presented()
 
-        public internal(set) var failureMessage: String?
         public internal(set) var outcome = ScreenOutcome<__Item__>()
+
+        public let notices: Notices
+
+        init(wait: ScreenWait) {
+            self.notices = Notices(wait: wait)
+        }
+    }
+
+    struct Presented: ScreenEditable {
+        public var editing = Shown<__Item__.ID>()
+    }
+
+    @MainActor
+    struct Notices {
+        public let error: ErrorNotice
+
+        init(wait: ScreenWait) {
+            self.error = ErrorNotice(wait: wait)
+        }
     }
 
     @MainActor
@@ -63,7 +82,7 @@ public extension __Screen__Model {
             input.items = .loaded(try await dependencies.database.__item__List())
         } catch {
             input.items = .failed
-            state.failureMessage = Self.loadFailedMessage
+            state.notices.error.show(Self.loadFailedMessage)
         }
     }
 
@@ -72,7 +91,7 @@ public extension __Screen__Model {
             try await dependencies.database.delete__Item__(item.id)
             state.outcome.send(item)
         } catch {
-            state.failureMessage = Self.removeFailedMessage
+            state.notices.error.show(Self.removeFailedMessage)
         }
     }
 }
@@ -89,7 +108,7 @@ private extension __Screen__Model {
         } catch is CancellationError {
             return
         } catch {
-            state.failureMessage = Self.loadFailedMessage
+            state.notices.error.show(Self.loadFailedMessage)
         }
     }
 }
