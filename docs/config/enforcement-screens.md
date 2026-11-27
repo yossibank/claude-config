@@ -56,7 +56,8 @@ DesignSystem のフォルダは、`is_part_library` が検査から外す。`@Pr
 | 書く範囲 | 検査 `check_swift_slots`。`(set)` を閉じない `public var` を見る | 検査 `check_kotlin_slots`。`private` でも `private set` でもない `var` を見る |
 | `fields` の中身 | 検査 `check_unread_fields`。同じモジュールの画面でないファイルの `fields.<名前>` を探す | 検査 `check_unread_fields`。`@Composable` の無いファイルを探す |
 | `Fields`・`Presented` の印 | レビューのみ。`ScreenEditable` への適合は見ない | レビューのみ |
-| 枠に入らない値の行き先 | レビューのみ | レビューのみ |
+| 直下の裸の値 | 検査 `check_swift_bare`。書かれた型か初めの値で読み、`@ObservationIgnored` の `private` は見ない | 検査 `check_kotlin_bare`。`mutableStateOf` の `var` だけを見る |
+| 枠に入らない値の行き先 | レビューのみ。裸の値を送った先が合うかは見ない | レビューのみ |
 
 ほかの部品は、レビューのみで守る。
 

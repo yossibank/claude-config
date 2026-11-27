@@ -20,7 +20,7 @@ from hooks.code_design_check.files import (  # noqa: E402
 )
 from hooks.code_design_check.modules import is_open_to  # noqa: E402
 from hooks.code_design_check.names import check_swift_role, check_swift_suffix  # noqa: E402
-from hooks.code_design_check.slots import check_kotlin_slots, check_swift_slots, check_unread_fields  # noqa: E402
+from hooks.code_design_check.slots import check_kotlin_bare, check_kotlin_slots, check_swift_bare, check_swift_slots, check_unread_fields  # noqa: E402
 from hooks.code_design_check.shape import check_kotlin_shape, check_swift_shape  # noqa: E402
 from hooks.code_design_check.state import (  # noqa: E402
     KOTLIN_NOW,
@@ -69,6 +69,7 @@ def swift_checker(paths):
                 *check_swift_state(code),
                 *check_swift_flags(code),
                 *check_swift_slots(code),
+                *check_swift_bare(code),
                 *check_unread_fields(path, code),
                 *check_swift_shape(code),
                 *check_swift_output(code),
@@ -98,6 +99,7 @@ def kotlin_checker(paths):
                 *check_kotlin_state(code),
                 *check_kotlin_flags(code),
                 *check_kotlin_slots(code),
+                *check_kotlin_bare(code),
                 *check_unread_fields(path, code),
                 *check_kotlin_shape(code),
                 *check_kotlin_output(code),
