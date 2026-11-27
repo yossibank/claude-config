@@ -14,8 +14,14 @@ def scan(line, quote):
         elif char == "\\":
             index += 2
             continue
+        elif quote == "$'":
+            quote = None if char == "'" else quote
         elif quote == '"':
             quote = None if char == '"' else quote
+        elif line.startswith("$'", index):
+            quote = "$'"
+            index += 2
+            continue
         elif char in "'\"":
             quote = char
         elif char == "#" and (index == 0 or line[index - 1] in COMMENT_AFTER):

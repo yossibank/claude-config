@@ -13,17 +13,47 @@ from hook_io import block_on_findings, run_gate, run_hook, target_paths  # noqa:
 HEADER = "コメントがある（rules/code-comments.md）。消す。要ると判断したら、書かずに提案する。"
 MESSAGE = "コメントを消す"
 MASKS = {".swift": swift_source.mask, ".kt": kotlin_source.mask, ".kts": kotlin_source.mask}
-SHELL_LIKE = (".sh", ".yml", ".yaml", ".toml")
+SHELL_LIKE = (".sh",)
+CONFIGS = (".yml", ".yaml", ".toml")
+QUOTE_AFTER = set(" \t:=[{,")
 NAMES = {"Makefile"}
 FIRST_LINE = ("#!", "// swift-tools-version:")
 DIRECTIVE = re.compile(r"^(?://|/\*|#)\s*(?:swiftlint:|swiftformat:|shellcheck\s|ktlint-|@formatter:|yaml-language-server:)")
 
 
 def is_target(path):
-    return path.endswith((*MASKS, *SHELL_LIKE)) or os.path.basename(path) in NAMES
+    return path.endswith((*MASKS, *SHELL_LIKE, *CONFIGS)) or os.path.basename(path) in NAMES
+
+
+def config_comment(line):
+    quote = None
+    index = 0
+    while index < len(line):
+        char = line[index]
+        before = line[index - 1] if index else " "
+        if quote:
+            if char == "\\" and quote == '"':
+                index += 1
+            elif char == quote:
+                quote = None
+        elif char in "'\"" and before in QUOTE_AFTER:
+            quote = char
+        elif char == "#" and before in " \t":
+            return line[index:]
+        index += 1
+    return None
+
+
+def config_comments(text):
+    for number, line in enumerate(text.split("\n"), 1):
+        body = config_comment(line)
+        if body is not None:
+            yield number, body
 
 
 def comments_of(path, text):
+    if path.endswith(CONFIGS):
+        return list(config_comments(text))
     mask = MASKS.get(os.path.splitext(path)[1])
     if mask is None:
         return list(shell_source.comments(text))

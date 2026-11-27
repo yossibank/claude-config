@@ -36,11 +36,13 @@ comment_case 0 "シェルの引数の数と配列の長さは通す" a/d.sh $'#!
 comment_case 0 "シェルの引用と語の中の # は通す" a/e.sh $'#!/bin/bash\necho "# a" \'# b\' c#d'
 comment_case 0 "ヒアドキュメントの中の # は通す" a/f.sh $'#!/bin/bash\ncat <<EOF\n# 見出し\nEOF'
 comment_case 0 "複数行の引用の中の # は通す" a/g.sh $'#!/bin/bash\necho \'a\n# b\''
+comment_case 2 "\$'…' の中の \\' の後も読み続ける" a/i.sh "#!/bin/bash"$'\n'"a=\$'x\\'y'"$'\necho a <<EOF\nEOF\n# 説明'
 comment_case 0 "shellcheck への指定は通す" a/h.sh $'#!/bin/bash\n# shellcheck disable=SC2086\necho $a'
 
 comment_case 2 "Makefile のコメントで止める" a/Makefile $'# 説明\nverify:\n\techo ok'
 comment_case 2 "YAML のコメントで止める" a/a.yml $'on: push\n# 説明\njobs: {}'
 comment_case 2 "TOML のコメントで止める" a/a.toml $'# 説明\n[versions]'
+comment_case 2 "YAML の語の中の ' を引用とみなさない" a/c.yml $'name: Don\'t stop\n# 説明'
 comment_case 0 "YAML の値の中の # は通す" a/b.yaml 'run: echo "a#b" c#d'
 comment_case 0 "対象でない拡張子は見ない" a/a.md $'# 見出し\n\n本文。'
 
