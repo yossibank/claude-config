@@ -46,7 +46,7 @@ extension HomeView {
 private extension HomeView {
     @ViewBuilder
     var status: some View {
-        if let message = model.state.notices.error.message {
+        if let message = model.state.notices.error.message ?? model.output.statusMessage {
             Text(message)
         } else if model.output.isLoaded {
             Text("データの版 \(model.output.schemaVersion)")

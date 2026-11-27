@@ -54,7 +54,7 @@ public extension __Screen__Model {
     @MainActor
     @Observable
     final class Input {
-        public internal(set) var items: [__Item__] = []
+        public internal(set) var items: Loadable<[__Item__]> = .loaded([])
     }
 
     @MainActor
@@ -76,8 +76,9 @@ extension __Screen__Model {
 public extension __Screen__Model {
     func refresh() {
         do {
-            input.items = try dependencies.database.__item__List()
+            input.items = .loaded(try dependencies.database.__item__List())
         } catch {
+            input.items = .failed
             state.notices.error.show(Self.loadFailedMessage)
         }
     }
@@ -100,7 +101,15 @@ private extension __Screen__Model {
 }
 
 public extension __Screen__Model.Output {
+    var items: [__Item__] {
+        input.items.value ?? []
+    }
+
     var isEmpty: Bool {
-        input.items.isEmpty
+        input.items.value?.isEmpty == true
+    }
+
+    var statusMessage: String? {
+        input.items.isFailed ? __Screen__Model.loadFailedMessage : nil
     }
 }

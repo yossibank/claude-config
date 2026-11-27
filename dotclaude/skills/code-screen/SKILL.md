@@ -89,11 +89,11 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | --- | --- | --- |
 | 最初の読み込み | 画面の `.task` が `run()` を呼ぶ | モデルの `init` が `refresh()` を呼ぶ |
 | DB の変化 | 見張り（`AsyncSequence`）で受ける | 画面が `refresh()` を呼び直す |
-| 一覧の値 | 読むまで `nil` で、`output` が空の配列にする | 最初から配列で、画面は `input` を読む |
+| 一覧の値 | 読むまで `nil` で、`output` が空の配列にする | 最初から空の配列を読んだ形で持ち、画面は `output` を読む |
 | 保存と削除 | async の関数を `perform` で呼ぶ | 同期の関数を、ボタンから直接呼ぶ |
 | 二重の保存 | `state.task` の `isRunning` と、送った結果で止める | 保存した下書きを `input` に置き、変更が無ければ止める |
 | 口 | モデルは `ScreenPerforming` である | 口を持たない。土台に `ScreenPerforming` が無くても置ける |
-| 一覧の値の段階 | `Loadable` で持つ | 最初から読んだ配列なので、`Loadable` を使わない |
+| 一覧の値の段階 | `Loadable` で持つ | `Loadable` で持つ。最初は `.loaded([])` で、読めなければ `.failed` にする |
 
 結果は、どちらの版も `state` の `outcome` に置き、画面が `onOutcome` で受ける。
 
@@ -116,7 +116,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 - 置く先に同じ名前のファイルがあれば、`NG` を出して止まる。`NG` の時は、ファイルを 1 つも置かない。
 - Swift は、モデルのフォルダの `Sources/<ターゲット>` を画面とテストの import にする。同じターゲットなら import を書かない。
 - Kotlin は、フォルダの場所から package を決める。土台・DB・扱う型の import は、宣言のあるファイルの package から決める。
-- `Database=sync` の時は、`templates/swift/<形>-sync/` のひな形を置く。土台の `ScreenPerforming`・`ModelTask`・`Loadable` は探さない。
+- `Database=sync` の時は、`templates/swift/<形>-sync/` のひな形を置く。土台の `ScreenPerforming`・`ModelTask` は探さない。
 - `Database=sync` を Kotlin か形 `base` に渡すと、`NG` を出して止まる。
 - 置いたファイルを、`OK` の行で出す。
 
@@ -142,6 +142,7 @@ python3 -I ${CLAUDE_SKILL_DIR}/scripts/create-screen.py <swift|kotlin> <list|edi
 | 同期の版の DB の関数 | 同じ名前で、`async` が付かない。`<item>ListUpdates` は使わない |
 | メモリの DB | `AppDatabase.inMemory()` |
 | 失敗の知らせ | `state.notices.error` の `ErrorNotice`。アプリに知らせの型があれば、それに替える |
+| 読めなかった印 | 一覧の失敗は、`output.statusMessage` で消えない文として出す。知らせが消えた後も、空の一覧と見分けられる |
 | Kotlin の DB の関数 | クラスの関数として呼ぶ。拡張の関数なら、import を足す |
 
 ## 土台

@@ -92,6 +92,10 @@ public extension HomeModel.Output {
         input.migrations.isFailed
     }
 
+    var statusMessage: String? {
+        isFailed ? HomeModel.loadFailedMessage : nil
+    }
+
     var schemaVersion: Int {
         input.migrations.value?.count ?? 0
     }

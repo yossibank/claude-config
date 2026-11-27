@@ -121,4 +121,8 @@ public extension __Screen__Model.Output {
     var isLoaded: Bool {
         input.items.isLoaded
     }
+
+    var statusMessage: String? {
+        input.items.isFailed ? __Screen__Model.loadFailedMessage : nil
+    }
 }

@@ -55,6 +55,9 @@ class __Screen__Model(
 
         val isLoaded: Boolean
             get() = input.items.isLoaded
+
+        val statusMessage: String?
+            get() = if (input.items.isFailed) loadFailed else null
     }
 
     private class Dependencies(

@@ -32,7 +32,7 @@ RENAMED = {
 }
 ASKED = ("Screen", "Item", "View", "Database")
 CALLS = ("async", "sync")
-UNUSED = {"async": (), "sync": ("ScreenPerforming", "ModelTask", "Loadable")}
+UNUSED = {"async": (), "sync": ("ScreenPerforming", "ModelTask")}
 BASE_HINT = "先に、形を base にして土台を足す。名前が違う時は、<既定の名前>=<アプリの名前> で渡す"
 
 

@@ -60,7 +60,7 @@ fun __View__(
         }
 
         Text(
-            text = model.state.notices.error.message.orEmpty(),
+            text = model.state.notices.error.message ?: model.output.statusMessage.orEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)

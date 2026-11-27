@@ -46,7 +46,7 @@ extension __View__ {
 
 private extension __View__ {
     var header: some View {
-        Text(model.state.notices.error.message ?? "")
+        Text(model.state.notices.error.message ?? model.output.statusMessage ?? "")
             .frame(maxWidth: .infinity)
             .padding(16)
             .onGeometryChange(for: CGFloat.self) { proxy in

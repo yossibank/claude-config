@@ -22,7 +22,7 @@ public struct __View__: View {
     public var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                ForEach(model.input.items) { item in
+                ForEach(model.output.items) { item in
                     row(item)
                 }
             }
@@ -53,7 +53,7 @@ extension __View__ {
 
 private extension __View__ {
     var header: some View {
-        Text(model.state.notices.error.message ?? emptyMessage)
+        Text(model.state.notices.error.message ?? model.output.statusMessage ?? emptyMessage)
             .frame(maxWidth: .infinity)
             .padding(16)
             .onGeometryChange(for: CGFloat.self) { proxy in
