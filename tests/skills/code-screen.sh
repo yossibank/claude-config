@@ -10,7 +10,6 @@ mkdir -p "$TMPDIR"
 create="$root/dotclaude/skills/code-screen/scripts/create-screen.py"
 hooks="$root/dotclaude/hooks"
 
-# <フォルダ> <拡張子> <フック>... で、フォルダの下のファイルの全部を、アプリの make verify と同じ形で検査に通す
 checked() {
     local folder=$1 suffix=$2 hook files=()
     shift 2
@@ -20,21 +19,18 @@ checked() {
     done
 }
 
-# <アプリ> <形> <フォルダ> [<名前>=<値>...] で、Swift のひな形を FeatureModels・Features・FeaturesTests に展開する
 swift_screen() {
     local package=$1/ios/Packages/DemoApp kind=$2 folder=$3
     shift 3
     python3 -I "$create" swift "$kind" "$package/Sources/FeatureModels/$folder" "$package/Sources/Features/$folder" "$package/Tests/FeaturesTests/$folder" "$@"
 }
 
-# <アプリ> <形> <フォルダ> [<名前>=<値>...] で、Kotlin のひな形を :featuremodels と :app に展開する
 kotlin_screen() {
     local android=$1/android kind=$2 folder=$3 base=kotlin/com/example/demo
     shift 3
     python3 -I "$create" kotlin "$kind" "$android/featuremodels/src/main/$base/featuremodels/$folder" "$android/app/src/main/$base/features/$folder" "$android/featuremodels/src/test/$base/featuremodels/$folder" "$@"
 }
 
-# <アプリ> <型の名前>... で、Core の型と Store の AppDatabase を持つ Android のモジュールを作る
 kotlin_app() {
     local android=$1/android base=src/main/kotlin/com/example/demo name
     shift
@@ -47,7 +43,6 @@ kotlin_app() {
     done
 }
 
-# <アプリ> <async|sync> で、仮の Swift パッケージに、土台と一覧と編集を展開する
 compiled_app() {
     local app=$1 calls=$2
     mkdir -p "$app"
@@ -58,12 +53,10 @@ compiled_app() {
     swift_screen "$app" edit Screens/Stamps Screen=StampEdit Item=Stamp View=StampEditSheet "Database=$calls"
 }
 
-# <アプリ> で、展開したままのパッケージをビルドしてテストを流し、通ったら <アプリ>.ok を置く。待たずに並べて流す
 swift_test() {
     { swift test --package-path "$1/ios/Packages/DemoApp" >"$1.log" 2>&1 && touch "$1.ok"; } &
 }
 
-# <アプリ> で、swift_test が通り、2 つのテストの型が走ったかを見る。落ちた時は、エラーの行を出す
 swift_tested() {
     if [[ -f $1.ok ]] && grep -q 'tests in 2 suites passed' "$1.log"; then
         return 0

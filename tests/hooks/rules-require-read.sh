@@ -87,7 +87,6 @@ EOF
 )
 check "rules: 古いフォルダの中の新しい記録を残し、掃除は 1 時間に 1 回にする" test "$out" = "(['new'], False) True"
 
-# --- lib の直接のテスト（hook_state・transcripts） ---
 out=$(python3 -I - "$root" "$work" 2>&1 <<'EOF'
 import json, os, sys, time
 import os

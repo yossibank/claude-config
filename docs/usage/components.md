@@ -40,6 +40,7 @@ flowchart LR
     editBefore["Edit・Write の前"] --> require
     editBefore --> detect["rules-detect-bash-edits"]
     editAfter["Edit・Write の後"] -->|.md だけ| docs["docs-check"]
+    editAfter -->|コードと設定| comments["code-check-comments"]
     editAfter -->|.swift だけ| swift["swift-format"]
     swift --> swiftStyle["swift-style-check"]
     swiftStyle --> design["code-design-check"]
@@ -59,12 +60,13 @@ flowchart LR
     classDef inform fill:#d6e9f8,stroke:#2e86c1,color:#000
     classDef tidy fill:#d5f5e3,stroke:#239b56,color:#000
     class limit,require,gate,japanese block
-    class design,docs,kotlinLayout,kotlinStyle,layout,swiftStyle,shell,detect inform
+    class comments,design,docs,kotlinLayout,kotlinStyle,layout,swiftStyle,shell,detect inform
     class swift tidy
 ```
 
 | フック | 動き | 呼ばれる時 | 動く条件 |
 | --- | --- | --- | --- |
+| [code-check-comments](../../dotclaude/hooks/code-check-comments.py) | 💬 知らせる | コードと設定のファイルを Edit・Write した後 | `dotclaude/rules/code-comments.md` で残すものを除き、コメントがある時 |
 | [code-design-check](../../dotclaude/hooks/code-design-check.py) | 💬 知らせる | `.swift` と `.kt` を Edit・Write した後。swift-style-check か kotlin-style-check の後に順に走る | `dotclaude/rules/code-design.md` の、数で分かる決まりに合わない時。大きさ・名前・状態の数・モデルの形・画面の形・同じ形を見て、アプリの基準線にある外れは通す |
 | [ctx-limit-read](../../dotclaude/hooks/ctx-limit-read.py) | 🛑 止める | Read の前 | 30KB を超えるテキストを、`limit` を付けずに読む時 |
 | [docs-check](../../dotclaude/hooks/docs-check.py) | 💬 知らせる | `.md` を Edit・Write した後。メモリのファイルは見ない | `.md` が `dotclaude/rules/docs-*.md` に合わない時。「の」の続きと大きさの外れは、止めずに知らせる |

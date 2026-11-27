@@ -7,7 +7,6 @@ source "$(dirname "$0")/../support/fixtures.sh"
 threads="$root/dotclaude/skills/pr-fix/scripts/fetch-threads.sh"
 repo="$work/repo"
 clone_with_origin "$repo"
-# gh の JSON を返し、-q の式は本物の jq で絞る。未解決だけを選ぶ式も走る
 fake_gh 'query=""
 args=("$@")
 for ((i = 0; i < ${#args[@]}; i++)); do

@@ -28,7 +28,6 @@ struct SnapshotTests {
 extension SnapshotTests {
     struct Case {
         let name: String
-        /// 人が読む画面の名前。「設定 › 口座の編集」のように、画面と場合を › で区切る
         let title: String
         let size: CGSize
         let view: () -> AnyView

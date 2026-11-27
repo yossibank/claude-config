@@ -9,43 +9,13 @@ from git import git_root  # noqa: E402
 from hook_io import command_words, git_subcommand, read_payload, run_gate, split_commands, tool_input  # noqa: E402
 from hook_messages import PR_UNCHECKED  # noqa: E402
 from loader import DOTCLAUDE  # noqa: E402
+from shell_source import heredocs, is_heredoc_end  # noqa: E402
 
 CHECK_SH = os.path.join(DOTCLAUDE, "skills", "pr-create", "scripts", "run-check.sh")
 PUSH_SKIPPED = {"--delete", "-d"}
 SHELLS = {"bash", "sh", "zsh"}
 UNRESOLVED = object()
 SUBSTITUTED = re.compile(r"\$SUB(\d+)")
-HEREDOC = re.compile(r"<<(-?)[ \t]*(?:'([^'\n]*)'|\"([^\"\n]*)\"|([A-Za-z0-9_.-]+))")
-COMMENT_AFTER = set(" \t;&|(")
-
-
-def heredocs(line, quote):
-    found = []
-    index = 0
-    while index < len(line):
-        char = line[index]
-        if quote == "'":
-            quote = None if char == "'" else quote
-        elif char == "\\":
-            index += 2
-            continue
-        elif quote == '"':
-            quote = None if char == '"' else quote
-        elif char in "'\"":
-            quote = char
-        elif char == "#" and (index == 0 or line[index - 1] in COMMENT_AFTER):
-            break
-        elif line.startswith("<<<", index):
-            index += 3
-            continue
-        elif match := HEREDOC.match(line, index):
-            strip, single, double, bare = match.groups()
-            quoted = single is not None or double is not None
-            found.append((strip == "-", next(word for word in (single, double, bare) if word is not None), quoted))
-            index = match.end()
-            continue
-        index += 1
-    return found, quote
 
 
 def without_quoted_heredocs(command):
@@ -54,10 +24,9 @@ def without_quoted_heredocs(command):
     quote = None
     for line in command.split("\n"):
         if ends:
-            strip, end, quoted = ends[0]
-            if (line.lstrip("\t") if strip else line) == end:
+            if is_heredoc_end(line, ends[0]):
                 ends.pop(0)
-            elif not quoted:
+            elif not ends[0][2]:
                 kept.append(line)
             continue
         kept.append(line)

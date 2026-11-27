@@ -76,7 +76,6 @@ render() {
 }
 
 render
-# PNG にする処理は、マシンが重い時にまれに失敗する。その時だけ 1 回描き直す
 if [[ $status -ne 0 ]] && grep -q "No IDATs written" "$log"; then
     echo "PNG を書けなかったので、描き直す"
     render

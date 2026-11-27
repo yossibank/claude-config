@@ -54,7 +54,6 @@ python3 -I "$skill/scripts/replace-placeholders.py" "$root" "$pascal" "$name" "$
 
 git -C "$root" init -q -b main
 
-# 土台の型は、code-screen のひな形から置く。写しを app-init に持たない
 package="$root/ios/Packages/${pascal}App"
 base="Shared/Model"
 placed=$(python3 -I "$skill/../code-screen/scripts/create-screen.py" swift base "$package/Sources/FeatureModels/$base" "$package/Sources/Features/$base" "$package/Tests/FeaturesTests/$base") || {

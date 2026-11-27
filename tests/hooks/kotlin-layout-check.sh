@@ -4,7 +4,6 @@ set -uo pipefail
 source "$(dirname "$0")/../support/assert.sh"
 source "$(dirname "$0")/../support/fixtures.sh"
 
-# HOME を差し替える前に組む。組めていないと、フックは検査を飛ばす
 printf 'fun a() = 1\n' >"$work/Build.kt"
 check "kotlin-layout を組める" bash "$root/dotclaude/hooks/run.sh" kotlin-layout-check "$work/Build.kt"
 
@@ -15,14 +14,12 @@ layout_case() {
     hook_case kotlin-layout-check "$expect" "$label" "$work/Case.kt" "$text" "$want"
 }
 
-# <行の数> の関数
 long_function() {
     local out=$'fun a() {\n' i
     for ((i = 0; i < $1 - 2; i++)); do out+=$'    b()\n'; done
     printf '%s' "${out}}"
 }
 
-# <分岐の数> の 1 行の分岐だけの when の表
 when_table() {
     local out=$'fun a(i: Int): Int = when (i) {\n' i
     for ((i = 0; i < $1; i++)); do out+="    ${i} -> ${i}"$'\n'; done
@@ -92,7 +89,6 @@ printf 'class Case {\n    val b = 2\n}\n' >"$base/src/Case.kt"
 out=$(bash "$hooks" kotlin-layout-check "$base/src/Case.kt" </dev/null 2>&1)
 match "直った外れが基準線に残っていたら NG にする" "$?:$(grep -c '行を消す' <<<"$out")" "2:1"
 
-# <ラベル> <直す前の中身> <直した後に含む文> で、--fix が外れを無くし、文を含むかを見る
 fix_case() {
     local label=$1 text=$2 want=$3 out
     printf '%s\n' "$text" >"$base/src/Case.kt"

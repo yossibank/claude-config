@@ -16,7 +16,6 @@ swift="$app/ios/Features/HomeView.swift"
 
 gate_failed="フックが確かめられなかったので止める"
 
-# 終了コード 2 を期待する時は、STOP に止めた理由の文を入れる。フックが例外で落ちた時の 2 とは区別する
 run() {
     local hook=$1 expect=$2 label=$3 payload=$4 out status
     shift 4
@@ -33,8 +32,6 @@ run() {
     fi
 }
 
-# <フック> <期待の終了コード> <ラベル> <ファイルのパス> <中身> [期待する文]
-# 中身を書いたファイルを編集した入力をフックに渡し、終了コードと出力の文を比べる。2 の時は文が要る
 hook_case() {
     local hook=$1 expect=$2 label=$3 path=$4 text=$5 want=${6:-} out status
     mkdir -p "$(dirname "$path")"
@@ -58,12 +55,10 @@ read_rule() {
         '{session_id: $session, agent_id: $agent, tool_name: "Read", tool_input: {file_path: $path}}' | bash "$hooks" rules-require-read
 }
 
-# <ファイルのパス> を編集した入力
 file_call() {
     jq -cn --arg path "$1" '{tool_input: {file_path: $path}}'
 }
 
-# <tool_use_id> <コマンド> を $app で走らせた入力
 bash_call() {
     jq -cn --arg id "$1" --arg cwd "$app" --arg command "$2" \
         '{session_id: "b", tool_use_id: $id, cwd: $cwd, tool_input: {command: $command}}'

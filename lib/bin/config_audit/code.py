@@ -18,6 +18,13 @@ SCRIPT_HEADER = "set -euo pipefail"
 WORKTREES_LITERAL = ".claude/worktrees"
 
 
+def check_code_comments():
+    comments = load_hook("code-check-comments")
+    for path in filter(comments.is_target, tracked("*")):
+        for number, message in comments.check(path):
+            yield path, number, message
+
+
 def check_worktree_literals():
     for path in tracked("dotclaude/hooks/*", "bin/*", "dotclaude/skills/*/scripts/*"):
         if path == os.path.abspath(__file__):

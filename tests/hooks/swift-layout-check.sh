@@ -4,7 +4,6 @@ set -uo pipefail
 source "$(dirname "$0")/../support/assert.sh"
 source "$(dirname "$0")/../support/fixtures.sh"
 
-# HOME を差し替える前に組む。組めていないと、フックは検査を飛ばす
 check "swift-layout を組める" swift build -c release --package-path "$root/lib/hooks/swift_layout_check/package"
 
 source "$(dirname "$0")/../support/hook_fixtures.sh"
@@ -14,14 +13,12 @@ layout_case() {
     hook_case swift-layout-check "$expect" "$label" "$work/Case.swift" "$text" "$want"
 }
 
-# <行の数> の関数を持つ、名前空間の enum
 long_function() {
     local out=$'enum Case {\n    static func a() {\n' i
     for ((i = 0; i < $1 - 2; i++)); do out+=$'        b()\n'; done
     printf '%s' "${out}"$'    }\n}'
 }
 
-# <分岐の数> の 1 行の分岐だけの switch の表を持つ、名前空間の enum。<2 行の分岐> に 1 を渡すと、2 行の分岐を 1 つ混ぜる
 switch_table() {
     local out=$'enum Case {\n    static func a(i: Int) -> Int {\n        switch i {\n' i
     for ((i = 0; i < $1; i++)); do out+="        case ${i}: ${i}"$'\n'; done
@@ -29,7 +26,6 @@ switch_table() {
     printf '%s' "${out}"$'        default: 0\n        }\n    }\n}'
 }
 
-# <分岐の数> の 1 行の分岐だけの switch の表を返す、計算プロパティ
 switch_getter() {
     local out=$'enum Case {\n    case a\n}\n\nextension Case {\n    var b: Int {\n        switch self {\n' i
     for ((i = 0; i < $1; i++)); do out+="        case .a: ${i}"$'\n'; done
@@ -107,7 +103,6 @@ printf 'struct Case {}\n' >"$base/Sources/Case.swift"
 out=$(bash "$hooks" swift-layout-check "$base/Sources/Case.swift" </dev/null 2>&1)
 match "直った外れが基準線に残っていたら NG にする" "$?:$(grep -c '行を消す' <<<"$out")" "2:1"
 
-# <ラベル> <直す前の中身> <直した後に含む文> で、--fix が外れを無くし、文を含むかを見る
 fix_case() {
     local label=$1 text=$2 want=$3 out
     printf '%s\n' "$text" >"$base/Sources/Case.swift"

@@ -3,7 +3,6 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 fails=0
 
-# 利用者の設定をテストに持ち込まない
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 while IFS= read -r name; do unset "$name"; done < <(compgen -e | grep '^CC_' || true)
 
@@ -48,7 +47,6 @@ match() {
     fi
 }
 
-# <読む> <書く> の中の <語> を <新しい語> に置き換える。語が無ければ失敗する
 replace_text() {
     local source=$1 dest=$2 old=$3 new=$4 text
     text=$(cat "$source"; echo x) || return 1
@@ -60,13 +58,11 @@ replace_text() {
     printf '%s' "${text//"$old"/"$new"}" >"$dest"
 }
 
-# Python のドライバーが先頭で exec する。argv[1] を claude-config の根にして lib を読めるようにする
 PY_PRELUDE='import sys
 sys.path.insert(0, sys.argv[1] + "/lib")
 from loader import load_hook, load_module'
 export PY_PRELUDE
 
-# <フォルダ> <名前>=<アプリの ID>... で、store/app-id.txt を持つアプリのフォルダを作る
 make_apps() {
     local dir=$1 entry
     shift
@@ -81,7 +77,6 @@ finish() {
     exit $((fails > 0))
 }
 
-# 通信できない状態にする。NO_PROXY を空にして、環境の除外設定で外に出ないようにする
 offline() {
     export https_proxy=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9 http_proxy=http://127.0.0.1:9 HTTP_PROXY=http://127.0.0.1:9
     export NO_PROXY= no_proxy=

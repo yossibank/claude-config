@@ -168,7 +168,6 @@ extension LayoutMembers {
         }
     }
 
-    /// 関数と計算プロパティの本体が、全部の分岐が 1 行の switch だけでできた表か。
     func isTable(_ member: DeclSyntax) -> Bool {
         let items: CodeBlockItemListSyntax?
 

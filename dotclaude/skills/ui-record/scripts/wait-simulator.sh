@@ -8,11 +8,9 @@ limit="${2:-120}"
 [[ $limit =~ ^[1-9][0-9]*$ ]] || { echo "NG 待つ秒数は 1 以上の整数にする: $limit"; exit 1; }
 command -v axe >/dev/null || { echo "NG axe が無い。brew install cameroncooke/axe/axe で入れる"; exit 1; }
 
-# 起動済みなら boot は失敗するが、そのまま進める
 xcrun simctl boot "$device" >/dev/null 2>&1 || true
 xcrun simctl bootstatus "$device" >/dev/null 2>&1 || { echo "NG 起動を待てなかった: $device"; exit 1; }
 
-# 起動の直後は、axe の最初の読み取りが失敗する。通るまでやり直す
 start=$SECONDS
 last=""
 while ((SECONDS - start < limit)); do

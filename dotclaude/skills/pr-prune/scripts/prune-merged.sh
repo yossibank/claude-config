@@ -27,7 +27,6 @@ expired() {
     [[ ! -e $1 ]] || { [[ $low == 1 ]] && in_main "$1"; }
 }
 
-# 外付けのボリュームが外れている間は、フォルダが見えないだけで、消えたとは限らない
 mounted() {
     local volume
     case $1 in

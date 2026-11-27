@@ -23,7 +23,6 @@ in_progress() {
     return 1
 }
 
-# 付け替えられない理由は stdout に出す
 rebase_onto() (
     local child=$1 old_base=$2 new_base=$3
     local worktree temp_tree=""
@@ -60,7 +59,6 @@ behind_origin() {
     ! git -C "$repo" merge-base --is-ancestor "$remote_tip" "$local_tip"
 }
 
-# 失敗したら、git の stderr の最後の行を stdout に出す
 push_restacked() {
     local child=$1 remote_tip=$2
     local errors
