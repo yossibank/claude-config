@@ -24,7 +24,7 @@ public extension HomeModel {
     @MainActor
     @Observable
     final class State {
-        public var failureMessage: String?
+        public internal(set) var failureMessage: String?
 
         public internal(set) var outcome = ScreenOutcome<Date>()
     }
